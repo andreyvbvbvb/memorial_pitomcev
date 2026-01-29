@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: memorial
+      POSTGRES_PASSWORD: memorial_password
+      POSTGRES_DB: memorial_prod
+    volumes:
+      - memorial_postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://memorial:memorial_password@postgres:5432/memorial_prod?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES: ${JWT_EXPIRES}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_SECURE: ${SMTP_SECURE}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    volumes:
+      - api_uploads:/app/apps/api/uploads
+    command: sh -c "pnpm -C /app/apps/api prisma migrate deploy && node dist/main.js"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    restart: unless-stopped
+    environment:
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      - api
+
+volumes:
+  memorial_postgres_data:
+  api_uploads:

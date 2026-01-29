@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  login        String?  @unique
+  email        String   @unique
+  passwordHash String?
+  googleId     String?  @unique
+  name         String?
+  role         Role     @default(USER)
+  coinBalance  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pets         Pet[]
+  gifts        GiftPlacement[]
+}
+
+model Pet {
+  id        String   @id @default(cuid())
+  ownerId   String
+  name      String
+  species   String?
+  birthDate DateTime?
+  deathDate DateTime?
+  epitaph   String?
+  story     String?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  memorial  Memorial?
+  marker    MapMarker?
+  photos    PetPhoto[]
+  gifts     GiftPlacement[]
+}
+
+model Memorial {
+  id            String   @id @default(cuid())
+  petId         String   @unique
+  environmentId String?
+  houseId       String?
+  sceneJson     Json?
+  dustStage     Int      @default(0)
+  dustUpdatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pet           Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+}
+
+model MapMarker {
+  id             String   @id @default(cuid())
+  petId          String   @unique
+  lat            Float
+  lng            Float
+  markerStyle    String?
+  previewPhotoId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pet            Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([lat, lng])
+}
+
+model PetPhoto {
+  id        String   @id @default(cuid())
+  petId     String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([petId, sortOrder])
+}
+
+model GiftCatalog {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  price     Int
+  modelUrl  String
+  createdAt DateTime @default(now())
+
+  placements GiftPlacement[]
+}
+
+model GiftPlacement {
+  id        String   @id @default(cuid())
+  petId     String
+  giftId    String
+  ownerId   String
+  slotName  String
+  placedAt  DateTime @default(now())
+  expiresAt DateTime?
+
+  pet   Pet         @relation(fields: [petId], references: [id], onDelete: Cascade)
+  gift  GiftCatalog @relation(fields: [giftId], references: [id])
+  owner User        @relation(fields: [ownerId], references: [id])
+
+  @@index([petId, slotName])
+}

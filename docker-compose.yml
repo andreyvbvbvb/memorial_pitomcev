@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: memorial_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: memorial
+      POSTGRES_PASSWORD: memorial_password
+      POSTGRES_DB: memorial_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - memorial_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  memorial_postgres_data:
