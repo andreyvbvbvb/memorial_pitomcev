@@ -249,7 +249,7 @@ export default function CreateMemorialClient() {
       url: URL.createObjectURL(file)
     }));
     setPhotos((prev) => [...prev, ...mapped]);
-    if (!previewPhotoId) {
+    if (!previewPhotoId && mapped[0]) {
       setPreviewPhotoId(mapped[0].id);
     }
   };
