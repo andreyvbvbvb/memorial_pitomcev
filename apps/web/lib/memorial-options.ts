@@ -4,6 +4,12 @@ export type OptionItem = {
   description: string;
 };
 
+export const DEFAULT_OPTION: OptionItem = {
+  id: "unknown",
+  name: "Не выбрано",
+  description: ""
+};
+
 export const environmentOptions: OptionItem[] = [
   { id: "summer", name: "Лето", description: "Светлая зелёная поверхность" },
   { id: "winter", name: "Зима", description: "Снежная поверхность" }
@@ -73,5 +79,5 @@ export const ambienceOptions: OptionItem[] = [
   { id: "night", name: "Ночь", description: "Звёздное небо" }
 ];
 
-export const optionById = (options: OptionItem[], id?: string) =>
-  options.find((item) => item.id === id) ?? options[0];
+export const optionById = (options: OptionItem[], id?: string): OptionItem =>
+  options.find((item) => item.id === id) ?? options[0] ?? DEFAULT_OPTION;
