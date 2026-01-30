@@ -37,10 +37,17 @@ export const HOUSE_SLOTS: Record<string, HouseSlots> = {
 export const getHouseSlots = (houseId?: string | null): HouseSlots =>
   HOUSE_SLOTS[houseId ?? ""] ?? DEFAULT_HOUSE_SLOTS;
 
+export const DEFAULT_TERRAIN_GIFT_SLOTS = [
+  "gift_slot_1",
+  "gift_slot_2",
+  "gift_slot_3",
+  "gift_slot_4"
+];
+
 export const TERRAIN_GIFT_SLOTS: Record<string, string[]> = {
-  summer: ["gift_slot_1", "gift_slot_2", "gift_slot_3", "gift_slot_4"],
-  winter: ["gift_slot_1", "gift_slot_2", "gift_slot_3", "gift_slot_4"]
+  summer: DEFAULT_TERRAIN_GIFT_SLOTS,
+  winter: DEFAULT_TERRAIN_GIFT_SLOTS
 };
 
-export const getTerrainGiftSlots = (terrainId?: string | null) =>
-  TERRAIN_GIFT_SLOTS[terrainId ?? ""] ?? TERRAIN_GIFT_SLOTS.summer;
+export const getTerrainGiftSlots = (terrainId?: string | null): string[] =>
+  TERRAIN_GIFT_SLOTS[terrainId ?? ""] ?? DEFAULT_TERRAIN_GIFT_SLOTS;
