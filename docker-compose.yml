@@ -17,7 +17,7 @@ services:
       - SMTP_SECURE=${SMTP_SECURE}
     ports:
       - "3001:3001"
-    command: sh -c "node /app/apps/api/node_modules/prisma/build/index.js migrate deploy && node dist/main.js"
+    command: sh -c "node /app/apps/api/node_modules/prisma/build/index.js generate && node /app/apps/api/node_modules/prisma/build/index.js migrate deploy && node dist/main.js"
 
   web:
     build:
