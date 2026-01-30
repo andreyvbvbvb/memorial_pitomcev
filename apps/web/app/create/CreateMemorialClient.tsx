@@ -197,6 +197,16 @@ export default function CreateMemorialClient() {
     return null;
   };
 
+  const clampStep = (value: number): Step => {
+    if (value <= 0) {
+      return 0;
+    }
+    if (value >= 3) {
+      return 3;
+    }
+    return value as Step;
+  };
+
   const handleNext = () => {
     const message = validateStep(step);
     if (message) {
@@ -204,12 +214,12 @@ export default function CreateMemorialClient() {
       return;
     }
     setError(null);
-    setStep((prev) => Math.min(3, (prev + 1) as Step));
+    setStep((prev) => clampStep(prev + 1));
   };
 
   const handleBack = () => {
     setError(null);
-    setStep((prev) => Math.max(0, (prev - 1) as Step));
+    setStep((prev) => clampStep(prev - 1));
   };
 
   const handleChange = (field: keyof FormState, value: string | boolean) => {
