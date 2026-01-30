@@ -164,30 +164,29 @@ export default function MapClient() {
                     }}
                     onClick={handleClusterClick}
                   >
-                    {(clusterer) =>
-                      markers.map((marker) => (
-                        <Marker
-                          key={marker.id}
-                          position={{ lat: marker.lat, lng: marker.lng }}
-                          clusterer={clusterer}
-                          icon={{
-                            url:
-                              marker.markerStyle
-                                ? markerIconUrl(marker.markerStyle)
-                                : markerIconUrl(markerStyleById(marker.markerStyle).color),
-                            scaledSize: new window.google.maps.Size(
-                              markerSize(marker.markerStyle, 43).width,
-                              markerSize(marker.markerStyle, 43).height
-                            ),
-                            anchor: new window.google.maps.Point(
-                              markerAnchor(marker.markerStyle, 43).x,
-                              markerAnchor(marker.markerStyle, 43).y
-                            )
-                          }}
-                          onClick={() => setActive(marker)}
-                        />
-                      ))
-                    }
+                    {(clusterer) => (
+                      <>
+                        {markers.map((marker) => (
+                          <Marker
+                            key={marker.id}
+                            position={{ lat: marker.lat, lng: marker.lng }}
+                            clusterer={clusterer}
+                            icon={{
+                              url: markerIconUrl(marker.markerStyle ?? "other"),
+                              scaledSize: new window.google.maps.Size(
+                                markerSize(marker.markerStyle ?? "other", 43).width,
+                                markerSize(marker.markerStyle ?? "other", 43).height
+                              ),
+                              anchor: new window.google.maps.Point(
+                                markerAnchor(marker.markerStyle ?? "other", 43).x,
+                                markerAnchor(marker.markerStyle ?? "other", 43).y
+                              )
+                            }}
+                            onClick={() => setActive(marker)}
+                          />
+                        ))}
+                      </>
+                    )}
                   </MarkerClusterer>
                   {active ? (
                     <InfoWindow
