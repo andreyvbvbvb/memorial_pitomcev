@@ -11,8 +11,8 @@ COPY apps/api/package.json apps/api/
 RUN pnpm install --filter @memorial/api... --frozen-lockfile
 
 FROM base AS build
-COPY --from=deps /app/node_modules /app/node_modules
-COPY --from=deps /app/apps/api/node_modules /app/apps/api/node_modules
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/apps/api/node_modules /app/apps/api/node_modules
 ARG DATABASE_URL=postgresql://user:pass@localhost:5432/db?schema=public
 ENV DATABASE_URL=$DATABASE_URL
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
