@@ -17,7 +17,7 @@ services:
       - SMTP_SECURE=${SMTP_SECURE}
     ports:
       - "3001:3001"
-    command: sh -c "node /app/apps/api/node_modules/prisma/build/index.js generate && node /app/apps/api/node_modules/prisma/build/index.js migrate deploy && node dist/main.js"
+    command: sh -c "node /app/apps/api/node_modules/prisma/build/index.js generate && node -e \"const fs=require('fs');const path=require('path');const clientDir=path.dirname(require.resolve('@prisma/client'));const source=path.join(clientDir,'..','..','.prisma');const target=path.join(clientDir,'.prisma');fs.rmSync(target,{recursive:true,force:true});fs.cpSync(source,target,{recursive:true});\" && node /app/apps/api/node_modules/prisma/build/index.js migrate deploy && node dist/main.js"
 
   web:
     build:
