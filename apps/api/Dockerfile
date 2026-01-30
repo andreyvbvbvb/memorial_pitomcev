@@ -19,7 +19,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/api apps/api
 COPY packages packages
 RUN pnpm --filter @memorial/api... prisma:generate
-RUN node -e "const fs=require('fs');const path=require('path');const clientDir=path.dirname(require.resolve('@prisma/client'));const source=path.join(clientDir,'..','..','.prisma');const target=path.join(clientDir,'.prisma');fs.rmSync(target,{recursive:true,force:true});fs.cpSync(source,target,{recursive:true});"
 RUN pnpm --filter @memorial/api... build
 
 FROM base AS runner
