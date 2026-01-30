@@ -4,6 +4,12 @@ export type MarkerStyle = {
   color: string;
 };
 
+export const DEFAULT_MARKER_STYLE: MarkerStyle = {
+  id: "other",
+  name: "Другое",
+  color: "#8D6FD1"
+};
+
 const PNG_ASPECT_RATIO = 1280 / 853;
 const PIN_ASPECT_RATIO = 48 / 36;
 const PNG_ICON_IDS = new Set([
@@ -26,8 +32,10 @@ export const markerStyles: MarkerStyle[] = [
   { id: "other", name: "Другое", color: "#8D6FD1" }
 ];
 
-export const markerStyleById = (id?: string | null) =>
-  markerStyles.find((style) => style.id === id) ?? markerStyles[0];
+export const markerStyleById = (id?: string | null): MarkerStyle =>
+  markerStyles.find((style) => style.id === id) ??
+  markerStyles[0] ??
+  DEFAULT_MARKER_STYLE;
 
 export const markerSize = (markerId: string | null | undefined, width: number) => {
   const aspect =
