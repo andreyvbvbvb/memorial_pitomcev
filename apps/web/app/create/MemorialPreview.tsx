@@ -17,10 +17,12 @@ type Props = {
   className?: string;
 };
 
+const Primitive = "primitive" as unknown as React.ComponentType<any>;
+
 function Model({ url, position }: { url: string; position?: [number, number, number] }) {
   const { scene } = useGLTF(url);
   const cloned = useMemo(() => scene.clone(true), [scene]);
-  return <primitive object={cloned} position={position} />;
+  return <Primitive object={cloned} position={position} />;
 }
 
 function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, string>) {
