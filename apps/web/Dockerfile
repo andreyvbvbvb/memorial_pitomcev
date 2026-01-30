@@ -25,6 +25,7 @@ FROM base AS runner
 ENV NODE_ENV=production
 ENV PORT=3002
 COPY --from=deps /app/node_modules /app/node_modules
+COPY --from=deps /app/apps/web/node_modules /app/apps/web/node_modules
 COPY --from=build /app/apps/web/.next /app/apps/web/.next
 COPY --from=build /app/apps/web/public /app/apps/web/public
 COPY --from=build /app/apps/web/next.config.mjs /app/apps/web/next.config.mjs
