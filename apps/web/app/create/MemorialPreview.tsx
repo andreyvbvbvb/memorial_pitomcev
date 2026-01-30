@@ -18,6 +18,9 @@ type Props = {
 };
 
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
+const Color = "color" as unknown as React.ComponentType<any>;
+const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
+const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 
 function Model({ url, position }: { url: string; position?: [number, number, number] }) {
   const { scene } = useGLTF(url);
@@ -353,9 +356,9 @@ export default function MemorialPreview({
         {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
       </button>
       <Canvas camera={{ position: [4, 3, 4], fov: 45 }}>
-        <color attach="background" args={["#f8fafc"]} />
-        <ambientLight intensity={0.7} />
-        <directionalLight intensity={1} position={[6, 8, 4]} />
+        <Color attach="background" args={["#f8fafc"]} />
+        <AmbientLight intensity={0.7} />
+        <DirectionalLight intensity={1} position={[6, 8, 4]} />
         <Suspense fallback={null}>
           {terrainUrl && houseUrl ? (
             <TerrainWithHouse
