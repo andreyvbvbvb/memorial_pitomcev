@@ -4,6 +4,9 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       primitive: any;
+      color: any;
+      ambientLight: any;
+      directionalLight: any;
     }
   }
 }
