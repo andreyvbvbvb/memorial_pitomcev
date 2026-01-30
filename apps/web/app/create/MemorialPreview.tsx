@@ -281,7 +281,7 @@ function TerrainWithHouse({
 
   return (
     <>
-      <primitive object={terrain} />
+      <Primitive object={terrain} />
       <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
       {giftSlots && giftSlots.length > 0 ? (
         <GiftSlotButtons
