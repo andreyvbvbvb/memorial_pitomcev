@@ -14,8 +14,8 @@ COPY --from=deps /app/node_modules /app/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/api apps/api
 COPY packages packages
-RUN pnpm -C apps/api prisma:generate
-RUN pnpm -C apps/api build
+RUN pnpm --filter @memorial/api... prisma:generate
+RUN pnpm --filter @memorial/api... build
 
 FROM base AS runner
 ENV NODE_ENV=production

@@ -7,9 +7,19 @@ import { WalletModule } from "./wallet/wallet.module";
 import { GiftsModule } from "./gifts/gifts.module";
 import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
+import { StorageModule } from "./storage/storage.module";
 
 @Module({
-  imports: [PrismaModule, PetsModule, MapModule, WalletModule, GiftsModule, UsersModule, AuthModule],
+  imports: [
+    PrismaModule,
+    PetsModule,
+    MapModule,
+    WalletModule,
+    GiftsModule,
+    UsersModule,
+    AuthModule,
+    StorageModule
+  ],
   controllers: [HealthController]
 })
 export class AppModule {}

@@ -1,13 +1,16 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { promises as fs } from "fs";
-import { extname, join } from "path";
+import { extname } from "path";
 import { PrismaService } from "../prisma/prisma.service";
+import { S3Service } from "../storage/s3.service";
 import { CreatePetDto } from "./dto/create-pet.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 
 @Injectable()
 export class PetsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(S3Service) private readonly s3: S3Service
+  ) {}
 
   private async ensureOwner(ownerId: string) {
     const existing = await this.prisma.user.findUnique({
@@ -133,12 +136,9 @@ export class PetsService {
     const ext = extname(file.originalname) || ".jpg";
     const safeExt = ext.length <= 8 ? ext : ".jpg";
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${safeExt}`;
-    const uploadDir = join(process.cwd(), "uploads", "pets", petId);
-    await fs.mkdir(uploadDir, { recursive: true });
-    const filePath = join(uploadDir, fileName);
-    await fs.writeFile(filePath, file.buffer);
-
-    const url = `/uploads/pets/${petId}/${fileName}`;
+    const key = `pets/${petId}/${fileName}`;
+    const contentType = file.originalname.endsWith(".png") ? "image/png" : "image/jpeg";
+    const url = await this.s3.uploadPublic(key, file.buffer, contentType);
     return this.prisma.petPhoto.create({
       data: {
         petId,
