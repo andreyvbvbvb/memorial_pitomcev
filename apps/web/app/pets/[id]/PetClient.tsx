@@ -176,7 +176,7 @@ export default function PetClient({ id }: Props) {
       return;
     }
     if (!selectedSlot || !availableSlots.includes(selectedSlot)) {
-      setSelectedSlot(availableSlots[0]);
+      setSelectedSlot(availableSlots[0] ?? null);
     }
   }, [availableSlots, selectedSlot]);
 
