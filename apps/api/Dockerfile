@@ -11,6 +11,7 @@ RUN pnpm install --filter @memorial/api... --frozen-lockfile
 
 FROM base AS build
 COPY --from=deps /app/node_modules /app/node_modules
+COPY --from=deps /app/apps/api/node_modules /app/apps/api/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/api apps/api
 COPY packages packages
