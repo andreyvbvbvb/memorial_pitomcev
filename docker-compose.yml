@@ -4,17 +4,17 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     environment:
-      PORT: 3001
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES: ${JWT_EXPIRES}
-      FRONTEND_URL: ${FRONTEND_URL}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM}
-      SMTP_SECURE: ${SMTP_SECURE}
+      - PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES=${JWT_EXPIRES}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - SMTP_SECURE=${SMTP_SECURE}
     ports:
       - "3001:3001"
     command: sh -c "node /app/apps/api/node_modules/prisma/build/index.js migrate deploy && node dist/main.js"
@@ -27,7 +27,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
     environment:
-      PORT: 3002
+      - PORT=3002
     ports:
       - "3002:3002"
     depends_on:
