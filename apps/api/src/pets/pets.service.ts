@@ -48,7 +48,7 @@ export class PetsService {
           create: {
             environmentId: dto.environmentId ?? null,
             houseId: dto.houseId ?? null,
-            sceneJson: dto.sceneJson ?? null
+            sceneJson: dto.sceneJson ?? undefined
           }
         },
         marker: hasCoords

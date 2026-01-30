@@ -46,11 +46,13 @@ export class UsersController {
         throw new BadRequestException("Логин уже занят");
       }
     }
+    const login = dto.login?.trim();
+    const email = dto.email?.trim();
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
-        login: dto.login === undefined ? undefined : dto.login?.toLowerCase() ?? null,
-        email: dto.email === undefined ? undefined : dto.email?.toLowerCase() ?? null
+        login: login ? login.toLowerCase() : undefined,
+        email: email ? email.toLowerCase() : undefined
       }
     });
     return {
