@@ -146,7 +146,9 @@ export default function CreateMemorialClient() {
     houseSlots.mat ? { slot: houseSlots.mat, url: matUrl } : null,
     houseSlots.bowlFood ? { slot: houseSlots.bowlFood, url: bowlFoodUrl } : null,
     houseSlots.bowlWater ? { slot: houseSlots.bowlWater, url: bowlWaterUrl } : null
-  ].filter((part): part is { slot: string; url: string } => Boolean(part.url));
+  ].filter(
+    (part): part is { slot: string; url: string } => Boolean(part && part.url)
+  );
   const colorOverrides = {
     roof_paint: form.roofColor,
     wall_paint: form.wallColor
