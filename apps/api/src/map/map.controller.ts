@@ -1,5 +1,16 @@
 import { Controller, Get, Inject } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+
+type MarkerWithPet = Prisma.MapMarkerGetPayload<{
+  include: {
+    pet: {
+      include: {
+        photos: true;
+      };
+    };
+  };
+}>;
 
 @Controller("map")
 export class MapController {
@@ -7,7 +18,7 @@ export class MapController {
 
   @Get("markers")
   async getMarkers() {
-    const markers = await this.prisma.mapMarker.findMany({
+    const markers: MarkerWithPet[] = await this.prisma.mapMarker.findMany({
       where: {
         pet: {
           isPublic: true
