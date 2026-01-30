@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { extname } from "path";
 import { PrismaService } from "../prisma/prisma.service";
 import { S3Service } from "../storage/s3.service";
@@ -48,7 +49,10 @@ export class PetsService {
           create: {
             environmentId: dto.environmentId ?? null,
             houseId: dto.houseId ?? null,
-            sceneJson: dto.sceneJson ?? undefined
+            sceneJson:
+              dto.sceneJson === undefined
+                ? undefined
+                : (dto.sceneJson as Prisma.InputJsonValue)
           }
         },
         marker: hasCoords
