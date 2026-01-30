@@ -1,18 +1,4 @@
 services:
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-    environment:
-      PORT: 3002
-    ports:
-      - "3002:3002"
-    depends_on:
-      - api
-
   api:
     build:
       context: .
@@ -32,3 +18,17 @@ services:
     ports:
       - "3001:3001"
     command: sh -c "node /app/apps/api/node_modules/prisma/build/index.js migrate deploy && node dist/main.js"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    environment:
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      - api
