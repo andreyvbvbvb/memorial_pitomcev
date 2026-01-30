@@ -94,8 +94,8 @@ const initialState: FormState = {
   matId: matOptions[1]?.id ?? "mat_1",
   bowlFoodId: bowlFoodOptions[1]?.id ?? "bowl_food_1",
   bowlWaterId: bowlWaterOptions[1]?.id ?? "bowl_water_1",
-  roofColor: colorPalette[0],
-  wallColor: colorPalette[1]
+  roofColor: colorPalette[0] ?? "#F36C6C",
+  wallColor: colorPalette[1] ?? "#F2B476"
 };
 
 export default function CreateMemorialClient() {
