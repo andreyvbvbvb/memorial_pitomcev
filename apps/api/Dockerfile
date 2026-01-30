@@ -25,7 +25,7 @@ FROM base AS runner
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules /app/node_modules
 COPY --from=deps /app/apps/api/node_modules /app/apps/api/node_modules
-COPY --from=build /app/node_modules/.prisma /app/node_modules/.prisma
+COPY --from=build /app/apps/api/node_modules/.prisma /app/apps/api/node_modules/.prisma
 COPY --from=build /app/apps/api/dist /app/apps/api/dist
 COPY --from=build /app/apps/api/prisma /app/apps/api/prisma
 COPY apps/api/prisma.config.ts /app/apps/api/prisma.config.ts
