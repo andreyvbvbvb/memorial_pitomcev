@@ -32,4 +32,4 @@ COPY --from=build /app/apps/web/next.config.mjs /app/apps/web/next.config.mjs
 COPY apps/web/package.json apps/web/
 WORKDIR /app/apps/web
 EXPOSE 3002
-CMD ["pnpm", "-C", "/app/apps/web", "start"]
+CMD ["node", "/app/apps/web/node_modules/next/dist/bin/next", "start", "-p", "3002"]
