@@ -59,8 +59,9 @@ export default function MapClient() {
     load();
   }, [apiUrl]);
 
-  const center = markers.length
-    ? { lat: markers[0].lat, lng: markers[0].lng }
+  const firstMarker = markers[0];
+  const center = firstMarker
+    ? { lat: firstMarker.lat, lng: firstMarker.lng }
     : defaultCenter;
 
 
