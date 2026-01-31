@@ -664,8 +664,11 @@ export default function CreateMemorialClient() {
           ) : null}
 
           {step === 2 ? (
-            <div className="flex flex-col gap-6 lg:flex-row">
-              <div className="grid gap-3 lg:w-[520px] lg:shrink-0">
+            <div
+              className="grid gap-6"
+              style={{ gridTemplateColumns: "minmax(0,520px) minmax(0,1fr)", alignItems: "start" }}
+            >
+              <div className="grid gap-3" style={{ maxWidth: 520 }}>
                 <h2 className="text-lg font-semibold text-slate-900">Превью мемориала</h2>
                 <MemorialPreview
                   terrainUrl={environmentUrl}
