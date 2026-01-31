@@ -764,7 +764,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("roofColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.roofColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -792,7 +792,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("wallColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.wallColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -820,7 +820,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("signColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.signColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -848,7 +848,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("frameLeftColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.frameLeftColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -876,7 +876,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("frameRightColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.frameRightColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -904,7 +904,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("matColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.matColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -932,7 +932,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("bowlFoodColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.bowlFoodColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -960,7 +960,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("bowlWaterColor", color)}
-                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
                             form.bowlWaterColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
