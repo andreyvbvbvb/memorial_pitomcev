@@ -81,7 +81,7 @@ const steps = [
   "Проверка"
 ];
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
-const mapContainerStyle = { width: "100%", height: "300px" };
+const mapContainerStyle = { width: "100%", height: "60vh" };
 const colorPalette = [
   "#F36C6C",
   "#F28C6B",
@@ -244,6 +244,12 @@ export default function CreateMemorialClient() {
       }
       if (!form.name.trim()) {
         return "Имя питомца обязательно";
+      }
+      if (!form.birthDate) {
+        return "Нужно указать дату рождения";
+      }
+      if (!form.deathDate) {
+        return "Нужно указать дату ухода";
       }
     }
     if (current === 1) {
@@ -442,6 +448,38 @@ export default function CreateMemorialClient() {
       setLoading(false);
     }
   };
+
+  const renderNavButtons = (className?: string) => (
+    <div className={`flex items-center justify-between ${className ?? ""}`}>
+      <button
+        type="button"
+        onClick={handleBack}
+        className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
+        disabled={step === 0}
+      >
+        Назад
+      </button>
+      {step < 4 ? (
+        <button
+          type="button"
+          onClick={handleNext}
+          className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
+          disabled={step === 0 && !authReady}
+        >
+          Дальше
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
+          disabled={loading}
+        >
+          {loading ? "Публикация..." : "Опубликовать мемориал"}
+        </button>
+      )}
+    </div>
+  );
 
   const optionImage = (category: string, id: string) =>
     `/memorial/options/${category}/${id}.png`;
@@ -705,33 +743,19 @@ export default function CreateMemorialClient() {
           ) : null}
 
           {step === 2 ? (
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: "minmax(0,60%) minmax(0,35%)",
-                columnGap: "5%",
-                alignItems: "start",
-                paddingLeft: "2.5%",
-                paddingRight: "2.5%"
-              }}
-            >
-              <div
-                className="grid gap-3"
-                style={{ width: "100%", position: "sticky", top: 24, alignSelf: "start" }}
-              >
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[60%_35%] lg:gap-x-[5%] lg:px-[2.5%]">
+              <div className="lg:hidden">{renderNavButtons()}</div>
+              <div className="grid gap-3 lg:sticky lg:top-24 lg:self-start">
                 <MemorialPreview
                   terrainUrl={environmentUrl}
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
-                  className="h-[calc(100vh-240px)] min-h-[520px]"
+                  className="h-[50vh] min-h-[320px] lg:h-[calc(100vh-240px)] lg:min-h-[520px]"
                 />
               </div>
 
-              <div
-                className="grid gap-6"
-                style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: "8px" }}
-              >
+              <div className="grid gap-6 max-h-[50vh] overflow-y-auto lg:max-h-[70vh] lg:pr-2">
                 <div className="grid gap-3">
                   <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
                   {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) =>
@@ -1108,34 +1132,8 @@ export default function CreateMemorialClient() {
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-        <div className="mt-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-            disabled={step === 0}
-          >
-            Назад
-          </button>
-          {step < 4 ? (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
-              disabled={step === 0 && !authReady}
-            >
-              Дальше
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
-              disabled={loading}
-            >
-              {loading ? "Публикация..." : "Опубликовать мемориал"}
-            </button>
-          )}
+        <div className={`mt-6 ${step === 2 ? "hidden lg:block" : ""}`}>
+          {renderNavButtons()}
         </div>
       </div>
     </main>
