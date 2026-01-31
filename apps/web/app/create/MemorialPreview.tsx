@@ -14,6 +14,7 @@ type Props = {
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
   colors?: Record<string, string>;
+  backgroundColor?: string;
   className?: string;
 };
 
@@ -319,6 +320,7 @@ export default function MemorialPreview({
   selectedSlot,
   onSelectSlot,
   colors,
+  backgroundColor = "#dfeeff",
   className
 }: Props) {
   const controlsRef = useRef<any>(null);
@@ -356,7 +358,7 @@ export default function MemorialPreview({
         {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
       </button>
       <Canvas camera={{ position: [4, 3, 4], fov: 45 }}>
-        <Color attach="background" args={["#f8fafc"]} />
+        <Color attach="background" args={[backgroundColor]} />
         <AmbientLight intensity={0.7} />
         <DirectionalLight intensity={1} position={[6, 8, 4]} />
         <Suspense fallback={null}>

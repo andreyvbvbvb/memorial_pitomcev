@@ -76,7 +76,33 @@ const steps = [
 ];
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const mapContainerStyle = { width: "100%", height: "300px" };
-const colorPalette = ["#F36C6C", "#F2B476", "#FFD166", "#9BD1A5", "#8ECAE6", "#CDB4DB", "#FFFFFF", "#6B7280"];
+const colorPalette = [
+  "#F36C6C",
+  "#F28C6B",
+  "#F2B476",
+  "#FFD166",
+  "#FFE9A5",
+  "#9BD1A5",
+  "#6FCF97",
+  "#8ECAE6",
+  "#6FA8DC",
+  "#5DADE2",
+  "#CDB4DB",
+  "#B39DDB",
+  "#9B8CCC",
+  "#FFFFFF",
+  "#6B7280",
+  "#F5E6D3",
+  "#E9D1B3",
+  "#DDBA8E",
+  "#CFA06E",
+  "#B88753",
+  "#A0723F",
+  "#8A5E2E",
+  "#714A22",
+  "#5A3A1B",
+  "#422913"
+];
 
 const initialState: FormState = {
   ownerId: "",
@@ -660,7 +686,9 @@ export default function CreateMemorialClient() {
               style={{
                 gridTemplateColumns: "minmax(0,60%) minmax(0,35%)",
                 columnGap: "5%",
-                alignItems: "start"
+                alignItems: "start",
+                paddingLeft: "2.5%",
+                paddingRight: "2.5%"
               }}
             >
               <div
@@ -672,7 +700,7 @@ export default function CreateMemorialClient() {
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
-                  className="h-[calc(100vh-320px)] min-h-[420px]"
+                  className="h-[calc(100vh-240px)] min-h-[520px]"
                 />
               </div>
 
@@ -703,15 +731,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
-                {houseSlots.wall ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
-                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) =>
-                      handleChange("wallId", id)
-                    )}
-                  </div>
-                ) : null}
-
                 {houseSlots.roof ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Цвет крыши домика</h2>
@@ -721,13 +740,22 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("roofColor", color)}
-                          className={`h-10 w-10 rounded-lg border-2 ${
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
                             form.roofColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
                         />
                       ))}
                     </div>
+                  </div>
+                ) : null}
+
+                {houseSlots.wall ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
+                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) =>
+                      handleChange("wallId", id)
+                    )}
                   </div>
                 ) : null}
 
@@ -740,7 +768,7 @@ export default function CreateMemorialClient() {
                           key={color}
                           type="button"
                           onClick={() => handleChange("wallColor", color)}
-                          className={`h-10 w-10 rounded-lg border-2 ${
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
                             form.wallColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -912,22 +940,6 @@ export default function CreateMemorialClient() {
                   <p>Эпитафия: {form.epitaph || "—"}</p>
                   <p>История: {form.story || "—"}</p>
                   <p>Публичность: {form.isPublic ? "Публичный" : "Приватный"}</p>
-                  <p>Маркер: {markerStyleById(form.markerStyle).name}</p>
-                  <p>
-                    Координаты: {hasCoords ? `${form.lat}, ${form.lng}` : "не указаны"}
-                  </p>
-                  <p>Окружение: {optionById(environmentOptions, form.environmentId).name}</p>
-                  <p>Домик: {optionById(houseOptions, form.houseId).name}</p>
-                  <p>Крыша: {optionById(roofOptions, form.roofId).name}</p>
-                  <p>Стены: {optionById(wallOptions, form.wallId).name}</p>
-                  <p>Украшение: {optionById(signOptions, form.signId).name}</p>
-                  <p>Рамка слева: {optionById(frameLeftOptions, form.frameLeftId).name}</p>
-                  <p>Рамка справа: {optionById(frameRightOptions, form.frameRightId).name}</p>
-                  <p>Коврик: {optionById(matOptions, form.matId).name}</p>
-                  <p>Еда: {optionById(bowlFoodOptions, form.bowlFoodId).name}</p>
-                  <p>Вода: {optionById(bowlWaterOptions, form.bowlWaterId).name}</p>
-                  <p>Цвет крыши: {form.roofColor}</p>
-                  <p>Цвет стен: {form.wallColor}</p>
                 </div>
                 {photos.length > 0 ? (
                   <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -949,6 +961,7 @@ export default function CreateMemorialClient() {
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
+                  className="h-[720px]"
                 />
               </div>
             </div>
