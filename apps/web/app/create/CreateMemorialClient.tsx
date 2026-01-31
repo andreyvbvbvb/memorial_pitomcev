@@ -509,16 +509,25 @@ export default function CreateMemorialClient() {
                 />
                 <p className="text-xs text-slate-500">Максимум 5 фото, до 10 МБ каждое.</p>
                 {photos.length > 0 ? (
-                  <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                  <div
+                    className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                      gap: "8px"
+                    }}
+                  >
                     {photos.map((photo) => (
                       <div
                         key={photo.id}
                         className="rounded-2xl border border-slate-200 bg-white p-2"
+                        style={{ maxWidth: "220px" }}
                       >
                         <img
                           src={photo.url}
                           alt="Фото питомца"
                           className="h-20 w-full rounded-lg object-cover"
+                          style={{ height: "80px", width: "100%", objectFit: "cover" }}
                         />
                         <div className="mt-3 flex items-center justify-between">
                           <button
