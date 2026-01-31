@@ -59,6 +59,12 @@ type FormState = {
   bowlWaterId: string;
   roofColor: string;
   wallColor: string;
+  signColor: string;
+  frameLeftColor: string;
+  frameRightColor: string;
+  matColor: string;
+  bowlFoodColor: string;
+  bowlWaterColor: string;
 };
 
 type PhotoDraft = {
@@ -127,7 +133,13 @@ const initialState: FormState = {
   bowlFoodId: bowlFoodOptions[1]?.id ?? "bowl_food_1",
   bowlWaterId: bowlWaterOptions[1]?.id ?? "bowl_water_1",
   roofColor: colorPalette[0] ?? "#F36C6C",
-  wallColor: colorPalette[1] ?? "#F2B476"
+  wallColor: colorPalette[1] ?? "#F2B476",
+  signColor: colorPalette[16] ?? "#E9D1B3",
+  frameLeftColor: colorPalette[16] ?? "#E9D1B3",
+  frameRightColor: colorPalette[16] ?? "#E9D1B3",
+  matColor: colorPalette[9] ?? "#5DADE2",
+  bowlFoodColor: colorPalette[3] ?? "#FFD166",
+  bowlWaterColor: colorPalette[7] ?? "#8ECAE6"
 };
 
 export default function CreateMemorialClient() {
@@ -184,7 +196,13 @@ export default function CreateMemorialClient() {
   );
   const colorOverrides = {
     roof_paint: form.roofColor,
-    wall_paint: form.wallColor
+    wall_paint: form.wallColor,
+    sign_paint: form.signColor,
+    frame_left_paint: form.frameLeftColor,
+    frame_right_paint: form.frameRightColor,
+    mat_paint: form.matColor,
+    bowl_food_paint: form.bowlFoodColor,
+    bowl_water_paint: form.bowlWaterColor
   };
 
   useEffect(() => {
@@ -360,7 +378,13 @@ export default function CreateMemorialClient() {
         },
         colors: {
           roof_paint: form.roofColor,
-          wall_paint: form.wallColor
+          wall_paint: form.wallColor,
+          sign_paint: form.signColor,
+          frame_left_paint: form.frameLeftColor,
+          frame_right_paint: form.frameRightColor,
+          mat_paint: form.matColor,
+          bowl_food_paint: form.bowlFoodColor,
+          bowl_water_paint: form.bowlWaterColor
         },
         version: 3
       }
@@ -787,12 +811,50 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
+                {houseSlots.sign ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет украшения</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("signColor", color)}
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                            form.signColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {houseSlots.frameLeft ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
                     {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) =>
                       handleChange("frameLeftId", id)
                     )}
+                  </div>
+                ) : null}
+
+                {houseSlots.frameLeft ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет рамки слева</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("frameLeftColor", color)}
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                            form.frameLeftColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 
@@ -805,12 +867,50 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
+                {houseSlots.frameRight ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет рамки справа</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("frameRightColor", color)}
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                            form.frameRightColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {houseSlots.mat ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
                     {renderOptionGrid("mat", matOptions, form.matId, (id) =>
                       handleChange("matId", id)
                     )}
+                  </div>
+                ) : null}
+
+                {houseSlots.mat ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет коврика</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("matColor", color)}
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                            form.matColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 
@@ -823,12 +923,50 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
+                {houseSlots.bowlFood ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет миски с едой</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("bowlFoodColor", color)}
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                            form.bowlFoodColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {houseSlots.bowlWater ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
                     {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) =>
                       handleChange("bowlWaterId", id)
                     )}
+                  </div>
+                ) : null}
+
+                {houseSlots.bowlWater ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет миски с водой</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("bowlWaterColor", color)}
+                          className={`h-[100px] w-[100px] rounded-lg border-2 ${
+                            form.bowlWaterColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
               </div>
