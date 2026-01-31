@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { ReactNode } from "react";
 import { Commissioner, Playfair_Display } from "next/font/google";
+import AppHeader from "../components/AppHeader";
 
 const bodyFont = Commissioner({
   subsets: ["latin", "cyrillic"],
@@ -22,7 +23,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
-      <body className={`${bodyFont.variable} ${displayFont.variable}`}>{children}</body>
+      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
+        <AppHeader />
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,12 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE } from "../../lib/config";
+import { API_BASE } from "../lib/config";
 
-export default function AuthClient() {
-  const [mode, setMode] = useState<"login" | "register">("login");
+type AuthMode = "login" | "register";
+
+type AuthUser = {
+  id: string;
+  login?: string | null;
+  email: string;
+  coinBalance?: number;
+};
+
+type AuthModalProps = {
+  open: boolean;
+  visible: boolean;
+  onClose: () => void;
+  onSuccess?: (user: AuthUser) => void;
+};
+
+export default function AuthModal({ open, visible, onClose, onSuccess }: AuthModalProps) {
+  const [mode, setMode] = useState<AuthMode>("login");
   const [identifier, setIdentifier] = useState("");
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
@@ -24,11 +39,47 @@ export default function AuthClient() {
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
 
+  useEffect(() => {
+    if (!open) {
+      setMode("login");
+      setForgotMode(false);
+      setIdentifier("");
+      setLogin("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setError(null);
+      setEmailError(null);
+      setLoginError(null);
+      setNotice(null);
+      setForgotNotice(null);
+      setForgotIdentifier("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open, onClose]);
+
   const handleSubmit = async () => {
     setError(null);
     setEmailError(null);
     setLoginError(null);
     setNotice(null);
+
     if (mode === "login") {
       if (!identifier.trim() || !password.trim()) {
         setError("Введите email (или логин) и пароль");
@@ -52,7 +103,8 @@ export default function AuthClient() {
         return;
       }
     }
-    if (mode === "register" && password.trim().length < 6) {
+
+    if (password.trim().length < 6) {
       setError("Пароль должен быть минимум 6 символов");
       return;
     }
@@ -63,7 +115,8 @@ export default function AuthClient() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/auth/${mode === "register" ? "register" : "login"}`,
+      const response = await fetch(
+        `${apiUrl}/auth/${mode === "register" ? "register" : "login"}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -75,6 +128,7 @@ export default function AuthClient() {
           )
         }
       );
+
       if (!response.ok) {
         const text = await response.text();
         let message = text;
@@ -95,7 +149,10 @@ export default function AuthClient() {
         }
         return;
       }
+
+      const payload = (await response.json()) as AuthUser;
       setNotice("Готово! Перенаправляем...");
+      onSuccess?.(payload);
       router.push("/profile");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка авторизации");
@@ -130,59 +187,69 @@ export default function AuthClient() {
     }
   };
 
+  if (!open) {
+    return null;
+  }
+
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
-      <div className="flex flex-col gap-2">
-        <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Вход</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Авторизация</h1>
-        <p className="text-slate-600">Вход и регистрация через email.</p>
-      </div>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-opacity duration-200 ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <button
+        type="button"
+        aria-label="Закрыть"
+        className="absolute inset-0 cursor-default bg-black/30 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className={`relative w-full max-w-md rounded-3xl border border-[rgba(215,230,242,0.8)] bg-white p-6 shadow-2xl transition-transform duration-200 ${
+          visible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-[var(--text)]">Вход и регистрация</h2>
+          <button type="button" className="btn btn-ghost px-3 py-2" onClick={onClose}>
+            Закрыть
+          </button>
+        </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/profile"
-          className="rounded-2xl border border-slate-200 px-5 py-2 text-sm text-slate-700"
-        >
-          Профиль
-        </Link>
-        <Link
-          href="/my-pets"
-          className="rounded-2xl border border-slate-200 px-5 py-2 text-sm text-slate-700"
-        >
-          Мои питомцы
-        </Link>
-      </div>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("login");
+              setForgotMode(false);
+            }}
+            className={`rounded-2xl px-4 py-2 text-sm ${
+              mode === "login" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-700"
+            }`}
+          >
+            Вход
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("register");
+              setForgotMode(false);
+            }}
+            className={`rounded-2xl px-4 py-2 text-sm ${
+              mode === "register" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-700"
+            }`}
+          >
+            Регистрация
+          </button>
+        </div>
 
-      <div className="mt-10">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setMode("login")}
-              className={`rounded-2xl px-4 py-2 text-sm ${
-                mode === "login" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-700"
-              }`}
-            >
-              Вход
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("register")}
-              className={`rounded-2xl px-4 py-2 text-sm ${
-                mode === "register" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-700"
-              }`}
-            >
-              Регистрация
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-4">
-            {mode === "login" ? (
+        <div className="mt-5 grid gap-4">
+          {!forgotMode ? (
+            mode === "login" ? (
               <>
                 <label className="grid gap-1 text-sm text-slate-700">
                   Email или логин
                   <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="input"
                     value={identifier}
                     onChange={(event) => {
                       setIdentifier(event.target.value);
@@ -195,19 +262,29 @@ export default function AuthClient() {
                   Пароль
                   <input
                     type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="input"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="••••••"
                   />
                 </label>
+                <button type="button" onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
+                  {loading ? "Подождите..." : "Войти"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForgotMode(true)}
+                  className="text-left text-xs text-slate-500 underline"
+                >
+                  Забыли пароль?
+                </button>
               </>
             ) : (
               <>
                 <label className="grid gap-1 text-sm text-slate-700">
                   Логин
                   <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="input"
                     value={login}
                     onChange={(event) => {
                       setLogin(event.target.value);
@@ -220,7 +297,7 @@ export default function AuthClient() {
                 <label className="grid gap-1 text-sm text-slate-700">
                   Email
                   <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="input"
                     value={email}
                     onChange={(event) => {
                       setEmail(event.target.value);
@@ -234,7 +311,7 @@ export default function AuthClient() {
                   Пароль
                   <input
                     type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="input"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="••••••"
@@ -244,62 +321,46 @@ export default function AuthClient() {
                   Подтверждение пароля
                   <input
                     type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="input"
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     placeholder="••••••"
                   />
                 </label>
+                <button type="button" onClick={handleSubmit} className="btn btn-primary" disabled={loading}>
+                  {loading ? "Подождите..." : "Зарегистрироваться"}
+                </button>
               </>
-            )}
-
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              disabled={loading}
-            >
-              {loading
-                ? "Подождите..."
-                : mode === "login"
-                  ? "Войти"
-                  : "Создать аккаунт"}
-            </button>
-
-            {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          </div>
-
-          <div className="mt-6 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setForgotMode((prev) => !prev)}
-              className="text-sm text-slate-600 underline-offset-4 hover:underline"
-            >
-              Забыли пароль?
-            </button>
-            {forgotMode ? (
-              <div className="mt-3 grid gap-2">
+            )
+          ) : (
+            <>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Email или логин
                 <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm"
-                  placeholder="Email или логин"
+                  className="input"
                   value={forgotIdentifier}
                   onChange={(event) => setForgotIdentifier(event.target.value)}
+                  placeholder="user@example.com"
                 />
-                <button
-                  type="button"
-                  onClick={handleForgot}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-                  disabled={loading}
-                >
-                  Отправить новый пароль
-                </button>
-                {forgotNotice ? (
-                  <p className="text-xs text-emerald-600">{forgotNotice}</p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+              </label>
+              <button type="button" onClick={handleForgot} className="btn btn-primary" disabled={loading}>
+                {loading ? "Подождите..." : "Отправить новый пароль"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setForgotMode(false)}
+                className="text-left text-xs text-slate-500 underline"
+              >
+                Назад к входу
+              </button>
+            </>
+          )}
+
+          {error ? <div className="rounded-2xl bg-red-50 p-3 text-xs text-red-700">{error}</div> : null}
+          {notice ? <div className="rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-700">{notice}</div> : null}
+          {forgotNotice ? (
+            <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-700">{forgotNotice}</div>
+          ) : null}
         </div>
       </div>
     </div>
