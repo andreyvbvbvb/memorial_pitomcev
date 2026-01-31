@@ -43,9 +43,6 @@ type FormState = {
   deathDate: string;
   epitaph: string;
   story: string;
-  favoriteTreats: string;
-  favoriteToys: string;
-  favoriteSleepPlaces: string;
   isPublic: boolean;
   lat: string;
   lng: string;
@@ -89,9 +86,6 @@ const initialState: FormState = {
   deathDate: "",
   epitaph: "",
   story: "",
-  favoriteTreats: "",
-  favoriteToys: "",
-  favoriteSleepPlaces: "",
   isPublic: true,
   lat: "",
   lng: "",
@@ -320,9 +314,6 @@ export default function CreateMemorialClient() {
       birthDate: form.birthDate || undefined,
       deathDate: form.deathDate || undefined,
       epitaph: form.epitaph.trim() || undefined,
-      favoriteTreats: form.favoriteTreats.trim() || undefined,
-      favoriteToys: form.favoriteToys.trim() || undefined,
-      favoriteSleepPlaces: form.favoriteSleepPlaces.trim() || undefined,
       story: form.story.trim() || undefined,
       isPublic: form.isPublic,
       lat: canShowMarker ? lat : undefined,
@@ -665,24 +656,24 @@ export default function CreateMemorialClient() {
 
           {step === 2 ? (
             <div
-              className="grid gap-6"
-              style={{ gridTemplateColumns: "minmax(0,60%) minmax(0,40%)", alignItems: "start" }}
+              className="grid"
+              style={{
+                gridTemplateColumns: "minmax(0,60%) minmax(0,35%)",
+                columnGap: "5%",
+                alignItems: "start"
+              }}
             >
               <div
                 className="grid gap-3"
                 style={{ width: "100%", position: "sticky", top: 24, alignSelf: "start" }}
               >
-                <h2 className="text-lg font-semibold text-slate-900">Превью мемориала</h2>
                 <MemorialPreview
                   terrainUrl={environmentUrl}
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
-                  className="h-[360px]"
+                  className="h-[calc(100vh-320px)] min-h-[420px]"
                 />
-                <p className="text-xs text-slate-500">
-                  Превью обновляется сразу при выборе поверхности, домика, деталей и цветов.
-                </p>
               </div>
 
               <div
@@ -709,13 +700,28 @@ export default function CreateMemorialClient() {
                     {renderOptionGrid("roof", roofOptions, form.roofId, (id) =>
                       handleChange("roofId", id)
                     )}
+                  </div>
+                ) : null}
+
+                {houseSlots.wall ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
+                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) =>
+                      handleChange("wallId", id)
+                    )}
+                  </div>
+                ) : null}
+
+                {houseSlots.roof ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Цвет крыши домика</h2>
                     <div className="flex flex-wrap gap-2">
                       {colorPalette.map((color) => (
                         <button
                           key={color}
                           type="button"
                           onClick={() => handleChange("roofColor", color)}
-                          className={`h-8 w-8 rounded-lg border-2 ${
+                          className={`h-10 w-10 rounded-lg border-2 ${
                             form.roofColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -727,17 +733,14 @@ export default function CreateMemorialClient() {
 
                 {houseSlots.wall ? (
                   <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
-                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) =>
-                      handleChange("wallId", id)
-                    )}
+                    <h2 className="text-base font-semibold text-slate-900">Цвет стен домика</h2>
                     <div className="flex flex-wrap gap-2">
                       {colorPalette.map((color) => (
                         <button
                           key={color}
                           type="button"
                           onClick={() => handleChange("wallColor", color)}
-                          className={`h-8 w-8 rounded-lg border-2 ${
+                          className={`h-10 w-10 rounded-lg border-2 ${
                             form.wallColor === color ? "border-slate-900" : "border-transparent"
                           }`}
                           style={{ backgroundColor: color }}
@@ -817,36 +820,6 @@ export default function CreateMemorialClient() {
                 />
               </label>
               <label className="grid gap-1 text-sm text-slate-700">
-                Какие были любимые лакомства?
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.favoriteTreats}
-                  maxLength={200}
-                  onChange={(event) => handleChange("favoriteTreats", event.target.value)}
-                  placeholder="Например, печеньки и индейка"
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-slate-700">
-                Какие были любимые игрушки?
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.favoriteToys}
-                  maxLength={200}
-                  onChange={(event) => handleChange("favoriteToys", event.target.value)}
-                  placeholder="Мячик, канат, пищалки"
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-slate-700">
-                Какие были любимые места для сна?
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.favoriteSleepPlaces}
-                  maxLength={200}
-                  onChange={(event) => handleChange("favoriteSleepPlaces", event.target.value)}
-                  placeholder="Кресло у окна, диван"
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-slate-700">
                 Здесь вы можете поделиться историей питомца и дополнительной информацией
                 <textarea
                   className="min-h-[160px] rounded-2xl border border-slate-200 px-4 py-2"
@@ -884,16 +857,25 @@ export default function CreateMemorialClient() {
                     {photos.map((photo) => (
                       <div
                         key={photo.id}
-                        className="rounded-2xl border border-slate-200 bg-white p-2"
+                        className="relative rounded-2xl border border-slate-200 bg-white p-2"
                         style={{ maxWidth: "220px" }}
                       >
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          className="absolute right-2 top-2 h-6 w-6 rounded-full bg-black/70 text-xs text-white"
+                          aria-label="Удалить фото"
+                          title="Удалить фото"
+                        >
+                          ×
+                        </button>
                         <img
                           src={photo.url}
                           alt="Фото питомца"
                           className="h-20 w-full rounded-lg object-cover"
                           style={{ height: "80px", width: "100%", objectFit: "cover" }}
                         />
-                        <div className="mt-3 flex items-center justify-between">
+                        <div className="mt-3 flex items-center justify-center">
                           <button
                             type="button"
                             onClick={() => setPreviewPhotoId(photo.id)}
@@ -903,14 +885,7 @@ export default function CreateMemorialClient() {
                                 : "border border-slate-200 text-slate-600"
                             }`}
                           >
-                            {previewPhotoId === photo.id ? "Мини‑фото" : "Сделать мини"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(photo.id)}
-                            className="text-xs text-red-600"
-                          >
-                            Удалить
+                            {previewPhotoId === photo.id ? "На обложке" : "На обложку"}
                           </button>
                         </div>
                       </div>
@@ -935,9 +910,6 @@ export default function CreateMemorialClient() {
                   <p>Дата рождения: {form.birthDate || "—"}</p>
                   <p>Дата ухода: {form.deathDate || "—"}</p>
                   <p>Эпитафия: {form.epitaph || "—"}</p>
-                  <p>Любимые лакомства: {form.favoriteTreats || "—"}</p>
-                  <p>Любимые игрушки: {form.favoriteToys || "—"}</p>
-                  <p>Любимые места для сна: {form.favoriteSleepPlaces || "—"}</p>
                   <p>История: {form.story || "—"}</p>
                   <p>Публичность: {form.isPublic ? "Публичный" : "Приватный"}</p>
                   <p>Маркер: {markerStyleById(form.markerStyle).name}</p>
