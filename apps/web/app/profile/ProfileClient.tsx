@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 
 type Profile = {
@@ -12,80 +13,84 @@ type Profile = {
 };
 
 export default function ProfileClient() {
-  const [ownerId, setOwnerId] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
-
-  const handleLoad = async () => {
-    const trimmed = ownerId.trim();
-    if (!trimmed) {
-      setError("Введите Owner ID");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    setNotice(null);
-    try {
-      const response = await fetch(`${apiUrl}/users/${encodeURIComponent(trimmed)}`, {
-        credentials: "include"
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Не удалось загрузить профиль");
-      }
-      const data = (await response.json()) as Profile;
-      setProfile(data);
-      setLogin(data.login ?? "");
-      setEmail(data.email ?? "");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки профиля");
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const router = useRouter();
 
   useEffect(() => {
     const loadMe = async () => {
       try {
+        setLoadingProfile(true);
         const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
         if (!response.ok) {
+          router.replace("/auth");
           return;
         }
         const data = (await response.json()) as Profile;
         setProfile(data);
-        setOwnerId(data.id);
         setLogin(data.login ?? "");
         setEmail(data.email ?? "");
+        setEditing(false);
       } catch {
-        return;
+        router.replace("/auth");
+      } finally {
+        setLoadingProfile(false);
       }
     };
     loadMe();
-  }, [apiUrl]);
+  }, [apiUrl, router]);
 
   const handleSave = async () => {
     if (!profile) {
       setError("Сначала загрузите профиль");
       return;
     }
+    const trimmedLogin = login.trim();
+    if (trimmedLogin && !/^[a-z0-9_]+$/.test(trimmedLogin)) {
+      setError("Логин может содержать только a-z, 0-9 и подчёркивание");
+      return;
+    }
+    if ((currentPassword.trim() || newPassword.trim()) && newPassword.trim().length < 6) {
+      setError("Новый пароль должен быть минимум 6 символов");
+      return;
+    }
+    if (newPassword.trim() && !currentPassword.trim()) {
+      setError("Введите текущий пароль");
+      return;
+    }
     setSaving(true);
     setError(null);
     setNotice(null);
     try {
+      const payload: {
+        login: string | null;
+        email: string | null;
+        currentPassword?: string;
+        newPassword?: string;
+      } = {
+        login: login.trim() || null,
+        email: email.trim() || null
+      };
+      if (currentPassword.trim() || newPassword.trim()) {
+        payload.currentPassword = currentPassword.trim();
+        payload.newPassword = newPassword.trim();
+      }
       const response = await fetch(`${apiUrl}/users/${encodeURIComponent(profile.id)}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ login: login.trim() || null, email: email.trim() || null }),
+          body: JSON.stringify(payload),
           credentials: "include"
         }
       );
@@ -97,6 +102,9 @@ export default function ProfileClient() {
       setProfile(data);
       setLogin(data.login ?? "");
       setEmail(data.email ?? "");
+      setCurrentPassword("");
+      setNewPassword("");
+      setEditing(false);
       setNotice("Профиль обновлён");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка сохранения профиля");
@@ -139,9 +147,7 @@ export default function ProfileClient() {
       <div className="flex flex-col gap-2">
         <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Личный кабинет</p>
         <h1 className="text-3xl font-semibold text-slate-900">Профиль</h1>
-        <p className="text-slate-600">
-          Пока без авторизации — указываем Owner ID вручную.
-        </p>
+        <p className="text-slate-600">Управляй данными аккаунта и балансом монет.</p>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
@@ -163,26 +169,9 @@ export default function ProfileClient() {
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Основные данные</h2>
           <div className="mt-4 grid gap-4">
-            <label className="grid gap-1 text-sm text-slate-700">
-              Owner ID
-              <div className="flex gap-2">
-                <input
-                  className="flex-1 rounded-2xl border border-slate-200 px-4 py-2"
-                  value={ownerId}
-                  onChange={(event) => setOwnerId(event.target.value)}
-                  placeholder="user_123"
-                />
-                <button
-                  type="button"
-                  onClick={handleLoad}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm"
-                  disabled={loading}
-                >
-                  {loading ? "Загрузка..." : "Загрузить"}
-                </button>
-              </div>
-            </label>
-
+            {loadingProfile ? (
+              <p className="text-sm text-slate-500">Загружаем профиль...</p>
+            ) : null}
             <label className="grid gap-1 text-sm text-slate-700">
               Логин
               <input
@@ -190,10 +179,10 @@ export default function ProfileClient() {
                 value={login}
                 onChange={(event) => setLogin(event.target.value)}
                 placeholder="login"
-                disabled={!profile}
+                disabled={!profile || !editing}
               />
               <span className="text-xs text-slate-500">
-                Можно менять. Допустимы a-z, 0-9, точка и подчёркивание.
+                Можно менять. Допустимы a-z, 0-9 и подчёркивание.
               </span>
             </label>
 
@@ -204,18 +193,80 @@ export default function ProfileClient() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="user@example.com"
-                disabled={!profile}
+                disabled={!profile || !editing}
               />
             </label>
 
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              disabled={!profile || saving}
-            >
-              {saving ? "Сохранение..." : "Сохранить изменения"}
-            </button>
+            {editing ? (
+              <>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Текущий пароль
+                  <input
+                    type="password"
+                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    placeholder="••••••"
+                    disabled={!profile}
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Новый пароль
+                  <input
+                    type="password"
+                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    placeholder="••••••"
+                    disabled={!profile}
+                  />
+                </label>
+              </>
+            ) : null}
+
+            <div className="flex flex-wrap gap-2">
+              {!editing ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (profile) {
+                      setEditing(true);
+                      setError(null);
+                      setNotice(null);
+                    }
+                  }}
+                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
+                  disabled={!profile}
+                >
+                  Редактировать профиль
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                    disabled={!profile || saving}
+                  >
+                    {saving ? "Сохранение..." : "Сохранить изменения"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(false);
+                      setLogin(profile?.login ?? "");
+                      setEmail(profile?.email ?? "");
+                      setCurrentPassword("");
+                      setNewPassword("");
+                    }}
+                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
+                    disabled={!profile || saving}
+                  >
+                    Отменить
+                  </button>
+                </>
+              )}
+            </div>
 
             {profile ? (
               <button
@@ -226,9 +277,9 @@ export default function ProfileClient() {
                     credentials: "include"
                   });
                   setProfile(null);
-                  setOwnerId("");
                   setLogin("");
                   setEmail("");
+                  router.replace("/auth");
                 }}
                 className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
               >

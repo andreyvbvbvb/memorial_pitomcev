@@ -109,7 +109,7 @@ export class AuthService {
   private normalizeLogin(value: string) {
     const cleaned = value
       .toLowerCase()
-      .replace(/[^a-z0-9._]+/g, "_")
+      .replace(/[^a-z0-9_]+/g, "_")
       .replace(/^_+|_+$/g, "")
       .slice(0, 20);
     return cleaned;
