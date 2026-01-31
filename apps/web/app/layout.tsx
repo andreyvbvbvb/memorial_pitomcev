@@ -1,6 +1,6 @@
 import "./globals.css";
 import type { ReactNode } from "react";
-import { Commissioner, Fraunces } from "next/font/google";
+import { Commissioner, Playfair_Display } from "next/font/google";
 
 const bodyFont = Commissioner({
   subsets: ["latin", "cyrillic"],
@@ -8,7 +8,7 @@ const bodyFont = Commissioner({
   weight: ["300", "400", "500", "600", "700"]
 });
 
-const displayFont = Fraunces({
+const displayFont = Playfair_Display({
   subsets: ["latin", "cyrillic"],
   variable: "--font-display",
   weight: ["400", "600", "700"]
