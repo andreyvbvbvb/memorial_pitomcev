@@ -321,7 +321,7 @@ export default function MemorialPreview({
   selectedSlot,
   onSelectSlot,
   colors,
-  backgroundColor = "#dfeeff",
+  backgroundColor = "#eef6ff",
   className,
   style
 }: Props) {

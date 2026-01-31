@@ -4,10 +4,50 @@
 
 :root {
   color-scheme: light;
+  --bg: #eef6ff;
+  --surface: #ffffff;
+  --primary: #3a7ca5;
+  --secondary: #74c69d;
+  --accent: #f2b880;
+  --text: #1b2a33;
+  --muted: #6b7c87;
+  --border: #d7e6f2;
 }
 
 body {
   margin: 0;
-  background: #f6f7fb;
-  color: #121316;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px circle at 10% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 60%),
+    radial-gradient(900px circle at 90% -5%, #dff0ff 0%, rgba(223, 240, 255, 0) 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+main {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text);
+  font-family: var(--font-display), serif;
+  letter-spacing: 0.01em;
+}
+
+a {
+  color: var(--primary);
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(58, 124, 165, 0.35);
+  outline-offset: 2px;
 }
