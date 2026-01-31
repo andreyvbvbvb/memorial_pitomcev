@@ -420,25 +420,24 @@ export default function CreateMemorialClient() {
             key={option.id}
             type="button"
             onClick={() => onSelect(option.id)}
-            className={`w-[120px] rounded-2xl border px-3 py-3 text-left ${
-              isSelected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"
+            aria-label={option.name}
+            title={option.name}
+            className={`rounded-2xl border p-2 ${
+              isSelected ? "border-slate-900 bg-slate-900" : "border-slate-200 bg-white"
             }`}
+            style={{ width: 112, height: 112 }}
           >
-            <div
-              className="mx-auto flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl bg-slate-100"
-            >
+            <div className="flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl bg-slate-100">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={option.name}
-                  className="h-[100px] w-[100px] object-cover"
+                  className="h-[100px] w-[100px] object-contain"
                 />
               ) : (
                 <div className="text-xs text-slate-500">Нет</div>
               )}
             </div>
-            <p className="mt-2 text-xs font-semibold">{option.name}</p>
-            <p className="text-[11px] text-slate-500">{option.description}</p>
           </button>
         );
       })}
@@ -665,15 +664,15 @@ export default function CreateMemorialClient() {
           ) : null}
 
           {step === 2 ? (
-            <div className="grid gap-6 lg:grid-cols-[480px_minmax(0,1fr)]">
-              <div className="grid gap-3 lg:sticky lg:top-24 lg:self-start">
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="grid gap-3 lg:w-[520px] lg:shrink-0">
                 <h2 className="text-lg font-semibold text-slate-900">Превью мемориала</h2>
                 <MemorialPreview
                   terrainUrl={environmentUrl}
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
-                  className="h-[380px]"
+                  className="h-[360px]"
                 />
                 <p className="text-xs text-slate-500">
                   Превью обновляется сразу при выборе поверхности, домика, деталей и цветов.
