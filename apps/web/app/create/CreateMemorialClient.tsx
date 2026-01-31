@@ -666,9 +666,12 @@ export default function CreateMemorialClient() {
           {step === 2 ? (
             <div
               className="grid gap-6"
-              style={{ gridTemplateColumns: "minmax(0,520px) minmax(0,1fr)", alignItems: "start" }}
+              style={{ gridTemplateColumns: "minmax(0,60%) minmax(0,40%)", alignItems: "start" }}
             >
-              <div className="grid gap-3" style={{ maxWidth: 520 }}>
+              <div
+                className="grid gap-3"
+                style={{ width: "100%", position: "sticky", top: 24, alignSelf: "start" }}
+              >
                 <h2 className="text-lg font-semibold text-slate-900">Превью мемориала</h2>
                 <MemorialPreview
                   terrainUrl={environmentUrl}
@@ -682,7 +685,10 @@ export default function CreateMemorialClient() {
                 </p>
               </div>
 
-              <div className="grid gap-6 lg:max-h-[70vh] lg:overflow-y-auto lg:pr-2">
+              <div
+                className="grid gap-6"
+                style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: "8px" }}
+              >
                 <div className="grid gap-3">
                   <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
                   {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) =>
