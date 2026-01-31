@@ -19,7 +19,6 @@
     "three": "^0.168.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
@@ -29,7 +28,7 @@
     "eslint-config-next": "latest",
     "postcss": "latest",
     "prettier": "latest",
-    "tailwindcss": "latest",
+    "tailwindcss": "3.4.15",
     "typescript": "latest"
   }
 }
