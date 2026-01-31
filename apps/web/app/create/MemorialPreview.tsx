@@ -16,6 +16,7 @@ type Props = {
   colors?: Record<string, string>;
   backgroundColor?: string;
   className?: string;
+  style?: React.CSSProperties;
 };
 
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
@@ -321,7 +322,8 @@ export default function MemorialPreview({
   onSelectSlot,
   colors,
   backgroundColor = "#dfeeff",
-  className
+  className,
+  style
 }: Props) {
   const controlsRef = useRef<any>(null);
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
@@ -337,11 +339,17 @@ export default function MemorialPreview({
     }
   }, [onSelectSlot]);
 
+  const containerStyle: React.CSSProperties = {
+    height: "320px",
+    ...style
+  };
+
   return (
     <div
-      className={`relative h-[320px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 ${
+      className={`relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 ${
         className ?? ""
       }`}
+      style={containerStyle}
     >
       <button
         type="button"

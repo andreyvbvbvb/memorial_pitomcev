@@ -150,6 +150,7 @@ export default function CreateMemorialClient() {
   const [authReady, setAuthReady] = useState(false);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState<"desktop" | "mobile">("desktop");
   const photosRef = useRef<PhotoDraft[]>([]);
 
   const router = useRouter();
@@ -208,6 +209,8 @@ export default function CreateMemorialClient() {
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+
+  const isMobile = layoutMode === "mobile" ? true : false;
 
   useEffect(() => {
     const loadMe = async () => {
@@ -743,19 +746,55 @@ export default function CreateMemorialClient() {
           ) : null}
 
           {step === 2 ? (
-            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[60%_35%] lg:gap-x-[5%] lg:px-[2.5%]">
-              <div className="lg:hidden">{renderNavButtons()}</div>
-              <div className="grid gap-3 lg:sticky lg:top-24 lg:self-start">
-                <MemorialPreview
-                  terrainUrl={environmentUrl}
-                  houseUrl={houseUrl}
-                  parts={partList}
-                  colors={colorOverrides}
-                  className="h-[50vh] min-h-[320px] lg:h-[calc(100vh-240px)] lg:min-h-[520px]"
-                />
+            <div className="grid gap-3">
+              <div className="flex justify-end px-4 lg:px-[2.5%]">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLayoutMode((prev) => (prev === "mobile" ? "desktop" : "mobile"))
+                  }
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                >
+                  {isMobile ? "Переключить на десктоп" : "Переключить на мобильную"}
+                </button>
               </div>
+              <div
+                className={isMobile ? "flex flex-col gap-4" : "grid gap-6"}
+                style={
+                  isMobile
+                    ? undefined
+                    : {
+                        gridTemplateColumns: "60% 35%",
+                        columnGap: "5%",
+                        paddingLeft: "2.5%",
+                        paddingRight: "2.5%"
+                      }
+                }
+              >
+                {isMobile ? (
+                  <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 py-3 backdrop-blur">
+                    {renderNavButtons("px-4")}
+                  </div>
+                ) : null}
+                <div className={`grid gap-3 ${isMobile ? "px-4" : "sticky top-24 self-start"}`}>
+                  <MemorialPreview
+                    terrainUrl={environmentUrl}
+                    houseUrl={houseUrl}
+                    parts={partList}
+                    colors={colorOverrides}
+                    style={
+                      isMobile
+                        ? { height: "40vh", minHeight: "280px" }
+                        : { height: "calc(100vh - 240px)", minHeight: "520px" }
+                    }
+                  />
+                </div>
 
-              <div className="grid gap-6 max-h-[50vh] overflow-y-auto lg:max-h-[70vh] lg:pr-2">
+                <div
+                  className={`grid gap-6 overflow-y-auto ${
+                    isMobile ? "max-h-[45vh] px-4 pb-6" : "max-h-[70vh] pr-2"
+                  }`}
+                >
                 <div className="grid gap-3">
                   <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
                   {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) =>
@@ -993,6 +1032,7 @@ export default function CreateMemorialClient() {
                     </div>
                   </div>
                 ) : null}
+                </div>
               </div>
             </div>
           ) : null}
@@ -1132,7 +1172,7 @@ export default function CreateMemorialClient() {
 
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
-        <div className={`mt-6 ${step === 2 ? "hidden lg:block" : ""}`}>
+        <div className={`mt-6 ${step === 2 && isMobile ? "hidden" : ""}`}>
           {renderNavButtons()}
         </div>
       </div>
