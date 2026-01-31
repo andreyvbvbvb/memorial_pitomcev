@@ -35,6 +35,9 @@ model Pet {
   birthDate DateTime?
   deathDate DateTime?
   epitaph   String?
+  favoriteTreats String?
+  favoriteToys String?
+  favoriteSleepPlaces String?
   story     String?
   isPublic  Boolean  @default(false)
   createdAt DateTime @default(now())

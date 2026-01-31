@@ -33,7 +33,7 @@ import {
   bowlWaterOptions
 } from "../../lib/memorial-options";
 
-type Step = 0 | 1 | 2 | 3;
+type Step = 0 | 1 | 2 | 3 | 4;
 
 type FormState = {
   ownerId: string;
@@ -43,6 +43,9 @@ type FormState = {
   deathDate: string;
   epitaph: string;
   story: string;
+  favoriteTreats: string;
+  favoriteToys: string;
+  favoriteSleepPlaces: string;
   isPublic: boolean;
   lat: string;
   lng: string;
@@ -67,7 +70,13 @@ type PhotoDraft = {
   url: string;
 };
 
-const steps = ["Питомец", "Локация", "Внешний вид", "Публикация"];
+const steps = [
+  "Основные данные",
+  "Маркер и точка",
+  "3D мемориал",
+  "Фото и история",
+  "Проверка"
+];
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const mapContainerStyle = { width: "100%", height: "300px" };
 const colorPalette = ["#F36C6C", "#F2B476", "#FFD166", "#9BD1A5", "#8ECAE6", "#CDB4DB", "#FFFFFF", "#6B7280"];
@@ -80,6 +89,9 @@ const initialState: FormState = {
   deathDate: "",
   epitaph: "",
   story: "",
+  favoriteTreats: "",
+  favoriteToys: "",
+  favoriteSleepPlaces: "",
   isPublic: true,
   lat: "",
   lng: "",
@@ -103,6 +115,7 @@ export default function CreateMemorialClient() {
   const [form, setForm] = useState<FormState>(initialState);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
   const photosRef = useRef<PhotoDraft[]>([]);
@@ -163,16 +176,19 @@ export default function CreateMemorialClient() {
       try {
         const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
         if (!response.ok) {
+          router.replace("/auth");
           return;
         }
         const data = (await response.json()) as { id: string };
         setForm((prev) => (prev.ownerId ? prev : { ...prev, ownerId: data.id }));
       } catch {
-        // ignore
+        router.replace("/auth");
+      } finally {
+        setAuthReady(true);
       }
     };
     loadMe();
-  }, [apiUrl]);
+  }, [apiUrl, router]);
 
   useEffect(() => {
     return () => {
@@ -182,8 +198,11 @@ export default function CreateMemorialClient() {
 
   const validateStep = (current: Step) => {
     if (current === 0) {
+      if (!authReady) {
+        return "Проверяем авторизацию...";
+      }
       if (!form.ownerId.trim()) {
-        return "Owner ID обязателен (пока нет авторизации)";
+        return "Нужно войти в аккаунт";
       }
       if (!form.name.trim()) {
         return "Имя питомца обязательно";
@@ -201,8 +220,8 @@ export default function CreateMemorialClient() {
     if (value <= 0) {
       return 0;
     }
-    if (value >= 3) {
-      return 3;
+    if (value >= 4) {
+      return 4;
     }
     return value as Step;
   };
@@ -269,10 +288,12 @@ export default function CreateMemorialClient() {
   };
 
   const handleSubmit = async () => {
-    const message = validateStep(1);
+    const step0Message = validateStep(0);
+    const step1Message = validateStep(1);
+    const message = step0Message ?? step1Message;
     if (message) {
       setError(message);
-      setStep(1);
+      setStep(step1Message ? 1 : 0);
       return;
     }
 
@@ -299,6 +320,9 @@ export default function CreateMemorialClient() {
       birthDate: form.birthDate || undefined,
       deathDate: form.deathDate || undefined,
       epitaph: form.epitaph.trim() || undefined,
+      favoriteTreats: form.favoriteTreats.trim() || undefined,
+      favoriteToys: form.favoriteToys.trim() || undefined,
+      favoriteSleepPlaces: form.favoriteSleepPlaces.trim() || undefined,
       story: form.story.trim() || undefined,
       isPublic: form.isPublic,
       lat: canShowMarker ? lat : undefined,
@@ -378,6 +402,49 @@ export default function CreateMemorialClient() {
     }
   };
 
+  const optionImage = (category: string, id: string) =>
+    `/memorial/options/${category}/${id}.png`;
+
+  const renderOptionGrid = (
+    category: string,
+    options: typeof environmentOptions,
+    selectedId: string,
+    onSelect: (id: string) => void
+  ) => (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {options.map((option) => {
+        const isSelected = selectedId === option.id;
+        const imageUrl = option.id === "none" ? null : optionImage(category, option.id);
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onSelect(option.id)}
+            className={`rounded-2xl border p-3 text-left ${
+              isSelected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"
+            }`}
+          >
+            <div className="aspect-square w-full overflow-hidden rounded-xl bg-slate-100">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={option.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
+                  Нет
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-xs font-semibold">{option.name}</p>
+            <p className="text-[11px] text-slate-500">{option.description}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
       <div className="mx-auto max-w-5xl">
@@ -389,32 +456,37 @@ export default function CreateMemorialClient() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          {steps.map((label, index) => (
-            <div
-              key={label}
-              className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                index === step
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-500"
-              }`}
-            >
-              {index + 1}. {label}
-            </div>
-          ))}
+          {steps.map((label, index) => {
+            const isActive = index === step;
+            const isClickable = index <= step;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  if (isClickable) {
+                    setError(null);
+                    setStep(index as Step);
+                  }
+                }}
+                className={`rounded-full px-4 py-2 text-xs font-semibold ${
+                  isActive
+                    ? "bg-slate-900 text-white"
+                    : isClickable
+                      ? "bg-white text-slate-700 hover:border-slate-300"
+                      : "bg-slate-100 text-slate-400"
+                }`}
+                disabled={!isClickable}
+              >
+                {index + 1}. {label}
+              </button>
+            );
+          })}
         </div>
 
         <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           {step === 0 ? (
             <div className="grid gap-4">
-              <label className="grid gap-1 text-sm text-slate-700">
-                Owner ID
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.ownerId}
-                  onChange={(event) => handleChange("ownerId", event.target.value)}
-                  placeholder="user_123"
-                />
-              </label>
               <label className="grid gap-1 text-sm text-slate-700">
                 Имя питомца
                 <input
@@ -459,104 +531,6 @@ export default function CreateMemorialClient() {
                     onChange={(event) => handleChange("deathDate", event.target.value)}
                   />
                 </label>
-              </div>
-              <label className="grid gap-1 text-sm text-slate-700">
-                Эпитафия (до 200 символов)
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.epitaph}
-                  maxLength={200}
-                  onChange={(event) => handleChange("epitaph", event.target.value)}
-                  placeholder="Самый лучший кот"
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-slate-700">
-                История (до 2000 символов)
-                <textarea
-                  className="min-h-[140px] rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.story}
-                  maxLength={2000}
-                  onChange={(event) => handleChange("story", event.target.value)}
-                  placeholder="Короткая история о жизни питомца"
-                />
-              </label>
-              <label className="flex items-center gap-3 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4"
-                  checked={form.isPublic}
-                  onChange={(event) => handleChange("isPublic", event.target.checked)}
-                />
-                Публичный мемориал
-              </label>
-              <p className="text-xs text-slate-500">
-                Если выключить, мемориал не появится на глобальной карте, но точка сохранится для владельца.
-              </p>
-
-              <div className="mt-4 grid gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 5)</h3>
-                  <span className="text-xs text-slate-500">{photos.length}/5</span>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(event) => {
-                    handlePhotosSelected(event.target.files);
-                    event.currentTarget.value = "";
-                  }}
-                />
-                <p className="text-xs text-slate-500">Максимум 5 фото, до 10 МБ каждое.</p>
-                {photos.length > 0 ? (
-                  <div
-                    className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-                      gap: "8px"
-                    }}
-                  >
-                    {photos.map((photo) => (
-                      <div
-                        key={photo.id}
-                        className="rounded-2xl border border-slate-200 bg-white p-2"
-                        style={{ maxWidth: "220px" }}
-                      >
-                        <img
-                          src={photo.url}
-                          alt="Фото питомца"
-                          className="h-20 w-full rounded-lg object-cover"
-                          style={{ height: "80px", width: "100%", objectFit: "cover" }}
-                        />
-                        <div className="mt-3 flex items-center justify-between">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewPhotoId(photo.id)}
-                            className={`rounded-full px-3 py-1 text-xs ${
-                              previewPhotoId === photo.id
-                                ? "bg-slate-900 text-white"
-                                : "border border-slate-200 text-slate-600"
-                            }`}
-                          >
-                            {previewPhotoId === photo.id ? "Мини‑фото" : "Сделать мини"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(photo.id)}
-                            className="text-xs text-red-600"
-                          >
-                            Удалить
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">
-                    Добавь фотографии питомца и выбери одну для мини‑окна на карте.
-                  </p>
-                )}
               </div>
             </div>
           ) : null}
@@ -674,6 +648,15 @@ export default function CreateMemorialClient() {
                   </GoogleMap>
                 )}
               </div>
+              <label className="flex items-center gap-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={form.isPublic}
+                  onChange={(event) => handleChange("isPublic", event.target.checked)}
+                />
+                Публичный мемориал
+              </label>
               <p className="text-xs text-slate-500">
                 Кликни на карте, чтобы выбрать точку для мемориала. Приватные мемориалы остаются скрытыми на
                 глобальной карте.
@@ -682,7 +665,7 @@ export default function CreateMemorialClient() {
           ) : null}
 
           {step === 2 ? (
-            <div className="grid gap-6">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
               <div className="grid gap-3">
                 <h2 className="text-lg font-semibold text-slate-900">Превью мемориала</h2>
                 <MemorialPreview
@@ -695,266 +678,258 @@ export default function CreateMemorialClient() {
                   Превью обновляется сразу при выборе поверхности, домика, деталей и цветов.
                 </p>
               </div>
-              <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Поверхность</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {environmentOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("environmentId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.environmentId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Домик</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {houseOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("houseId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.houseId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {houseSlots.roof ? (
+              <div className="grid gap-6 lg:max-h-[70vh] lg:overflow-y-auto lg:pr-2">
                 <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Крыша</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {roofOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("roofId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.roofId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
+                  <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
+                  {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) =>
+                    handleChange("environmentId", id)
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {colorPalette.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => handleChange("roofColor", color)}
-                      className={`h-8 w-8 rounded-full border-2 ${
-                        form.roofColor === color ? "border-slate-900" : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              </div>
-              ) : null}
 
-              {houseSlots.wall ? (
                 <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Стены</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {wallOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("wallId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.wallId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
+                  <h2 className="text-base font-semibold text-slate-900">Домик</h2>
+                  {renderOptionGrid("house", houseOptions, form.houseId, (id) =>
+                    handleChange("houseId", id)
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {colorPalette.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => handleChange("wallColor", color)}
-                      className={`h-8 w-8 rounded-full border-2 ${
-                        form.wallColor === color ? "border-slate-900" : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              </div>
-              ) : null}
 
-              {houseSlots.sign ? (
-                <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Украшение над входом</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {signOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("signId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.signId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              ) : null}
-
-              {houseSlots.frameLeft ? (
-                <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Рамка слева</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {frameLeftOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("frameLeftId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.frameLeftId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              ) : null}
-
-              {houseSlots.frameRight ? (
-                <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Рамка справа</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {frameRightOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("frameRightId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.frameRightId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              ) : null}
-
-              {houseSlots.mat ? (
-                <div className="grid gap-3">
-                  <h2 className="text-lg font-semibold text-slate-900">Коврик</h2>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {matOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => handleChange("matId", option.id)}
-                        className={`rounded-2xl border px-4 py-3 text-left ${
-                          form.matId === option.id
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-white text-slate-700"
-                        }`}
-                      >
-                        <p className="text-sm font-semibold">{option.name}</p>
-                        <p className="text-xs opacity-80">{option.description}</p>
-                      </button>
-                    ))}
+                {houseSlots.roof ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Крыша домика</h2>
+                    {renderOptionGrid("roof", roofOptions, form.roofId, (id) =>
+                      handleChange("roofId", id)
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("roofColor", color)}
+                          className={`h-8 w-8 rounded-lg border-2 ${
+                            form.roofColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                ) : null}
 
-              {houseSlots.bowlFood ? (
-                <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Миска с едой</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {bowlFoodOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("bowlFoodId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.bowlFoodId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              ) : null}
+                {houseSlots.wall ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
+                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) =>
+                      handleChange("wallId", id)
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {colorPalette.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange("wallColor", color)}
+                          className={`h-8 w-8 rounded-lg border-2 ${
+                            form.wallColor === color ? "border-slate-900" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
-              {houseSlots.bowlWater ? (
-                <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">Миска с водой</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {bowlWaterOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => handleChange("bowlWaterId", option.id)}
-                      className={`rounded-2xl border px-4 py-3 text-left ${
-                        form.bowlWaterId === option.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold">{option.name}</p>
-                      <p className="text-xs opacity-80">{option.description}</p>
-                    </button>
-                  ))}
-                </div>
+                {houseSlots.sign ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Украшение над входом</h2>
+                    {renderOptionGrid("sign", signOptions, form.signId, (id) =>
+                      handleChange("signId", id)
+                    )}
+                  </div>
+                ) : null}
+
+                {houseSlots.frameLeft ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
+                    {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) =>
+                      handleChange("frameLeftId", id)
+                    )}
+                  </div>
+                ) : null}
+
+                {houseSlots.frameRight ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Рамка справа</h2>
+                    {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) =>
+                      handleChange("frameRightId", id)
+                    )}
+                  </div>
+                ) : null}
+
+                {houseSlots.mat ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
+                    {renderOptionGrid("mat", matOptions, form.matId, (id) =>
+                      handleChange("matId", id)
+                    )}
+                  </div>
+                ) : null}
+
+                {houseSlots.bowlFood ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Миска с едой</h2>
+                    {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) =>
+                      handleChange("bowlFoodId", id)
+                    )}
+                  </div>
+                ) : null}
+
+                {houseSlots.bowlWater ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
+                    {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) =>
+                      handleChange("bowlWaterId", id)
+                    )}
+                  </div>
+                ) : null}
               </div>
-              ) : null}
             </div>
           ) : null}
 
           {step === 3 ? (
+            <div className="grid gap-4">
+              <label className="grid gap-1 text-sm text-slate-700">
+                Эпитафия (до 200 символов)
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={form.epitaph}
+                  maxLength={200}
+                  onChange={(event) => handleChange("epitaph", event.target.value)}
+                  placeholder="Самый лучший друг"
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Какие были любимые лакомства?
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={form.favoriteTreats}
+                  maxLength={200}
+                  onChange={(event) => handleChange("favoriteTreats", event.target.value)}
+                  placeholder="Например, печеньки и индейка"
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Какие были любимые игрушки?
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={form.favoriteToys}
+                  maxLength={200}
+                  onChange={(event) => handleChange("favoriteToys", event.target.value)}
+                  placeholder="Мячик, канат, пищалки"
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Какие были любимые места для сна?
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={form.favoriteSleepPlaces}
+                  maxLength={200}
+                  onChange={(event) => handleChange("favoriteSleepPlaces", event.target.value)}
+                  placeholder="Кресло у окна, диван"
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Здесь вы можете поделиться историей питомца и дополнительной информацией
+                <textarea
+                  className="min-h-[160px] rounded-2xl border border-slate-200 px-4 py-2"
+                  value={form.story}
+                  maxLength={2000}
+                  onChange={(event) => handleChange("story", event.target.value)}
+                  placeholder="Короткая история о жизни питомца"
+                />
+              </label>
+
+              <div className="mt-4 grid gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 5)</h3>
+                  <span className="text-xs text-slate-500">{photos.length}/5</span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(event) => {
+                    handlePhotosSelected(event.target.files);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <p className="text-xs text-slate-500">Максимум 5 фото, до 10 МБ каждое.</p>
+                {photos.length > 0 ? (
+                  <div
+                    className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                      gap: "8px"
+                    }}
+                  >
+                    {photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="rounded-2xl border border-slate-200 bg-white p-2"
+                        style={{ maxWidth: "220px" }}
+                      >
+                        <img
+                          src={photo.url}
+                          alt="Фото питомца"
+                          className="h-20 w-full rounded-lg object-cover"
+                          style={{ height: "80px", width: "100%", objectFit: "cover" }}
+                        />
+                        <div className="mt-3 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewPhotoId(photo.id)}
+                            className={`rounded-full px-3 py-1 text-xs ${
+                              previewPhotoId === photo.id
+                                ? "bg-slate-900 text-white"
+                                : "border border-slate-200 text-slate-600"
+                            }`}
+                          >
+                            {previewPhotoId === photo.id ? "Мини‑фото" : "Сделать мини"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(photo.id)}
+                            className="text-xs text-red-600"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Добавь фотографии питомца и выбери одну для мини‑окна на карте.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {step === 4 ? (
             <div className="grid gap-6">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <h2 className="text-lg font-semibold text-slate-900">Проверь перед публикацией</h2>
                 <div className="mt-4 grid gap-2 text-sm text-slate-700">
                   <p>Имя: {form.name || "—"}</p>
+                  <p>Вид: {form.species || "—"}</p>
+                  <p>Дата рождения: {form.birthDate || "—"}</p>
+                  <p>Дата ухода: {form.deathDate || "—"}</p>
+                  <p>Эпитафия: {form.epitaph || "—"}</p>
+                  <p>Любимые лакомства: {form.favoriteTreats || "—"}</p>
+                  <p>Любимые игрушки: {form.favoriteToys || "—"}</p>
+                  <p>Любимые места для сна: {form.favoriteSleepPlaces || "—"}</p>
+                  <p>История: {form.story || "—"}</p>
                   <p>Публичность: {form.isPublic ? "Публичный" : "Приватный"}</p>
                   <p>Маркер: {markerStyleById(form.markerStyle).name}</p>
                   <p>
@@ -973,6 +948,18 @@ export default function CreateMemorialClient() {
                   <p>Цвет крыши: {form.roofColor}</p>
                   <p>Цвет стен: {form.wallColor}</p>
                 </div>
+                {photos.length > 0 ? (
+                  <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {photos.map((photo) => (
+                      <img
+                        key={photo.id}
+                        src={photo.url}
+                        alt="Фото питомца"
+                        className="h-20 w-full rounded-lg object-cover"
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <div className="grid gap-3">
                 <h2 className="text-lg font-semibold text-slate-900">3D‑превью</h2>
@@ -998,11 +985,12 @@ export default function CreateMemorialClient() {
           >
             Назад
           </button>
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               type="button"
               onClick={handleNext}
               className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
+              disabled={step === 0 && !authReady}
             >
               Дальше
             </button>
