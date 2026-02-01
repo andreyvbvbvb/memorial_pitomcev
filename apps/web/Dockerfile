@@ -12,8 +12,10 @@ RUN pnpm install --filter @memorial/web... --frozen-lockfile
 FROM base AS build
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ARG NEXT_PUBLIC_HERO_VIDEO_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_HERO_VIDEO_URL=$NEXT_PUBLIC_HERO_VIDEO_URL
 COPY --from=deps /app/node_modules /app/node_modules
 COPY --from=deps /app/apps/web/node_modules /app/apps/web/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
