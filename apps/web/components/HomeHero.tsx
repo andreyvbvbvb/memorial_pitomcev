@@ -6,7 +6,7 @@ export default function HomeHero() {
 
   return (
     <section className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-16 text-center">
-      <div className="pointer-events-none absolute inset-0 -z-10">
+      <div className="pointer-events-none absolute inset-0 z-0">
         <video
           className="h-full w-full object-cover"
           src={heroVideo}
@@ -20,12 +20,12 @@ export default function HomeHero() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(236,244,255,0.88) 0%, rgba(236,244,255,0.76) 40%, rgba(255,255,255,0.9) 100%)"
+              "linear-gradient(180deg, rgba(236,244,255,0.55) 0%, rgba(236,244,255,0.42) 40%, rgba(255,255,255,0.7) 100%)"
           }}
         />
       </div>
 
-      <div className="hero-stagger flex max-w-2xl flex-col items-center gap-6">
+      <div className="hero-stagger relative z-10 flex max-w-2xl flex-col items-center gap-6">
         <h1
           className="text-4xl font-semibold leading-tight lg:text-5xl lg:leading-tight animate-fade-up"
           style={{ "--delay": "0.05s" } as CSSProperties}
