@@ -27,6 +27,8 @@ const containerStyle = { width: "100%", height: "520px" };
 
 export default function MapClient() {
   const [markers, setMarkers] = useState<MarkerDto[]>([]);
+  const [visibleMarkers, setVisibleMarkers] = useState<MarkerDto[]>([]);
+  const [boundsReady, setBoundsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MarkerDto | null>(null);
@@ -63,6 +65,28 @@ export default function MapClient() {
   const center = firstMarker
     ? { lat: firstMarker.lat, lng: firstMarker.lng }
     : defaultCenter;
+
+  const updateVisibleMarkers = () => {
+    if (!map) {
+      return;
+    }
+    const bounds = map.getBounds();
+    if (!bounds) {
+      return;
+    }
+    const next = markers.filter((marker) =>
+      bounds.contains(new window.google.maps.LatLng(marker.lat, marker.lng))
+    );
+    setBoundsReady(true);
+    setVisibleMarkers(next);
+  };
+
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+    updateVisibleMarkers();
+  }, [map, markers]);
 
 
   useEffect(() => {
@@ -150,6 +174,7 @@ export default function MapClient() {
                   center={center}
                   zoom={4}
                   onLoad={(loadedMap) => setMap(loadedMap)}
+                  onIdle={updateVisibleMarkers}
                   options={{
                     mapTypeControl: false,
                     fullscreenControl: false,
@@ -224,15 +249,19 @@ export default function MapClient() {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Публичные мемориалы</h2>
-              <span className="text-xs text-slate-500">{markers.length}</span>
+              <span className="text-xs text-slate-500">
+                {boundsReady ? visibleMarkers.length : markers.length}
+              </span>
             </div>
             <div className="mt-4 grid gap-3">
               {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
               {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              {!loading && !error && markers.length === 0 ? (
-                <p className="text-sm text-slate-500">Пока нет публичных мемориалов.</p>
+              {!loading && !error && (boundsReady ? visibleMarkers.length === 0 : markers.length === 0) ? (
+                <p className="text-sm text-slate-500">
+                  {boundsReady ? "В выбранной области нет мемориалов." : "Пока нет публичных мемориалов."}
+                </p>
               ) : null}
-              {markers.map((marker) => (
+              {(boundsReady ? visibleMarkers : markers).map((marker) => (
                 <a
                   key={marker.id}
                   href={`/pets/${marker.petId}`}
