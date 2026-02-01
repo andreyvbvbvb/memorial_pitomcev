@@ -44,6 +44,13 @@ type Pet = {
   }[];
 };
 
+type AuthUser = {
+  id: string;
+  login?: string | null;
+  email: string;
+  coinBalance?: number;
+};
+
 type Props = {
   id: string;
 };
@@ -54,12 +61,17 @@ export default function PetClient({ id }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [topUpVisible, setTopUpVisible] = useState(false);
+  const [topUpError, setTopUpError] = useState<string | null>(null);
   const [giftCatalog, setGiftCatalog] = useState<
     { id: string; name: string; price: number; modelUrl: string }[]
   >([]);
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftLoading, setGiftLoading] = useState(false);
-  const [gifterId, setGifterId] = useState("");
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(1);
@@ -80,7 +92,6 @@ export default function PetClient({ id }: Props) {
       }
       const data = (await response.json()) as Pet;
       setPet(data);
-      setGifterId((prev) => prev || data.ownerId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка загрузки");
     } finally {
@@ -92,6 +103,68 @@ export default function PetClient({ id }: Props) {
     setMounted(true);
     loadPet();
   }, [loadPet]);
+
+  const loadCurrentUser = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
+      if (!response.ok) {
+        setCurrentUser(null);
+        setWalletBalance(null);
+        return;
+      }
+      const data = (await response.json()) as AuthUser;
+      setCurrentUser(data);
+    } catch {
+      setCurrentUser(null);
+      setWalletBalance(null);
+    }
+  }, [apiUrl]);
+
+  const loadWallet = useCallback(
+    async (ownerId: string) => {
+      setWalletLoading(true);
+      try {
+        const response = await fetch(`${apiUrl}/wallet/${ownerId}`);
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить баланс");
+        }
+        const data = (await response.json()) as { coinBalance: number };
+        setWalletBalance(data.coinBalance ?? 0);
+      } catch {
+        setWalletBalance(null);
+      } finally {
+        setWalletLoading(false);
+      }
+    },
+    [apiUrl]
+  );
+
+  useEffect(() => {
+    loadCurrentUser();
+  }, [loadCurrentUser]);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadWallet(currentUser.id);
+    }
+  }, [currentUser, loadWallet]);
+
+  useEffect(() => {
+    if (!topUpOpen) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeTopUp();
+      }
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [topUpOpen]);
 
   useEffect(() => {
     const loadCatalog = async () => {
@@ -185,8 +258,8 @@ export default function PetClient({ id }: Props) {
       setGiftError("Выбери подарок и слот");
       return;
     }
-    if (!gifterId.trim()) {
-      setGiftError("Укажи, кто дарит подарок (ownerId)");
+    if (!currentUser?.id) {
+      setGiftError("Войдите, чтобы подарить подарок");
       return;
     }
     setGiftLoading(true);
@@ -196,7 +269,7 @@ export default function PetClient({ id }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ownerId: gifterId.trim(),
+          ownerId: currentUser.id,
           giftId: selectedGiftId,
           slotName: selectedSlot,
           months: selectedDuration
@@ -207,6 +280,9 @@ export default function PetClient({ id }: Props) {
         throw new Error(text || "Ошибка покупки подарка");
       }
       await loadPet();
+      if (currentUser?.id) {
+        loadWallet(currentUser.id);
+      }
     } catch (err) {
       setGiftError(err instanceof Error ? err.message : "Ошибка покупки подарка");
     } finally {
@@ -214,10 +290,59 @@ export default function PetClient({ id }: Props) {
     }
   };
 
+  const openTopUp = () => {
+    setTopUpOpen(true);
+    requestAnimationFrame(() => setTopUpVisible(true));
+  };
+
+  const closeTopUp = () => {
+    setTopUpVisible(false);
+    setTopUpError(null);
+    setTimeout(() => setTopUpOpen(false), 180);
+  };
+
+  const handleTopUp = async (amount: number) => {
+    if (!currentUser?.id) {
+      setTopUpError("Войдите, чтобы пополнить баланс");
+      return;
+    }
+    setWalletLoading(true);
+    setTopUpError(null);
+    try {
+      const response = await fetch(`${apiUrl}/wallet/top-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: currentUser.id, amount })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось пополнить баланс");
+      }
+      const data = (await response.json()) as { coinBalance?: number };
+      if (typeof data.coinBalance === "number") {
+        setWalletBalance(data.coinBalance);
+      } else if (currentUser?.id) {
+        loadWallet(currentUser.id);
+      }
+      closeTopUp();
+    } catch (err) {
+      setTopUpError(err instanceof Error ? err.message : "Ошибка пополнения");
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const topUpOptions = [
+    { coins: 50, rub: 50 },
+    { coins: 100, rub: 100 },
+    { coins: 200, rub: 150 },
+    { coins: 500, rub: 350 }
+  ];
+
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 px-6 py-16">
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="mx-auto max-w-6xl text-center">
           <p className="text-slate-500">Загрузка мемориала...</p>
         </div>
       </main>
@@ -227,7 +352,7 @@ export default function PetClient({ id }: Props) {
   if (error || !pet) {
     return (
       <main className="min-h-screen bg-slate-50 px-6 py-16">
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="mx-auto max-w-6xl text-center">
           <h1 className="text-2xl font-semibold text-slate-900">Мемориал не найден</h1>
           <p className="mt-3 text-slate-600">{error ?? "Проверь ссылку"}</p>
         </div>
@@ -282,7 +407,7 @@ export default function PetClient({ id }: Props) {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -295,7 +420,7 @@ export default function PetClient({ id }: Props) {
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl bg-slate-50 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Рождение</p>
               <p className="mt-2 text-sm text-slate-700">
@@ -306,12 +431,6 @@ export default function PetClient({ id }: Props) {
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Уход</p>
               <p className="mt-2 text-sm text-slate-700">
                 {pet.deathDate ? new Date(pet.deathDate).toLocaleDateString() : "—"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Создан</p>
-              <p className="mt-2 text-sm text-slate-700">
-                {new Date(pet.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -353,10 +472,63 @@ export default function PetClient({ id }: Props) {
             </p>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Подарки</p>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Мемориал 3D</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Визуализация</h2>
+            </div>
+          </div>
+          <div className="mt-6">
+            <MemorialPreview
+              className="h-[540px]"
+              terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId)}
+              houseUrl={resolveHouseModel(pet.memorial?.houseId)}
+              parts={partList}
+              gifts={previewGifts}
+              giftSlots={availableSlots}
+              selectedSlot={selectedSlot}
+              onSelectSlot={setSelectedSlot}
+              colors={colorOverrides}
+            />
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Оставьте знак внимания</h2>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm">
+              <span className="text-slate-500">Баланс</span>
+              <strong className="text-slate-900">
+                {walletLoading ? "..." : walletBalance ?? "—"} монет
+              </strong>
+              <button
+                type="button"
+                onClick={openTopUp}
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 text-lg text-slate-700"
+                aria-label="Пополнить баланс"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {currentUser ? (
+            <p className="mt-2 text-sm text-slate-600">
+              Выбирайте подарок, срок и свободный слот — сразу увидите, где он появится.
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-rose-600">Войдите, чтобы дарить подарки.</p>
+          )}
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
             {activeGifts.length > 0 ? (
-              <div className="mt-3 grid gap-2 text-sm text-slate-700">
+              <div className="grid gap-2 text-sm text-slate-700">
                 {activeGifts.map((gift) => (
                   <div key={gift.id} className="rounded-xl bg-white p-3">
                     <div className="flex items-center justify-between">
@@ -375,20 +547,10 @@ export default function PetClient({ id }: Props) {
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-slate-500">Пока нет подарков.</p>
+              <p className="text-sm text-slate-500">Пока нет подарков.</p>
             )}
 
             <div className="mt-4 grid gap-3">
-              <div className="grid gap-1 text-sm text-slate-700">
-                Кто дарит (ownerId)
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={gifterId}
-                  onChange={(event) => setGifterId(event.target.value)}
-                  placeholder="user_123"
-                />
-              </div>
-
               <div className="grid gap-2 text-sm text-slate-700">
                 Подарок
                 <div className="flex flex-wrap gap-2">
@@ -435,18 +597,19 @@ export default function PetClient({ id }: Props) {
                   <p className="text-sm text-slate-500">Нет свободных слотов.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {availableSlots.map((slot) => (
+                    {availableSlots.map((slot, index) => (
                       <button
                         key={slot}
                         type="button"
                         onClick={() => setSelectedSlot(slot)}
-                        className={`rounded-2xl border px-4 py-2 text-sm ${
+                        className={`h-10 w-10 rounded-full border text-sm ${
                           selectedSlot === slot
                             ? "border-slate-900 bg-slate-900 text-white"
                             : "border-slate-200 bg-white text-slate-700"
                         }`}
+                        aria-label={`Слот ${index + 1}`}
                       >
-                        {slot}
+                        {index + 1}
                       </button>
                     ))}
                   </div>
@@ -459,7 +622,7 @@ export default function PetClient({ id }: Props) {
                 type="button"
                 onClick={handlePlaceGift}
                 className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                disabled={giftLoading}
+                disabled={giftLoading || !currentUser}
               >
                 {giftLoading
                   ? "Покупка..."
@@ -469,31 +632,53 @@ export default function PetClient({ id }: Props) {
               </button>
             </div>
           </div>
-
-        </div>
-
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Мемориал 3D</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Визуализация</h2>
-            </div>
-          </div>
-          <div className="mt-6">
-            <MemorialPreview
-              className="h-[360px]"
-              terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId)}
-              houseUrl={resolveHouseModel(pet.memorial?.houseId)}
-              parts={partList}
-              gifts={previewGifts}
-              giftSlots={availableSlots}
-              selectedSlot={selectedSlot}
-              onSelectSlot={setSelectedSlot}
-              colors={colorOverrides}
-            />
-          </div>
         </div>
       </div>
+
+      {topUpOpen ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            topUpVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={closeTopUp}
+          />
+          <div
+            className={`relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+              topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Пополнение баланса</h3>
+              <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeTopUp}>
+                Закрыть
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              Выберите пакет монет. Оплата пока тестовая.
+            </p>
+            <div className="mt-4 grid gap-2">
+              {topUpOptions.map((option) => (
+                <button
+                  key={option.coins}
+                  type="button"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 hover:border-slate-300"
+                  onClick={() => handleTopUp(option.coins)}
+                  disabled={walletLoading}
+                >
+                  <span className="font-semibold">{option.coins} монет</span>
+                  <span className="text-slate-500">{option.rub} ₽</span>
+                </button>
+              ))}
+            </div>
+            {topUpError ? <p className="mt-3 text-sm text-red-600">{topUpError}</p> : null}
+          </div>
+        </div>
+      ) : null}
 
       {mounted && lightboxIndex !== null ? (
         <div

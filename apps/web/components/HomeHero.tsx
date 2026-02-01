@@ -2,15 +2,29 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 export default function HomeHero() {
+  const heroVideo = process.env.NEXT_PUBLIC_HERO_VIDEO_URL ?? "/background_main_page.mp4";
+
   return (
-    <section className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center px-6 pb-20 pt-16 text-center">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(1200px circle at 20% 0%, rgba(255,255,255,0.95) 0%, rgba(238,246,255,0) 60%), radial-gradient(900px circle at 80% 10%, rgba(197,224,255,0.7) 0%, rgba(238,246,255,0) 55%)"
-        }}
-      />
+    <section className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-16 text-center">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <video
+          className="h-full w-full object-cover"
+          src={heroVideo}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(236,244,255,0.88) 0%, rgba(236,244,255,0.76) 40%, rgba(255,255,255,0.9) 100%)"
+          }}
+        />
+      </div>
+
       <div className="hero-stagger flex max-w-2xl flex-col items-center gap-6">
         <h1
           className="text-4xl font-semibold leading-tight lg:text-5xl lg:leading-tight animate-fade-up"

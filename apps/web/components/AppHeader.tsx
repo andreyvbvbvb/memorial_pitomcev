@@ -18,6 +18,7 @@ export default function AppHeader() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -49,11 +50,11 @@ export default function AppHeader() {
       if (!menuRef.current || menuRef.current.contains(event.target as Node)) {
         return;
       }
-      setMenuOpen(false);
+      closeMenu();
     };
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setMenuOpen(false);
+        closeMenu();
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -63,6 +64,16 @@ export default function AppHeader() {
       document.removeEventListener("keydown", handleKey);
     };
   }, [menuOpen]);
+
+  const openMenu = () => {
+    setMenuOpen(true);
+    requestAnimationFrame(() => setMenuVisible(true));
+  };
+
+  const closeMenu = () => {
+    setMenuVisible(false);
+    setTimeout(() => setMenuOpen(false), 160);
+  };
 
   const openAuth = () => {
     setAuthOpen(true);
@@ -79,6 +90,7 @@ export default function AppHeader() {
       await fetch(`${apiUrl}/auth/logout`, { method: "POST", credentials: "include" });
     } finally {
       setUser(null);
+      setMenuVisible(false);
       setMenuOpen(false);
       router.push("/");
     }
@@ -98,7 +110,7 @@ export default function AppHeader() {
                   type="button"
                   className="btn btn-ghost"
                   aria-label="Открыть меню"
-                  onClick={() => setMenuOpen((prev) => !prev)}
+                  onClick={() => (menuOpen ? closeMenu() : openMenu())}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
                     <path
@@ -115,7 +127,11 @@ export default function AppHeader() {
                   </svg>
                 </button>
                 {menuOpen ? (
-                  <div className="absolute right-0 mt-3 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                  <div
+                    className={`absolute right-0 mt-3 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl transition-all duration-150 ${
+                      menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
+                    }`}
+                  >
                     <div className="px-3 pb-2 text-xs text-slate-500">
                       {user.login ?? user.email}
                     </div>

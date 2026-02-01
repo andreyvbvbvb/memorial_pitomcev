@@ -4,14 +4,14 @@
 
 :root {
   color-scheme: light;
-  --bg: #eef6ff;
+  --bg: #f1f6fb;
   --surface: #ffffff;
-  --primary: #3a7ca5;
-  --secondary: #74c69d;
-  --accent: #f2b880;
-  --text: #1b2a33;
-  --muted: #6b7c87;
-  --border: #d7e6f2;
+  --primary: #2f6b8a;
+  --secondary: #6fbf9b;
+  --accent: #f3b06a;
+  --text: #18242d;
+  --muted: #60707c;
+  --border: #dbe7f3;
 }
 
 body {
@@ -35,7 +35,7 @@ h5,
 h6 {
   color: var(--text);
   font-family: var(--font-display), var(--font-body), serif;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
 }
 
 a {
@@ -50,27 +50,28 @@ a {
     gap: 0.5rem;
     width: fit-content;
     border-radius: 999px;
-    padding: 0.85rem 1.6rem;
+    padding: 0.85rem 1.7rem;
     font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    font-size: 0.95rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
     text-decoration: none;
   }
 
   .btn-primary {
-    background: var(--primary);
+    background: linear-gradient(135deg, #2f6b8a, #3f88a9);
     color: #fff;
-    box-shadow: 0 12px 24px rgba(58, 124, 165, 0.22);
+    box-shadow: 0 14px 28px rgba(47, 107, 138, 0.24);
   }
 
   .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 16px 28px rgba(58, 124, 165, 0.26);
+    box-shadow: 0 18px 32px rgba(47, 107, 138, 0.28);
   }
 
   .btn-outline {
-    border: 1px solid var(--border);
+    border: 1px solid rgba(47, 107, 138, 0.2);
     color: var(--text);
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.85);
   }
 
   .btn-ghost {
@@ -83,7 +84,7 @@ a {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 24px;
-    box-shadow: 0 18px 32px rgba(19, 46, 65, 0.08);
+    box-shadow: 0 18px 32px rgba(17, 36, 49, 0.08);
   }
 
   .chip {
@@ -92,8 +93,8 @@ a {
     gap: 0.5rem;
     padding: 0.35rem 0.85rem;
     border-radius: 999px;
-    border: 1px solid rgba(58, 124, 165, 0.15);
-    background: rgba(58, 124, 165, 0.08);
+    border: 1px solid rgba(47, 107, 138, 0.15);
+    background: rgba(47, 107, 138, 0.08);
     color: var(--text);
     font-size: 0.75rem;
     font-weight: 600;
