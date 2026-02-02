@@ -33,6 +33,8 @@ export default function MapClient() {
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MarkerDto | null>(null);
   const [map, setMap] = useState<any>(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [mapZoom, setMapZoom] = useState(4);
   const hasAutoFitRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
@@ -61,11 +63,6 @@ export default function MapClient() {
     };
     load();
   }, [apiUrl]);
-
-  const firstMarker = markers[0];
-  const center = firstMarker
-    ? { lat: firstMarker.lat, lng: firstMarker.lng }
-    : defaultCenter;
 
   const updateVisibleMarkers = () => {
     if (!map) {
@@ -101,6 +98,20 @@ export default function MapClient() {
     map.fitBounds(bounds);
     hasAutoFitRef.current = true;
   }, [map, markers]);
+
+  const syncMapState = () => {
+    if (!map) {
+      return;
+    }
+    const currentCenter = map.getCenter();
+    const currentZoom = map.getZoom();
+    if (currentCenter) {
+      setMapCenter({ lat: currentCenter.lat(), lng: currentCenter.lng() });
+    }
+    if (typeof currentZoom === "number") {
+      setMapZoom(currentZoom);
+    }
+  };
 
   const smoothZoom = (targetZoom: number) => {
     if (!map) {
@@ -173,10 +184,13 @@ export default function MapClient() {
               ) : (
                 <GoogleMap
                   mapContainerStyle={containerStyle}
-                  defaultCenter={defaultCenter}
-                  defaultZoom={4}
+                  center={mapCenter}
+                  zoom={mapZoom}
                   onLoad={(loadedMap) => setMap(loadedMap)}
-                  onIdle={updateVisibleMarkers}
+                  onIdle={() => {
+                    updateVisibleMarkers();
+                    syncMapState();
+                  }}
                   options={{
                     mapTypeControl: false,
                     fullscreenControl: false,
