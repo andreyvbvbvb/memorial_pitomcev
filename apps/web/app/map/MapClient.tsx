@@ -7,7 +7,7 @@ import {
   MarkerClusterer,
   useJsApiLoader
 } from "@react-google-maps/api";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../../lib/config";
 import { markerAnchor, markerIconUrl, markerSize, markerStyleById } from "../../lib/markers";
 
@@ -33,6 +33,7 @@ export default function MapClient() {
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MarkerDto | null>(null);
   const [map, setMap] = useState<any>(null);
+  const hasAutoFitRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
@@ -90,7 +91,7 @@ export default function MapClient() {
 
 
   useEffect(() => {
-    if (!map || markers.length === 0) {
+    if (!map || markers.length === 0 || hasAutoFitRef.current) {
       return;
     }
     const bounds = new window.google.maps.LatLngBounds();
@@ -98,6 +99,7 @@ export default function MapClient() {
       bounds.extend({ lat: marker.lat, lng: marker.lng });
     });
     map.fitBounds(bounds);
+    hasAutoFitRef.current = true;
   }, [map, markers]);
 
   const smoothZoom = (targetZoom: number) => {
@@ -171,8 +173,8 @@ export default function MapClient() {
               ) : (
                 <GoogleMap
                   mapContainerStyle={containerStyle}
-                  center={center}
-                  zoom={4}
+                  defaultCenter={defaultCenter}
+                  defaultZoom={4}
                   onLoad={(loadedMap) => setMap(loadedMap)}
                   onIdle={updateVisibleMarkers}
                   options={{
