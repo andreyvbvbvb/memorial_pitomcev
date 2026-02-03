@@ -95,10 +95,24 @@ export class PetsService {
         memorial: true,
         marker: true,
         photos: true,
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            login: true
+          }
+        },
         gifts: {
           include: {
             gift: true,
-            owner: true
+            owner: {
+              select: {
+                id: true,
+                email: true,
+                login: true,
+                pets: { select: { id: true, name: true } }
+              }
+            }
           },
           orderBy: { placedAt: "desc" }
         }

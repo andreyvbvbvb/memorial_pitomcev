@@ -156,7 +156,6 @@ function GiftSlotButtons({
     <>
       {anchors.map((anchor) => {
         const isActive = selectedSlot === anchor.slot;
-        const label = anchor.slot.replace("gift_slot_", "");
         return (
           <Html key={anchor.slot} position={anchor.position} center distanceFactor={8}>
             <button
@@ -171,7 +170,6 @@ function GiftSlotButtons({
                   : "border-slate-200/80 bg-white/70 text-slate-700"
               }`}
             >
-              {label}
             </button>
           </Html>
         );
