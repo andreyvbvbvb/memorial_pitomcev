@@ -33,8 +33,6 @@ export default function MapClient() {
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MarkerDto | null>(null);
   const [map, setMap] = useState<any>(null);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [mapZoom, setMapZoom] = useState(4);
   const hasAutoFitRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
@@ -64,11 +62,11 @@ export default function MapClient() {
     load();
   }, [apiUrl]);
 
-  const updateVisibleMarkers = () => {
-    if (!map) {
+  const updateVisibleMarkers = (targetMap = map) => {
+    if (!targetMap) {
       return;
     }
-    const bounds = map.getBounds();
+    const bounds = targetMap.getBounds();
     if (!bounds) {
       return;
     }
@@ -98,20 +96,6 @@ export default function MapClient() {
     map.fitBounds(bounds);
     hasAutoFitRef.current = true;
   }, [map, markers]);
-
-  const syncMapState = () => {
-    if (!map) {
-      return;
-    }
-    const currentCenter = map.getCenter();
-    const currentZoom = map.getZoom();
-    if (currentCenter) {
-      setMapCenter({ lat: currentCenter.lat(), lng: currentCenter.lng() });
-    }
-    if (typeof currentZoom === "number") {
-      setMapZoom(currentZoom);
-    }
-  };
 
   const smoothZoom = (targetZoom: number) => {
     if (!map) {
@@ -184,12 +168,14 @@ export default function MapClient() {
               ) : (
                 <GoogleMap
                   mapContainerStyle={containerStyle}
-                  center={mapCenter}
-                  zoom={mapZoom}
-                  onLoad={(loadedMap) => setMap(loadedMap)}
+                  onLoad={(loadedMap) => {
+                    setMap(loadedMap);
+                    loadedMap.setCenter(defaultCenter);
+                    loadedMap.setZoom(4);
+                    updateVisibleMarkers(loadedMap);
+                  }}
                   onIdle={() => {
                     updateVisibleMarkers();
-                    syncMapState();
                   }}
                   options={{
                     mapTypeControl: false,

@@ -9,7 +9,7 @@ type Props = {
   terrainUrl?: string | null;
   houseUrl?: string | null;
   parts?: { slot: string; url: string }[];
-  gifts?: { slot: string; url: string }[];
+  gifts?: { slot: string; url: string; name?: string; owner?: string; expiresAt?: string | null }[];
   giftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
@@ -17,6 +17,14 @@ type Props = {
   backgroundColor?: string;
   className?: string;
   style?: React.CSSProperties;
+};
+
+type GiftHover = {
+  slot: string;
+  position: [number, number, number];
+  name?: string;
+  owner?: string;
+  expiresAt?: string | null;
 };
 
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
@@ -89,11 +97,11 @@ function GiftSlotsOverlay({
     }
 
     const markers = anchors.map((anchor) => {
-      const geometry = new THREE.SphereGeometry(0.08, 16, 16);
+      const geometry = new THREE.SphereGeometry(0.045, 16, 16);
       const material = new THREE.MeshBasicMaterial({
         color: "#ff7a7a",
         transparent: true,
-        opacity: 0.8
+        opacity: 0.35
       });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.name = "__gift_marker";
@@ -164,10 +172,10 @@ function GiftSlotButtons({
                 event.stopPropagation();
                 onSelectSlot(anchor.slot);
               }}
-              className={`rounded-full border px-2 py-1 text-[10px] font-semibold shadow-sm transition ${
+              className={`h-4 w-4 rounded-full border shadow-sm transition ${
                 isActive
-                  ? "border-rose-400/80 bg-rose-500/80 text-white"
-                  : "border-slate-200/80 bg-white/70 text-slate-700"
+                  ? "border-rose-400/80 bg-rose-500/70"
+                  : "border-white/60 bg-white/30"
               }`}
             >
             </button>
@@ -181,14 +189,21 @@ function GiftSlotButtons({
 function GiftPlacementAttachment({
   terrain,
   slot,
-  url
+  url,
+  info,
+  onHover,
+  onLeave
 }: {
   terrain: THREE.Object3D;
   slot: string;
   url: string;
+  info?: { name?: string; owner?: string; expiresAt?: string | null };
+  onHover?: (gift: GiftHover) => void;
+  onLeave?: () => void;
 }) {
   const { scene } = useGLTF(url);
   const gift = useMemo(() => scene.clone(true), [scene]);
+  const [position, setPosition] = useState<[number, number, number] | null>(null);
 
   useEffect(() => {
     const anchor = terrain.getObjectByName(slot);
@@ -196,13 +211,36 @@ function GiftPlacementAttachment({
       console.warn(`[MemorialPreview] gift slot '${slot}' не найден`);
       return;
     }
-    anchor.add(gift);
-    return () => {
-      anchor.remove(gift);
-    };
-  }, [terrain, slot, gift]);
+    const pos = new THREE.Vector3();
+    anchor.getWorldPosition(pos);
+    setPosition([pos.x, pos.y, pos.z]);
+  }, [terrain, slot]);
 
-  return null;
+  if (!position) {
+    return null;
+  }
+
+  return (
+    <group
+      position={position}
+      onPointerOver={(event) => {
+        event.stopPropagation();
+        onHover?.({
+          slot,
+          position,
+          name: info?.name,
+          owner: info?.owner,
+          expiresAt: info?.expiresAt
+        });
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation();
+        onLeave?.();
+      }}
+    >
+      <Primitive object={gift} />
+    </group>
+  );
 }
 
 function PartAttachment({
@@ -247,17 +285,21 @@ function TerrainWithHouse({
   showGiftSlots,
   giftSlots,
   selectedSlot,
-  onSelectSlot
+  onSelectSlot,
+  onGiftHover,
+  onGiftLeave
 }: {
   terrainUrl: string;
   houseUrl: string;
   parts?: { slot: string; url: string }[];
-  gifts?: { slot: string; url: string }[];
+  gifts?: { slot: string; url: string; name?: string; owner?: string; expiresAt?: string | null }[];
   colors?: Record<string, string>;
   showGiftSlots: boolean;
   giftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
+  onGiftHover?: (gift: GiftHover) => void;
+  onGiftLeave?: () => void;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -301,6 +343,9 @@ function TerrainWithHouse({
           terrain={terrain}
           slot={gift.slot}
           url={gift.url}
+          info={{ name: gift.name, owner: gift.owner, expiresAt: gift.expiresAt }}
+          onHover={onGiftHover}
+          onLeave={onGiftLeave}
         />
       ))}
       {parts?.map((part) => (
@@ -326,6 +371,7 @@ export default function MemorialPreview({
   const controlsRef = useRef<any>(null);
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
   const [showGiftSlots, setShowGiftSlots] = useState(Boolean(onSelectSlot));
+  const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
@@ -338,9 +384,11 @@ export default function MemorialPreview({
   }, [onSelectSlot]);
 
   const containerStyle: React.CSSProperties = {
-    height: "320px",
     ...style
   };
+  if (!style?.height && !className) {
+    containerStyle.height = "320px";
+  }
 
   return (
     <div
@@ -379,10 +427,27 @@ export default function MemorialPreview({
               giftSlots={giftSlots}
               selectedSlot={selectedSlot}
               onSelectSlot={onSelectSlot}
+              onGiftHover={setHoveredGift}
+              onGiftLeave={() => setHoveredGift(null)}
             />
           ) : null}
           {!terrainUrl && houseUrl ? (
             <Model url={houseUrl} position={[0, 0, 0]} />
+          ) : null}
+          {hoveredGift ? (
+            <Html position={hoveredGift.position} center distanceFactor={8} className="pointer-events-none">
+              <div className="max-w-[180px] rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
+                <p className="font-semibold text-slate-900">{hoveredGift.name ?? "Подарок"}</p>
+                <p className="text-slate-500">
+                  {hoveredGift.owner ? `От ${hoveredGift.owner}` : "От владельца"}
+                </p>
+                <p className="text-slate-500">
+                  {hoveredGift.expiresAt
+                    ? `До ${new Date(hoveredGift.expiresAt).toLocaleDateString()}`
+                    : "Без срока"}
+                </p>
+              </div>
+            </Html>
           ) : null}
         </Suspense>
         <OrbitControls

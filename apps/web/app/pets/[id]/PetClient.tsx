@@ -398,15 +398,31 @@ export default function PetClient({ id }: Props) {
       : null
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
   const colorOverrides = sceneJson.colors ?? undefined;
-  const giftInstances = activeGifts.map((gift) => ({
-    slot: gift.slotName,
-    url: gift.gift.modelUrl
-  }));
+  const giftInstances = activeGifts.map((gift) => {
+    const ownerPets = gift.owner?.pets ?? [];
+    const ownerLabel =
+      ownerPets.length > 0
+        ? `От хозяина: ${ownerPets.map((petItem) => petItem.name).join(", ")}`
+        : gift.owner?.login ?? gift.owner?.email ?? "—";
+    return {
+      slot: gift.slotName,
+      url: gift.gift.modelUrl,
+      name: gift.gift.name,
+      owner: ownerLabel,
+      expiresAt: gift.expiresAt ?? undefined
+    };
+  });
   const selectedGift =
     giftCatalog.find((gift) => gift.id === selectedGiftId) ?? giftCatalog[0] ?? null;
   const previewGift =
     selectedGift && selectedSlot && !occupiedSlots.has(selectedSlot)
-      ? { slot: selectedSlot, url: selectedGift.modelUrl }
+      ? {
+          slot: selectedSlot,
+          url: selectedGift.modelUrl,
+          name: selectedGift.name,
+          owner: currentUser?.login ?? currentUser?.email ?? "—",
+          expiresAt: null
+        }
       : null;
   const previewGifts = previewGift ? [...giftInstances, previewGift] : giftInstances;
   const totalPrice = selectedGift ? selectedGift.price * selectedDuration : null;
@@ -491,7 +507,7 @@ export default function PetClient({ id }: Props) {
           </div>
           <div className="mt-6">
             <MemorialPreview
-              className="h-[650px]"
+              className="h-[780px]"
               terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId)}
               houseUrl={resolveHouseModel(pet.memorial?.houseId)}
               parts={partList}
