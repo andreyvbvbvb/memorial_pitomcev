@@ -31,6 +31,7 @@ const Primitive = "primitive" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
+const Group = "group" as unknown as React.ComponentType<any>;
 
 function Model({ url, position }: { url: string; position?: [number, number, number] }) {
   const { scene } = useGLTF(url);
@@ -221,9 +222,9 @@ function GiftPlacementAttachment({
   }
 
   return (
-    <group
+    <Group
       position={position}
-      onPointerOver={(event) => {
+      onPointerOver={(event: any) => {
         event.stopPropagation();
         onHover?.({
           slot,
@@ -233,13 +234,13 @@ function GiftPlacementAttachment({
           expiresAt: info?.expiresAt
         });
       }}
-      onPointerOut={(event) => {
+      onPointerOut={(event: any) => {
         event.stopPropagation();
         onLeave?.();
       }}
     >
       <Primitive object={gift} />
-    </group>
+    </Group>
   );
 }
 
