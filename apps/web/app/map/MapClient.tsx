@@ -23,7 +23,7 @@ type MarkerDto = {
 };
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
-const containerStyle = { width: "100%", height: "520px" };
+const containerStyle = { width: "100%", height: "676px" };
 
 export default function MapClient() {
   const [markers, setMarkers] = useState<MarkerDto[]>([]);
@@ -146,7 +146,7 @@ export default function MapClient() {
           </p>
         </div>
 
-        <section className="mt-10 grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <section className="mt-10 grid gap-6 lg:grid-cols-[2.6fr_1fr]">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Карта</h2>
@@ -154,15 +154,15 @@ export default function MapClient() {
             </div>
             <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
               {!apiKey ? (
-                <div className="flex min-h-[520px] items-center justify-center bg-slate-50 text-sm text-slate-500">
+                <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-slate-500">
                   Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
                 </div>
               ) : loadError ? (
-                <div className="flex min-h-[520px] items-center justify-center bg-slate-50 text-sm text-red-600">
+                <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-red-600">
                   Ошибка загрузки Google Maps
                 </div>
               ) : !isLoaded ? (
-                <div className="flex min-h-[520px] items-center justify-center bg-slate-50 text-sm text-slate-500">
+                <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-slate-500">
                   Загрузка карты...
                 </div>
               ) : (
