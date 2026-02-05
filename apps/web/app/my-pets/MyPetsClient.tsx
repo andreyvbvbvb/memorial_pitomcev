@@ -33,7 +33,7 @@ export default function MyPetsClient() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<1 | 2 | 3>(1);
+  const [viewMode, setViewMode] = useState<1 | 2 | 3 | 4>(1);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -98,11 +98,11 @@ export default function MyPetsClient() {
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm">
-          {[1, 2, 3].map((mode) => (
+          {[1, 2, 3, 4].map((mode) => (
             <button
               key={mode}
               type="button"
-              onClick={() => setViewMode(mode as 1 | 2 | 3)}
+              onClick={() => setViewMode(mode as 1 | 2 | 3 | 4)}
               className={`h-9 w-10 rounded-xl text-sm font-semibold transition ${
                 viewMode === mode
                   ? "bg-slate-900 text-white"
@@ -264,6 +264,56 @@ export default function MyPetsClient() {
                           </span>
                         ) : null}
                       </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
+          {viewMode === 4 ? (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {petsWithPreview.map((pet) => (
+                <Link
+                  key={pet.id}
+                  href={`/pets/${pet.id}`}
+                  className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="bg-slate-100">
+                    {pet.previewUrl ? (
+                      <img
+                        src={pet.previewUrl}
+                        alt={`Фото ${pet.name}`}
+                        className="h-auto w-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-40 w-full bg-slate-200" />
+                    )}
+                  </div>
+                  <div className="space-y-2 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-lg font-semibold text-slate-900 group-hover:underline">
+                        {pet.name}
+                      </h3>
+                      <span className="text-xs text-slate-500">
+                        {pet.isPublic ? "Публичный" : "Приватный"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      {pet.epitaph ?? "Без эпитафии"}
+                    </p>
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                      {pet.birthDate ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1">
+                          Рождение: {new Date(pet.birthDate).toLocaleDateString()}
+                        </span>
+                      ) : null}
+                      {pet.deathDate ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1">
+                          Уход: {new Date(pet.deathDate).toLocaleDateString()}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </Link>
