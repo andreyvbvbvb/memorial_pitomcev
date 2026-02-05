@@ -48,6 +48,7 @@ export default function MapClient() {
   const [map, setMap] = useState<any>(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [nameFilter, setNameFilter] = useState("");
+  const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
   const hasAutoFitRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
@@ -217,7 +218,7 @@ export default function MapClient() {
           </div>
         </div>
 
-        <section className="mt-10 grid gap-6 lg:grid-cols-[3fr_1fr]">
+        <section className="mt-10 grid gap-6 lg:grid-cols-[4.5fr_1fr]">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Карта</h2>
@@ -269,6 +270,11 @@ export default function MapClient() {
                             key={marker.id}
                             position={{ lat: marker.lat, lng: marker.lng }}
                             clusterer={clusterer}
+                            animation={
+                              hoveredMarkerId === marker.id && typeof window !== "undefined" && window.google
+                                ? window.google.maps.Animation.BOUNCE
+                                : undefined
+                            }
                             icon={{
                               url: markerIconUrl(marker.markerStyle ?? "other"),
                               scaledSize: new window.google.maps.Size(
@@ -340,6 +346,10 @@ export default function MapClient() {
                 <a
                   key={marker.id}
                   href={`/pets/${marker.petId}`}
+                  onMouseEnter={() => setHoveredMarkerId(marker.id)}
+                  onMouseLeave={() => setHoveredMarkerId(null)}
+                  onFocus={() => setHoveredMarkerId(marker.id)}
+                  onBlur={() => setHoveredMarkerId(null)}
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
                 >
                   <div className="flex items-center gap-3">
