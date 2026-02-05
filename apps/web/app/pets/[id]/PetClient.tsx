@@ -511,16 +511,9 @@ export default function PetClient({ id }: Props) {
 
         <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Мемориал 3D</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Визуализация</h2>
-            </div>
+            <div />
           </div>
-          {currentUser ? (
-            <p className="mt-2 text-sm text-slate-600">
-              Выбирайте подарок, срок и свободный слот — сразу увидите, где он появится.
-            </p>
-          ) : (
+          {currentUser ? null : (
             <p className="mt-2 text-sm text-rose-600">Войдите, чтобы дарить подарки.</p>
           )}
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -608,7 +601,7 @@ export default function PetClient({ id }: Props) {
           </div>
           <div className="mt-6">
             <MemorialPreview
-              className="h-[780px]"
+              className="h-[660px]"
               terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId)}
               houseUrl={resolveHouseModel(pet.memorial?.houseId)}
               parts={partList}
@@ -625,21 +618,6 @@ export default function PetClient({ id }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">Оставьте знак внимания</h2>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm">
-              <span className="text-slate-500">Баланс</span>
-              <strong className="text-slate-900">
-                {walletLoading ? "..." : walletBalance ?? "—"} монет
-              </strong>
-              <button
-                type="button"
-                onClick={openTopUp}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 text-lg text-slate-700"
-                aria-label="Пополнить баланс"
-              >
-                +
-              </button>
             </div>
           </div>
 
