@@ -606,7 +606,7 @@ export default function PetClient({ id }: Props) {
                       {expiresLabel ? (
                         <p className="text-xs text-slate-500">До: {expiresLabel}</p>
                       ) : null}
-                      <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-72 aspect-video rounded-2xl border border-slate-200 bg-white p-3 text-[8px] leading-snug text-slate-600 shadow-lg group-hover:block">
+                      <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
                         <p className="font-semibold text-slate-800">{gift.gift.name}</p>
                         <p className="mt-1">От: {ownerLabel}</p>
                         {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}

@@ -437,7 +437,7 @@ export default function MemorialPreview({
           ) : null}
           {hoveredGift ? (
             <Html position={hoveredGift.position} center distanceFactor={8} className="pointer-events-none">
-              <div className="w-64 aspect-video rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-[7px] leading-snug text-slate-700 shadow-lg">
+              <div className="inline-block min-w-[180px] max-w-[280px] break-words rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-[9px] leading-snug text-slate-700 shadow-lg">
                 <p className="font-semibold text-slate-900">{hoveredGift.name ?? "Подарок"}</p>
                 <p className="text-slate-500">
                   От: {hoveredGift.owner ? hoveredGift.owner : "владельца"}
