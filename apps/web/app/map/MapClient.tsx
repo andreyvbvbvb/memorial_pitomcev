@@ -171,60 +171,52 @@ export default function MapClient() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
       <div className="mx-auto w-full max-w-none">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col items-center gap-2 text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Глобальная карта</p>
-          <h1 className="text-3xl font-semibold text-slate-900">Мемориалы по всему миру</h1>
-          <p className="text-slate-600">
-            Это живая карта Google Maps. Маркеры показывают публичные мемориалы.
-          </p>
+          <h1 className="text-3xl font-semibold text-slate-900">Здесь нас можно всегда найти</h1>
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
-            <label className="grid gap-1 text-sm text-slate-700">
-              Вид питомца
-              <select
-                className="rounded-2xl border border-slate-200 px-4 py-2"
-                value={typeFilter}
-                onChange={(event) => setTypeFilter(event.target.value)}
+        <section className="mt-8 grid gap-6 lg:justify-center lg:grid-cols-[minmax(400px,55%)_minmax(360px,25%)]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+              <label className="grid gap-1 text-sm text-slate-700">
+                Вид питомца
+                <select
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value)}
+                >
+                  {petTypeOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Имя питомца
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={nameFilter}
+                  onChange={(event) => setNameFilter(event.target.value)}
+                  placeholder="Барсик"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setTypeFilter("all");
+                  setNameFilter("");
+                }}
+                disabled={!hasFilters}
+                className="h-[42px] rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60 md:mt-6"
               >
-                {petTypeOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm text-slate-700">
-              Имя питомца
-              <input
-                className="rounded-2xl border border-slate-200 px-4 py-2"
-                value={nameFilter}
-                onChange={(event) => setNameFilter(event.target.value)}
-                placeholder="Барсик"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                setTypeFilter("all");
-                setNameFilter("");
-              }}
-              disabled={!hasFilters}
-              className="h-[42px] rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60 md:mt-6"
-            >
-              Сбросить
-            </button>
-          </div>
-        </div>
-
-        <section className="mt-10 grid gap-6 lg:justify-center lg:grid-cols-[minmax(400px,55%)_minmax(360px,25%)]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Карта</h2>
-              <span className="text-xs text-slate-500">Google Maps</span>
+                Сбросить
+              </button>
             </div>
-            <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-slate-200">
               {!apiKey ? (
                 <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-slate-500">
                   Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -327,7 +319,7 @@ export default function MapClient() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Публичные мемориалы</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
               <span className="text-xs text-slate-500">{listMarkers.length}</span>
             </div>
             <div className="mt-4 grid gap-3">
