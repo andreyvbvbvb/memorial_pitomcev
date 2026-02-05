@@ -437,16 +437,16 @@ export default function MemorialPreview({
           ) : null}
           {hoveredGift ? (
             <Html position={hoveredGift.position} center distanceFactor={8} className="pointer-events-none">
-              <div className="max-w-[180px] rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
+              <div className="w-64 aspect-video rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-[7px] leading-snug text-slate-700 shadow-lg">
                 <p className="font-semibold text-slate-900">{hoveredGift.name ?? "Подарок"}</p>
                 <p className="text-slate-500">
-                  {hoveredGift.owner ? `От ${hoveredGift.owner}` : "От владельца"}
+                  От: {hoveredGift.owner ? hoveredGift.owner : "владельца"}
                 </p>
-                <p className="text-slate-500">
-                  {hoveredGift.expiresAt
-                    ? `До ${new Date(hoveredGift.expiresAt).toLocaleDateString()}`
-                    : "Без срока"}
-                </p>
+                {hoveredGift.expiresAt ? (
+                  <p className="text-slate-500">
+                    До {new Date(hoveredGift.expiresAt).toLocaleDateString()}
+                  </p>
+                ) : null}
               </div>
             </Html>
           ) : null}

@@ -413,7 +413,7 @@ export default function PetClient({ id }: Props) {
     const ownerPets = gift.owner?.pets ?? [];
     const ownerLabel =
       ownerPets.length > 0
-        ? `От хозяина: ${ownerPets.map((petItem) => petItem.name).join(", ")}`
+        ? ownerPets.map((petItem) => petItem.name).join(", ")
         : gift.owner?.login ?? gift.owner?.email ?? "—";
     return {
       slot: gift.slotName,
