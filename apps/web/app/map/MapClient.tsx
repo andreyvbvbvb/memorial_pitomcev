@@ -9,7 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../../lib/config";
-import { markerAnchor, markerIconUrl, markerSize, markerStyleById } from "../../lib/markers";
+import { markerAnchor, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 
 type MarkerDto = {
   id: string;
@@ -24,6 +24,19 @@ type MarkerDto = {
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "676px" };
+const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles];
+
+const matchesFilters = (marker: MarkerDto, typeFilter: string, nameFilter: string) => {
+  const normalizedName = nameFilter.trim().toLowerCase();
+  const markerType = (marker.markerStyle ?? "other").toLowerCase();
+  if (typeFilter !== "all" && markerType !== typeFilter) {
+    return false;
+  }
+  if (normalizedName && !marker.name.toLowerCase().includes(normalizedName)) {
+    return false;
+  }
+  return true;
+};
 
 export default function MapClient() {
   const [markers, setMarkers] = useState<MarkerDto[]>([]);
@@ -33,6 +46,8 @@ export default function MapClient() {
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MarkerDto | null>(null);
   const [map, setMap] = useState<any>(null);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [nameFilter, setNameFilter] = useState("");
   const hasAutoFitRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
@@ -84,6 +99,23 @@ export default function MapClient() {
     updateVisibleMarkers();
   }, [map, markers]);
 
+  const filteredMarkers = useMemo(
+    () => markers.filter((marker) => matchesFilters(marker, typeFilter, nameFilter)),
+    [markers, typeFilter, nameFilter]
+  );
+
+  const listMarkers = useMemo(() => {
+    const source = boundsReady ? visibleMarkers : markers;
+    return source.filter((marker) => matchesFilters(marker, typeFilter, nameFilter));
+  }, [boundsReady, visibleMarkers, markers, typeFilter, nameFilter]);
+
+  const hasFilters = typeFilter !== "all" || nameFilter.trim().length > 0;
+
+  useEffect(() => {
+    if (active && !filteredMarkers.some((marker) => marker.id === active.id)) {
+      setActive(null);
+    }
+  }, [active, filteredMarkers]);
 
   useEffect(() => {
     if (!map || markers.length === 0 || hasAutoFitRef.current) {
@@ -146,7 +178,46 @@ export default function MapClient() {
           </p>
         </div>
 
-        <section className="mt-10 grid gap-6 lg:grid-cols-[2.6fr_1fr]">
+        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+            <label className="grid gap-1 text-sm text-slate-700">
+              Вид питомца
+              <select
+                className="rounded-2xl border border-slate-200 px-4 py-2"
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value)}
+              >
+                {petTypeOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm text-slate-700">
+              Имя питомца
+              <input
+                className="rounded-2xl border border-slate-200 px-4 py-2"
+                value={nameFilter}
+                onChange={(event) => setNameFilter(event.target.value)}
+                placeholder="Барсик"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setTypeFilter("all");
+                setNameFilter("");
+              }}
+              disabled={!hasFilters}
+              className="h-[42px] rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60 md:mt-6"
+            >
+              Сбросить
+            </button>
+          </div>
+        </div>
+
+        <section className="mt-10 grid gap-6 lg:grid-cols-[3fr_1fr]">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Карта</h2>
@@ -193,7 +264,7 @@ export default function MapClient() {
                   >
                     {(clusterer) => (
                       <>
-                        {markers.map((marker) => (
+                        {filteredMarkers.map((marker) => (
                           <Marker
                             key={marker.id}
                             position={{ lat: marker.lat, lng: marker.lng }}
@@ -251,19 +322,21 @@ export default function MapClient() {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Публичные мемориалы</h2>
-              <span className="text-xs text-slate-500">
-                {boundsReady ? visibleMarkers.length : markers.length}
-              </span>
+              <span className="text-xs text-slate-500">{listMarkers.length}</span>
             </div>
             <div className="mt-4 grid gap-3">
               {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
               {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              {!loading && !error && (boundsReady ? visibleMarkers.length === 0 : markers.length === 0) ? (
+              {!loading && !error && listMarkers.length === 0 ? (
                 <p className="text-sm text-slate-500">
-                  {boundsReady ? "В выбранной области нет мемориалов." : "Пока нет публичных мемориалов."}
+                  {hasFilters
+                    ? "По заданным фильтрам ничего не найдено."
+                    : boundsReady
+                      ? "В выбранной области нет мемориалов."
+                      : "Пока нет публичных мемориалов."}
                 </p>
               ) : null}
-              {(boundsReady ? visibleMarkers : markers).map((marker) => (
+              {listMarkers.map((marker) => (
                 <a
                   key={marker.id}
                   href={`/pets/${marker.petId}`}
