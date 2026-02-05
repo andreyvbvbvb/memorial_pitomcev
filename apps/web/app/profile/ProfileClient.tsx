@@ -163,8 +163,7 @@ export default function ProfileClient() {
 
       <section className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Основные данные</h2>
-          <div className="mt-4 grid gap-4">
+          <div className="grid gap-4">
             {loadingProfile ? (
               <p className="text-sm text-slate-500">Загружаем профиль...</p>
             ) : null}
@@ -289,8 +288,7 @@ export default function ProfileClient() {
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Кошелёк</h2>
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-900">Баланс монет</p>
               <span className="text-sm text-slate-700">

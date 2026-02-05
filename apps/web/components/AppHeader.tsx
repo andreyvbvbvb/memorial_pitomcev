@@ -106,24 +106,16 @@ export default function AppHeader() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700">
-                  <span className="text-slate-500">Баланс</span>
-                  <strong className="text-slate-900">{user.coinBalance ?? 0}</strong>
-                  <button
-                    type="button"
-                    className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-sm text-slate-700"
-                    onClick={() => router.push("/profile")}
-                    aria-label="Пополнить баланс"
-                  >
-                    +
-                  </button>
-                </div>
                 <Link
                   href="/create"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 hover:bg-slate-50"
+                  className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 transition hover:bg-slate-50"
                   aria-label="Создать мемориал"
                 >
-                  +
+                  <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-70 animate-ping" />
+                  <span className="relative z-10">+</span>
+                  <span className="pointer-events-none absolute left-1/2 top-11 -translate-x-1/2 whitespace-nowrap rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
+                    Создать мемориал
+                  </span>
                 </Link>
                 <Link className="btn btn-ghost" href="/my-pets">
                   Мои питомцы
@@ -158,9 +150,23 @@ export default function AppHeader() {
                         menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
                       }`}
                     >
-                      <div className="px-3 pb-2 text-xs text-slate-500">
-                        {user.login ?? user.email}
-                      </div>
+                    <div className="px-3 pb-1 text-xs text-slate-500">
+                      {user.login ?? user.email}
+                    </div>
+                    <div className="flex items-center justify-between px-3 pb-2 text-xs text-slate-500">
+                      <span>
+                        Баланс:{" "}
+                        <strong className="text-slate-700">{user.coinBalance ?? 0}</strong>
+                      </span>
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm text-slate-700"
+                        onClick={() => router.push("/profile")}
+                        aria-label="Пополнить баланс"
+                      >
+                        +
+                      </button>
+                    </div>
                       <div className="grid gap-1 text-sm text-slate-700">
                         <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/profile">
                           Профиль
