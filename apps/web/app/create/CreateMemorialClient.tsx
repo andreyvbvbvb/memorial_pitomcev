@@ -528,7 +528,11 @@ export default function CreateMemorialClient() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div className="mx-auto max-w-5xl">
+      <div
+        className={`mx-auto ${
+          step === 2 ? "w-full max-w-none lg:w-[75vw]" : "max-w-5xl"
+        }`}
+      >
         <div className="flex flex-col gap-3">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Создание мемориала</p>
           <h1 className="text-3xl font-semibold text-slate-900">
