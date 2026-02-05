@@ -272,12 +272,12 @@ export default function MyPetsClient() {
           ) : null}
 
           {viewMode === 4 ? (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="columns-1 sm:columns-2 xl:columns-3 [column-gap:1.25rem]">
               {petsWithPreview.map((pet) => (
                 <Link
                   key={pet.id}
                   href={`/pets/${pet.id}`}
-                  className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                  className="group mb-5 inline-block w-full break-inside-avoid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                 >
                   <div className="bg-slate-100">
                     {pet.previewUrl ? (
