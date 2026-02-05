@@ -23,7 +23,9 @@ type MarkerDto = {
 };
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
-const containerStyle = { width: "100%", height: "676px" };
+const mapHeight = 676;
+const mapCardHeight = mapHeight + 48;
+const containerStyle = { width: "100%", height: "100%" };
 const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles];
 
 const matchesFilters = (marker: MarkerDto, typeFilter: string, nameFilter: string) => {
@@ -215,18 +217,30 @@ export default function MapClient() {
               </button>
             </div>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
+          <div
+            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            style={{ height: mapCardHeight }}
+          >
+            <div className="h-full overflow-hidden rounded-2xl border border-slate-200">
               {!apiKey ? (
-                <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-slate-500">
+                <div
+                  className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500"
+                  style={{ minHeight: mapHeight }}
+                >
                   Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
                 </div>
               ) : loadError ? (
-                <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-red-600">
+                <div
+                  className="flex h-full items-center justify-center bg-slate-50 text-sm text-red-600"
+                  style={{ minHeight: mapHeight }}
+                >
                   Ошибка загрузки Google Maps
                 </div>
               ) : !isLoaded ? (
-                <div className="flex min-h-[676px] items-center justify-center bg-slate-50 text-sm text-slate-500">
+                <div
+                  className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500"
+                  style={{ minHeight: mapHeight }}
+                >
                   Загрузка карты...
                 </div>
               ) : (
@@ -317,63 +331,68 @@ export default function MapClient() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div
+            className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+            style={{ height: mapCardHeight }}
+          >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
               <span className="text-xs text-slate-500">{listMarkers.length}</span>
             </div>
-            <div className="mt-4 grid gap-3">
-              {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
-              {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              {!loading && !error && listMarkers.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  {hasFilters
-                    ? "По заданным фильтрам ничего не найдено."
-                    : boundsReady
-                      ? "В выбранной области нет мемориалов."
-                      : "Пока нет публичных мемориалов."}
-                </p>
-              ) : null}
-              {listMarkers.map((marker) => (
-                <a
-                  key={marker.id}
-                  href={`/pets/${marker.petId}`}
-                  onMouseEnter={() => setHoveredMarkerId(marker.id)}
-                  onMouseLeave={() => setHoveredMarkerId(null)}
-                  onFocus={() => setHoveredMarkerId(marker.id)}
-                  onBlur={() => setHoveredMarkerId(null)}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
-                >
-                  <div className="flex items-center gap-3">
-                    {marker.previewPhotoUrl ? (
-                      <img
-                        src={
-                          marker.previewPhotoUrl.startsWith("http")
-                            ? marker.previewPhotoUrl
-                            : `${apiUrl}${marker.previewPhotoUrl}`
-                        }
-                        alt="Фото питомца"
-                        className="rounded-xl object-cover"
-                        style={{ width: 44, height: 44 }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="rounded-xl bg-slate-200" style={{ width: 44, height: 44 }} />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-                        <span className="text-xs text-slate-400">
-                          {marker.lat.toFixed(3)}, {marker.lng.toFixed(3)}
-                        </span>
+            <div className="mt-4 flex-1 overflow-y-auto pr-1">
+              <div className="grid gap-3">
+                {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
+                {error ? <p className="text-sm text-red-600">{error}</p> : null}
+                {!loading && !error && listMarkers.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    {hasFilters
+                      ? "По заданным фильтрам ничего не найдено."
+                      : boundsReady
+                        ? "В выбранной области нет мемориалов."
+                        : "Пока нет публичных мемориалов."}
+                  </p>
+                ) : null}
+                {listMarkers.map((marker) => (
+                  <a
+                    key={marker.id}
+                    href={`/pets/${marker.petId}`}
+                    onMouseEnter={() => setHoveredMarkerId(marker.id)}
+                    onMouseLeave={() => setHoveredMarkerId(null)}
+                    onFocus={() => setHoveredMarkerId(marker.id)}
+                    onBlur={() => setHoveredMarkerId(null)}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
+                  >
+                    <div className="flex items-center gap-3">
+                      {marker.previewPhotoUrl ? (
+                        <img
+                          src={
+                            marker.previewPhotoUrl.startsWith("http")
+                              ? marker.previewPhotoUrl
+                              : `${apiUrl}${marker.previewPhotoUrl}`
+                          }
+                          alt="Фото питомца"
+                          className="rounded-xl object-cover"
+                          style={{ width: 44, height: 44 }}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="rounded-xl bg-slate-200" style={{ width: 44, height: 44 }} />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
+                          <span className="text-xs text-slate-400">
+                            {marker.lat.toFixed(3)}, {marker.lng.toFixed(3)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {marker.epitaph ?? "Без эпитафии"}
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-slate-600">
-                        {marker.epitaph ?? "Без эпитафии"}
-                      </p>
                     </div>
-                  </div>
-                </a>
-              ))}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </section>
