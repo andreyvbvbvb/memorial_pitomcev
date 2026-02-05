@@ -144,11 +144,7 @@ export default function ProfileClient() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
-      <div className="flex flex-col gap-2">
-        <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Личный кабинет</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Профиль</h1>
-        <p className="text-slate-600">Управляй данными аккаунта и балансом монет.</p>
-      </div>
+      <div className="flex flex-col gap-2" />
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link

@@ -513,92 +513,91 @@ export default function PetClient({ id }: Props) {
           <div className="flex items-center justify-between">
             <div />
           </div>
-          {currentUser ? null : (
-            <p className="mt-2 text-sm text-rose-600">Войдите, чтобы дарить подарки.</p>
-          )}
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <div className="grid gap-3">
-              <div className="grid gap-2 text-sm text-slate-700">
-                Подарок
-                <div className="flex flex-wrap gap-2">
-                  {giftCatalog.map((gift) => (
-                    <button
-                      key={gift.id}
-                      type="button"
-                      onClick={() => handleSelectGift(gift.id)}
-                      className={`rounded-2xl border px-4 py-2 text-sm ${
-                        selectedGiftId === gift.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      {gift.name} · {gift.price} монет/мес
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-2 text-sm text-slate-700">
-                Срок подарка
-                <div className="flex flex-wrap gap-2">
-                  {[1, 2, 3, 6, 12].map((months) => (
-                    <button
-                      key={months}
-                      type="button"
-                      onClick={() => setSelectedDuration(months)}
-                      className={`rounded-2xl border px-4 py-2 text-sm ${
-                        selectedDuration === months
-                          ? "border-rose-500 bg-rose-500 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      {months} мес
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-2 text-sm text-slate-700">
-                Слот
-                {availableSlots.length === 0 ? (
-                  <p className="text-sm text-slate-500">Нет свободных слотов.</p>
-                ) : (
+          {currentUser ? (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="grid gap-3">
+                <div className="grid gap-2 text-sm text-slate-700">
+                  Подарок
                   <div className="flex flex-wrap gap-2">
-                    {availableSlots.map((slot, index) => (
+                    {giftCatalog.map((gift) => (
                       <button
-                        key={slot}
+                        key={gift.id}
                         type="button"
-                        onClick={() => handleSelectSlot(slot)}
-                        className={`h-10 w-10 rounded-full border text-sm ${
-                          selectedSlot === slot
+                        onClick={() => handleSelectGift(gift.id)}
+                        className={`rounded-2xl border px-4 py-2 text-sm ${
+                          selectedGiftId === gift.id
                             ? "border-slate-900 bg-slate-900 text-white"
                             : "border-slate-200 bg-white text-slate-700"
                         }`}
-                        aria-label={`Слот ${index + 1}`}
                       >
-                        {index + 1}
+                        {gift.name} · {gift.price} монет/мес
                       </button>
                     ))}
                   </div>
-                )}
+                </div>
+
+                <div className="grid gap-2 text-sm text-slate-700">
+                  Срок подарка
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 6, 12].map((months) => (
+                      <button
+                        key={months}
+                        type="button"
+                        onClick={() => setSelectedDuration(months)}
+                        className={`rounded-2xl border px-4 py-2 text-sm ${
+                          selectedDuration === months
+                            ? "border-rose-500 bg-rose-500 text-white"
+                            : "border-slate-200 bg-white text-slate-700"
+                        }`}
+                      >
+                        {months} мес
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-2 text-sm text-slate-700">
+                  Слот
+                  {availableSlots.length === 0 ? (
+                    <p className="text-sm text-slate-500">Нет свободных слотов.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {availableSlots.map((slot, index) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => handleSelectSlot(slot)}
+                          className={`h-10 w-10 rounded-full border text-sm ${
+                            selectedSlot === slot
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-200 bg-white text-slate-700"
+                          }`}
+                          aria-label={`Слот ${index + 1}`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {giftError ? <p className="text-sm text-red-600">{giftError}</p> : null}
+
+                <button
+                  type="button"
+                  onClick={handlePlaceGift}
+                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                  disabled={giftLoading}
+                >
+                  {giftLoading
+                    ? "Покупка..."
+                    : selectedGift && totalPrice !== null
+                      ? `Подарить (${totalPrice} монет)`
+                      : "Подарить"}
+                </button>
               </div>
-
-              {giftError ? <p className="text-sm text-red-600">{giftError}</p> : null}
-
-              <button
-                type="button"
-                onClick={handlePlaceGift}
-                className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                disabled={giftLoading || !currentUser}
-              >
-                {giftLoading
-                  ? "Покупка..."
-                  : selectedGift && totalPrice !== null
-                    ? `Подарить (${totalPrice} монет)`
-                    : "Подарить"}
-              </button>
             </div>
-          </div>
+          ) : null}
           <div className="mt-6">
             <MemorialPreview
               className="h-[660px]"
@@ -614,71 +613,74 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
+        {currentUser ? (
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              {activeGifts.length > 0 ? (
+                <div className="grid gap-2 text-sm text-slate-700">
+                  {activeGifts.map((gift) => {
+                    const ownerPets = gift.owner?.pets ?? [];
+                    const ownerName =
+                      gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
+                    const ownerLabel =
+                      ownerPets.length > 0
+                        ? ownerPets.map((petItem) => petItem.name).join(", ")
+                        : ownerName;
+                    const expiresLabel = gift.expiresAt
+                      ? new Date(gift.expiresAt).toLocaleDateString()
+                      : null;
+                    return (
+                      <div
+                        key={gift.id}
+                        className="group relative rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold">{gift.gift.name}</p>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          От хозяина:{" "}
+                          {ownerPets.length > 0 ? (
+                            <span className="inline-flex flex-wrap gap-1">
+                              {ownerPets.map((petItem, index) => (
+                                <span key={petItem.id} className="inline-flex items-center gap-1">
+                                  <a
+                                    href={`/pets/${petItem.id}`}
+                                    className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+                                  >
+                                    {petItem.name}
+                                  </a>
+                                  {index < ownerPets.length - 1 ? "," : null}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            ownerName
+                          )}
+                        </p>
+                        {expiresLabel ? (
+                          <p className="text-xs text-slate-500">До: {expiresLabel}</p>
+                        ) : null}
+                        <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
+                          <p className="font-semibold text-slate-800">{gift.gift.name}</p>
+                          <p className="mt-1">От: {ownerLabel}</p>
+                          {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Пока нет подарков.</p>
+              )}
             </div>
           </div>
-
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            {activeGifts.length > 0 ? (
-              <div className="grid gap-2 text-sm text-slate-700">
-                {activeGifts.map((gift) => {
-                  const ownerPets = gift.owner?.pets ?? [];
-                  const ownerName = gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
-                  const ownerLabel =
-                    ownerPets.length > 0
-                      ? ownerPets.map((petItem) => petItem.name).join(", ")
-                      : ownerName;
-                  const expiresLabel = gift.expiresAt
-                    ? new Date(gift.expiresAt).toLocaleDateString()
-                    : null;
-                  return (
-                    <div
-                      key={gift.id}
-                      className="group relative rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold">{gift.gift.name}</p>
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        От хозяина:{" "}
-                        {ownerPets.length > 0 ? (
-                          <span className="inline-flex flex-wrap gap-1">
-                            {ownerPets.map((petItem, index) => (
-                              <span key={petItem.id} className="inline-flex items-center gap-1">
-                                <a
-                                  href={`/pets/${petItem.id}`}
-                                  className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
-                                >
-                                  {petItem.name}
-                                </a>
-                                {index < ownerPets.length - 1 ? "," : null}
-                              </span>
-                            ))}
-                          </span>
-                        ) : (
-                          ownerName
-                        )}
-                      </p>
-                      {expiresLabel ? (
-                        <p className="text-xs text-slate-500">До: {expiresLabel}</p>
-                      ) : null}
-                      <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
-                        <p className="font-semibold text-slate-800">{gift.gift.name}</p>
-                        <p className="mt-1">От: {ownerLabel}</p>
-                        {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">Пока нет подарков.</p>
-            )}
-          </div>
-        </div>
+        ) : null}
       </div>
 
       {topUpOpen ? (

@@ -105,63 +105,81 @@ export default function AppHeader() {
           </Link>
           <div className="flex items-center gap-3">
             {user ? (
-              <div className="relative" ref={menuRef}>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  aria-label="Открыть меню"
-                  onClick={() => (menuOpen ? closeMenu() : openMenu())}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
-                    <path
-                      d="M4 5.5C4 4.12 5.12 3 6.5 3H19a2 2 0 0 1 2 2v13.5a2.5 2.5 0 0 0-2.5-2.5H6.5C5.12 16 4 14.88 4 13.5V5.5Z"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M6 7.5h9M6 10.5h9"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-                {menuOpen ? (
-                  <div
-                    className={`absolute right-0 mt-3 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl transition-all duration-150 ${
-                      menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
-                    }`}
+              <>
+                <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700">
+                  <span className="text-slate-500">Баланс</span>
+                  <strong className="text-slate-900">{user.coinBalance ?? 0}</strong>
+                  <button
+                    type="button"
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 text-sm text-slate-700"
+                    onClick={() => router.push("/profile")}
+                    aria-label="Пополнить баланс"
                   >
-                    <div className="px-3 pb-2 text-xs text-slate-500">
-                      {user.login ?? user.email}
+                    +
+                  </button>
+                </div>
+                <Link
+                  href="/create"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 hover:bg-slate-50"
+                  aria-label="Создать мемориал"
+                >
+                  +
+                </Link>
+                <Link className="btn btn-ghost" href="/my-pets">
+                  Мои питомцы
+                </Link>
+                <Link className="btn btn-ghost" href="/map">
+                  Карта
+                </Link>
+                <div className="relative" ref={menuRef}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    aria-label="Открыть меню"
+                    onClick={() => (menuOpen ? closeMenu() : openMenu())}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+                      <path
+                        d="M4 5.5C4 4.12 5.12 3 6.5 3H19a2 2 0 0 1 2 2v13.5a2.5 2.5 0 0 0-2.5-2.5H6.5C5.12 16 4 14.88 4 13.5V5.5Z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        d="M6 7.5h9M6 10.5h9"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                  {menuOpen ? (
+                    <div
+                      className={`absolute right-0 mt-3 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl transition-all duration-150 ${
+                        menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
+                      }`}
+                    >
+                      <div className="px-3 pb-2 text-xs text-slate-500">
+                        {user.login ?? user.email}
+                      </div>
+                      <div className="grid gap-1 text-sm text-slate-700">
+                        <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/profile">
+                          Профиль
+                        </Link>
+                        <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/about">
+                          О проекте
+                        </Link>
+                        <button
+                          type="button"
+                          className="mt-2 rounded-xl border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                          onClick={handleLogout}
+                        >
+                          Выйти
+                        </button>
+                      </div>
                     </div>
-                    <div className="grid gap-1 text-sm text-slate-700">
-                      <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/profile">
-                        Профиль
-                      </Link>
-                      <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/create">
-                        Создать мемориал
-                      </Link>
-                      <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/my-pets">
-                        Мои питомцы
-                      </Link>
-                      <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/map">
-                        Карта мемориалов
-                      </Link>
-                      <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/about">
-                        О проекте
-                      </Link>
-                      <button
-                        type="button"
-                        className="mt-2 rounded-xl border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                        onClick={handleLogout}
-                      >
-                        Выйти
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+                  ) : null}
+                </div>
+              </>
             ) : (
               <button type="button" className="btn btn-outline" onClick={openAuth}>
                 Войти

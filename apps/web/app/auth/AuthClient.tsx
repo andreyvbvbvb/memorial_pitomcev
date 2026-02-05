@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
@@ -104,6 +103,11 @@ export default function AuthClient() {
     }
   };
 
+  const handleSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSubmit();
+  };
+
   const handleForgot = async () => {
     setError(null);
     setForgotNotice(null);
@@ -131,30 +135,16 @@ export default function AuthClient() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
-      <div className="flex flex-col gap-2">
-        <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Вход</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Авторизация</h1>
-        <p className="text-slate-600">Вход и регистрация через email.</p>
-      </div>
+    <div className="flex min-h-[calc(100vh-120px)] items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Вход</p>
+        </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/profile"
-          className="rounded-2xl border border-slate-200 px-5 py-2 text-sm text-slate-700"
+        <form
+          className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          onSubmit={handleSubmitEvent}
         >
-          Профиль
-        </Link>
-        <Link
-          href="/my-pets"
-          className="rounded-2xl border border-slate-200 px-5 py-2 text-sm text-slate-700"
-        >
-          Мои питомцы
-        </Link>
-      </div>
-
-      <div className="mt-10">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex gap-2">
             <button
               type="button"
@@ -254,8 +244,7 @@ export default function AuthClient() {
             )}
 
             <button
-              type="button"
-              onClick={handleSubmit}
+              type="submit"
               className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
               disabled={loading}
             >
@@ -300,7 +289,7 @@ export default function AuthClient() {
               </div>
             ) : null}
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
