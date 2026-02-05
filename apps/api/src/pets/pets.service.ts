@@ -84,7 +84,13 @@ export class PetsService {
 
     return this.prisma.pet.findMany({
       where: Object.keys(where).length > 0 ? where : undefined,
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      include: {
+        photos: {
+          orderBy: { sortOrder: "asc" }
+        },
+        marker: true
+      }
     });
   }
 
