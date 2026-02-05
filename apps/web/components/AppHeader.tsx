@@ -111,7 +111,7 @@ export default function AppHeader() {
                   className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 transition hover:bg-slate-50"
                   aria-label="Создать мемориал"
                 >
-                  <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-70 animate-ping" />
+                  <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-0 transition group-hover:opacity-70 group-hover:animate-ping" />
                   <span className="relative z-10">+</span>
                   <span className="pointer-events-none absolute left-1/2 top-11 -translate-x-1/2 whitespace-nowrap rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
                     Создать мемориал
