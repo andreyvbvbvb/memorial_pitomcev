@@ -170,7 +170,7 @@ export default function MapClient() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div className="mx-auto w-full max-w-[1400px]">
+      <div className="mx-auto w-full max-w-none">
         <div className="flex flex-col gap-2">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Глобальная карта</p>
           <h1 className="text-3xl font-semibold text-slate-900">Мемориалы по всему миру</h1>
@@ -218,7 +218,7 @@ export default function MapClient() {
           </div>
         </div>
 
-        <section className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="mt-10 grid gap-6 lg:justify-center lg:grid-cols-[minmax(400px,55%)_minmax(360px,25%)]">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Карта</h2>
