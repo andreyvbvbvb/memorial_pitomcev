@@ -641,7 +641,6 @@ export default function PetClient({ id }: Props) {
                     >
                       <div className="flex items-center justify-between">
                         <p className="font-semibold">{gift.gift.name}</p>
-                        <span className="text-xs text-slate-400">{gift.slotName}</span>
                       </div>
                       <p className="mt-1 text-xs text-slate-500">
                         От хозяина:{" "}
