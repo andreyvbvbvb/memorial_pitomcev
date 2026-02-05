@@ -81,6 +81,7 @@ export default function PetClient({ id }: Props) {
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(1);
+  const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
 
@@ -259,6 +260,16 @@ export default function PetClient({ id }: Props) {
     }
   }, [availableSlots, selectedSlot]);
 
+  const handleSelectSlot = (slot: string) => {
+    setSelectedSlot(slot);
+    setGiftPreviewEnabled(true);
+  };
+
+  const handleSelectGift = (giftId: string) => {
+    setSelectedGiftId(giftId);
+    setGiftPreviewEnabled(true);
+  };
+
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot) {
       setGiftError("Выбери подарок и слот");
@@ -415,7 +426,7 @@ export default function PetClient({ id }: Props) {
   const selectedGift =
     giftCatalog.find((gift) => gift.id === selectedGiftId) ?? giftCatalog[0] ?? null;
   const previewGift =
-    selectedGift && selectedSlot && !occupiedSlots.has(selectedSlot)
+    giftPreviewEnabled && selectedGift && selectedSlot && !occupiedSlots.has(selectedSlot)
       ? {
           slot: selectedSlot,
           url: selectedGift.modelUrl,
@@ -514,7 +525,7 @@ export default function PetClient({ id }: Props) {
               gifts={previewGifts}
               giftSlots={availableSlots}
               selectedSlot={selectedSlot}
-              onSelectSlot={setSelectedSlot}
+              onSelectSlot={handleSelectSlot}
               colors={colorOverrides}
             />
           </div>
@@ -612,7 +623,7 @@ export default function PetClient({ id }: Props) {
                     <button
                       key={gift.id}
                       type="button"
-                      onClick={() => setSelectedGiftId(gift.id)}
+                      onClick={() => handleSelectGift(gift.id)}
                       className={`rounded-2xl border px-4 py-2 text-sm ${
                         selectedGiftId === gift.id
                           ? "border-slate-900 bg-slate-900 text-white"
@@ -655,7 +666,7 @@ export default function PetClient({ id }: Props) {
                       <button
                         key={slot}
                         type="button"
-                        onClick={() => setSelectedSlot(slot)}
+                        onClick={() => handleSelectSlot(slot)}
                         className={`h-10 w-10 rounded-full border text-sm ${
                           selectedSlot === slot
                             ? "border-slate-900 bg-slate-900 text-white"
