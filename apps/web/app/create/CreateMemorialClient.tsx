@@ -1106,8 +1106,8 @@ export default function CreateMemorialClient() {
                         <img
                           src={photo.url}
                           alt="Фото питомца"
-                          className="h-20 w-full rounded-lg object-cover"
-                          style={{ height: "80px", width: "100%", objectFit: "cover" }}
+                          className="w-full rounded-lg bg-slate-100 object-contain"
+                          style={{ height: "120px", width: "100%", objectFit: "contain" }}
                         />
                         <div className="mt-3 flex items-center justify-center">
                           <button
@@ -1141,8 +1141,13 @@ export default function CreateMemorialClient() {
                   <p>Имя: {form.name || "—"}</p>
                   <p>Дата рождения: {form.birthDate || "—"}</p>
                   <p>Дата ухода: {form.deathDate || "—"}</p>
-                  <p>Эпитафия: {form.epitaph || "—"}</p>
-                  <p>История: {form.story || "—"}</p>
+                  <p className="break-words">
+                    Эпитафия: <span className="break-all">{form.epitaph || "—"}</span>
+                  </p>
+                  <p className="break-words">
+                    История:{" "}
+                    <span className="whitespace-pre-wrap break-all">{form.story || "—"}</span>
+                  </p>
                 </div>
                 {photos.length > 0 ? (
                   <div className="mt-4">
