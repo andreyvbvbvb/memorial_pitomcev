@@ -1137,37 +1137,36 @@ export default function CreateMemorialClient() {
           {step === 4 ? (
             <div className="grid gap-6">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <h2 className="text-lg font-semibold text-slate-900">Проверь перед публикацией</h2>
-                <div className="mt-4 grid gap-2 text-sm text-slate-700">
+                <div className="grid gap-2 text-sm text-slate-700">
                   <p>Имя: {form.name || "—"}</p>
-                  <p>Вид: {form.species || "—"}</p>
                   <p>Дата рождения: {form.birthDate || "—"}</p>
                   <p>Дата ухода: {form.deathDate || "—"}</p>
                   <p>Эпитафия: {form.epitaph || "—"}</p>
                   <p>История: {form.story || "—"}</p>
-                  <p>Публичность: {form.isPublic ? "Публичный" : "Приватный"}</p>
                 </div>
                 {photos.length > 0 ? (
-                  <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {photos.map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={photo.url}
-                        alt="Фото питомца"
-                        className="h-20 w-full rounded-lg object-cover"
-                      />
-                    ))}
+                  <div className="mt-4">
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {photos.map((photo) => (
+                        <img
+                          key={photo.id}
+                          src={photo.url}
+                          alt="Фото питомца"
+                          className="rounded-xl object-cover"
+                          style={{ width: 324, height: 252 }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ) : null}
               </div>
               <div className="grid gap-3">
-                <h2 className="text-lg font-semibold text-slate-900">3D‑превью</h2>
                 <MemorialPreview
                   terrainUrl={environmentUrl}
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
-                  className="h-[720px]"
+                  className="h-[648px]"
                 />
               </div>
             </div>
