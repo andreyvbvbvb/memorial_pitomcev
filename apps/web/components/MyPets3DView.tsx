@@ -169,8 +169,10 @@ function MemorialInstance({
     [houseSlots, sceneJson.parts]
   );
 
-  const { scene: terrainScene } = useGLTF(environmentUrl);
-  const { scene: houseScene } = useGLTF(houseUrl);
+  const terrainGltf = useGLTF(environmentUrl) as unknown as { scene: THREE.Object3D };
+  const houseGltf = useGLTF(houseUrl) as unknown as { scene: THREE.Object3D };
+  const terrainScene = terrainGltf.scene;
+  const houseScene = houseGltf.scene;
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => houseScene.clone(true), [houseScene]);
 
