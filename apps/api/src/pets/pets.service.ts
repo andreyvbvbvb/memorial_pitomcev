@@ -86,6 +86,7 @@ export class PetsService {
       where: Object.keys(where).length > 0 ? where : undefined,
       orderBy: { createdAt: "desc" },
       include: {
+        memorial: true,
         photos: {
           orderBy: { sortOrder: "asc" }
         },
