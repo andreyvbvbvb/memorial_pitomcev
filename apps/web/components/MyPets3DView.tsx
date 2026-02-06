@@ -73,9 +73,13 @@ function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, strin
     }
     if (!mesh.userData.__clonedMaterial) {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      const cloned = materials.map((material) => (material as THREE.Material).clone());
-      mesh.material = Array.isArray(mesh.material) ? cloned : cloned[0];
-      mesh.userData.__clonedMaterial = true;
+      const cloned = materials
+        .map((material) => (material as THREE.Material | undefined)?.clone?.())
+        .filter((material): material is THREE.Material => Boolean(material));
+      if (cloned.length > 0) {
+        mesh.material = Array.isArray(mesh.material) ? cloned : cloned[0] ?? mesh.material;
+        mesh.userData.__clonedMaterial = true;
+      }
     }
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     materials.forEach((material) => {
