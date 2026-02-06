@@ -1,26 +1,17 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import HomeHeroBackground from "./HomeHeroBackground";
 
 export default function HomeHero() {
-  const heroVideo = process.env.NEXT_PUBLIC_HERO_VIDEO_URL ?? "/background_main_page.mp4";
-
   return (
     <section className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center overflow-hidden px-6 pb-20 pt-16 text-center">
       <div className="pointer-events-none absolute inset-0 z-0">
-        <video
-          className="h-full w-full object-cover"
-          src={heroVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-        />
+        <HomeHeroBackground />
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(236,244,255,0.55) 0%, rgba(236,244,255,0.42) 40%, rgba(255,255,255,0.7) 100%)"
+              "linear-gradient(180deg, rgba(251,247,245,0.65) 0%, rgba(251,247,245,0.5) 45%, rgba(255,255,255,0.82) 100%)"
           }}
         />
       </div>
