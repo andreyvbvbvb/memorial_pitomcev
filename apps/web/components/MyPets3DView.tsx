@@ -169,6 +169,9 @@ function MemorialInstance({
     [houseSlots, sceneJson.parts]
   );
 
+  if (!environmentUrl || !houseUrl) {
+    return null;
+  }
   const terrainGltf = useGLTF(environmentUrl) as unknown as { scene: THREE.Object3D };
   const houseGltf = useGLTF(houseUrl) as unknown as { scene: THREE.Object3D };
   const terrainScene = terrainGltf.scene;
