@@ -6,6 +6,7 @@ import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 const MODEL_URL = "/models/main_page.glb";
+const Primitive = "primitive" as unknown as React.ComponentType<any>;
 const Group = "group" as unknown as React.ComponentType<any>;
 
 function RotatingModel() {
@@ -34,7 +35,7 @@ function RotatingModel() {
 
   return (
     <Group ref={pivotRef} rotation={[0.12, -0.4, 0]}>
-      <primitive object={normalized} />
+      <Primitive object={normalized} />
     </Group>
   );
 }
