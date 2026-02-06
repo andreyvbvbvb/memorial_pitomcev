@@ -8,6 +8,9 @@ import * as THREE from "three";
 const MODEL_URL = "/models/main_page.glb";
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
 const Group = "group" as unknown as React.ComponentType<any>;
+const Color = "color" as unknown as React.ComponentType<any>;
+const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
+const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 
 function RotatingModel() {
   const { scene } = useGLTF(MODEL_URL);
@@ -48,9 +51,9 @@ export default function HomeHeroBackground() {
       dpr={[1, 1.5]}
       gl={{ antialias: true }}
     >
-      <color attach="background" args={["#fbf7f5"]} />
-      <ambientLight intensity={0.9} />
-      <directionalLight intensity={1.1} position={[6, 8, 4]} />
+      <Color attach="background" args={["#fbf7f5"]} />
+      <AmbientLight intensity={0.9} />
+      <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <Suspense fallback={null}>
         <RotatingModel />
       </Suspense>
