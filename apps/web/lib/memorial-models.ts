@@ -10,61 +10,29 @@ import {
   signOptions,
   wallOptions
 } from "./memorial-options";
+import {
+  environmentModelByIdGenerated,
+  houseModelByIdGenerated,
+  roofModelByIdGenerated,
+  wallModelByIdGenerated,
+  signModelByIdGenerated,
+  frameLeftModelByIdGenerated,
+  frameRightModelByIdGenerated,
+  matModelByIdGenerated,
+  bowlFoodModelByIdGenerated,
+  bowlWaterModelByIdGenerated
+} from "./memorial-models.generated";
 
-const environmentModelById: Record<string, string> = {
-  summer: "/models/terrains/TERRAIN_summer.glb",
-  summer_1: "/models/terrains/TERRAIN_summer_1.glb",
-  spring: "/models/terrains/TERRAIN_spring.glb",
-  autumn: "/models/terrains/TERRAIN_autumn.glb",
-  winter: "/models/terrains/TERRAIN_winter.glb",
-  winter_1: "/models/terrains/TERRAIN_winter_1.glb"
-};
-
-const houseModelById: Record<string, string> = {
-  budka_1: "/models/houses/DOM_budka_1.glb",
-  budka_2: "/models/houses/DOM_budka_2.glb"
-};
-
-const roofModelById: Record<string, string> = {
-  roof_1: "/models/parts/roof/roof_1.glb",
-  roof_2: "/models/parts/roof/roof_2.glb"
-};
-
-const wallModelById: Record<string, string> = {
-  wall_1: "/models/parts/wall/wall_1.glb",
-  wall_2: "/models/parts/wall/wall_2.glb"
-};
-
-const signModelById: Record<string, string> = {
-  sign_1: "/models/parts/sign/sign_1.glb",
-  sign_2: "/models/parts/sign/sign_2.glb"
-};
-
-const frameLeftModelById: Record<string, string> = {
-  frame_left_1: "/models/parts/frame_left/frame_left_1.glb",
-  frame_left_2: "/models/parts/frame_left/frame_left_2.glb"
-};
-
-const frameRightModelById: Record<string, string> = {
-  frame_right_1: "/models/parts/frame_right/frame_right_1.glb",
-  frame_right_2: "/models/parts/frame_right/frame_right_2.glb"
-};
-
-const matModelById: Record<string, string> = {
-  mat_1: "/models/parts/mat/mat_1.glb",
-  mat_2: "/models/parts/mat/mat_2.glb"
-};
-
-const bowlFoodModelById: Record<string, string> = {
-  bowl_food_1: "/models/parts/bowl_food/bowl_food_1.glb",
-  bowl_food_2: "/models/parts/bowl_food/bowl_food_2.glb",
-  bowl_food_3: "/models/parts/bowl_food/bowl_food_3.glb"
-};
-
-const bowlWaterModelById: Record<string, string> = {
-  bowl_water_1: "/models/parts/bowl_water/bowl_water_1.glb",
-  bowl_water_2: "/models/parts/bowl_water/bowl_water_2.glb"
-};
+const environmentModelById: Record<string, string> = environmentModelByIdGenerated;
+const houseModelById: Record<string, string> = houseModelByIdGenerated;
+const roofModelById: Record<string, string> = roofModelByIdGenerated;
+const wallModelById: Record<string, string> = wallModelByIdGenerated;
+const signModelById: Record<string, string> = signModelByIdGenerated;
+const frameLeftModelById: Record<string, string> = frameLeftModelByIdGenerated;
+const frameRightModelById: Record<string, string> = frameRightModelByIdGenerated;
+const matModelById: Record<string, string> = matModelByIdGenerated;
+const bowlFoodModelById: Record<string, string> = bowlFoodModelByIdGenerated;
+const bowlWaterModelById: Record<string, string> = bowlWaterModelByIdGenerated;
 
 const resolveOptionalModel = (
   map: Record<string, string>,

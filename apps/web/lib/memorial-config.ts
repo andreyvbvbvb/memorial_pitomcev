@@ -44,14 +44,7 @@ export const DEFAULT_TERRAIN_GIFT_SLOTS = [
   "gift_slot_4"
 ];
 
-export const TERRAIN_GIFT_SLOTS: Record<string, string[]> = {
-  summer: DEFAULT_TERRAIN_GIFT_SLOTS,
-  summer_1: DEFAULT_TERRAIN_GIFT_SLOTS,
-  spring: DEFAULT_TERRAIN_GIFT_SLOTS,
-  autumn: DEFAULT_TERRAIN_GIFT_SLOTS,
-  winter: DEFAULT_TERRAIN_GIFT_SLOTS,
-  winter_1: DEFAULT_TERRAIN_GIFT_SLOTS
-};
+export const TERRAIN_GIFT_SLOTS: Record<string, string[]> = {};
 
 export const getTerrainGiftSlots = (terrainId?: string | null): string[] =>
   TERRAIN_GIFT_SLOTS[terrainId ?? ""] ?? DEFAULT_TERRAIN_GIFT_SLOTS;

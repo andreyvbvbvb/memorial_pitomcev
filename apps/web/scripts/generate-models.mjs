@@ -1,0 +1,235 @@
+import fs from "fs";
+import path from "path";
+
+const ROOT = path.resolve(process.cwd(), "public", "models");
+
+const envNameMap = {
+  summer: "Лето",
+  winter: "Зима",
+  spring: "Весна",
+  autumn: "Осень"
+};
+
+const envOrder = ["summer", "summer_1", "spring", "autumn", "winter", "winter_1"];
+
+const categories = [
+  {
+    key: "environment",
+    dir: "terrains",
+    filePrefix: "TERRAIN_",
+    urlPrefix: "/models/terrains/",
+    label: "Поверхность",
+    naming: "environment"
+  },
+  {
+    key: "house",
+    dir: "houses",
+    filePrefix: "DOM_",
+    urlPrefix: "/models/houses/",
+    label: "Будка",
+    naming: "numbered"
+  },
+  {
+    key: "roof",
+    dir: "parts/roof",
+    filePrefix: "",
+    urlPrefix: "/models/parts/roof/",
+    label: "Крыша",
+    naming: "numbered"
+  },
+  {
+    key: "wall",
+    dir: "parts/wall",
+    filePrefix: "",
+    urlPrefix: "/models/parts/wall/",
+    label: "Стены",
+    naming: "numbered"
+  },
+  {
+    key: "sign",
+    dir: "parts/sign",
+    filePrefix: "",
+    urlPrefix: "/models/parts/sign/",
+    label: "Украшение",
+    naming: "numbered"
+  },
+  {
+    key: "frameLeft",
+    dir: "parts/frame_left",
+    filePrefix: "",
+    urlPrefix: "/models/parts/frame_left/",
+    label: "Рамка слева",
+    naming: "numbered"
+  },
+  {
+    key: "frameRight",
+    dir: "parts/frame_right",
+    filePrefix: "",
+    urlPrefix: "/models/parts/frame_right/",
+    label: "Рамка справа",
+    naming: "numbered"
+  },
+  {
+    key: "mat",
+    dir: "parts/mat",
+    filePrefix: "",
+    urlPrefix: "/models/parts/mat/",
+    label: "Коврик",
+    naming: "numbered"
+  },
+  {
+    key: "bowlFood",
+    dir: "parts/bowl_food",
+    filePrefix: "",
+    urlPrefix: "/models/parts/bowl_food/",
+    label: "Миска еды",
+    naming: "numbered"
+  },
+  {
+    key: "bowlWater",
+    dir: "parts/bowl_water",
+    filePrefix: "",
+    urlPrefix: "/models/parts/bowl_water/",
+    label: "Миска воды",
+    naming: "numbered"
+  }
+];
+
+const toId = (fileName, prefix) => {
+  const base = path.basename(fileName, ".glb");
+  if (prefix && base.startsWith(prefix)) {
+    return base.slice(prefix.length);
+  }
+  return base;
+};
+
+const extractNumber = (id) => {
+  const match = id.match(/_(\d+)$/);
+  return match ? Number(match[1]) : null;
+};
+
+const humanize = (value) =>
+  value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+
+const makeName = (category, id) => {
+  if (category.naming === "environment") {
+    const [base, ...rest] = id.split("_");
+    const baseName = envNameMap[base] ?? humanize(base);
+    return rest.length > 0 ? `${baseName} ${rest.join(" ")}` : baseName;
+  }
+  const number = extractNumber(id);
+  return number ? `${category.label} ${number}` : category.label;
+};
+
+const makeDescription = (category, id) => {
+  if (category.naming === "environment") {
+    return "Автодобавлено";
+  }
+  const number = extractNumber(id);
+  return number ? `Вариант ${number}` : "Автодобавлено";
+};
+
+const compareEntries = (category, a, b) => {
+  if (category.naming === "environment") {
+    const aIndex = envOrder.indexOf(a.id);
+    const bIndex = envOrder.indexOf(b.id);
+    if (aIndex !== -1 || bIndex !== -1) {
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    }
+  }
+  const aNum = extractNumber(a.id);
+  const bNum = extractNumber(b.id);
+  if (aNum !== null && bNum !== null && aNum !== bNum) {
+    return aNum - bNum;
+  }
+  return a.id.localeCompare(b.id);
+};
+
+const readCategory = (category) => {
+  const dirPath = path.join(ROOT, category.dir);
+  if (!fs.existsSync(dirPath)) {
+    return [];
+  }
+  return fs
+    .readdirSync(dirPath)
+    .filter((file) => file.toLowerCase().endsWith(".glb"))
+    .filter((file) => {
+      if (!category.filePrefix) {
+        return true;
+      }
+      return path.basename(file).startsWith(category.filePrefix);
+    })
+    .map((file) => ({
+      file,
+      id: toId(file, category.filePrefix)
+    }))
+    .sort((a, b) => compareEntries(category, a, b));
+};
+
+const mappings = {};
+const options = {};
+
+categories.forEach((category) => {
+  const items = readCategory(category);
+  const modelMap = {};
+  const optionList = [];
+  items.forEach((item) => {
+    modelMap[item.id] = `${category.urlPrefix}${item.file}`;
+    optionList.push({
+      id: item.id,
+      name: makeName(category, item.id),
+      description: makeDescription(category, item.id)
+    });
+  });
+  mappings[category.key] = modelMap;
+  options[category.key] = optionList;
+});
+
+const generatedModelsPath = path.resolve(process.cwd(), "lib", "memorial-models.generated.ts");
+const generatedOptionsPath = path.resolve(process.cwd(), "lib", "memorial-options.generated.ts");
+
+const formatExport = (name, value) =>
+  `export const ${name} = ${JSON.stringify(value, null, 2)} as const;`;
+
+const modelsFile = `// This file is auto-generated by scripts/generate-models.mjs. Do not edit manually.
+
+${formatExport("environmentModelByIdGenerated", mappings.environment)}
+${formatExport("houseModelByIdGenerated", mappings.house)}
+${formatExport("roofModelByIdGenerated", mappings.roof)}
+${formatExport("wallModelByIdGenerated", mappings.wall)}
+${formatExport("signModelByIdGenerated", mappings.sign)}
+${formatExport("frameLeftModelByIdGenerated", mappings.frameLeft)}
+${formatExport("frameRightModelByIdGenerated", mappings.frameRight)}
+${formatExport("matModelByIdGenerated", mappings.mat)}
+${formatExport("bowlFoodModelByIdGenerated", mappings.bowlFood)}
+${formatExport("bowlWaterModelByIdGenerated", mappings.bowlWater)}
+`;
+
+const optionsFile = `// This file is auto-generated by scripts/generate-models.mjs. Do not edit manually.
+
+export type GeneratedOptionItem = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+${formatExport("environmentOptionsGenerated", options.environment)}
+${formatExport("houseOptionsGenerated", options.house)}
+${formatExport("roofOptionsGenerated", options.roof)}
+${formatExport("wallOptionsGenerated", options.wall)}
+${formatExport("signOptionsGenerated", options.sign)}
+${formatExport("frameLeftOptionsGenerated", options.frameLeft)}
+${formatExport("frameRightOptionsGenerated", options.frameRight)}
+${formatExport("matOptionsGenerated", options.mat)}
+${formatExport("bowlFoodOptionsGenerated", options.bowlFood)}
+${formatExport("bowlWaterOptionsGenerated", options.bowlWater)}
+`;
+
+fs.writeFileSync(generatedModelsPath, modelsFile, "utf8");
+fs.writeFileSync(generatedOptionsPath, optionsFile, "utf8");
+
+console.log("Generated memorial model + options files.");

@@ -4,6 +4,18 @@ import { Canvas } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  environmentModelByIdGenerated,
+  houseModelByIdGenerated,
+  roofModelByIdGenerated,
+  wallModelByIdGenerated,
+  signModelByIdGenerated,
+  frameLeftModelByIdGenerated,
+  frameRightModelByIdGenerated,
+  matModelByIdGenerated,
+  bowlFoodModelByIdGenerated,
+  bowlWaterModelByIdGenerated
+} from "../../lib/memorial-models.generated";
 
 type Props = {
   terrainUrl?: string | null;
@@ -464,29 +476,20 @@ export default function MemorialPreview({
   );
 }
 
-useGLTF.preload("/models/terrains/TERRAIN_summer.glb");
-useGLTF.preload("/models/terrains/TERRAIN_summer_1.glb");
-useGLTF.preload("/models/terrains/TERRAIN_spring.glb");
-useGLTF.preload("/models/terrains/TERRAIN_autumn.glb");
-useGLTF.preload("/models/terrains/TERRAIN_winter.glb");
-useGLTF.preload("/models/terrains/TERRAIN_winter_1.glb");
-useGLTF.preload("/models/houses/DOM_budka_1.glb");
-useGLTF.preload("/models/houses/DOM_budka_2.glb");
-useGLTF.preload("/models/parts/roof/roof_1.glb");
-useGLTF.preload("/models/parts/roof/roof_2.glb");
-useGLTF.preload("/models/parts/wall/wall_1.glb");
-useGLTF.preload("/models/parts/wall/wall_2.glb");
-useGLTF.preload("/models/parts/sign/sign_1.glb");
-useGLTF.preload("/models/parts/sign/sign_2.glb");
-useGLTF.preload("/models/parts/frame_left/frame_left_1.glb");
-useGLTF.preload("/models/parts/frame_left/frame_left_2.glb");
-useGLTF.preload("/models/parts/frame_right/frame_right_1.glb");
-useGLTF.preload("/models/parts/frame_right/frame_right_2.glb");
-useGLTF.preload("/models/parts/mat/mat_1.glb");
-useGLTF.preload("/models/parts/mat/mat_2.glb");
-useGLTF.preload("/models/parts/bowl_food/bowl_food_1.glb");
-useGLTF.preload("/models/parts/bowl_food/bowl_food_2.glb");
-useGLTF.preload("/models/parts/bowl_food/bowl_food_3.glb");
-useGLTF.preload("/models/parts/bowl_water/bowl_water_1.glb");
-useGLTF.preload("/models/parts/bowl_water/bowl_water_2.glb");
+const preloadUrls = [
+  ...Object.values(environmentModelByIdGenerated),
+  ...Object.values(houseModelByIdGenerated),
+  ...Object.values(roofModelByIdGenerated),
+  ...Object.values(wallModelByIdGenerated),
+  ...Object.values(signModelByIdGenerated),
+  ...Object.values(frameLeftModelByIdGenerated),
+  ...Object.values(frameRightModelByIdGenerated),
+  ...Object.values(matModelByIdGenerated),
+  ...Object.values(bowlFoodModelByIdGenerated),
+  ...Object.values(bowlWaterModelByIdGenerated)
+];
+
+preloadUrls.forEach((url) => {
+  useGLTF.preload(url);
+});
 useGLTF.preload("/models/gifts/candle.glb");
