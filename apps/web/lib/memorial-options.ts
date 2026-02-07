@@ -12,7 +12,11 @@ export const DEFAULT_OPTION: OptionItem = {
 
 export const environmentOptions: OptionItem[] = [
   { id: "summer", name: "Лето", description: "Светлая зелёная поверхность" },
-  { id: "winter", name: "Зима", description: "Снежная поверхность" }
+  { id: "summer_1", name: "Лето 2", description: "Альтернативная летняя поверхность" },
+  { id: "spring", name: "Весна", description: "Весенняя поверхность" },
+  { id: "autumn", name: "Осень", description: "Осенняя поверхность" },
+  { id: "winter", name: "Зима", description: "Снежная поверхность" },
+  { id: "winter_1", name: "Зима 2", description: "Альтернативная зимняя поверхность" }
 ];
 
 export const houseOptions: OptionItem[] = [
@@ -57,7 +61,8 @@ export const matOptions: OptionItem[] = [
 export const bowlFoodOptions: OptionItem[] = [
   { id: "none", name: "Без миски (еда)", description: "Не добавлять элемент" },
   { id: "bowl_food_1", name: "Миска еды 1", description: "Вариант 1" },
-  { id: "bowl_food_2", name: "Миска еды 2", description: "Вариант 2" }
+  { id: "bowl_food_2", name: "Миска еды 2", description: "Вариант 2" },
+  { id: "bowl_food_3", name: "Миска еды 3", description: "Вариант 3" }
 ];
 
 export const bowlWaterOptions: OptionItem[] = [

@@ -465,7 +465,11 @@ export default function MemorialPreview({
 }
 
 useGLTF.preload("/models/terrains/TERRAIN_summer.glb");
+useGLTF.preload("/models/terrains/TERRAIN_summer_1.glb");
+useGLTF.preload("/models/terrains/TERRAIN_spring.glb");
+useGLTF.preload("/models/terrains/TERRAIN_autumn.glb");
 useGLTF.preload("/models/terrains/TERRAIN_winter.glb");
+useGLTF.preload("/models/terrains/TERRAIN_winter_1.glb");
 useGLTF.preload("/models/houses/DOM_budka_1.glb");
 useGLTF.preload("/models/houses/DOM_budka_2.glb");
 useGLTF.preload("/models/parts/roof/roof_1.glb");
@@ -482,6 +486,7 @@ useGLTF.preload("/models/parts/mat/mat_1.glb");
 useGLTF.preload("/models/parts/mat/mat_2.glb");
 useGLTF.preload("/models/parts/bowl_food/bowl_food_1.glb");
 useGLTF.preload("/models/parts/bowl_food/bowl_food_2.glb");
+useGLTF.preload("/models/parts/bowl_food/bowl_food_3.glb");
 useGLTF.preload("/models/parts/bowl_water/bowl_water_1.glb");
 useGLTF.preload("/models/parts/bowl_water/bowl_water_2.glb");
 useGLTF.preload("/models/gifts/candle.glb");

@@ -13,7 +13,11 @@ import {
 
 const environmentModelById: Record<string, string> = {
   summer: "/models/terrains/TERRAIN_summer.glb",
-  winter: "/models/terrains/TERRAIN_winter.glb"
+  summer_1: "/models/terrains/TERRAIN_summer_1.glb",
+  spring: "/models/terrains/TERRAIN_spring.glb",
+  autumn: "/models/terrains/TERRAIN_autumn.glb",
+  winter: "/models/terrains/TERRAIN_winter.glb",
+  winter_1: "/models/terrains/TERRAIN_winter_1.glb"
 };
 
 const houseModelById: Record<string, string> = {
@@ -53,7 +57,8 @@ const matModelById: Record<string, string> = {
 
 const bowlFoodModelById: Record<string, string> = {
   bowl_food_1: "/models/parts/bowl_food/bowl_food_1.glb",
-  bowl_food_2: "/models/parts/bowl_food/bowl_food_2.glb"
+  bowl_food_2: "/models/parts/bowl_food/bowl_food_2.glb",
+  bowl_food_3: "/models/parts/bowl_food/bowl_food_3.glb"
 };
 
 const bowlWaterModelById: Record<string, string> = {
