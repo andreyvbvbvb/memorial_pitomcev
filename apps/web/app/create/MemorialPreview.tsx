@@ -25,6 +25,7 @@ type Props = {
   giftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
+  onGiftSlotsDetected?: (slots: string[]) => void;
   colors?: Record<string, string>;
   backgroundColor?: string;
   className?: string;
@@ -85,6 +86,9 @@ function GiftSlotsOverlay({
   visible: boolean;
   slots?: string[];
 }) {
+  const { scene } = useGLTF("/models/gifts/slot_placeholder.glb");
+  const placeholder = useMemo(() => scene.clone(true), [scene]);
+
   useEffect(() => {
     if (!visible) {
       return;
@@ -110,26 +114,18 @@ function GiftSlotsOverlay({
     }
 
     const markers = anchors.map((anchor) => {
-      const geometry = new THREE.SphereGeometry(0.045, 16, 16);
-      const material = new THREE.MeshBasicMaterial({
-        color: "#ff7a7a",
-        transparent: true,
-        opacity: 0.35
-      });
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.name = "__gift_marker";
-      anchor.add(mesh);
-      return { anchor, mesh, geometry, material };
+      const model = placeholder.clone(true);
+      model.name = "__gift_placeholder";
+      anchor.add(model);
+      return { anchor, model };
     });
 
     return () => {
-      markers.forEach(({ anchor, mesh, geometry, material }) => {
-        anchor.remove(mesh);
-        geometry.dispose();
-        material.dispose();
+      markers.forEach(({ anchor, model }) => {
+        anchor.remove(model);
       });
     };
-  }, [target, visible, slots]);
+  }, [target, visible, slots, placeholder]);
 
   return null;
 }
@@ -139,13 +135,15 @@ function GiftSlotButtons({
   slots,
   visible,
   selectedSlot,
-  onSelectSlot
+  onSelectSlot,
+  onSlotsDetected
 }: {
   terrain: THREE.Object3D;
   slots: string[];
   visible: boolean;
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
+  onSlotsDetected?: (slots: string[]) => void;
 }) {
   const [anchors, setAnchors] = useState<{ slot: string; position: [number, number, number] }[]>([]);
 
@@ -167,7 +165,8 @@ function GiftSlotButtons({
       })
       .filter((item): item is { slot: string; position: [number, number, number] } => Boolean(item));
     setAnchors(points);
-  }, [terrain, slots, visible]);
+    onSlotsDetected?.(points.map((item) => item.slot));
+  }, [terrain, slots, visible, onSlotsDetected]);
 
   if (!visible || !onSelectSlot) {
     return null;
@@ -299,6 +298,7 @@ function TerrainWithHouse({
   giftSlots,
   selectedSlot,
   onSelectSlot,
+  onSlotsDetected,
   onGiftHover,
   onGiftLeave
 }: {
@@ -311,6 +311,7 @@ function TerrainWithHouse({
   giftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
+  onSlotsDetected?: (slots: string[]) => void;
   onGiftHover?: (gift: GiftHover) => void;
   onGiftLeave?: () => void;
 }) {
@@ -348,6 +349,7 @@ function TerrainWithHouse({
           visible={showGiftSlots}
           selectedSlot={selectedSlot}
           onSelectSlot={onSelectSlot}
+          onSlotsDetected={onSlotsDetected}
         />
       ) : null}
       {gifts?.map((gift) => (
@@ -376,6 +378,7 @@ export default function MemorialPreview({
   giftSlots,
   selectedSlot,
   onSelectSlot,
+  onGiftSlotsDetected,
   colors,
   backgroundColor = "#eef6ff",
   className,
@@ -440,6 +443,7 @@ export default function MemorialPreview({
               giftSlots={giftSlots}
               selectedSlot={selectedSlot}
               onSelectSlot={onSelectSlot}
+              onSlotsDetected={onGiftSlotsDetected}
               onGiftHover={setHoveredGift}
               onGiftLeave={() => setHoveredGift(null)}
             />
@@ -493,3 +497,4 @@ preloadUrls.forEach((url) => {
   useGLTF.preload(url);
 });
 useGLTF.preload("/models/gifts/candle.glb");
+useGLTF.preload("/models/gifts/slot_placeholder.glb");

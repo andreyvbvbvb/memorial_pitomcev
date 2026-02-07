@@ -82,6 +82,7 @@ export default function PetClient({ id }: Props) {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(1);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
 
@@ -244,7 +245,11 @@ export default function PetClient({ id }: Props) {
   }, [lightboxIndex, goNext, goPrev, mounted]);
 
   const houseSlots = getHouseSlots(pet?.memorial?.houseId);
-  const terrainGiftSlots = getTerrainGiftSlots(pet?.memorial?.environmentId);
+  useEffect(() => {
+    setDetectedSlots(null);
+  }, [pet?.id]);
+
+  const terrainGiftSlots = detectedSlots ?? getTerrainGiftSlots(pet?.memorial?.environmentId);
   const activeGifts =
     pet?.gifts?.filter((gift) => !gift.expiresAt || new Date(gift.expiresAt) > new Date()) ?? [];
   const occupiedSlots = new Set(activeGifts.map((gift) => gift.slotName));
@@ -608,6 +613,7 @@ export default function PetClient({ id }: Props) {
               giftSlots={availableSlots}
               selectedSlot={selectedSlot}
               onSelectSlot={handleSelectSlot}
+              onGiftSlotsDetected={setDetectedSlots}
               colors={colorOverrides}
             />
           </div>

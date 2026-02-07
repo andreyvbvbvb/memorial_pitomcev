@@ -41,7 +41,13 @@ export const DEFAULT_TERRAIN_GIFT_SLOTS = [
   "gift_slot_1",
   "gift_slot_2",
   "gift_slot_3",
-  "gift_slot_4"
+  "gift_slot_4",
+  "gift_slot_5",
+  "gift_slot_6",
+  "gift_slot_7",
+  "gift_slot_8",
+  "gift_slot_9",
+  "gift_slot_10"
 ];
 
 export const TERRAIN_GIFT_SLOTS: Record<string, string[]> = {};
