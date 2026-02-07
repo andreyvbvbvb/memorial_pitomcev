@@ -39,7 +39,11 @@ export const matModelByIdGenerated = {
 export const bowlFoodModelByIdGenerated = {
   "bowl_food_1": "/models/parts/bowl_food/bowl_food_1.glb",
   "bowl_food_2": "/models/parts/bowl_food/bowl_food_2.glb",
-  "bowl_food_3": "/models/parts/bowl_food/bowl_food_3.glb"
+  "bowl_food_3": "/models/parts/bowl_food/bowl_food_3.glb",
+  "bowl_food_4": "/models/parts/bowl_food/bowl_food_4.glb",
+  "bowl_food_5": "/models/parts/bowl_food/bowl_food_5.glb",
+  "bowl_food_6": "/models/parts/bowl_food/bowl_food_6.glb",
+  "bowl_food_7": "/models/parts/bowl_food/bowl_food_7.glb"
 } as const;
 export const bowlWaterModelByIdGenerated = {
   "bowl_water_1": "/models/parts/bowl_water/bowl_water_1.glb",

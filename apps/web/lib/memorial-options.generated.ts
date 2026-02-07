@@ -137,6 +137,26 @@ export const bowlFoodOptionsGenerated = [
     "id": "bowl_food_3",
     "name": "Миска еды 3",
     "description": "Вариант 3"
+  },
+  {
+    "id": "bowl_food_4",
+    "name": "Миска еды 4",
+    "description": "Вариант 4"
+  },
+  {
+    "id": "bowl_food_5",
+    "name": "Миска еды 5",
+    "description": "Вариант 5"
+  },
+  {
+    "id": "bowl_food_6",
+    "name": "Миска еды 6",
+    "description": "Вариант 6"
+  },
+  {
+    "id": "bowl_food_7",
+    "name": "Миска еды 7",
+    "description": "Вариант 7"
   }
 ] as const;
 export const bowlWaterOptionsGenerated = [
