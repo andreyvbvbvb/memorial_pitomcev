@@ -83,6 +83,7 @@ export default function PetClient({ id }: Props) {
   const [selectedDuration, setSelectedDuration] = useState(1);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
+  const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
 
@@ -247,6 +248,7 @@ export default function PetClient({ id }: Props) {
   const houseSlots = getHouseSlots(pet?.memorial?.houseId);
   useEffect(() => {
     setDetectedSlots(null);
+    setSlotManuallyCleared(false);
   }, [pet?.id]);
 
   const terrainGiftSlots = detectedSlots ?? getTerrainGiftSlots(pet?.memorial?.environmentId);
@@ -260,14 +262,26 @@ export default function PetClient({ id }: Props) {
       setSelectedSlot(null);
       return;
     }
-    if (!selectedSlot || !availableSlots.includes(selectedSlot)) {
+    if (selectedSlot && !availableSlots.includes(selectedSlot)) {
+      setSelectedSlot(availableSlots[0] ?? null);
+      setSlotManuallyCleared(false);
+      return;
+    }
+    if (!selectedSlot && !slotManuallyCleared) {
       setSelectedSlot(availableSlots[0] ?? null);
     }
-  }, [availableSlots, selectedSlot]);
+  }, [availableSlots, selectedSlot, slotManuallyCleared]);
 
   const handleSelectSlot = (slot: string) => {
+    if (selectedSlot === slot) {
+      setSelectedSlot(null);
+      setGiftPreviewEnabled(false);
+      setSlotManuallyCleared(true);
+      return;
+    }
     setSelectedSlot(slot);
     setGiftPreviewEnabled(true);
+    setSlotManuallyCleared(false);
   };
 
   const handleSelectGift = (giftId: string) => {
