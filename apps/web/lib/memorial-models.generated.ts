@@ -47,5 +47,11 @@ export const bowlFoodModelByIdGenerated = {
 } as const;
 export const bowlWaterModelByIdGenerated = {
   "bowl_water_1": "/models/parts/bowl_water/bowl_water_1.glb",
-  "bowl_water_2": "/models/parts/bowl_water/bowl_water_2.glb"
+  "bowl_water_2": "/models/parts/bowl_water/bowl_water_2.glb",
+  "bowl_water_3": "/models/parts/bowl_water/bowl_water_3.glb",
+  "bowl_water_4": "/models/parts/bowl_water/bowl_water_4.glb",
+  "bowl_water_5": "/models/parts/bowl_water/bowl_water_5.glb",
+  "bowl_water_6": "/models/parts/bowl_water/bowl_water_6.glb",
+  "bowl_water_7": "/models/parts/bowl_water/bowl_water_7.glb",
+  "bowl_water_8": "/models/parts/bowl_water/bowl_water_8.glb"
 } as const;

@@ -169,5 +169,35 @@ export const bowlWaterOptionsGenerated = [
     "id": "bowl_water_2",
     "name": "Миска воды 2",
     "description": "Вариант 2"
+  },
+  {
+    "id": "bowl_water_3",
+    "name": "Миска воды 3",
+    "description": "Вариант 3"
+  },
+  {
+    "id": "bowl_water_4",
+    "name": "Миска воды 4",
+    "description": "Вариант 4"
+  },
+  {
+    "id": "bowl_water_5",
+    "name": "Миска воды 5",
+    "description": "Вариант 5"
+  },
+  {
+    "id": "bowl_water_6",
+    "name": "Миска воды 6",
+    "description": "Вариант 6"
+  },
+  {
+    "id": "bowl_water_7",
+    "name": "Миска воды 7",
+    "description": "Вариант 7"
+  },
+  {
+    "id": "bowl_water_8",
+    "name": "Миска воды 8",
+    "description": "Вариант 8"
   }
 ] as const;
