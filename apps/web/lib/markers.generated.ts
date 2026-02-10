@@ -17,6 +17,101 @@ export const markerVariantsGenerated = [
     "url": "/markers/dog.png"
   },
   {
+    "id": "dog_1",
+    "baseId": "dog",
+    "url": "/markers/dog_1.png"
+  },
+  {
+    "id": "dog_10",
+    "baseId": "dog",
+    "url": "/markers/dog_10.png"
+  },
+  {
+    "id": "dog_11",
+    "baseId": "dog",
+    "url": "/markers/dog_11.png"
+  },
+  {
+    "id": "dog_12",
+    "baseId": "dog",
+    "url": "/markers/dog_12.png"
+  },
+  {
+    "id": "dog_13",
+    "baseId": "dog",
+    "url": "/markers/dog_13.png"
+  },
+  {
+    "id": "dog_14",
+    "baseId": "dog",
+    "url": "/markers/dog_14.png"
+  },
+  {
+    "id": "dog_15",
+    "baseId": "dog",
+    "url": "/markers/dog_15.png"
+  },
+  {
+    "id": "dog_16",
+    "baseId": "dog",
+    "url": "/markers/dog_16.png"
+  },
+  {
+    "id": "dog_17",
+    "baseId": "dog",
+    "url": "/markers/dog_17.png"
+  },
+  {
+    "id": "dog_18",
+    "baseId": "dog",
+    "url": "/markers/dog_18.png"
+  },
+  {
+    "id": "dog_19",
+    "baseId": "dog",
+    "url": "/markers/dog_19.png"
+  },
+  {
+    "id": "dog_2",
+    "baseId": "dog",
+    "url": "/markers/dog_2.png"
+  },
+  {
+    "id": "dog_3",
+    "baseId": "dog",
+    "url": "/markers/dog_3.png"
+  },
+  {
+    "id": "dog_4",
+    "baseId": "dog",
+    "url": "/markers/dog_4.png"
+  },
+  {
+    "id": "dog_5",
+    "baseId": "dog",
+    "url": "/markers/dog_5.png"
+  },
+  {
+    "id": "dog_6",
+    "baseId": "dog",
+    "url": "/markers/dog_6.png"
+  },
+  {
+    "id": "dog_7",
+    "baseId": "dog",
+    "url": "/markers/dog_7.png"
+  },
+  {
+    "id": "dog_8",
+    "baseId": "dog",
+    "url": "/markers/dog_8.png"
+  },
+  {
+    "id": "dog_9",
+    "baseId": "dog",
+    "url": "/markers/dog_9.png"
+  },
+  {
     "id": "fish",
     "baseId": "fish",
     "url": "/markers/fish.png"
