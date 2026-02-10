@@ -160,6 +160,7 @@ export default function CreateMemorialClient() {
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<"desktop" | "mobile">("desktop");
   const photosRef = useRef<PhotoDraft[]>([]);
+  const [showOtherMarkers, setShowOtherMarkers] = useState(false);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -305,6 +306,7 @@ export default function CreateMemorialClient() {
   };
 
   const handleSpeciesChange = (value: string) => {
+    setShowOtherMarkers(false);
     setForm((prev) => {
       const nextMarker = firstMarkerVariantId(value) ?? prev.markerStyle;
       return { ...prev, species: value, markerStyle: nextMarker };
@@ -539,11 +541,7 @@ export default function CreateMemorialClient() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div
-        className={`mx-auto ${
-          step === 2 ? "w-full max-w-none lg:w-[75vw]" : "max-w-5xl"
-        }`}
-      >
+      <div className="mx-auto w-full max-w-none lg:w-[80vw]">
         <div className="flex flex-col gap-3">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Создание мемориала</p>
           <h1 className="text-3xl font-semibold text-slate-900">
@@ -641,7 +639,7 @@ export default function CreateMemorialClient() {
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
                         Маркеры выбранного вида
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {markerGroups.primary.map((marker) => {
                           const markerName = markerStyleById(marker.baseId).name;
                           return (
@@ -649,15 +647,15 @@ export default function CreateMemorialClient() {
                               key={marker.id}
                               type="button"
                               onClick={() => handleChange("markerStyle", marker.id)}
-                              className={`flex items-center justify-center rounded-2xl border px-3 py-3 ${
+                              className={`flex items-center justify-center rounded-2xl border-2 p-1 ${
                                 form.markerStyle === marker.id
                                   ? "border-slate-900 bg-slate-900 text-white"
                                   : "border-slate-200 bg-white text-slate-700"
                               }`}
                             >
                               <span
-                                className="overflow-hidden rounded-2xl bg-slate-100"
-                                style={{ width: 80, height: 80 }}
+                                className="overflow-hidden rounded-xl bg-slate-100"
+                                style={{ width: 60, height: 60 }}
                               >
                                 <img
                                   src={marker.iconUrl}
@@ -674,37 +672,46 @@ export default function CreateMemorialClient() {
 
                   {markerGroups.secondary.length > 0 ? (
                     <div className="grid gap-2">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                        Остальные виды
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {markerGroups.secondary.map((marker) => {
-                          const markerName = markerStyleById(marker.baseId).name;
-                          return (
-                            <button
-                              key={marker.id}
-                              type="button"
-                              onClick={() => handleChange("markerStyle", marker.id)}
-                              className={`flex items-center justify-center rounded-2xl border px-3 py-3 ${
-                                form.markerStyle === marker.id
-                                  ? "border-slate-900 bg-slate-900 text-white"
-                                  : "border-slate-200 bg-white text-slate-700"
-                              }`}
-                            >
-                              <span
-                                className="overflow-hidden rounded-2xl bg-slate-100"
-                                style={{ width: 80, height: 80 }}
+                      <button
+                        type="button"
+                        onClick={() => setShowOtherMarkers((prev) => !prev)}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs uppercase tracking-[0.2em] text-slate-500"
+                      >
+                        Остальные маркеры
+                        <span className="text-base leading-none text-slate-400">
+                          {showOtherMarkers ? "−" : "+"}
+                        </span>
+                      </button>
+                      {showOtherMarkers ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {markerGroups.secondary.map((marker) => {
+                            const markerName = markerStyleById(marker.baseId).name;
+                            return (
+                              <button
+                                key={marker.id}
+                                type="button"
+                                onClick={() => handleChange("markerStyle", marker.id)}
+                                className={`flex items-center justify-center rounded-2xl border-2 p-1 ${
+                                  form.markerStyle === marker.id
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-200 bg-white text-slate-700"
+                                }`}
                               >
-                                <img
-                                  src={marker.iconUrl}
-                                  alt={markerName}
-                                  className="h-full w-full object-contain"
-                                />
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                                <span
+                                  className="overflow-hidden rounded-xl bg-slate-100"
+                                  style={{ width: 60, height: 60 }}
+                                >
+                                  <img
+                                    src={marker.iconUrl}
+                                    alt={markerName}
+                                    className="h-full w-full object-contain"
+                                  />
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
