@@ -234,18 +234,33 @@ fs.writeFileSync(generatedModelsPath, modelsFile, "utf8");
 fs.writeFileSync(generatedOptionsPath, optionsFile, "utf8");
 
 const markersDir = path.resolve(process.cwd(), "public", "markers");
+const markerIconsDir = path.resolve(process.cwd(), "public", "markers_icons");
 const markerFiles = fs.existsSync(markersDir)
   ? fs
       .readdirSync(markersDir)
       .filter((file) => file.toLowerCase().endsWith(".png"))
   : [];
+const markerIconFiles = fs.existsSync(markerIconsDir)
+  ? fs
+      .readdirSync(markerIconsDir)
+      .filter((file) => file.toLowerCase().endsWith("_icon.png"))
+  : [];
+const markerIconMap = new Map(
+  markerIconFiles.map((file) => {
+    const id = path.basename(file, "_icon.png");
+    return [id, `/markers_icons/${file}`];
+  })
+);
+
 const markerVariants = markerFiles.map((file) => {
   const id = path.basename(file, ".png");
   const baseId = id.split("_")[0] ?? id;
+  const iconUrl = markerIconMap.get(id) ?? `/markers/${file}`;
   return {
     id,
     baseId,
-    url: `/markers/${file}`
+    url: `/markers/${file}`,
+    iconUrl
   };
 });
 

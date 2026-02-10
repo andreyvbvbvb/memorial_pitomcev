@@ -660,7 +660,7 @@ export default function CreateMemorialClient() {
                                 style={{ width: 80, height: 80 }}
                               >
                                 <img
-                                  src={marker.url}
+                                  src={marker.iconUrl}
                                   alt={markerName}
                                   className="h-full w-full object-contain"
                                 />
@@ -696,7 +696,7 @@ export default function CreateMemorialClient() {
                                 style={{ width: 80, height: 80 }}
                               >
                                 <img
-                                  src={marker.url}
+                                  src={marker.iconUrl}
                                   alt={markerName}
                                   className="h-full w-full object-contain"
                                 />

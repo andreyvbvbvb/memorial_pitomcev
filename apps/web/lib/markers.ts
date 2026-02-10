@@ -10,6 +10,7 @@ export type MarkerVariant = {
   id: string;
   baseId: string;
   url: string;
+  iconUrl: string;
 };
 
 export const DEFAULT_MARKER_STYLE: MarkerStyle = {
@@ -35,7 +36,8 @@ export const markerStyles: MarkerStyle[] = [
 const normalizedVariants: MarkerVariant[] = markerVariantsGenerated.map((variant) => ({
   id: variant.id.toLowerCase(),
   baseId: variant.baseId.toLowerCase(),
-  url: variant.url
+  url: variant.url,
+  iconUrl: variant.iconUrl
 }));
 
 const variantOrder = markerStyles.map((style) => style.id);
