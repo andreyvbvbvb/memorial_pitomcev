@@ -11,13 +11,133 @@ export const markerVariantsGenerated = [
     "id": "cat",
     "baseId": "cat",
     "url": "/markers/cat.png",
-    "iconUrl": "/markers/cat.png"
+    "iconUrl": "/markers_icons/cat_icon.png"
+  },
+  {
+    "id": "cat_1",
+    "baseId": "cat",
+    "url": "/markers/cat_1.png",
+    "iconUrl": "/markers/cat_1.png"
+  },
+  {
+    "id": "cat_10",
+    "baseId": "cat",
+    "url": "/markers/cat_10.png",
+    "iconUrl": "/markers/cat_10.png"
+  },
+  {
+    "id": "cat_11",
+    "baseId": "cat",
+    "url": "/markers/cat_11.png",
+    "iconUrl": "/markers/cat_11.png"
+  },
+  {
+    "id": "cat_12",
+    "baseId": "cat",
+    "url": "/markers/cat_12.png",
+    "iconUrl": "/markers/cat_12.png"
+  },
+  {
+    "id": "cat_13",
+    "baseId": "cat",
+    "url": "/markers/cat_13.png",
+    "iconUrl": "/markers/cat_13.png"
+  },
+  {
+    "id": "cat_14",
+    "baseId": "cat",
+    "url": "/markers/cat_14.png",
+    "iconUrl": "/markers/cat_14.png"
+  },
+  {
+    "id": "cat_15",
+    "baseId": "cat",
+    "url": "/markers/cat_15.png",
+    "iconUrl": "/markers/cat_15.png"
+  },
+  {
+    "id": "cat_16",
+    "baseId": "cat",
+    "url": "/markers/cat_16.png",
+    "iconUrl": "/markers/cat_16.png"
+  },
+  {
+    "id": "cat_17",
+    "baseId": "cat",
+    "url": "/markers/cat_17.png",
+    "iconUrl": "/markers/cat_17.png"
+  },
+  {
+    "id": "cat_18",
+    "baseId": "cat",
+    "url": "/markers/cat_18.png",
+    "iconUrl": "/markers/cat_18.png"
+  },
+  {
+    "id": "cat_19",
+    "baseId": "cat",
+    "url": "/markers/cat_19.png",
+    "iconUrl": "/markers/cat_19.png"
+  },
+  {
+    "id": "cat_2",
+    "baseId": "cat",
+    "url": "/markers/cat_2.png",
+    "iconUrl": "/markers/cat_2.png"
+  },
+  {
+    "id": "cat_20",
+    "baseId": "cat",
+    "url": "/markers/cat_20.png",
+    "iconUrl": "/markers/cat_20.png"
+  },
+  {
+    "id": "cat_3",
+    "baseId": "cat",
+    "url": "/markers/cat_3.png",
+    "iconUrl": "/markers/cat_3.png"
+  },
+  {
+    "id": "cat_4",
+    "baseId": "cat",
+    "url": "/markers/cat_4.png",
+    "iconUrl": "/markers/cat_4.png"
+  },
+  {
+    "id": "cat_5",
+    "baseId": "cat",
+    "url": "/markers/cat_5.png",
+    "iconUrl": "/markers/cat_5.png"
+  },
+  {
+    "id": "cat_6",
+    "baseId": "cat",
+    "url": "/markers/cat_6.png",
+    "iconUrl": "/markers/cat_6.png"
+  },
+  {
+    "id": "cat_7",
+    "baseId": "cat",
+    "url": "/markers/cat_7.png",
+    "iconUrl": "/markers/cat_7.png"
+  },
+  {
+    "id": "cat_8",
+    "baseId": "cat",
+    "url": "/markers/cat_8.png",
+    "iconUrl": "/markers/cat_8.png"
+  },
+  {
+    "id": "cat_9",
+    "baseId": "cat",
+    "url": "/markers/cat_9.png",
+    "iconUrl": "/markers/cat_9.png"
   },
   {
     "id": "dog",
     "baseId": "dog",
     "url": "/markers/dog.png",
-    "iconUrl": "/markers/dog.png"
+    "iconUrl": "/markers_icons/dog_icon.png"
   },
   {
     "id": "dog_1",
@@ -155,6 +275,6 @@ export const markerVariantsGenerated = [
     "id": "rat",
     "baseId": "rat",
     "url": "/markers/rat.png",
-    "iconUrl": "/markers/rat.png"
+    "iconUrl": "/markers_icons/rat_icon.png"
   }
 ] as const;
