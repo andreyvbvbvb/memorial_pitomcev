@@ -9,7 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../../lib/config";
-import { markerAnchor, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
+import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 
 type MarkerDto = {
   id: string;
@@ -30,7 +30,7 @@ const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles]
 
 const matchesFilters = (marker: MarkerDto, typeFilter: string, nameFilter: string) => {
   const normalizedName = nameFilter.trim().toLowerCase();
-  const markerType = (marker.markerStyle ?? "other").toLowerCase();
+  const markerType = markerBaseId(marker.markerStyle ?? "other");
   if (typeFilter !== "all" && markerType !== typeFilter) {
     return false;
   }

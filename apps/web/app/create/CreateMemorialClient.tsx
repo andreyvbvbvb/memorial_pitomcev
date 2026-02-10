@@ -16,7 +16,15 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../../lib/memorial-models";
-import { markerAnchor, markerIconUrl, markerSize, markerStyleById, markerStyles } from "../../lib/markers";
+import {
+  firstMarkerVariantId,
+  markerAnchor,
+  markerIconUrl,
+  markerSize,
+  markerStyleById,
+  markerStyles,
+  markerVariantsForSpecies
+} from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
 import { getHouseSlots } from "../../lib/memorial-config";
 import {
@@ -172,6 +180,10 @@ export default function CreateMemorialClient() {
   const markerIconId = form.markerStyle === "other" ? "other" : form.markerStyle;
   const markerPreviewSize = markerSize(form.markerStyle, 43);
   const markerPreviewAnchor = markerAnchor(form.markerStyle, 43);
+  const markerGroups = useMemo(
+    () => markerVariantsForSpecies(form.species),
+    [form.species]
+  );
   const environmentUrl = resolveEnvironmentModel(form.environmentId);
   const houseUrl = resolveHouseModel(form.houseId);
   const houseSlots = getHouseSlots(form.houseId);
@@ -294,8 +306,7 @@ export default function CreateMemorialClient() {
 
   const handleSpeciesChange = (value: string) => {
     setForm((prev) => {
-      const nextMarker =
-        markerStyles.find((style) => style.id === value)?.id ?? prev.markerStyle;
+      const nextMarker = firstMarkerVariantId(value) ?? prev.markerStyle;
       return { ...prev, species: value, markerStyle: nextMarker };
     });
   };
@@ -624,30 +635,78 @@ export default function CreateMemorialClient() {
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
-                <div className="flex flex-wrap gap-2">
-                  {markerStyles.map((style) => (
-                    <button
-                      key={style.id}
-                      type="button"
-                      onClick={() => handleChange("markerStyle", style.id)}
-                      className={`flex items-center justify-center rounded-2xl border px-3 py-3 ${
-                        form.markerStyle === style.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <span
-                        className="overflow-hidden rounded-2xl bg-slate-100"
-                        style={{ width: 80, height: 80 }}
-                      >
-                        <img
-                          src={`/markers/${style.id}.png`}
-                          alt={style.name}
-                          className="h-full w-full object-contain"
-                        />
-                      </span>
-                    </button>
-                  ))}
+                <div className="grid gap-3">
+                  {markerGroups.primary.length > 0 ? (
+                    <div className="grid gap-2">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Маркеры выбранного вида
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {markerGroups.primary.map((marker) => {
+                          const markerName = markerStyleById(marker.baseId).name;
+                          return (
+                            <button
+                              key={marker.id}
+                              type="button"
+                              onClick={() => handleChange("markerStyle", marker.id)}
+                              className={`flex items-center justify-center rounded-2xl border px-3 py-3 ${
+                                form.markerStyle === marker.id
+                                  ? "border-slate-900 bg-slate-900 text-white"
+                                  : "border-slate-200 bg-white text-slate-700"
+                              }`}
+                            >
+                              <span
+                                className="overflow-hidden rounded-2xl bg-slate-100"
+                                style={{ width: 80, height: 80 }}
+                              >
+                                <img
+                                  src={marker.url}
+                                  alt={markerName}
+                                  className="h-full w-full object-contain"
+                                />
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {markerGroups.secondary.length > 0 ? (
+                    <div className="grid gap-2">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                        Остальные виды
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {markerGroups.secondary.map((marker) => {
+                          const markerName = markerStyleById(marker.baseId).name;
+                          return (
+                            <button
+                              key={marker.id}
+                              type="button"
+                              onClick={() => handleChange("markerStyle", marker.id)}
+                              className={`flex items-center justify-center rounded-2xl border px-3 py-3 ${
+                                form.markerStyle === marker.id
+                                  ? "border-slate-900 bg-slate-900 text-white"
+                                  : "border-slate-200 bg-white text-slate-700"
+                              }`}
+                            >
+                              <span
+                                className="overflow-hidden rounded-2xl bg-slate-100"
+                                style={{ width: 80, height: 80 }}
+                              >
+                                <img
+                                  src={marker.url}
+                                  alt={markerName}
+                                  className="h-full w-full object-contain"
+                                />
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
