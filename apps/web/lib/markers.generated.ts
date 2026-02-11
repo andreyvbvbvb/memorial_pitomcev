@@ -5,7 +5,7 @@ export const markerVariantsGenerated = [
     "id": "bird",
     "baseId": "bird",
     "url": "/markers/bird.png",
-    "iconUrl": "/markers/bird.png"
+    "iconUrl": "/markers_icons/bird_icon.png"
   },
   {
     "id": "cat",
@@ -17,121 +17,121 @@ export const markerVariantsGenerated = [
     "id": "cat_1",
     "baseId": "cat",
     "url": "/markers/cat_1.png",
-    "iconUrl": "/markers/cat_1.png"
+    "iconUrl": "/markers_icons/cat_1_icon.png"
   },
   {
     "id": "cat_10",
     "baseId": "cat",
     "url": "/markers/cat_10.png",
-    "iconUrl": "/markers/cat_10.png"
+    "iconUrl": "/markers_icons/cat_10_icon.png"
   },
   {
     "id": "cat_11",
     "baseId": "cat",
     "url": "/markers/cat_11.png",
-    "iconUrl": "/markers/cat_11.png"
+    "iconUrl": "/markers_icons/cat_11_icon.png"
   },
   {
     "id": "cat_12",
     "baseId": "cat",
     "url": "/markers/cat_12.png",
-    "iconUrl": "/markers/cat_12.png"
+    "iconUrl": "/markers_icons/cat_12_icon.png"
   },
   {
     "id": "cat_13",
     "baseId": "cat",
     "url": "/markers/cat_13.png",
-    "iconUrl": "/markers/cat_13.png"
+    "iconUrl": "/markers_icons/cat_13_icon.png"
   },
   {
     "id": "cat_14",
     "baseId": "cat",
     "url": "/markers/cat_14.png",
-    "iconUrl": "/markers/cat_14.png"
+    "iconUrl": "/markers_icons/cat_14_icon.png"
   },
   {
     "id": "cat_15",
     "baseId": "cat",
     "url": "/markers/cat_15.png",
-    "iconUrl": "/markers/cat_15.png"
+    "iconUrl": "/markers_icons/cat_15_icon.png"
   },
   {
     "id": "cat_16",
     "baseId": "cat",
     "url": "/markers/cat_16.png",
-    "iconUrl": "/markers/cat_16.png"
+    "iconUrl": "/markers_icons/cat_16_icon.png"
   },
   {
     "id": "cat_17",
     "baseId": "cat",
     "url": "/markers/cat_17.png",
-    "iconUrl": "/markers/cat_17.png"
+    "iconUrl": "/markers_icons/cat_17_icon.png"
   },
   {
     "id": "cat_18",
     "baseId": "cat",
     "url": "/markers/cat_18.png",
-    "iconUrl": "/markers/cat_18.png"
+    "iconUrl": "/markers_icons/cat_18_icon.png"
   },
   {
     "id": "cat_19",
     "baseId": "cat",
     "url": "/markers/cat_19.png",
-    "iconUrl": "/markers/cat_19.png"
+    "iconUrl": "/markers_icons/cat_19_icon.png"
   },
   {
     "id": "cat_2",
     "baseId": "cat",
     "url": "/markers/cat_2.png",
-    "iconUrl": "/markers/cat_2.png"
+    "iconUrl": "/markers_icons/cat_2_icon.png"
   },
   {
     "id": "cat_20",
     "baseId": "cat",
     "url": "/markers/cat_20.png",
-    "iconUrl": "/markers/cat_20.png"
+    "iconUrl": "/markers_icons/cat_20_icon.png"
   },
   {
     "id": "cat_3",
     "baseId": "cat",
     "url": "/markers/cat_3.png",
-    "iconUrl": "/markers/cat_3.png"
+    "iconUrl": "/markers_icons/cat_3_icon.png"
   },
   {
     "id": "cat_4",
     "baseId": "cat",
     "url": "/markers/cat_4.png",
-    "iconUrl": "/markers/cat_4.png"
+    "iconUrl": "/markers_icons/cat_4_icon.png"
   },
   {
     "id": "cat_5",
     "baseId": "cat",
     "url": "/markers/cat_5.png",
-    "iconUrl": "/markers/cat_5.png"
+    "iconUrl": "/markers_icons/cat_5_icon.png"
   },
   {
     "id": "cat_6",
     "baseId": "cat",
     "url": "/markers/cat_6.png",
-    "iconUrl": "/markers/cat_6.png"
+    "iconUrl": "/markers_icons/cat_6_icon.png"
   },
   {
     "id": "cat_7",
     "baseId": "cat",
     "url": "/markers/cat_7.png",
-    "iconUrl": "/markers/cat_7.png"
+    "iconUrl": "/markers_icons/cat_7_icon.png"
   },
   {
     "id": "cat_8",
     "baseId": "cat",
     "url": "/markers/cat_8.png",
-    "iconUrl": "/markers/cat_8.png"
+    "iconUrl": "/markers_icons/cat_8_icon.png"
   },
   {
     "id": "cat_9",
     "baseId": "cat",
     "url": "/markers/cat_9.png",
-    "iconUrl": "/markers/cat_9.png"
+    "iconUrl": "/markers_icons/cat_9_icon.png"
   },
   {
     "id": "dog",
@@ -143,133 +143,133 @@ export const markerVariantsGenerated = [
     "id": "dog_1",
     "baseId": "dog",
     "url": "/markers/dog_1.png",
-    "iconUrl": "/markers/dog_1.png"
+    "iconUrl": "/markers_icons/dog_1_icon.png"
   },
   {
     "id": "dog_10",
     "baseId": "dog",
     "url": "/markers/dog_10.png",
-    "iconUrl": "/markers/dog_10.png"
+    "iconUrl": "/markers_icons/dog_10_icon.png"
   },
   {
     "id": "dog_11",
     "baseId": "dog",
     "url": "/markers/dog_11.png",
-    "iconUrl": "/markers/dog_11.png"
+    "iconUrl": "/markers_icons/dog_11_icon.png"
   },
   {
     "id": "dog_12",
     "baseId": "dog",
     "url": "/markers/dog_12.png",
-    "iconUrl": "/markers/dog_12.png"
+    "iconUrl": "/markers_icons/dog_12_icon.png"
   },
   {
     "id": "dog_13",
     "baseId": "dog",
     "url": "/markers/dog_13.png",
-    "iconUrl": "/markers/dog_13.png"
+    "iconUrl": "/markers_icons/dog_13_icon.png"
   },
   {
     "id": "dog_14",
     "baseId": "dog",
     "url": "/markers/dog_14.png",
-    "iconUrl": "/markers/dog_14.png"
+    "iconUrl": "/markers_icons/dog_14_icon.png"
   },
   {
     "id": "dog_15",
     "baseId": "dog",
     "url": "/markers/dog_15.png",
-    "iconUrl": "/markers/dog_15.png"
+    "iconUrl": "/markers_icons/dog_15_icon.png"
   },
   {
     "id": "dog_16",
     "baseId": "dog",
     "url": "/markers/dog_16.png",
-    "iconUrl": "/markers/dog_16.png"
+    "iconUrl": "/markers_icons/dog_16_icon.png"
   },
   {
     "id": "dog_17",
     "baseId": "dog",
     "url": "/markers/dog_17.png",
-    "iconUrl": "/markers/dog_17.png"
+    "iconUrl": "/markers_icons/dog_17_icon.png"
   },
   {
     "id": "dog_18",
     "baseId": "dog",
     "url": "/markers/dog_18.png",
-    "iconUrl": "/markers/dog_18.png"
+    "iconUrl": "/markers_icons/dog_18_icon.png"
   },
   {
     "id": "dog_19",
     "baseId": "dog",
     "url": "/markers/dog_19.png",
-    "iconUrl": "/markers/dog_19.png"
+    "iconUrl": "/markers_icons/dog_19_icon.png"
   },
   {
     "id": "dog_2",
     "baseId": "dog",
     "url": "/markers/dog_2.png",
-    "iconUrl": "/markers/dog_2.png"
+    "iconUrl": "/markers_icons/dog_2_icon.png"
   },
   {
     "id": "dog_3",
     "baseId": "dog",
     "url": "/markers/dog_3.png",
-    "iconUrl": "/markers/dog_3.png"
+    "iconUrl": "/markers_icons/dog_3_icon.png"
   },
   {
     "id": "dog_4",
     "baseId": "dog",
     "url": "/markers/dog_4.png",
-    "iconUrl": "/markers/dog_4.png"
+    "iconUrl": "/markers_icons/dog_4_icon.png"
   },
   {
     "id": "dog_5",
     "baseId": "dog",
     "url": "/markers/dog_5.png",
-    "iconUrl": "/markers/dog_5.png"
+    "iconUrl": "/markers_icons/dog_5_icon.png"
   },
   {
     "id": "dog_6",
     "baseId": "dog",
     "url": "/markers/dog_6.png",
-    "iconUrl": "/markers/dog_6.png"
+    "iconUrl": "/markers_icons/dog_6_icon.png"
   },
   {
     "id": "dog_7",
     "baseId": "dog",
     "url": "/markers/dog_7.png",
-    "iconUrl": "/markers/dog_7.png"
+    "iconUrl": "/markers_icons/dog_7_icon.png"
   },
   {
     "id": "dog_8",
     "baseId": "dog",
     "url": "/markers/dog_8.png",
-    "iconUrl": "/markers/dog_8.png"
+    "iconUrl": "/markers_icons/dog_8_icon.png"
   },
   {
     "id": "dog_9",
     "baseId": "dog",
     "url": "/markers/dog_9.png",
-    "iconUrl": "/markers/dog_9.png"
+    "iconUrl": "/markers_icons/dog_9_icon.png"
   },
   {
     "id": "fish",
     "baseId": "fish",
     "url": "/markers/fish.png",
-    "iconUrl": "/markers/fish.png"
+    "iconUrl": "/markers_icons/fish_icon.png"
   },
   {
     "id": "gryzun",
     "baseId": "gryzun",
     "url": "/markers/gryzun.png",
-    "iconUrl": "/markers/gryzun.png"
+    "iconUrl": "/markers_icons/gryzun_icon.png"
   },
   {
     "id": "other",
     "baseId": "other",
     "url": "/markers/other.png",
-    "iconUrl": "/markers/other.png"
+    "iconUrl": "/markers_icons/other_icon.png"
   },
   {
     "id": "rat",

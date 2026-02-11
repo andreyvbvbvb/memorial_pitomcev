@@ -647,7 +647,7 @@ export default function CreateMemorialClient() {
                               key={marker.id}
                               type="button"
                               onClick={() => handleChange("markerStyle", marker.id)}
-                              className={`flex items-center justify-center rounded-2xl border-2 p-1 ${
+                              className={`flex items-center justify-center rounded-2xl border p-1 ${
                                 form.markerStyle === marker.id
                                   ? "border-slate-900 bg-slate-900 text-white"
                                   : "border-slate-200 bg-white text-slate-700"
@@ -691,7 +691,7 @@ export default function CreateMemorialClient() {
                                 key={marker.id}
                                 type="button"
                                 onClick={() => handleChange("markerStyle", marker.id)}
-                                className={`flex items-center justify-center rounded-2xl border-2 p-1 ${
+                                className={`flex items-center justify-center rounded-2xl border p-1 ${
                                   form.markerStyle === marker.id
                                     ? "border-slate-900 bg-slate-900 text-white"
                                     : "border-slate-200 bg-white text-slate-700"
