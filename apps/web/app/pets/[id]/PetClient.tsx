@@ -16,6 +16,12 @@ import {
   resolveBowlWaterModel
 } from "../../../lib/memorial-models";
 import { getHouseSlots, getTerrainGiftSlots } from "../../../lib/memorial-config";
+import {
+  getGiftAvailableTypes,
+  getGiftSlotType,
+  resolveGiftModelUrl,
+  resolveGiftIconUrl
+} from "../../../lib/gifts";
 
 type Pet = {
   id: string;
@@ -40,7 +46,7 @@ type Pet = {
     slotName: string;
     placedAt: string;
     expiresAt: string | null;
-    gift: { id: string; name: string; price: number; modelUrl: string };
+    gift: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
     owner?: {
       id: string;
       email: string | null;
@@ -74,7 +80,7 @@ export default function PetClient({ id }: Props) {
   const [topUpVisible, setTopUpVisible] = useState(false);
   const [topUpError, setTopUpError] = useState<string | null>(null);
   const [giftCatalog, setGiftCatalog] = useState<
-    { id: string; name: string; price: number; modelUrl: string }[]
+    { id: string; code?: string | null; name: string; price: number; modelUrl: string }[]
   >([]);
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftLoading, setGiftLoading] = useState(false);
@@ -184,6 +190,7 @@ export default function PetClient({ id }: Props) {
         }
         const data = (await response.json()) as {
           id: string;
+          code?: string | null;
           name: string;
           price: number;
           modelUrl: string;
@@ -256,21 +263,28 @@ export default function PetClient({ id }: Props) {
     pet?.gifts?.filter((gift) => !gift.expiresAt || new Date(gift.expiresAt) > new Date()) ?? [];
   const occupiedSlots = new Set(activeGifts.map((gift) => gift.slotName));
   const availableSlots = terrainGiftSlots.filter((slot) => !occupiedSlots.has(slot));
+  const selectedGift =
+    giftCatalog.find((gift) => gift.id === selectedGiftId) ?? giftCatalog[0] ?? null;
+  const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
+  const filteredAvailableSlots =
+    selectedGiftTypes.length > 0
+      ? availableSlots.filter((slot) => selectedGiftTypes.includes(getGiftSlotType(slot)))
+      : availableSlots;
 
   useEffect(() => {
-    if (availableSlots.length === 0) {
+    if (filteredAvailableSlots.length === 0) {
       setSelectedSlot(null);
       return;
     }
-    if (selectedSlot && !availableSlots.includes(selectedSlot)) {
-      setSelectedSlot(availableSlots[0] ?? null);
+    if (selectedSlot && !filteredAvailableSlots.includes(selectedSlot)) {
+      setSelectedSlot(filteredAvailableSlots[0] ?? null);
       setSlotManuallyCleared(false);
       return;
     }
     if (!selectedSlot && !slotManuallyCleared) {
-      setSelectedSlot(availableSlots[0] ?? null);
+      setSelectedSlot(filteredAvailableSlots[0] ?? null);
     }
-  }, [availableSlots, selectedSlot, slotManuallyCleared]);
+  }, [filteredAvailableSlots, selectedSlot, slotManuallyCleared]);
 
   const handleSelectSlot = (slot: string) => {
     if (selectedSlot === slot) {
@@ -434,21 +448,32 @@ export default function PetClient({ id }: Props) {
       ownerPets.length > 0
         ? ownerPets.map((petItem) => petItem.name).join(", ")
         : gift.owner?.login ?? gift.owner?.email ?? "—";
+    const slotType = getGiftSlotType(gift.slotName);
+    const resolvedUrl =
+      resolveGiftModelUrl({ gift: gift.gift, slotType, fallbackUrl: gift.gift.modelUrl }) ??
+      gift.gift.modelUrl;
     return {
       slot: gift.slotName,
-      url: gift.gift.modelUrl,
+      url: resolvedUrl,
       name: gift.gift.name,
       owner: ownerLabel,
       expiresAt: gift.expiresAt ?? undefined
     };
   });
-  const selectedGift =
-    giftCatalog.find((gift) => gift.id === selectedGiftId) ?? giftCatalog[0] ?? null;
+  const selectedSlotType = selectedSlot ? getGiftSlotType(selectedSlot) : null;
+  const previewGiftUrl =
+    resolveGiftModelUrl({ gift: selectedGift ?? undefined, slotType: selectedSlotType }) ??
+    selectedGift?.modelUrl ??
+    null;
   const previewGift =
-    giftPreviewEnabled && selectedGift && selectedSlot && !occupiedSlots.has(selectedSlot)
+    giftPreviewEnabled &&
+    selectedGift &&
+    selectedSlot &&
+    !occupiedSlots.has(selectedSlot) &&
+    previewGiftUrl
       ? {
           slot: selectedSlot,
-          url: selectedGift.modelUrl,
+          url: previewGiftUrl,
           name: selectedGift.name,
           owner: currentUser?.login ?? currentUser?.email ?? "—",
           expiresAt: null
@@ -549,7 +574,24 @@ export default function PetClient({ id }: Props) {
                             : "border-slate-200 bg-white text-slate-700"
                         }`}
                       >
-                        {gift.name} · {gift.price} монет/мес
+                        <span className="flex items-center gap-3">
+                          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                            {resolveGiftIconUrl(gift) ? (
+                              <img
+                                src={resolveGiftIconUrl(gift) ?? undefined}
+                                alt=""
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                                onError={(event) => {
+                                  event.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ) : null}
+                          </span>
+                          <span>
+                            {gift.name} · {gift.price} монет/мес
+                          </span>
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -577,11 +619,11 @@ export default function PetClient({ id }: Props) {
 
                 <div className="grid gap-2 text-sm text-slate-700">
                   Слот
-                  {availableSlots.length === 0 ? (
+                  {filteredAvailableSlots.length === 0 ? (
                     <p className="text-sm text-slate-500">Нет свободных слотов.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {availableSlots.map((slot, index) => (
+                      {filteredAvailableSlots.map((slot, index) => (
                         <button
                           key={slot}
                           type="button"
@@ -624,7 +666,7 @@ export default function PetClient({ id }: Props) {
               houseUrl={resolveHouseModel(pet.memorial?.houseId)}
               parts={partList}
               gifts={previewGifts}
-              giftSlots={availableSlots}
+              giftSlots={filteredAvailableSlots}
               selectedSlot={selectedSlot}
               onSelectSlot={handleSelectSlot}
               onGiftSlotsDetected={setDetectedSlots}

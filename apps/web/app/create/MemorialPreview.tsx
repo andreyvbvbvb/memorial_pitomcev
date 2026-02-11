@@ -16,6 +16,7 @@ import {
   bowlFoodModelByIdGenerated,
   bowlWaterModelByIdGenerated
 } from "../../lib/memorial-models.generated";
+import { isGiftSlotName, parseGiftSlot } from "../../lib/gifts";
 
 type Props = {
   terrainUrl?: string | null;
@@ -45,6 +46,31 @@ const Color = "color" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 const Group = "group" as unknown as React.ComponentType<any>;
+
+const collectGiftSlots = (target: THREE.Object3D) => {
+  const found = new Set<string>();
+  target.traverse((node) => {
+    if (!isGiftSlotName(node.name)) {
+      return;
+    }
+    found.add(node.name);
+  });
+  return Array.from(found).sort((a, b) => {
+    const aInfo = parseGiftSlot(a);
+    const bInfo = parseGiftSlot(b);
+    const aType = aInfo?.type ?? "";
+    const bType = bInfo?.type ?? "";
+    if (aType !== bType) {
+      return aType.localeCompare(bType);
+    }
+    const aIndex = aInfo?.index ?? null;
+    const bIndex = bInfo?.index ?? null;
+    if (aIndex !== null && bIndex !== null && aIndex !== bIndex) {
+      return aIndex - bIndex;
+    }
+    return a.localeCompare(b);
+  });
+};
 
 function Model({ url, position }: { url: string; position?: [number, number, number] }) {
   const { scene } = useGLTF(url);
@@ -97,19 +123,17 @@ function GiftSlotsOverlay({
     const allowed = slots && slots.length > 0 ? new Set(slots) : null;
     const anchors: THREE.Object3D[] = [];
     target.traverse((node) => {
-      if (!node.name || !node.name.toLowerCase().startsWith("gift_slot_")) {
+      if (!isGiftSlotName(node.name)) {
         return;
       }
       if (allowed && !allowed.has(node.name)) {
         return;
       }
-      if (node.name && node.name.toLowerCase().startsWith("gift_slot_")) {
-        anchors.push(node);
-      }
+      anchors.push(node);
     });
 
     if (anchors.length === 0) {
-      console.warn("[MemorialPreview] Не найдено ни одной метки gift_slot_*");
+      console.warn("[MemorialPreview] Не найдено ни одной метки gift_*");
       return;
     }
 
@@ -337,6 +361,14 @@ function TerrainWithHouse({
     applyMaterialColors(terrain, colors);
     applyMaterialColors(house, colors);
   }, [terrain, house, colors]);
+
+  useEffect(() => {
+    if (!onSlotsDetected) {
+      return;
+    }
+    const detected = collectGiftSlots(terrain);
+    onSlotsDetected(detected);
+  }, [terrain, onSlotsDetected]);
 
   return (
     <>

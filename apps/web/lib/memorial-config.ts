@@ -38,16 +38,16 @@ export const getHouseSlots = (houseId?: string | null): HouseSlots =>
   HOUSE_SLOTS[houseId ?? ""] ?? DEFAULT_HOUSE_SLOTS;
 
 export const DEFAULT_TERRAIN_GIFT_SLOTS = [
-  "gift_slot_1",
-  "gift_slot_2",
-  "gift_slot_3",
-  "gift_slot_4",
-  "gift_slot_5",
-  "gift_slot_6",
-  "gift_slot_7",
-  "gift_slot_8",
-  "gift_slot_9",
-  "gift_slot_10"
+  "gift_ground_1",
+  "gift_ground_2",
+  "gift_ground_3",
+  "gift_ground_4",
+  "gift_ground_5",
+  "gift_ground_6",
+  "gift_ground_7",
+  "gift_ground_8",
+  "gift_ground_9",
+  "gift_ground_10"
 ];
 
 export const TERRAIN_GIFT_SLOTS: Record<string, string[]> = {};

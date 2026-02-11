@@ -32,18 +32,6 @@ export const markerVariantsGenerated = [
     "iconUrl": "/markers_icons/cat_11_icon.png"
   },
   {
-    "id": "cat_12",
-    "baseId": "cat",
-    "url": "/markers/cat_12.png",
-    "iconUrl": "/markers_icons/cat_12_icon.png"
-  },
-  {
-    "id": "cat_13",
-    "baseId": "cat",
-    "url": "/markers/cat_13.png",
-    "iconUrl": "/markers_icons/cat_13_icon.png"
-  },
-  {
     "id": "cat_14",
     "baseId": "cat",
     "url": "/markers/cat_14.png",
