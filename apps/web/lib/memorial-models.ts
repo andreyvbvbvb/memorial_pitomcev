@@ -12,6 +12,7 @@ import {
 } from "./memorial-options";
 import {
   environmentModelByIdGenerated,
+  environmentSeasonModelsByIdGenerated,
   houseModelByIdGenerated,
   roofModelByIdGenerated,
   wallModelByIdGenerated,
@@ -24,6 +25,8 @@ import {
 } from "./memorial-models.generated";
 
 const environmentModelById: Record<string, string> = environmentModelByIdGenerated;
+const environmentSeasonModelsById: Record<string, Record<string, string>> =
+  environmentSeasonModelsByIdGenerated as Record<string, Record<string, string>>;
 const houseModelById: Record<string, string> = houseModelByIdGenerated;
 const roofModelById: Record<string, string> = roofModelByIdGenerated;
 const wallModelById: Record<string, string> = wallModelByIdGenerated;
@@ -34,18 +37,55 @@ const matModelById: Record<string, string> = matModelByIdGenerated;
 const bowlFoodModelById: Record<string, string> = bowlFoodModelByIdGenerated;
 const bowlWaterModelById: Record<string, string> = bowlWaterModelByIdGenerated;
 
-const resolveOptionalModel = (
-  map: Record<string, string>,
-  id?: string | null
-) => {
+const resolveOptionalModel = (map: Record<string, string>, id?: string | null) => {
   if (!id || id === "none") {
     return null;
   }
   return map[id] ?? null;
 };
 
-export const resolveEnvironmentModel = (id?: string | null) =>
-  environmentModelById[id ?? ""] ?? environmentModelById[environmentOptions[0]?.id ?? ""];
+export type SeasonKey = "spring" | "summer" | "autumn" | "winter";
+
+const seasonSuffixes: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
+
+const normalizeEnvironmentId = (id?: string | null) => {
+  if (!id) return "";
+  const normalized = id.trim();
+  const lower = normalized.toLowerCase();
+  for (const season of seasonSuffixes) {
+    const suffix = `_${season}`;
+    if (lower.endsWith(suffix)) {
+      const base = normalized.slice(0, -suffix.length);
+      return base || normalized;
+    }
+  }
+  return normalized;
+};
+
+export const getSeasonForDate = (date = new Date()): SeasonKey => {
+  const month = date.getMonth();
+  if (month >= 2 && month <= 4) return "spring";
+  if (month >= 5 && month <= 7) return "summer";
+  if (month >= 8 && month <= 10) return "autumn";
+  return "winter";
+};
+
+export const resolveEnvironmentModel = (
+  id?: string | null,
+  season?: SeasonKey | "auto" | null
+) => {
+  const baseId = normalizeEnvironmentId(id);
+  const seasonal = environmentSeasonModelsById[baseId];
+  if (seasonal) {
+    const seasonKey =
+      season === "auto" ? getSeasonForDate() : season ?? "summer";
+    return seasonal[seasonKey] ?? seasonal.summer ?? Object.values(seasonal)[0];
+  }
+  return (
+    environmentModelById[id ?? ""] ??
+    environmentModelById[environmentOptions[0]?.id ?? ""]
+  );
+};
 
 export const resolveHouseModel = (id?: string | null) =>
   houseModelById[id ?? ""] ?? houseModelById[houseOptions[0]?.id ?? ""];

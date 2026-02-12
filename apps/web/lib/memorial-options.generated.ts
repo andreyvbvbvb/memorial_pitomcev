@@ -8,13 +8,8 @@ export type GeneratedOptionItem = {
 
 export const environmentOptionsGenerated = [
   {
-    "id": "summer",
-    "name": "Лето",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "summer_1",
-    "name": "Лето 1",
+    "id": "autumn",
+    "name": "Осень",
     "description": "Автодобавлено"
   },
   {
@@ -23,8 +18,13 @@ export const environmentOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "autumn",
-    "name": "Осень",
+    "id": "summer",
+    "name": "Лето",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "summer_1",
+    "name": "Summer 1",
     "description": "Автодобавлено"
   },
   {
@@ -34,7 +34,7 @@ export const environmentOptionsGenerated = [
   },
   {
     "id": "winter_1",
-    "name": "Зима 1",
+    "name": "Winter 1",
     "description": "Автодобавлено"
   }
 ] as const;

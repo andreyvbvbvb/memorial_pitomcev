@@ -185,7 +185,7 @@ export default function CreateMemorialClient() {
     () => markerVariantsForSpecies(form.species),
     [form.species]
   );
-  const environmentUrl = resolveEnvironmentModel(form.environmentId);
+  const environmentUrl = resolveEnvironmentModel(form.environmentId, "summer");
   const houseUrl = resolveHouseModel(form.houseId);
   const houseSlots = getHouseSlots(form.houseId);
   const roofUrl = resolveRoofModel(form.roofId);

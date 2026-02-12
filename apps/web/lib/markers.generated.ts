@@ -254,6 +254,114 @@ export const markerVariantsGenerated = [
     "iconUrl": "/markers_icons/gryzun_icon.png"
   },
   {
+    "id": "gryzun_1",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_1.png",
+    "iconUrl": "/markers_icons/gryzun_1_icon.png"
+  },
+  {
+    "id": "gryzun_10",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_10.png",
+    "iconUrl": "/markers_icons/gryzun_10_icon.png"
+  },
+  {
+    "id": "gryzun_11",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_11.png",
+    "iconUrl": "/markers_icons/gryzun_11_icon.png"
+  },
+  {
+    "id": "gryzun_12",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_12.png",
+    "iconUrl": "/markers_icons/gryzun_12_icon.png"
+  },
+  {
+    "id": "gryzun_13",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_13.png",
+    "iconUrl": "/markers_icons/gryzun_13_icon.png"
+  },
+  {
+    "id": "gryzun_14",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_14.png",
+    "iconUrl": "/markers_icons/gryzun_14_icon.png"
+  },
+  {
+    "id": "gryzun_15",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_15.png",
+    "iconUrl": "/markers_icons/gryzun_15_icon.png"
+  },
+  {
+    "id": "gryzun_16",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_16.png",
+    "iconUrl": "/markers_icons/gryzun_16_icon.png"
+  },
+  {
+    "id": "gryzun_17",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_17.png",
+    "iconUrl": "/markers_icons/gryzun_17_icon.png"
+  },
+  {
+    "id": "gryzun_18",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_18.png",
+    "iconUrl": "/markers_icons/gryzun_18_icon.png"
+  },
+  {
+    "id": "gryzun_2",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_2.png",
+    "iconUrl": "/markers_icons/gryzun_2_icon.png"
+  },
+  {
+    "id": "gryzun_3",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_3.png",
+    "iconUrl": "/markers_icons/gryzun_3_icon.png"
+  },
+  {
+    "id": "gryzun_4",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_4.png",
+    "iconUrl": "/markers_icons/gryzun_4_icon.png"
+  },
+  {
+    "id": "gryzun_5",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_5.png",
+    "iconUrl": "/markers_icons/gryzun_5_icon.png"
+  },
+  {
+    "id": "gryzun_6",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_6.png",
+    "iconUrl": "/markers_icons/gryzun_6_icon.png"
+  },
+  {
+    "id": "gryzun_7",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_7.png",
+    "iconUrl": "/markers_icons/gryzun_7_icon.png"
+  },
+  {
+    "id": "gryzun_8",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_8.png",
+    "iconUrl": "/markers_icons/gryzun_8_icon.png"
+  },
+  {
+    "id": "gryzun_9",
+    "baseId": "gryzun",
+    "url": "/markers/gryzun_9.png",
+    "iconUrl": "/markers_icons/gryzun_9_icon.png"
+  },
+  {
     "id": "other",
     "baseId": "other",
     "url": "/markers/other.png",

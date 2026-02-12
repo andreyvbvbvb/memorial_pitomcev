@@ -662,7 +662,7 @@ export default function PetClient({ id }: Props) {
           <div className="mt-6">
             <MemorialPreview
               className="h-[660px]"
-              terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId)}
+              terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
               houseUrl={resolveHouseModel(pet.memorial?.houseId)}
               parts={partList}
               gifts={previewGifts}
