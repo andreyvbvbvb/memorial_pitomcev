@@ -1,13 +1,24 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 
+const FLOWER_GIFTS = Array.from({ length: 12 }, (_, index) => {
+  const number = index + 1;
+  return {
+    code: `flower_${number}`,
+    name: `Цветок ${number}`,
+    price: 20,
+    modelUrl: `/models/gifts/flower/flower_${number}.glb`
+  };
+});
+
 const DEFAULT_GIFTS = [
   {
     code: "candle",
     name: "Свеча",
     price: 20,
     modelUrl: "/models/gifts/candle.glb"
-  }
+  },
+  ...FLOWER_GIFTS
 ];
 
 @Injectable()
@@ -33,14 +44,14 @@ export class GiftsService {
   }
 
   private async ensureCatalogSeeded() {
-    const count = await this.prisma.giftCatalog.count();
-    if (count > 0) {
-      return;
-    }
     for (const gift of DEFAULT_GIFTS) {
       await this.prisma.giftCatalog.upsert({
         where: { code: gift.code },
-        update: {},
+        update: {
+          name: gift.name,
+          price: gift.price,
+          modelUrl: gift.modelUrl
+        },
         create: gift
       });
     }

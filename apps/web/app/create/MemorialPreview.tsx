@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Html, OrbitControls, useGLTF } from "@react-three/drei";
+import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -441,6 +441,13 @@ export default function MemorialPreview({
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
   const [showGiftSlots, setShowGiftSlots] = useState(Boolean(onSelectSlot));
   const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
+  const backgroundTexture = useTexture("/nebo.jpg");
+  const hasBackgroundImage = Boolean(backgroundTexture?.image);
+
+  useEffect(() => {
+    backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+    backgroundTexture.needsUpdate = true;
+  }, [backgroundTexture]);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
@@ -481,7 +488,11 @@ export default function MemorialPreview({
         {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
       </button>
       <Canvas camera={{ position: [4, 3, 4], fov: 45 }}>
-        <Color attach="background" args={[backgroundColor]} />
+        {hasBackgroundImage ? (
+          <Primitive attach="background" object={backgroundTexture} />
+        ) : (
+          <Color attach="background" args={[backgroundColor]} />
+        )}
         <AmbientLight intensity={0.7} />
         <DirectionalLight intensity={1} position={[6, 8, 4]} />
         <Suspense fallback={null}>
@@ -526,7 +537,7 @@ export default function MemorialPreview({
           minPolarAngle={0}
           maxPolarAngle={Math.PI / 2}
           minDistance={baseDistance / 2}
-          maxDistance={baseDistance * 2}
+          maxDistance={baseDistance * 2.6}
         />
       </Canvas>
     </div>
