@@ -1,24 +1,13 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 
-const FLOWER_GIFTS = Array.from({ length: 12 }, (_, index) => {
-  const number = index + 1;
-  return {
-    code: `flower_${number}`,
-    name: `Цветок ${number}`,
-    price: 20,
-    modelUrl: `/models/gifts/flower/flower_${number}.glb`
-  };
-});
-
 const DEFAULT_GIFTS = [
   {
     code: "candle",
     name: "Свеча",
     price: 20,
-    modelUrl: "/models/gifts/candle.glb"
-  },
-  ...FLOWER_GIFTS
+    modelUrl: "/models/gifts/candle/candle_1.glb"
+  }
 ];
 
 @Injectable()
@@ -54,6 +43,50 @@ export class GiftsService {
         },
         create: gift
       });
+    }
+    await this.syncCatalogFromAssets();
+  }
+
+  private async syncCatalogFromAssets() {
+    const fs = await import("fs");
+    const path = await import("path");
+    const giftsRoot = path.resolve(process.cwd(), "..", "web", "public", "models", "gifts");
+    if (!fs.existsSync(giftsRoot)) {
+      return;
+    }
+    const typeDirs = fs
+      .readdirSync(giftsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+
+    for (const type of typeDirs) {
+      const typeDir = path.join(giftsRoot, type);
+      if (!fs.existsSync(typeDir)) {
+        continue;
+      }
+      const files = fs
+        .readdirSync(typeDir)
+        .filter((file) => file.toLowerCase().endsWith(".glb"));
+      for (const file of files) {
+        const code = path.basename(file, ".glb");
+        const numeric = code.match(/_(\d+)$/);
+        const number = numeric ? Number(numeric[1]) : null;
+        const titlePrefix = type === "candle" ? "Свеча" : type === "flower" ? "Цветок" : "Подарок";
+        const name = number ? `${titlePrefix} ${number}` : titlePrefix;
+        await this.prisma.giftCatalog.upsert({
+          where: { code },
+          update: {
+            name,
+            modelUrl: `/models/gifts/${type}/${file}`
+          },
+          create: {
+            code,
+            name,
+            price: type === "candle" ? 30 : 20,
+            modelUrl: `/models/gifts/${type}/${file}`
+          }
+        });
+      }
     }
   }
 

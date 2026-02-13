@@ -562,35 +562,33 @@ export default function PetClient({ id }: Props) {
               <div className="grid gap-3">
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {giftCatalog.map((gift) => (
                       <button
                         key={gift.id}
                         type="button"
                         onClick={() => handleSelectGift(gift.id)}
-                        className={`rounded-2xl border px-4 py-2 text-sm ${
+                        className={`relative flex h-24 w-24 items-center justify-center rounded-2xl border ${
                           selectedGiftId === gift.id
                             ? "border-slate-900 bg-slate-900 text-white"
                             : "border-slate-200 bg-white text-slate-700"
                         }`}
                       >
-                        <span className="flex items-center gap-3">
-                          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
-                            {resolveGiftIconUrl(gift) ? (
-                              <img
-                                src={resolveGiftIconUrl(gift) ?? undefined}
-                                alt=""
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                                onError={(event) => {
-                                  event.currentTarget.style.display = "none";
-                                }}
-                              />
-                            ) : null}
-                          </span>
-                          <span>
-                            {gift.name} · {gift.price} монет/мес
-                          </span>
+                        <span className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                          {resolveGiftIconUrl(gift) ? (
+                            <img
+                              src={resolveGiftIconUrl(gift) ?? undefined}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                              onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : null}
+                        </span>
+                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
+                          {gift.price}
                         </span>
                       </button>
                     ))}

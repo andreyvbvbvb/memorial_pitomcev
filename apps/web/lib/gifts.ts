@@ -106,13 +106,23 @@ export const resolveGiftIconUrl = (gift?: { code?: string | null; modelUrl?: str
   return `/gifts_icons/${code}.png`;
 };
 
-const giftHeightRules = [
-  { prefix: "flower_", height: 0.3 }
-];
+const giftWidthRules = [{ prefix: "flower_", width: 0.6 }];
 
-export const resolveGiftTargetHeight = (gift?: { code?: string | null; modelUrl?: string | null }) => {
+const resolveCandleWidth = (code: string) => {
+  const match = code.match(/^candle_(\d+)$/);
+  if (!match) return null;
+  const number = Number(match[1]);
+  if (Number.isNaN(number)) return null;
+  return number <= 8 ? 0.3 : 1;
+};
+
+export const resolveGiftTargetWidth = (gift?: { code?: string | null; modelUrl?: string | null }) => {
   const code = getGiftCode(gift);
   if (!code) return null;
-  const rule = giftHeightRules.find((item) => code.startsWith(item.prefix));
-  return rule ? rule.height : null;
+  const candleWidth = resolveCandleWidth(code);
+  if (candleWidth) {
+    return candleWidth;
+  }
+  const rule = giftWidthRules.find((item) => code.startsWith(item.prefix));
+  return rule ? rule.width : null;
 };

@@ -16,7 +16,7 @@ import {
   bowlFoodModelByIdGenerated,
   bowlWaterModelByIdGenerated
 } from "../../lib/memorial-models.generated";
-import { isGiftSlotName, parseGiftSlot, resolveGiftTargetHeight } from "../../lib/gifts";
+import { isGiftSlotName, parseGiftSlot, resolveGiftTargetWidth } from "../../lib/gifts";
 
 type Props = {
   terrainUrl?: string | null;
@@ -146,17 +146,17 @@ function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, strin
   });
 }
 
-function applyGiftScale(target: THREE.Object3D, height: number) {
-  if (!height || height <= 0) {
+function applyGiftScale(target: THREE.Object3D, width: number) {
+  if (!width || width <= 0) {
     return;
   }
   const box = new THREE.Box3().setFromObject(target);
   const size = new THREE.Vector3();
   box.getSize(size);
-  if (size.y <= 0) {
+  if (size.x <= 0) {
     return;
   }
-  const scale = height / size.y;
+  const scale = width / size.x;
   target.scale.setScalar(scale);
 }
 
@@ -297,9 +297,9 @@ function GiftPlacementAttachment({
   const { scene } = useGLTF(url);
   const gift = useMemo(() => {
     const cloned = scene.clone(true);
-    const targetHeight = resolveGiftTargetHeight({ modelUrl: url });
-    if (targetHeight) {
-      applyGiftScale(cloned, targetHeight);
+    const targetWidth = resolveGiftTargetWidth({ modelUrl: url });
+    if (targetWidth) {
+      applyGiftScale(cloned, targetWidth);
     }
     return cloned;
   }, [scene, url]);
