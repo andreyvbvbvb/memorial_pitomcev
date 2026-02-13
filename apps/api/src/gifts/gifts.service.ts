@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { generatedGifts } from "./gifts.generated";
 
 const DEFAULT_GIFTS = [
   {
@@ -45,6 +46,7 @@ export class GiftsService {
       });
     }
     await this.syncCatalogFromAssets();
+    await this.syncGeneratedGifts();
   }
 
   private async syncCatalogFromAssets() {
@@ -94,6 +96,25 @@ export class GiftsService {
           }
         });
       }
+    }
+  }
+
+  private async syncGeneratedGifts() {
+    for (const gift of generatedGifts) {
+      await this.prisma.giftCatalog.upsert({
+        where: { code: gift.code },
+        update: {
+          name: gift.name,
+          price: gift.price,
+          modelUrl: gift.modelUrl
+        },
+        create: {
+          code: gift.code,
+          name: gift.name,
+          price: gift.price,
+          modelUrl: gift.modelUrl
+        }
+      });
     }
   }
 
