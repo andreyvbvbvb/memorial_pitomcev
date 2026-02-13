@@ -76,7 +76,7 @@ const collectGiftSlots = (target: THREE.Object3D) => {
 };
 
 function SceneBackground({ backgroundColor }: { backgroundColor: string }) {
-  const texture = useTexture("/nebo.jpg");
+  const texture = useTexture("/nebo.png");
   const hasTexture = Boolean(texture?.image);
   const sphereRef = useRef<THREE.Mesh>(null);
 
