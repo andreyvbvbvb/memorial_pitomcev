@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -46,6 +46,9 @@ const Color = "color" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 const Group = "group" as unknown as React.ComponentType<any>;
+const Mesh = "mesh" as unknown as React.ComponentType<any>;
+const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
+const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 
 const collectGiftSlots = (target: THREE.Object3D) => {
   const found = new Set<string>();
@@ -75,6 +78,7 @@ const collectGiftSlots = (target: THREE.Object3D) => {
 function SceneBackground({ backgroundColor }: { backgroundColor: string }) {
   const texture = useTexture("/nebo.jpg");
   const hasTexture = Boolean(texture?.image);
+  const sphereRef = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
     if (!hasTexture) {
@@ -84,11 +88,31 @@ function SceneBackground({ backgroundColor }: { backgroundColor: string }) {
     texture.needsUpdate = true;
   }, [texture, hasTexture]);
 
-  if (hasTexture) {
-    return <Primitive attach="background" object={texture} />;
+  useFrame(({ camera }) => {
+    if (!sphereRef.current) {
+      return;
+    }
+    sphereRef.current.position.copy(camera.position);
+  });
+
+  if (!hasTexture) {
+    return <Color attach="background" args={[backgroundColor]} />;
   }
 
-  return <Color attach="background" args={[backgroundColor]} />;
+  return (
+    <>
+      <Color attach="background" args={[backgroundColor]} />
+      <Mesh ref={sphereRef} renderOrder={-10}>
+        <SphereGeometry args={[80, 64, 64]} />
+        <MeshBasicMaterial
+          map={texture}
+          side={THREE.BackSide}
+          depthWrite={false}
+          transparent
+        />
+      </Mesh>
+    </>
+  );
 }
 
 function Model({ url, position }: { url: string; position?: [number, number, number] }) {
