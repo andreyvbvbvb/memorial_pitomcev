@@ -563,7 +563,11 @@ export default function PetClient({ id }: Props) {
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
                   <div className="flex flex-wrap gap-3">
-                    {giftCatalog.map((gift) => (
+                    {giftCatalog.map((gift) => {
+                      const iconUrl = resolveGiftIconUrl(gift);
+                      const fallbackIcon =
+                        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                      return (
                       <button
                         key={gift.id}
                         type="button"
@@ -575,14 +579,15 @@ export default function PetClient({ id }: Props) {
                         }`}
                       >
                         <span className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
-                          {resolveGiftIconUrl(gift) ? (
+                          {iconUrl ? (
                             <img
-                              src={resolveGiftIconUrl(gift) ?? undefined}
+                              src={iconUrl ?? undefined}
                               alt=""
                               className="h-full w-full object-cover"
                               loading="lazy"
                               onError={(event) => {
-                                event.currentTarget.style.display = "none";
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = fallbackIcon;
                               }}
                             />
                           ) : null}
@@ -591,7 +596,8 @@ export default function PetClient({ id }: Props) {
                           {gift.price}
                         </span>
                       </button>
-                    ))}
+                    );
+                  })}
                   </div>
                 </div>
 

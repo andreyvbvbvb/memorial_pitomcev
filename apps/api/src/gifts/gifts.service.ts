@@ -50,8 +50,15 @@ export class GiftsService {
   private async syncCatalogFromAssets() {
     const fs = await import("fs");
     const path = await import("path");
-    const giftsRoot = path.resolve(process.cwd(), "..", "web", "public", "models", "gifts");
-    if (!fs.existsSync(giftsRoot)) {
+    const candidates = [
+      process.env.GIFTS_ASSETS_PATH,
+      path.resolve(process.cwd(), "apps", "web", "public", "models", "gifts"),
+      path.resolve(process.cwd(), "..", "web", "public", "models", "gifts"),
+      path.resolve(process.cwd(), "public", "models", "gifts"),
+      path.resolve(__dirname, "..", "..", "..", "web", "public", "models", "gifts")
+    ].filter(Boolean) as string[];
+    const giftsRoot = candidates.find((candidate) => fs.existsSync(candidate));
+    if (!giftsRoot) {
       return;
     }
     const typeDirs = fs
