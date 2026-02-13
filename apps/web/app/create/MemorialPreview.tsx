@@ -72,6 +72,25 @@ const collectGiftSlots = (target: THREE.Object3D) => {
   });
 };
 
+function SceneBackground({ backgroundColor }: { backgroundColor: string }) {
+  const texture = useTexture("/nebo.jpg");
+  const hasTexture = Boolean(texture?.image);
+
+  useEffect(() => {
+    if (!hasTexture) {
+      return;
+    }
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+  }, [texture, hasTexture]);
+
+  if (hasTexture) {
+    return <Primitive attach="background" object={texture} />;
+  }
+
+  return <Color attach="background" args={[backgroundColor]} />;
+}
+
 function Model({ url, position }: { url: string; position?: [number, number, number] }) {
   const { scene } = useGLTF(url);
   const cloned = useMemo(() => scene.clone(true), [scene]);
@@ -441,13 +460,6 @@ export default function MemorialPreview({
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
   const [showGiftSlots, setShowGiftSlots] = useState(Boolean(onSelectSlot));
   const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
-  const backgroundTexture = useTexture("/nebo.jpg");
-  const hasBackgroundImage = Boolean(backgroundTexture?.image);
-
-  useEffect(() => {
-    backgroundTexture.colorSpace = THREE.SRGBColorSpace;
-    backgroundTexture.needsUpdate = true;
-  }, [backgroundTexture]);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
@@ -488,11 +500,7 @@ export default function MemorialPreview({
         {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
       </button>
       <Canvas camera={{ position: [4, 3, 4], fov: 45 }}>
-        {hasBackgroundImage ? (
-          <Primitive attach="background" object={backgroundTexture} />
-        ) : (
-          <Color attach="background" args={[backgroundColor]} />
-        )}
+        <SceneBackground backgroundColor={backgroundColor} />
         <AmbientLight intensity={0.7} />
         <DirectionalLight intensity={1} position={[6, 8, 4]} />
         <Suspense fallback={null}>
