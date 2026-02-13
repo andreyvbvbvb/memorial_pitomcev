@@ -250,6 +250,35 @@ export default function CreateMemorialClient() {
     };
   }, []);
 
+  const today = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now;
+  }, []);
+
+  const dateValidationMessage = useMemo(() => {
+    const birth = form.birthDate ? new Date(form.birthDate) : null;
+    const death = form.deathDate ? new Date(form.deathDate) : null;
+    if (birth && Number.isNaN(birth.getTime())) {
+      return "Проверь дату рождения";
+    }
+    if (death && Number.isNaN(death.getTime())) {
+      return "Проверь дату ухода";
+    }
+    if (birth && birth > today) {
+      return "Дата рождения не может быть позже текущей даты";
+    }
+    if (death && death > today) {
+      return "Дата ухода не может быть позже текущей даты";
+    }
+    if (birth && death && birth > death) {
+      return "Дата рождения должна быть раньше даты ухода";
+    }
+    return null;
+  }, [form.birthDate, form.deathDate, today]);
+
+  const todayInputValue = useMemo(() => today.toISOString().slice(0, 10), [today]);
+
   const validateStep = (current: Step) => {
     if (current === 0) {
       if (!authReady) {
@@ -266,6 +295,9 @@ export default function CreateMemorialClient() {
       }
       if (!form.deathDate) {
         return "Нужно указать дату ухода";
+      }
+      if (dateValidationMessage) {
+        return dateValidationMessage;
       }
     }
     if (current === 1) {
@@ -611,21 +643,31 @@ export default function CreateMemorialClient() {
                   Дата рождения
                   <input
                     type="date"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className={`rounded-2xl border px-4 py-2 ${
+                      dateValidationMessage ? "border-red-400" : "border-slate-200"
+                    }`}
                     value={form.birthDate}
                     onChange={(event) => handleChange("birthDate", event.target.value)}
+                    max={form.deathDate || todayInputValue}
                   />
                 </label>
                 <label className="grid gap-1 text-sm text-slate-700">
                   Дата ухода
                   <input
                     type="date"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className={`rounded-2xl border px-4 py-2 ${
+                      dateValidationMessage ? "border-red-400" : "border-slate-200"
+                    }`}
                     value={form.deathDate}
                     onChange={(event) => handleChange("deathDate", event.target.value)}
+                    min={form.birthDate || undefined}
+                    max={todayInputValue}
                   />
                 </label>
               </div>
+              {dateValidationMessage ? (
+                <p className="text-xs text-red-600">{dateValidationMessage}</p>
+              ) : null}
             </div>
           ) : null}
 
@@ -639,7 +681,7 @@ export default function CreateMemorialClient() {
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
                         Маркеры выбранного вида
                       </p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-1">
                         {markerGroups.primary.map((marker) => {
                           const markerName = markerStyleById(marker.baseId).name;
                           return (
@@ -647,15 +689,15 @@ export default function CreateMemorialClient() {
                               key={marker.id}
                               type="button"
                               onClick={() => handleChange("markerStyle", marker.id)}
-                              className={`flex items-center justify-center rounded-2xl border p-1 ${
+                              className={`flex items-center justify-center rounded-lg border p-0.5 ${
                                 form.markerStyle === marker.id
                                   ? "border-slate-900 bg-slate-900 text-white"
                                   : "border-slate-200 bg-white text-slate-700"
                               }`}
                             >
                               <span
-                                className="overflow-hidden rounded-xl bg-slate-100"
-                                style={{ width: 60, height: 60 }}
+                                className="overflow-hidden rounded-lg bg-slate-100"
+                                style={{ width: 72, height: 72 }}
                               >
                                 <img
                                   src={marker.iconUrl}
@@ -683,7 +725,7 @@ export default function CreateMemorialClient() {
                         </span>
                       </button>
                       {showOtherMarkers ? (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1">
                           {markerGroups.secondary.map((marker) => {
                             const markerName = markerStyleById(marker.baseId).name;
                             return (
@@ -691,15 +733,15 @@ export default function CreateMemorialClient() {
                                 key={marker.id}
                                 type="button"
                                 onClick={() => handleChange("markerStyle", marker.id)}
-                                className={`flex items-center justify-center rounded-2xl border p-1 ${
+                                className={`flex items-center justify-center rounded-lg border p-0.5 ${
                                   form.markerStyle === marker.id
                                     ? "border-slate-900 bg-slate-900 text-white"
                                     : "border-slate-200 bg-white text-slate-700"
                                 }`}
                               >
                                 <span
-                                  className="overflow-hidden rounded-xl bg-slate-100"
-                                  style={{ width: 60, height: 60 }}
+                                  className="overflow-hidden rounded-lg bg-slate-100"
+                                  style={{ width: 72, height: 72 }}
                                 >
                                   <img
                                     src={marker.iconUrl}
