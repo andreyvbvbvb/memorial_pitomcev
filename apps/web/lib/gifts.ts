@@ -105,3 +105,14 @@ export const resolveGiftIconUrl = (gift?: { code?: string | null; modelUrl?: str
   if (!code) return null;
   return `/gifts_icons/${code}.png`;
 };
+
+const giftHeightRules = [
+  { prefix: "flower_", height: 0.3 }
+];
+
+export const resolveGiftTargetHeight = (gift?: { code?: string | null; modelUrl?: string | null }) => {
+  const code = getGiftCode(gift);
+  if (!code) return null;
+  const rule = giftHeightRules.find((item) => code.startsWith(item.prefix));
+  return rule ? rule.height : null;
+};

@@ -16,7 +16,7 @@ import {
   bowlFoodModelByIdGenerated,
   bowlWaterModelByIdGenerated
 } from "../../lib/memorial-models.generated";
-import { isGiftSlotName, parseGiftSlot } from "../../lib/gifts";
+import { isGiftSlotName, parseGiftSlot, resolveGiftTargetHeight } from "../../lib/gifts";
 
 type Props = {
   terrainUrl?: string | null;
@@ -101,6 +101,20 @@ function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, strin
       }
     });
   });
+}
+
+function applyGiftScale(target: THREE.Object3D, height: number) {
+  if (!height || height <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  if (size.y <= 0) {
+    return;
+  }
+  const scale = height / size.y;
+  target.scale.setScalar(scale);
 }
 
 function GiftSlotsOverlay({
@@ -238,7 +252,14 @@ function GiftPlacementAttachment({
   onLeave?: () => void;
 }) {
   const { scene } = useGLTF(url);
-  const gift = useMemo(() => scene.clone(true), [scene]);
+  const gift = useMemo(() => {
+    const cloned = scene.clone(true);
+    const targetHeight = resolveGiftTargetHeight({ modelUrl: url });
+    if (targetHeight) {
+      applyGiftScale(cloned, targetHeight);
+    }
+    return cloned;
+  }, [scene, url]);
   const [position, setPosition] = useState<[number, number, number] | null>(null);
 
   useEffect(() => {

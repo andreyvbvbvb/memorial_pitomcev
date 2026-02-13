@@ -153,10 +153,12 @@ const parseEnvironmentId = (id) => {
 
 const makeEnvironmentOption = (baseId) => {
   const number = extractNumber(baseId);
+  const isNumericId = /^[0-9]+$/.test(baseId);
+  const labelNumber = isNumericId ? baseId : number;
   const name =
     envNameMap[baseId] ??
-    (number !== null && String(number) === baseId
-      ? `Поверхность ${number}`
+    (isNumericId
+      ? `Поверхность ${labelNumber}`
       : humanize(baseId));
   return {
     id: baseId,

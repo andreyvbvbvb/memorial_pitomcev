@@ -8,33 +8,8 @@ export type GeneratedOptionItem = {
 
 export const environmentOptionsGenerated = [
   {
-    "id": "autumn",
-    "name": "Осень",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "spring",
-    "name": "Весна",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "summer",
-    "name": "Лето",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "summer_1",
-    "name": "Summer 1",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "winter",
-    "name": "Зима",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "winter_1",
-    "name": "Winter 1",
+    "id": "2",
+    "name": "Поверхность 2",
     "description": "Автодобавлено"
   }
 ] as const;
