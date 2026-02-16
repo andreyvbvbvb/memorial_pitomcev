@@ -160,6 +160,20 @@ function applyGiftScale(target: THREE.Object3D, width: number) {
   target.scale.setScalar(scale);
 }
 
+function applyPartScale(target: THREE.Object3D, width: number) {
+  if (!width || width <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  if (size.x <= 0) {
+    return;
+  }
+  const scale = width / size.x;
+  target.scale.setScalar(scale);
+}
+
 function GiftSlotsOverlay({
   target,
   visible,
@@ -362,6 +376,9 @@ function PartAttachment({
     if (!anchor) {
       console.warn(`[MemorialPreview] slot '${slot}' не найден`);
       return;
+    }
+    if (slot === "mat_slot") {
+      applyPartScale(part, 2);
     }
     anchor.add(part);
     return () => {

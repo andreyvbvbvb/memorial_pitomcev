@@ -95,6 +95,71 @@ export const matOptionsGenerated = [
     "id": "mat_2",
     "name": "Коврик 2",
     "description": "Вариант 2"
+  },
+  {
+    "id": "mat_3",
+    "name": "Коврик 3",
+    "description": "Вариант 3"
+  },
+  {
+    "id": "mat_4",
+    "name": "Коврик 4",
+    "description": "Вариант 4"
+  },
+  {
+    "id": "mat_5",
+    "name": "Коврик 5",
+    "description": "Вариант 5"
+  },
+  {
+    "id": "mat_6",
+    "name": "Коврик 6",
+    "description": "Вариант 6"
+  },
+  {
+    "id": "mat_7",
+    "name": "Коврик 7",
+    "description": "Вариант 7"
+  },
+  {
+    "id": "mat_8",
+    "name": "Коврик 8",
+    "description": "Вариант 8"
+  },
+  {
+    "id": "mat_9",
+    "name": "Коврик 9",
+    "description": "Вариант 9"
+  },
+  {
+    "id": "mat_10",
+    "name": "Коврик 10",
+    "description": "Вариант 10"
+  },
+  {
+    "id": "mat_11",
+    "name": "Коврик 11",
+    "description": "Вариант 11"
+  },
+  {
+    "id": "mat_12",
+    "name": "Коврик 12",
+    "description": "Вариант 12"
+  },
+  {
+    "id": "mat_13",
+    "name": "Коврик 13",
+    "description": "Вариант 13"
+  },
+  {
+    "id": "mat_14",
+    "name": "Коврик 14",
+    "description": "Вариант 14"
+  },
+  {
+    "id": "mat_15",
+    "name": "Коврик 15",
+    "description": "Вариант 15"
   }
 ] as const;
 export const bowlFoodOptionsGenerated = [

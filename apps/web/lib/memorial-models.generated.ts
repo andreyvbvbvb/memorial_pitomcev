@@ -37,7 +37,20 @@ export const frameRightModelByIdGenerated = {
 } as const;
 export const matModelByIdGenerated = {
   "mat_1": "/models/parts/mat/mat_1.glb",
-  "mat_2": "/models/parts/mat/mat_2.glb"
+  "mat_2": "/models/parts/mat/mat_2.glb",
+  "mat_3": "/models/parts/mat/mat_3.glb",
+  "mat_4": "/models/parts/mat/mat_4.glb",
+  "mat_5": "/models/parts/mat/mat_5.glb",
+  "mat_6": "/models/parts/mat/mat_6.glb",
+  "mat_7": "/models/parts/mat/mat_7.glb",
+  "mat_8": "/models/parts/mat/mat_8.glb",
+  "mat_9": "/models/parts/mat/mat_9.glb",
+  "mat_10": "/models/parts/mat/mat_10.glb",
+  "mat_11": "/models/parts/mat/mat_11.glb",
+  "mat_12": "/models/parts/mat/mat_12.glb",
+  "mat_13": "/models/parts/mat/mat_13.glb",
+  "mat_14": "/models/parts/mat/mat_14.glb",
+  "mat_15": "/models/parts/mat/mat_15.glb"
 } as const;
 export const bowlFoodModelByIdGenerated = {
   "bowl_food_1": "/models/parts/bowl_food/bowl_food_1.glb",
