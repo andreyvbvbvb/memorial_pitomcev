@@ -44,8 +44,8 @@ export default function ErrorToast({
 
   return (
     <div
-      className={`fixed left-6 z-[999] max-w-[320px] transition-all duration-200 ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      className={`fixed right-6 z-[999] max-w-[320px] transition-all duration-200 ${
+        visible ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0"
       }`}
       style={{ bottom: 24 + offset }}
     >
