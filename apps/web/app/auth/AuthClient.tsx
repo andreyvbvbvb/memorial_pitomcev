@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
+import ErrorToast from "../../components/ErrorToast";
 
 export default function AuthClient() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -252,7 +253,7 @@ export default function AuthClient() {
             </button>
 
             {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            <ErrorToast message={error} onClose={() => setError(null)} />
           </div>
 
           <div className="mt-6 border-t border-slate-100 pt-4">

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../lib/config";
+import ErrorToast from "./ErrorToast";
 
 type AuthMode = "login" | "register";
 
@@ -356,7 +357,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
             </>
           )}
 
-          {error ? <div className="rounded-2xl bg-red-50 p-3 text-xs text-red-700">{error}</div> : null}
+          <ErrorToast message={error} onClose={() => setError(null)} />
           {notice ? <div className="rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-700">{notice}</div> : null}
           {forgotNotice ? (
             <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-700">{forgotNotice}</div>

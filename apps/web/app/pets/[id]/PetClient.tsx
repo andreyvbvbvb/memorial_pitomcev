@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../../lib/config";
 import MemorialPreview from "../../create/MemorialPreview";
+import ErrorToast from "../../../components/ErrorToast";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -646,7 +647,7 @@ export default function PetClient({ id }: Props) {
                   )}
                 </div>
 
-                {giftError ? <p className="text-sm text-red-600">{giftError}</p> : null}
+                <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />
 
                 <button
                   type="button"
@@ -789,7 +790,7 @@ export default function PetClient({ id }: Props) {
                 </button>
               ))}
             </div>
-            {topUpError ? <p className="mt-3 text-sm text-red-600">{topUpError}</p> : null}
+            <ErrorToast message={topUpError} onClose={() => setTopUpError(null)} offset={72} />
           </div>
         </div>
       ) : null}

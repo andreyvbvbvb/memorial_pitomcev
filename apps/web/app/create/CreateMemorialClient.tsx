@@ -26,6 +26,7 @@ import {
   markerVariantsForSpecies
 } from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
+import ErrorToast from "../../components/ErrorToast";
 import { getHouseSlots } from "../../lib/memorial-config";
 import {
   environmentOptions,
@@ -1286,7 +1287,7 @@ export default function CreateMemorialClient() {
           ) : null}
         </section>
 
-        {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+        <ErrorToast message={error} onClose={() => setError(null)} />
 
         <div className={`mt-6 ${step === 2 && isMobile ? "hidden" : ""}`}>
           {renderNavButtons()}

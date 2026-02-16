@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import MyPets3DView from "../../components/MyPets3DView";
 import { API_BASE } from "../../lib/config";
+import ErrorToast from "../../components/ErrorToast";
 
 type PetPhoto = {
   id: string;
@@ -123,14 +124,12 @@ export default function MyPetsClient() {
 
       {viewMode === 5 ? (
         <section className="mt-10">
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="relative left-1/2 right-1/2 mt-4 w-screen -translate-x-1/2 px-6">
             <MyPets3DView pets={petsWithPreview} loading={loading} />
           </div>
         </section>
       ) : (
         <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
           {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
 
           <div className="mt-6">
@@ -337,6 +336,7 @@ export default function MyPetsClient() {
           </div>
         </section>
       )}
+      <ErrorToast message={error} onClose={() => setError(null)} />
     </div>
   );
 }

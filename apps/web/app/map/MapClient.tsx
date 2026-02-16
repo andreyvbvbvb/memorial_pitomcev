@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../../lib/config";
+import ErrorToast from "../../components/ErrorToast";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 
 type MarkerDto = {
@@ -342,7 +343,6 @@ export default function MapClient() {
             <div className="mt-4 flex-1 overflow-y-auto pr-1">
               <div className="grid gap-3">
                 {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
-                {error ? <p className="text-sm text-red-600">{error}</p> : null}
                 {!loading && !error && listMarkers.length === 0 ? (
                   <p className="text-sm text-slate-500">
                     {hasFilters
@@ -392,9 +392,10 @@ export default function MapClient() {
                     </div>
                   </a>
                 ))}
-              </div>
             </div>
           </div>
+          <ErrorToast message={error} onClose={() => setError(null)} />
+        </div>
         </section>
       </div>
     </main>
