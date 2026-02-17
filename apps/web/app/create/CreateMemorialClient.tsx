@@ -585,33 +585,46 @@ export default function CreateMemorialClient() {
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Создание мемориала</p>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {steps.map((label, index) => {
-            const isActive = index === step;
-            const isClickable = index <= step;
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => {
-                  if (isClickable) {
-                    setError(null);
-                    setStep(index as Step);
-                  }
-                }}
-                className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                  isActive
-                    ? "bg-slate-900 text-white"
-                    : isClickable
-                      ? "bg-white text-slate-700 hover:border-slate-300"
-                      : "bg-slate-100 text-slate-400"
-                }`}
-                disabled={!isClickable}
-              >
-                {index + 1}. {label}
-              </button>
-            );
-          })}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {steps.map((label, index) => {
+              const isActive = index === step;
+              const isClickable = index <= step;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    if (isClickable) {
+                      setError(null);
+                      setStep(index as Step);
+                    }
+                  }}
+                  className={`rounded-full px-4 py-2 text-xs font-semibold ${
+                    isActive
+                      ? "bg-slate-900 text-white"
+                      : isClickable
+                        ? "bg-white text-slate-700 hover:border-slate-300"
+                        : "bg-slate-100 text-slate-400"
+                  }`}
+                  disabled={!isClickable}
+                >
+                  {index + 1}. {label}
+                </button>
+              );
+            })}
+          </div>
+          {step === 2 ? (
+            <button
+              type="button"
+              onClick={() =>
+                setLayoutMode((prev) => (prev === "mobile" ? "desktop" : "mobile"))
+              }
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+            >
+              {isMobile ? "Переключить на десктоп" : "Переключить на мобильную"}
+            </button>
+          ) : null}
         </div>
 
         <section className="mt-6 rounded-2xl bg-transparent p-5">
@@ -863,17 +876,6 @@ export default function CreateMemorialClient() {
 
           {step === 2 ? (
             <div className="grid gap-3">
-              <div className="flex justify-end px-4 lg:px-[2.5%]">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setLayoutMode((prev) => (prev === "mobile" ? "desktop" : "mobile"))
-                  }
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
-                >
-                  {isMobile ? "Переключить на десктоп" : "Переключить на мобильную"}
-                </button>
-              </div>
               <div
                 className={isMobile ? "flex flex-col gap-4" : "grid gap-4"}
                 style={

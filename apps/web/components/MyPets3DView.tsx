@@ -138,18 +138,21 @@ function PartAttachment({
   colors?: Record<string, string>;
 }) {
   const { scene } = useGLTF(url);
-  const part = useMemo(() => scene.clone(true), [scene]);
+  const part = useMemo(() => {
+    const cloned = scene.clone(true);
+    if (slot === "mat_slot") {
+      applyPartFitScale(cloned, 1, 1.5);
+    }
+    if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
+      applyPartScale(cloned, 0.5, "x");
+    }
+    return cloned;
+  }, [scene, slot]);
 
   useEffect(() => {
     const anchor = house.getObjectByName(slot);
     if (!anchor) {
       return;
-    }
-    if (slot === "mat_slot") {
-      applyPartFitScale(part, 1, 1.5);
-    }
-    if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(part, 0.5, "x");
     }
     anchor.add(part);
     return () => {
