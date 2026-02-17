@@ -99,7 +99,7 @@ export default function AppHeader() {
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-[rgba(215,230,242,0.6)] bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2">
           <Link href="/" className="chip">
             Memorial
           </Link>
@@ -108,25 +108,25 @@ export default function AppHeader() {
               <>
                 <Link
                   href="/create"
-                  className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 transition hover:bg-slate-50"
+                  className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-base text-slate-700 transition hover:bg-slate-50"
                   aria-label="Создать мемориал"
                 >
                   <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-0 transition group-hover:opacity-70 group-hover:animate-ping" />
                   <span className="relative z-10">+</span>
-                  <span className="pointer-events-none absolute left-1/2 top-11 -translate-x-1/2 whitespace-nowrap rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
+                  <span className="pointer-events-none absolute left-1/2 top-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
                     Создать мемориал
                   </span>
                 </Link>
-                <Link className="btn btn-ghost" href="/my-pets">
+                <Link className="btn btn-ghost !px-3 !py-2 text-sm" href="/my-pets">
                   Мои питомцы
                 </Link>
-                <Link className="btn btn-ghost" href="/map">
+                <Link className="btn btn-ghost !px-3 !py-2 text-sm" href="/map">
                   Карта
                 </Link>
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
-                    className="btn btn-ghost"
+                    className="btn btn-ghost !px-3 !py-2 text-sm"
                     aria-label="Открыть меню"
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >
@@ -187,7 +187,7 @@ export default function AppHeader() {
                 </div>
               </>
             ) : (
-              <button type="button" className="btn btn-outline" onClick={openAuth}>
+              <button type="button" className="btn btn-outline !px-4 !py-2 text-sm" onClick={openAuth}>
                 Войти
               </button>
             )}

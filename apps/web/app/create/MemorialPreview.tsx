@@ -663,9 +663,9 @@ export default function MemorialPreview({
   };
   if (softEdges) {
     containerStyle.WebkitMaskImage =
-      "radial-gradient(130% 130% at 50% 50%, #000 55%, transparent 100%)";
+      "radial-gradient(140% 140% at 50% 50%, #000 45%, transparent 100%)";
     containerStyle.maskImage =
-      "radial-gradient(130% 130% at 50% 50%, #000 55%, transparent 100%)";
+      "radial-gradient(140% 140% at 50% 50%, #000 45%, transparent 100%)";
   }
   if (!style?.height && !className) {
     containerStyle.height = "320px";
@@ -678,6 +678,15 @@ export default function MemorialPreview({
       } ${className ?? ""}`}
       style={containerStyle}
     >
+      {softEdges ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-20"
+          style={{
+            background:
+              "radial-gradient(140% 140% at 50% 50%, rgba(251,247,245,0) 48%, rgba(251,247,245,0.96) 100%)"
+          }}
+        />
+      ) : null}
       <button
         type="button"
         onClick={() => controlsRef.current?.reset?.()}

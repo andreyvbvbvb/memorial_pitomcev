@@ -581,9 +581,7 @@ export default function CreateMemorialClient() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-4 py-10">
       <div className="mx-auto w-full max-w-none lg:w-[90vw]">
-        <div className="flex flex-col gap-3">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Создание мемориала</p>
-        </div>
+        <div className="flex flex-col gap-3"></div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
@@ -882,8 +880,8 @@ export default function CreateMemorialClient() {
                   isMobile
                     ? undefined
                     : {
-                        gridTemplateColumns: "60% 35%",
-                        columnGap: "5%"
+                        gridTemplateColumns: "68% 28%",
+                        columnGap: "4%"
                       }
                 }
               >
