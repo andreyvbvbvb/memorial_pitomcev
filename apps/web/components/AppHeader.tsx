@@ -19,6 +19,10 @@ export default function AppHeader() {
   const [authVisible, setAuthVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [topUpVisible, setTopUpVisible] = useState(false);
+  const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
+  const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -85,6 +89,16 @@ export default function AppHeader() {
     setTimeout(() => setAuthOpen(false), 200);
   };
 
+  const openTopUp = () => {
+    setTopUpOpen(true);
+    requestAnimationFrame(() => setTopUpVisible(true));
+  };
+
+  const closeTopUp = () => {
+    setTopUpVisible(false);
+    setTimeout(() => setTopUpOpen(false), 180);
+  };
+
   const handleLogout = async () => {
     try {
       await fetch(`${apiUrl}/auth/logout`, { method: "POST", credentials: "include" });
@@ -95,6 +109,13 @@ export default function AppHeader() {
       router.push("/");
     }
   };
+
+  const topUpOptions = [
+    { coins: 100, rub: 100, usd: 1 },
+    { coins: 200, rub: 200, usd: 2 },
+    { coins: 500, rub: 500, usd: 500 },
+    { coins: 1000, rub: 1000, usd: 10 }
+  ];
 
   return (
     <>
@@ -161,7 +182,10 @@ export default function AppHeader() {
                       <button
                         type="button"
                         className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 text-sm text-slate-700"
-                        onClick={() => router.push("/profile")}
+                        onClick={() => {
+                          closeMenu();
+                          openTopUp();
+                        }}
                         aria-label="Пополнить баланс"
                       >
                         +
@@ -204,6 +228,85 @@ export default function AppHeader() {
           closeAuth();
         }}
       />
+
+      {topUpOpen ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            topUpVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={closeTopUp}
+          />
+          <div
+            className={`relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+              topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Пополнение баланса</h3>
+              <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeTopUp}>
+                Закрыть
+              </button>
+            </div>
+            <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
+              {(["RUB", "USD"] as const).map((currency) => {
+                const isActive = topUpCurrency === currency;
+                return (
+                  <button
+                    key={currency}
+                    type="button"
+                    onClick={() => setTopUpCurrency(currency)}
+                    className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold ${
+                      isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                    }`}
+                  >
+                    {currency}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 grid gap-2">
+              {topUpOptions.map((option) => {
+                const isSelected = topUpPlan === option.coins;
+                const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
+                return (
+                  <button
+                    key={option.coins}
+                    type="button"
+                    onClick={() => setTopUpPlan(option.coins)}
+                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                      isSelected
+                        ? "border-sky-400 bg-sky-50 text-slate-900"
+                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="font-semibold">{option.coins} монет</span>
+                    <span className="text-slate-500">{price}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              onClick={() => {
+                if (!topUpPlan) {
+                  return;
+                }
+                router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
+                closeTopUp();
+              }}
+              disabled={!topUpPlan}
+            >
+              Продолжить
+            </button>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
