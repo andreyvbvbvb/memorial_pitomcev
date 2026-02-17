@@ -687,9 +687,7 @@ export default function MemorialPreview({
           className="pointer-events-none absolute inset-0 z-20"
           style={{
             background:
-              "radial-gradient(140% 140% at 50% 50%, rgba(251,247,245,0) 40%, rgba(251,247,245,0.98) 100%)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)"
+              "radial-gradient(140% 140% at 50% 50%, rgba(251,247,245,0) 55%, rgba(251,247,245,0.98) 100%)"
           }}
         />
       ) : null}
