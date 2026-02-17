@@ -112,6 +112,20 @@ function applyPartScale(target: THREE.Object3D, size: number, axis: "x" | "z") {
   target.scale.setScalar(scale);
 }
 
+function applyPartFitScale(target: THREE.Object3D, maxWidth: number, maxLength: number) {
+  if (!maxWidth || !maxLength || maxWidth <= 0 || maxLength <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0 || sizeVec.z <= 0) {
+    return;
+  }
+  const scale = Math.min(maxWidth / sizeVec.x, maxLength / sizeVec.z);
+  target.scale.setScalar(scale);
+}
+
 function PartAttachment({
   house,
   slot,
@@ -132,7 +146,7 @@ function PartAttachment({
       return;
     }
     if (slot === "mat_slot") {
-      applyPartScale(part, 2, "z");
+      applyPartFitScale(part, 1, 1.5);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
       applyPartScale(part, 0.5, "x");

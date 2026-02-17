@@ -546,7 +546,7 @@ export default function CreateMemorialClient() {
     selectedId: string,
     onSelect: (id: string) => void
   ) => (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(category, option.id);
@@ -557,17 +557,16 @@ export default function CreateMemorialClient() {
             onClick={() => onSelect(option.id)}
             aria-label={option.name}
             title={option.name}
-            className={`rounded-2xl border p-2 ${
-              isSelected ? "border-slate-900 bg-slate-900" : "border-slate-200 bg-white"
+            className={`flex h-[104px] w-[104px] items-center justify-center rounded-xl border p-1 transition ${
+              isSelected ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-transparent"
             }`}
-            style={{ width: 112, height: 112 }}
           >
-            <div className="flex h-[100px] w-[100px] items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+            <div className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={option.name}
-                  className="h-[100px] w-[100px] object-contain"
+                  className="h-[92px] w-[92px] object-contain"
                 />
               ) : (
                 <div className="text-xs text-slate-500">Нет</div>
@@ -580,8 +579,8 @@ export default function CreateMemorialClient() {
   );
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div className="mx-auto w-full max-w-none lg:w-[80vw]">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-4 py-10">
+      <div className="mx-auto w-full max-w-none lg:w-[90vw]">
         <div className="flex flex-col gap-3">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Создание мемориала</p>
           <h1 className="text-3xl font-semibold text-slate-900">
@@ -618,7 +617,7 @@ export default function CreateMemorialClient() {
           })}
         </div>
 
-        <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <section className="mt-6 rounded-2xl border border-slate-200/60 bg-transparent p-5">
           {step === 0 ? (
             <div className="grid gap-4">
               <label className="grid gap-1 text-sm text-slate-700">
@@ -879,7 +878,7 @@ export default function CreateMemorialClient() {
                 </button>
               </div>
               <div
-                className={isMobile ? "flex flex-col gap-4" : "grid gap-6"}
+                className={isMobile ? "flex flex-col gap-4" : "grid gap-4"}
                 style={
                   isMobile
                     ? undefined
@@ -912,7 +911,7 @@ export default function CreateMemorialClient() {
                 </div>
 
                 <div
-                  className={`grid gap-6 overflow-y-auto ${
+                  className={`grid gap-4 overflow-y-auto ${
                     isMobile ? "max-h-[45vh] px-4 pb-6" : "max-h-[70vh] pr-2"
                   }`}
                 >
@@ -942,25 +941,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
-                {houseSlots.roof ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет крыши домика</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("roofColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.roofColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
                 {houseSlots.wall ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
@@ -968,25 +948,6 @@ export default function CreateMemorialClient() {
                       handleChange("wallId", id);
                       setFocusSlot(houseSlots.wall ?? null);
                     })}
-                  </div>
-                ) : null}
-
-                {houseSlots.wall ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет стен домика</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("wallColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.wallColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
                   </div>
                 ) : null}
 
@@ -1000,25 +961,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
-                {houseSlots.sign ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет украшения</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("signColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.signColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
                 {houseSlots.frameLeft ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
@@ -1026,25 +968,6 @@ export default function CreateMemorialClient() {
                       handleChange("frameLeftId", id);
                       setFocusSlot(houseSlots.frameLeft ?? null);
                     })}
-                  </div>
-                ) : null}
-
-                {houseSlots.frameLeft ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет рамки слева</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("frameLeftColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.frameLeftColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
                   </div>
                 ) : null}
 
@@ -1058,25 +981,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
-                {houseSlots.frameRight ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет рамки справа</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("frameRightColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.frameRightColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
                 {houseSlots.mat ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
@@ -1084,25 +988,6 @@ export default function CreateMemorialClient() {
                       handleChange("matId", id);
                       setFocusSlot(houseSlots.mat ?? null);
                     })}
-                  </div>
-                ) : null}
-
-                {houseSlots.mat ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет коврика</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("matColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.matColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
                   </div>
                 ) : null}
 
@@ -1116,25 +1001,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
-                {houseSlots.bowlFood ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет миски с едой</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("bowlFoodColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.bowlFoodColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
                 {houseSlots.bowlWater ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
@@ -1145,24 +1011,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
 
-                {houseSlots.bowlWater ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Цвет миски с водой</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {colorPalette.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange("bowlWaterColor", color)}
-                          className={`h-[35px] w-[35px] rounded-lg border-2 ${
-                            form.bowlWaterColor === color ? "border-slate-900" : "border-transparent"
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
                 </div>
               </div>
             </div>
