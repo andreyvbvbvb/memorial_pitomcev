@@ -162,6 +162,7 @@ export default function CreateMemorialClient() {
   const [layoutMode, setLayoutMode] = useState<"desktop" | "mobile">("desktop");
   const photosRef = useRef<PhotoDraft[]>([]);
   const [showOtherMarkers, setShowOtherMarkers] = useState(false);
+  const [focusSlot, setFocusSlot] = useState<string | null>(null);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -250,6 +251,12 @@ export default function CreateMemorialClient() {
       photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.url));
     };
   }, []);
+
+  useEffect(() => {
+    if (step !== 2) {
+      setFocusSlot(null);
+    }
+  }, [step]);
 
   const today = useMemo(() => {
     const now = new Date();
@@ -895,6 +902,7 @@ export default function CreateMemorialClient() {
                     houseUrl={houseUrl}
                     parts={partList}
                     colors={colorOverrides}
+                    focusSlot={focusSlot}
                     style={
                       isMobile
                         ? { height: "40vh", minHeight: "280px" }
@@ -910,24 +918,27 @@ export default function CreateMemorialClient() {
                 >
                 <div className="grid gap-3">
                   <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
-                  {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) =>
-                    handleChange("environmentId", id)
-                  )}
+                  {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
+                    handleChange("environmentId", id);
+                    setFocusSlot("dom_slot");
+                  })}
                 </div>
 
                 <div className="grid gap-3">
                   <h2 className="text-base font-semibold text-slate-900">Домик</h2>
-                  {renderOptionGrid("house", houseOptions, form.houseId, (id) =>
-                    handleChange("houseId", id)
-                  )}
+                  {renderOptionGrid("house", houseOptions, form.houseId, (id) => {
+                    handleChange("houseId", id);
+                    setFocusSlot("dom_slot");
+                  })}
                 </div>
 
                 {houseSlots.roof ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Крыша домика</h2>
-                    {renderOptionGrid("roof", roofOptions, form.roofId, (id) =>
-                      handleChange("roofId", id)
-                    )}
+                    {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
+                      handleChange("roofId", id);
+                      setFocusSlot(houseSlots.roof ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -953,9 +964,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.wall ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
-                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) =>
-                      handleChange("wallId", id)
-                    )}
+                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
+                      handleChange("wallId", id);
+                      setFocusSlot(houseSlots.wall ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -981,9 +993,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.sign ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Украшение над входом</h2>
-                    {renderOptionGrid("sign", signOptions, form.signId, (id) =>
-                      handleChange("signId", id)
-                    )}
+                    {renderOptionGrid("sign", signOptions, form.signId, (id) => {
+                      handleChange("signId", id);
+                      setFocusSlot(houseSlots.sign ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -1009,9 +1022,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.frameLeft ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
-                    {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) =>
-                      handleChange("frameLeftId", id)
-                    )}
+                    {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
+                      handleChange("frameLeftId", id);
+                      setFocusSlot(houseSlots.frameLeft ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -1037,9 +1051,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.frameRight ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Рамка справа</h2>
-                    {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) =>
-                      handleChange("frameRightId", id)
-                    )}
+                    {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
+                      handleChange("frameRightId", id);
+                      setFocusSlot(houseSlots.frameRight ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -1065,9 +1080,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.mat ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
-                    {renderOptionGrid("mat", matOptions, form.matId, (id) =>
-                      handleChange("matId", id)
-                    )}
+                    {renderOptionGrid("mat", matOptions, form.matId, (id) => {
+                      handleChange("matId", id);
+                      setFocusSlot(houseSlots.mat ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -1093,9 +1109,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.bowlFood ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Миска с едой</h2>
-                    {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) =>
-                      handleChange("bowlFoodId", id)
-                    )}
+                    {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
+                      handleChange("bowlFoodId", id);
+                      setFocusSlot(houseSlots.bowlFood ?? null);
+                    })}
                   </div>
                 ) : null}
 
@@ -1121,9 +1138,10 @@ export default function CreateMemorialClient() {
                 {houseSlots.bowlWater ? (
                   <div className="grid gap-3">
                     <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
-                    {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) =>
-                      handleChange("bowlWaterId", id)
-                    )}
+                    {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
+                      handleChange("bowlWaterId", id);
+                      setFocusSlot(houseSlots.bowlWater ?? null);
+                    })}
                   </div>
                 ) : null}
 

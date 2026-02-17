@@ -97,6 +97,21 @@ function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, strin
   });
 }
 
+function applyPartScale(target: THREE.Object3D, size: number, axis: "x" | "z") {
+  if (!size || size <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  const current = axis === "z" ? sizeVec.z : sizeVec.x;
+  if (current <= 0) {
+    return;
+  }
+  const scale = size / current;
+  target.scale.setScalar(scale);
+}
+
 function PartAttachment({
   house,
   slot,
@@ -115,6 +130,12 @@ function PartAttachment({
     const anchor = house.getObjectByName(slot);
     if (!anchor) {
       return;
+    }
+    if (slot === "mat_slot") {
+      applyPartScale(part, 2, "z");
+    }
+    if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
+      applyPartScale(part, 0.5, "x");
     }
     anchor.add(part);
     return () => {

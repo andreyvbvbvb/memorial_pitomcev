@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -27,6 +27,7 @@ type Props = {
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
   onGiftSlotsDetected?: (slots: string[]) => void;
+  focusSlot?: string | null;
   colors?: Record<string, string>;
   backgroundColor?: string;
   className?: string;
@@ -49,6 +50,8 @@ const Group = "group" as unknown as React.ComponentType<any>;
 const Mesh = "mesh" as unknown as React.ComponentType<any>;
 const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
+const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
+const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 
 const collectGiftSlots = (target: THREE.Object3D) => {
   const found = new Set<string>();
@@ -160,18 +163,82 @@ function applyGiftScale(target: THREE.Object3D, width: number) {
   target.scale.setScalar(scale);
 }
 
-function applyPartScale(target: THREE.Object3D, width: number) {
-  if (!width || width <= 0) {
+function applyPartScale(target: THREE.Object3D, size: number, axis: "x" | "z") {
+  if (!size || size <= 0) {
     return;
   }
   const box = new THREE.Box3().setFromObject(target);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  if (size.x <= 0) {
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  const current = axis === "z" ? sizeVec.z : sizeVec.x;
+  if (current <= 0) {
     return;
   }
-  const scale = width / size.x;
+  const scale = size / current;
   target.scale.setScalar(scale);
+}
+
+function SceneCameraRig({
+  focus,
+  controlsRef
+}: {
+  focus: [number, number, number] | null;
+  controlsRef: React.MutableRefObject<any>;
+}) {
+  const { camera } = useThree();
+  const animationRef = useRef<{
+    elapsed: number;
+    duration: number;
+    startPos: THREE.Vector3;
+    startTarget: THREE.Vector3;
+    endPos: THREE.Vector3;
+    endTarget: THREE.Vector3;
+  } | null>(null);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    const currentTarget = controls ? controls.target.clone() : DEFAULT_TARGET.clone();
+    const startPos = camera.position.clone();
+    const startTarget = currentTarget;
+    const endTarget = focus
+      ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2])
+      : DEFAULT_TARGET.clone();
+    const endPos = focus
+      ? endTarget.clone().add(new THREE.Vector3(2.6, 1.8, 2.6))
+      : DEFAULT_CAMERA.clone();
+    animationRef.current = {
+      elapsed: 0,
+      duration: 0.9,
+      startPos,
+      startTarget,
+      endPos,
+      endTarget
+    };
+  }, [focus, camera, controlsRef]);
+
+  useFrame((_, delta) => {
+    const anim = animationRef.current;
+    if (!anim) {
+      return;
+    }
+    anim.elapsed += delta;
+    const t = Math.min(anim.elapsed / anim.duration, 1);
+    const eased = t * (2 - t);
+    camera.position.lerpVectors(anim.startPos, anim.endPos, eased);
+    const target = new THREE.Vector3().lerpVectors(anim.startTarget, anim.endTarget, eased);
+    const controls = controlsRef.current;
+    if (controls) {
+      controls.target.copy(target);
+      controls.update();
+    } else {
+      camera.lookAt(target);
+    }
+    if (t >= 1) {
+      animationRef.current = null;
+    }
+  });
+
+  return null;
 }
 
 function GiftSlotsOverlay({
@@ -378,7 +445,10 @@ function PartAttachment({
       return;
     }
     if (slot === "mat_slot") {
-      applyPartScale(part, 2);
+      applyPartScale(part, 2, "z");
+    }
+    if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
+      applyPartScale(part, 0.5, "x");
     }
     anchor.add(part);
     return () => {
@@ -405,7 +475,9 @@ function TerrainWithHouse({
   onSelectSlot,
   onSlotsDetected,
   onGiftHover,
-  onGiftLeave
+  onGiftLeave,
+  focusSlot,
+  onFocusPosition
 }: {
   terrainUrl: string;
   houseUrl: string;
@@ -419,6 +491,8 @@ function TerrainWithHouse({
   onSlotsDetected?: (slots: string[]) => void;
   onGiftHover?: (gift: GiftHover) => void;
   onGiftLeave?: () => void;
+  focusSlot?: string | null;
+  onFocusPosition?: (position: [number, number, number] | null) => void;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -442,6 +516,26 @@ function TerrainWithHouse({
     applyMaterialColors(terrain, colors);
     applyMaterialColors(house, colors);
   }, [terrain, house, colors]);
+
+  useEffect(() => {
+    if (!onFocusPosition) {
+      return;
+    }
+    if (!focusSlot) {
+      onFocusPosition(null);
+      return;
+    }
+    const anchor = house.getObjectByName(focusSlot) ?? terrain.getObjectByName(focusSlot);
+    if (!anchor) {
+      console.warn(`[MemorialPreview] focus slot '${focusSlot}' не найден`);
+      onFocusPosition(null);
+      return;
+    }
+    terrain.updateMatrixWorld(true);
+    const pos = new THREE.Vector3();
+    anchor.getWorldPosition(pos);
+    onFocusPosition([pos.x, pos.y, pos.z]);
+  }, [focusSlot, house, terrain, onFocusPosition]);
 
   useEffect(() => {
     if (!onSlotsDetected) {
@@ -492,6 +586,7 @@ export default function MemorialPreview({
   selectedSlot,
   onSelectSlot,
   onGiftSlotsDetected,
+  focusSlot,
   colors,
   backgroundColor = "#eef6ff",
   className,
@@ -501,6 +596,7 @@ export default function MemorialPreview({
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
   const [showGiftSlots, setShowGiftSlots] = useState(Boolean(onSelectSlot));
   const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
+  const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
@@ -559,6 +655,8 @@ export default function MemorialPreview({
               onSlotsDetected={onGiftSlotsDetected}
               onGiftHover={setHoveredGift}
               onGiftLeave={() => setHoveredGift(null)}
+              focusSlot={focusSlot}
+              onFocusPosition={setFocusPosition}
             />
           ) : null}
           {!terrainUrl && houseUrl ? (
@@ -588,6 +686,7 @@ export default function MemorialPreview({
           minDistance={baseDistance / 2}
           maxDistance={baseDistance * 2.6}
         />
+        <SceneCameraRig focus={focusPosition} controlsRef={controlsRef} />
       </Canvas>
     </div>
   );
