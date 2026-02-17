@@ -557,16 +557,16 @@ export default function CreateMemorialClient() {
             onClick={() => onSelect(option.id)}
             aria-label={option.name}
             title={option.name}
-            className={`flex h-[104px] w-[104px] items-center justify-center rounded-xl border p-1 transition ${
+            className={`flex h-[84px] w-[84px] items-center justify-center rounded-lg border p-1 transition ${
               isSelected ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-transparent"
             }`}
           >
-            <div className="flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+            <div className="flex h-[74px] w-[74px] items-center justify-center overflow-hidden rounded-md bg-slate-100">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={option.name}
-                  className="h-[92px] w-[92px] object-contain"
+                  className="h-[74px] w-[74px] object-contain"
                 />
               ) : (
                 <div className="text-xs text-slate-500">Нет</div>
@@ -583,9 +583,6 @@ export default function CreateMemorialClient() {
       <div className="mx-auto w-full max-w-none lg:w-[90vw]">
         <div className="flex flex-col gap-3">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Создание мемориала</p>
-          <h1 className="text-3xl font-semibold text-slate-900">
-            Пошаговый мастер
-          </h1>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
@@ -617,7 +614,7 @@ export default function CreateMemorialClient() {
           })}
         </div>
 
-        <section className="mt-6 rounded-2xl border border-slate-200/60 bg-transparent p-5">
+        <section className="mt-6 rounded-2xl bg-transparent p-5">
           {step === 0 ? (
             <div className="grid gap-4">
               <label className="grid gap-1 text-sm text-slate-700">
@@ -884,9 +881,7 @@ export default function CreateMemorialClient() {
                     ? undefined
                     : {
                         gridTemplateColumns: "60% 35%",
-                        columnGap: "5%",
-                        paddingLeft: "2.5%",
-                        paddingRight: "2.5%"
+                        columnGap: "5%"
                       }
                 }
               >
@@ -902,6 +897,7 @@ export default function CreateMemorialClient() {
                     parts={partList}
                     colors={colorOverrides}
                     focusSlot={focusSlot}
+                    softEdges
                     style={
                       isMobile
                         ? { height: "40vh", minHeight: "280px" }
@@ -912,7 +908,7 @@ export default function CreateMemorialClient() {
 
                 <div
                   className={`grid gap-4 overflow-y-auto ${
-                    isMobile ? "max-h-[45vh] px-4 pb-6" : "max-h-[70vh] pr-2"
+                    isMobile ? "max-h-[45vh] px-4 pb-6" : "max-h-[70vh]"
                   }`}
                 >
                 <div className="grid gap-3">
@@ -1146,6 +1142,7 @@ export default function CreateMemorialClient() {
                   houseUrl={houseUrl}
                   parts={partList}
                   colors={colorOverrides}
+                  softEdges
                   className="h-[648px]"
                 />
               </div>

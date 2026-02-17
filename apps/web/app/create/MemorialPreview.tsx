@@ -30,6 +30,7 @@ type Props = {
   focusSlot?: string | null;
   colors?: Record<string, string>;
   backgroundColor?: string;
+  softEdges?: boolean;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -633,6 +634,7 @@ export default function MemorialPreview({
   focusSlot,
   colors,
   backgroundColor = "#eef6ff",
+  softEdges = false,
   className,
   style
 }: Props) {
@@ -656,15 +658,21 @@ export default function MemorialPreview({
   const containerStyle: React.CSSProperties = {
     ...style
   };
+  if (softEdges) {
+    containerStyle.WebkitMaskImage =
+      "radial-gradient(120% 120% at 50% 50%, #000 70%, transparent 100%)";
+    containerStyle.maskImage =
+      "radial-gradient(120% 120% at 50% 50%, #000 70%, transparent 100%)";
+  }
   if (!style?.height && !className) {
     containerStyle.height = "320px";
   }
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 ${
-        className ?? ""
-      }`}
+      className={`relative w-full overflow-hidden rounded-2xl ${
+        softEdges ? "bg-transparent" : "border border-slate-200 bg-slate-50"
+      } ${className ?? ""}`}
       style={containerStyle}
     >
       <button
