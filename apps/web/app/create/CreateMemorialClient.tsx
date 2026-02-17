@@ -581,9 +581,7 @@ export default function CreateMemorialClient() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-4 py-10">
       <div className="mx-auto w-full max-w-none lg:w-[90vw]">
-        <div className="flex flex-col gap-3"></div>
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             {steps.map((label, index) => {
               const isActive = index === step;
@@ -881,7 +879,7 @@ export default function CreateMemorialClient() {
                     ? undefined
                     : {
                         gridTemplateColumns: "68% 28%",
-                        columnGap: "4%"
+                        columnGap: "2.8%"
                       }
                 }
               >
@@ -900,15 +898,15 @@ export default function CreateMemorialClient() {
                     softEdges
                     style={
                       isMobile
-                        ? { height: "40vh", minHeight: "280px" }
-                        : { height: "calc(100vh - 240px)", minHeight: "520px" }
+                        ? { height: "34vh", minHeight: "240px" }
+                        : { height: "calc(100vh - 320px)", minHeight: "440px" }
                     }
                   />
                 </div>
 
                 <div
                   className={`grid gap-4 overflow-y-auto ${
-                    isMobile ? "max-h-[45vh] px-4 pb-6" : "max-h-[70vh]"
+                    isMobile ? "max-h-[38vh] px-4 pb-6" : "max-h-[60vh]"
                   }`}
                 >
                 <div className="grid gap-3">

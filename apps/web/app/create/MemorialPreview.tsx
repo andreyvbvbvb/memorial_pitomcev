@@ -666,6 +666,10 @@ export default function MemorialPreview({
       "radial-gradient(140% 140% at 50% 50%, #000 45%, transparent 100%)";
     containerStyle.maskImage =
       "radial-gradient(140% 140% at 50% 50%, #000 45%, transparent 100%)";
+    containerStyle.WebkitMaskRepeat = "no-repeat";
+    containerStyle.maskRepeat = "no-repeat";
+    containerStyle.WebkitMaskSize = "100% 100%";
+    containerStyle.maskSize = "100% 100%";
   }
   if (!style?.height && !className) {
     containerStyle.height = "320px";
@@ -683,7 +687,9 @@ export default function MemorialPreview({
           className="pointer-events-none absolute inset-0 z-20"
           style={{
             background:
-              "radial-gradient(140% 140% at 50% 50%, rgba(251,247,245,0) 48%, rgba(251,247,245,0.96) 100%)"
+              "radial-gradient(140% 140% at 50% 50%, rgba(251,247,245,0) 40%, rgba(251,247,245,0.98) 100%)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)"
           }}
         />
       ) : null}
@@ -701,7 +707,23 @@ export default function MemorialPreview({
       >
         {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
       </button>
-      <Canvas camera={{ position: [4, 3, 4], fov: 45 }}>
+      <Canvas
+        camera={{ position: [4, 3, 4], fov: 45 }}
+        style={
+          softEdges
+            ? {
+                WebkitMaskImage:
+                  "radial-gradient(140% 140% at 50% 50%, #000 45%, transparent 100%)",
+                maskImage:
+                  "radial-gradient(140% 140% at 50% 50%, #000 45%, transparent 100%)",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskSize: "100% 100%",
+                maskSize: "100% 100%"
+              }
+            : undefined
+        }
+      >
         <SceneBackground backgroundColor={backgroundColor} />
         <AmbientLight intensity={0.9} />
         <HemisphereLight intensity={0.6} color={"#ffffff"} groundColor={"#d5dbe5"} />
