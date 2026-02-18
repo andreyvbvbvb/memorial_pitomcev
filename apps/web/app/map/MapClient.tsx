@@ -149,14 +149,14 @@ export default function MapClient() {
   }, [filteredMarkers]);
 
   const activeCarouselMarker =
-    carouselOrder.length > 0 ? carouselOrder[carouselIndex % carouselOrder.length] : null;
+    carouselOrder.length > 0 ? carouselOrder[carouselIndex % carouselOrder.length] ?? null : null;
   const leftCarouselMarker =
     carouselOrder.length > 1
-      ? carouselOrder[(carouselIndex - 1 + carouselOrder.length) % carouselOrder.length]
+      ? carouselOrder[(carouselIndex - 1 + carouselOrder.length) % carouselOrder.length] ?? null
       : null;
   const rightCarouselMarker =
     carouselOrder.length > 1
-      ? carouselOrder[(carouselIndex + 1) % carouselOrder.length]
+      ? carouselOrder[(carouselIndex + 1) % carouselOrder.length] ?? null
       : null;
 
   const listMarkers = useMemo(() => {
