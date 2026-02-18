@@ -338,10 +338,12 @@ function buildGridPositions(count: number) {
 
 export default function MyPets3DView({
   pets,
-  loading
+  loading,
+  fullScreen
 }: {
   pets: MyPets3DViewPet[];
   loading?: boolean;
+  fullScreen?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const controlsRef = useRef<any>(null);
@@ -358,8 +360,12 @@ export default function MyPets3DView({
   const selectedItem = items.find((item) => item.pet.id === selectedId) ?? null;
   const focusPosition = selectedItem ? selectedItem.position : null;
 
+  const containerClassName = fullScreen
+    ? "fixed inset-0 z-0 h-screen w-screen overflow-hidden bg-slate-50"
+    : "relative h-[calc(100vh-220px)] min-h-[520px] w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm";
+
   return (
-    <div className="relative h-[calc(100vh-220px)] min-h-[520px] w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm">
+    <div className={containerClassName}>
       {loading ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 text-sm text-slate-500">
           Загрузка...

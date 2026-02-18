@@ -12,6 +12,8 @@ export type GiftSlotInfo = {
   index?: number | null;
 };
 
+export type GiftSize = "s" | "m" | "l";
+
 export const isGiftSlotName = (name?: string | null) => {
   if (!name) return false;
   return name.toLowerCase().startsWith(SLOT_PREFIX);
@@ -107,6 +109,11 @@ export const resolveGiftIconUrl = (gift?: { code?: string | null; modelUrl?: str
 };
 
 const giftWidthRules = [{ prefix: "flower_", width: 0.6 }];
+const starSizeMultipliers: Record<GiftSize, number> = {
+  s: 0.7,
+  m: 1,
+  l: 1.4
+};
 
 const resolveCandleWidth = (code: string) => {
   const match = code.match(/^candle_(\d+)$/);
@@ -125,4 +132,30 @@ export const resolveGiftTargetWidth = (gift?: { code?: string | null; modelUrl?:
   }
   const rule = giftWidthRules.find((item) => code.startsWith(item.prefix));
   return rule ? rule.width : null;
+};
+
+export const giftSupportsSize = (gift?: { code?: string | null; modelUrl?: string | null }) => {
+  const code = getGiftCode(gift);
+  if (!code) return false;
+  return code.startsWith("star");
+};
+
+export const resolveGiftSizeMultiplier = (options: {
+  gift?: { code?: string | null; modelUrl?: string | null };
+  size?: GiftSize | string | null;
+}) => {
+  if (!options.size) {
+    return 1;
+  }
+  if (!giftSupportsSize(options.gift)) {
+    return 1;
+  }
+  const normalized = String(options.size).toLowerCase();
+  if (normalized === "s" || normalized === "small") {
+    return starSizeMultipliers.s;
+  }
+  if (normalized === "l" || normalized === "large") {
+    return starSizeMultipliers.l;
+  }
+  return starSizeMultipliers.m;
 };

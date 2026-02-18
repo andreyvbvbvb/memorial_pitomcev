@@ -131,8 +131,9 @@ export class GiftsService {
     giftId: string;
     slotName: string;
     months?: number;
+    size?: string;
   }) {
-    const { petId, ownerId, giftId, slotName, months } = options;
+    const { petId, ownerId, giftId, slotName, months, size } = options;
     const pet = await this.prisma.pet.findUnique({ where: { id: petId } });
     if (!pet) {
       throw new NotFoundException("Мемориал не найден");
@@ -172,7 +173,8 @@ export class GiftsService {
           giftId,
           ownerId,
           slotName,
-          expiresAt
+          expiresAt,
+          size: size ?? null
         },
         include: {
           gift: true,

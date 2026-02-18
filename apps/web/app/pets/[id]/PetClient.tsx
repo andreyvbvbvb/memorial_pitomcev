@@ -18,8 +18,11 @@ import {
 } from "../../../lib/memorial-models";
 import { getHouseSlots, getTerrainGiftSlots } from "../../../lib/memorial-config";
 import {
+  GiftSize,
   getGiftAvailableTypes,
   getGiftSlotType,
+  giftSupportsSize,
+  getGiftCode,
   resolveGiftModelUrl,
   resolveGiftIconUrl
 } from "../../../lib/gifts";
@@ -47,6 +50,7 @@ type Pet = {
     slotName: string;
     placedAt: string;
     expiresAt: string | null;
+    size?: string | null;
     gift: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
     owner?: {
       id: string;
@@ -86,6 +90,7 @@ export default function PetClient({ id }: Props) {
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftLoading, setGiftLoading] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
+  const [selectedGiftSize, setSelectedGiftSize] = useState<GiftSize>("m");
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(1);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
@@ -266,11 +271,21 @@ export default function PetClient({ id }: Props) {
   const availableSlots = terrainGiftSlots.filter((slot) => !occupiedSlots.has(slot));
   const selectedGift =
     giftCatalog.find((gift) => gift.id === selectedGiftId) ?? giftCatalog[0] ?? null;
+  const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
+  const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
   const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
   const filteredAvailableSlots =
     selectedGiftTypes.length > 0
       ? availableSlots.filter((slot) => selectedGiftTypes.includes(getGiftSlotType(slot)))
       : availableSlots;
+
+  useEffect(() => {
+    if (!selectedGiftSupportsSize) {
+      setSelectedGiftSize("m");
+      return;
+    }
+    setSelectedGiftSize((prev) => prev ?? "m");
+  }, [selectedGiftSupportsSize, selectedGiftCode]);
 
   useEffect(() => {
     if (filteredAvailableSlots.length === 0) {
@@ -323,7 +338,8 @@ export default function PetClient({ id }: Props) {
           ownerId: currentUser.id,
           giftId: selectedGiftId,
           slotName: selectedSlot,
-          months: selectedDuration
+          months: selectedDuration,
+          size: selectedGiftSupportsSize ? selectedGiftSize : undefined
         })
       });
       if (!response.ok) {
@@ -388,6 +404,11 @@ export default function PetClient({ id }: Props) {
     { coins: 100, rub: 100 },
     { coins: 200, rub: 150 },
     { coins: 500, rub: 350 }
+  ];
+  const starSizeOptions: { id: GiftSize; label: string; helper: string }[] = [
+    { id: "s", label: "S", helper: "Маленькая" },
+    { id: "m", label: "M", helper: "Средняя" },
+    { id: "l", label: "L", helper: "Большая" }
   ];
 
   if (loading) {
@@ -458,7 +479,8 @@ export default function PetClient({ id }: Props) {
       url: resolvedUrl,
       name: gift.gift.name,
       owner: ownerLabel,
-      expiresAt: gift.expiresAt ?? undefined
+      expiresAt: gift.expiresAt ?? undefined,
+      size: gift.size ?? null
     };
   });
   const selectedSlotType = selectedSlot ? getGiftSlotType(selectedSlot) : null;
@@ -477,7 +499,8 @@ export default function PetClient({ id }: Props) {
           url: previewGiftUrl,
           name: selectedGift.name,
           owner: currentUser?.login ?? currentUser?.email ?? "—",
-          expiresAt: null
+          expiresAt: null,
+          size: selectedGiftSupportsSize ? selectedGiftSize : null
         }
       : null;
   const previewGifts = previewGift ? [...giftInstances, previewGift] : giftInstances;
@@ -601,6 +624,29 @@ export default function PetClient({ id }: Props) {
                   })}
                   </div>
                 </div>
+
+                {selectedGiftSupportsSize ? (
+                  <div className="grid gap-2 text-sm text-slate-700">
+                    Размер звезды
+                    <div className="flex flex-wrap gap-2">
+                      {starSizeOptions.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setSelectedGiftSize(option.id)}
+                          className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${
+                            selectedGiftSize === option.id
+                              ? "border-sky-400 bg-sky-50 text-slate-900"
+                              : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          <span className="text-sm font-semibold">{option.label}</span>
+                          <span className="text-[11px] text-slate-400">{option.helper}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="grid gap-2 text-sm text-slate-700">
                   Срок подарка

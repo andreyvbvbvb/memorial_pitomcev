@@ -22,7 +22,8 @@ export class GiftsController {
       ownerId: dto.ownerId,
       giftId: dto.giftId,
       slotName: dto.slotName,
-      months: dto.months
+      months: dto.months,
+      size: dto.size
     });
   }
 }

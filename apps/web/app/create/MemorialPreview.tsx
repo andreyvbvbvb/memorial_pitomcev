@@ -16,13 +16,25 @@ import {
   bowlFoodModelByIdGenerated,
   bowlWaterModelByIdGenerated
 } from "../../lib/memorial-models.generated";
-import { isGiftSlotName, parseGiftSlot, resolveGiftTargetWidth } from "../../lib/gifts";
+import {
+  isGiftSlotName,
+  parseGiftSlot,
+  resolveGiftSizeMultiplier,
+  resolveGiftTargetWidth
+} from "../../lib/gifts";
 
 type Props = {
   terrainUrl?: string | null;
   houseUrl?: string | null;
   parts?: { slot: string; url: string }[];
-  gifts?: { slot: string; url: string; name?: string; owner?: string; expiresAt?: string | null }[];
+  gifts?: {
+    slot: string;
+    url: string;
+    name?: string;
+    owner?: string;
+    expiresAt?: string | null;
+    size?: string | null;
+  }[];
   giftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
@@ -397,6 +409,7 @@ function GiftPlacementAttachment({
   slot,
   url,
   info,
+  size,
   onHover,
   onLeave
 }: {
@@ -404,6 +417,7 @@ function GiftPlacementAttachment({
   slot: string;
   url: string;
   info?: { name?: string; owner?: string; expiresAt?: string | null };
+  size?: string | null;
   onHover?: (gift: GiftHover) => void;
   onLeave?: () => void;
 }) {
@@ -414,8 +428,12 @@ function GiftPlacementAttachment({
     if (targetWidth) {
       applyGiftScale(cloned, targetWidth);
     }
+    const sizeMultiplier = resolveGiftSizeMultiplier({ gift: { modelUrl: url }, size });
+    if (sizeMultiplier && sizeMultiplier !== 1) {
+      cloned.scale.multiplyScalar(sizeMultiplier);
+    }
     return cloned;
-  }, [scene, url]);
+  }, [scene, url, size]);
   const [position, setPosition] = useState<[number, number, number] | null>(null);
 
   useEffect(() => {
@@ -518,7 +536,14 @@ function TerrainWithHouse({
   terrainUrl: string;
   houseUrl: string;
   parts?: { slot: string; url: string }[];
-  gifts?: { slot: string; url: string; name?: string; owner?: string; expiresAt?: string | null }[];
+  gifts?: {
+    slot: string;
+    url: string;
+    name?: string;
+    owner?: string;
+    expiresAt?: string | null;
+    size?: string | null;
+  }[];
   colors?: Record<string, string>;
   showGiftSlots: boolean;
   giftSlots?: string[];
@@ -614,6 +639,7 @@ function TerrainWithHouse({
           slot={gift.slot}
           url={gift.url}
           info={{ name: gift.name, owner: gift.owner, expiresAt: gift.expiresAt }}
+          size={gift.size ?? undefined}
           onHover={onGiftHover}
           onLeave={onGiftLeave}
         />

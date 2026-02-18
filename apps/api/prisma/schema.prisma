@@ -108,6 +108,7 @@ model GiftPlacement {
   giftId    String
   ownerId   String
   slotName  String
+  size      String?
   placedAt  DateTime @default(now())
   expiresAt DateTime?
 
