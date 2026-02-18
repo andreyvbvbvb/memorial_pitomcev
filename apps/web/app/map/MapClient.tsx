@@ -273,7 +273,7 @@ export default function MapClient() {
 
       <div className="relative z-10 flex h-full flex-col gap-4 p-6 pointer-events-none">
         <div className="flex w-full flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:justify-end">
-          <div className="pointer-events-auto self-start rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur lg:max-w-[360px]">
+          <div className="pointer-events-auto relative z-20 self-start rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur lg:max-w-[360px]">
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
               <label className="grid gap-1 text-sm text-slate-700">
                 Вид питомца
@@ -312,7 +312,7 @@ export default function MapClient() {
             </div>
           </div>
 
-          <div className="pointer-events-auto flex max-h-[70vh] flex-col self-start rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur lg:max-w-[380px]">
+          <div className="pointer-events-auto relative z-10 flex max-h-[70vh] flex-col self-start rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur lg:max-w-[380px]">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
               <span className="text-xs text-slate-500">{listMarkers.length}</span>
