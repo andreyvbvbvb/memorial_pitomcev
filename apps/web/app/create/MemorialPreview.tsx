@@ -43,6 +43,7 @@ type Props = {
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
+  showControls?: boolean;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -664,12 +665,13 @@ export default function MemorialPreview({
   colors,
   backgroundColor = "#eef6ff",
   softEdges = false,
+  showControls = true,
   className,
   style
 }: Props) {
   const controlsRef = useRef<any>(null);
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
-  const [showGiftSlots, setShowGiftSlots] = useState(Boolean(onSelectSlot));
+  const [showGiftSlots, setShowGiftSlots] = useState(showControls && Boolean(onSelectSlot));
   const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
@@ -679,10 +681,10 @@ export default function MemorialPreview({
   }, []);
 
   useEffect(() => {
-    if (onSelectSlot) {
+    if (showControls && onSelectSlot) {
       setShowGiftSlots(true);
     }
-  }, [onSelectSlot]);
+  }, [onSelectSlot, showControls]);
 
   const containerStyle: React.CSSProperties = {
     ...style
@@ -717,20 +719,24 @@ export default function MemorialPreview({
           }}
         />
       ) : null}
-      <button
-        type="button"
-        onClick={() => controlsRef.current?.reset?.()}
-        className="absolute right-3 top-3 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm"
-      >
-        Сбросить вид
-      </button>
-      <button
-        type="button"
-        onClick={() => setShowGiftSlots((prev) => !prev)}
-        className="absolute left-3 top-3 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm"
-      >
-        {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
-      </button>
+      {showControls ? (
+        <>
+          <button
+            type="button"
+            onClick={() => controlsRef.current?.reset?.()}
+            className="absolute right-3 top-3 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm"
+          >
+            Сбросить вид
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowGiftSlots((prev) => !prev)}
+            className="absolute left-3 top-3 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm"
+          >
+            {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
+          </button>
+        </>
+      ) : null}
       <Canvas
         camera={{ position: [4, 3, 4], fov: 45 }}
         style={
