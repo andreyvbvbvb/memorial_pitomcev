@@ -24,8 +24,6 @@ type MarkerDto = {
 };
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
-const mapHeight = 676;
-const mapCardHeight = mapHeight + 48;
 const containerStyle = { width: "100%", height: "100%" };
 const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles];
 
@@ -172,15 +170,110 @@ export default function MapClient() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div className="mx-auto w-full max-w-none">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Глобальная карта</p>
-          <h1 className="text-3xl font-semibold text-slate-900">Здесь нас можно всегда найти</h1>
-        </div>
+    <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0">
+        {!apiKey ? (
+          <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
+            Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
+          </div>
+        ) : loadError ? (
+          <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-red-600">
+            Ошибка загрузки Google Maps
+          </div>
+        ) : !isLoaded ? (
+          <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
+            Загрузка карты...
+          </div>
+        ) : (
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            onLoad={(loadedMap) => {
+              setMap(loadedMap);
+              loadedMap.setCenter(defaultCenter);
+              loadedMap.setZoom(4);
+              updateVisibleMarkers(loadedMap);
+            }}
+            onIdle={() => {
+              updateVisibleMarkers();
+            }}
+            options={{
+              mapTypeControl: false,
+              fullscreenControl: false,
+              streetViewControl: false
+            }}
+          >
+            <MarkerClusterer
+              options={{
+                averageCenter: true,
+                minimumClusterSize: 4,
+                zoomOnClick: false
+              }}
+              onClick={handleClusterClick}
+            >
+              {(clusterer) => (
+                <>
+                  {filteredMarkers.map((marker) => (
+                    <Marker
+                      key={marker.id}
+                      position={{ lat: marker.lat, lng: marker.lng }}
+                      clusterer={clusterer}
+                      animation={
+                        hoveredMarkerId === marker.id && typeof window !== "undefined" && window.google
+                          ? window.google.maps.Animation.BOUNCE
+                          : undefined
+                      }
+                      icon={{
+                        url: markerIconUrl(marker.markerStyle ?? "other"),
+                        scaledSize: new window.google.maps.Size(
+                          markerSize(marker.markerStyle ?? "other", 43).width,
+                          markerSize(marker.markerStyle ?? "other", 43).height
+                        ),
+                        anchor: new window.google.maps.Point(
+                          markerAnchor(marker.markerStyle ?? "other", 43).x,
+                          markerAnchor(marker.markerStyle ?? "other", 43).y
+                        )
+                      }}
+                      onClick={() => setActive(marker)}
+                    />
+                  ))}
+                </>
+              )}
+            </MarkerClusterer>
+            {active ? (
+              <InfoWindow
+                position={{ lat: active.lat, lng: active.lng }}
+                onCloseClick={() => setActive(null)}
+                options={{ maxWidth: 260 }}
+              >
+                <div className="max-w-[240px] text-sm">
+                  {active.previewPhotoUrl ? (
+                    <img
+                      src={
+                        active.previewPhotoUrl.startsWith("http")
+                          ? active.previewPhotoUrl
+                          : `${apiUrl}${active.previewPhotoUrl}`
+                      }
+                      alt="Фото питомца"
+                      className="mb-2 rounded-md object-cover"
+                      style={{ width: 180, height: 135 }}
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <p className="font-semibold text-slate-900">{active.name}</p>
+                  <p className="text-slate-600">{active.epitaph ?? "Без эпитафии"}</p>
+                  <a className="mt-2 inline-block text-slate-900 underline" href={`/pets/${active.petId}`}>
+                    Открыть мемориал
+                  </a>
+                </div>
+              </InfoWindow>
+            ) : null}
+          </GoogleMap>
+        )}
+      </div>
 
-        <section className="mt-8 grid gap-6 lg:justify-center lg:grid-cols-[minmax(400px,55%)_minmax(360px,25%)]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+      <div className="relative z-10 flex h-full flex-col gap-4 p-6 pointer-events-none">
+        <div className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_minmax(320px,380px)] pointer-events-auto">
+          <div className="rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
             <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
               <label className="grid gap-1 text-sm text-slate-700">
                 Вид питомца
@@ -218,124 +311,8 @@ export default function MapClient() {
               </button>
             </div>
           </div>
-          <div
-            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-            style={{ height: mapCardHeight }}
-          >
-            <div className="h-full overflow-hidden rounded-2xl border border-slate-200">
-              {!apiKey ? (
-                <div
-                  className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500"
-                  style={{ minHeight: mapHeight }}
-                >
-                  Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
-                </div>
-              ) : loadError ? (
-                <div
-                  className="flex h-full items-center justify-center bg-slate-50 text-sm text-red-600"
-                  style={{ minHeight: mapHeight }}
-                >
-                  Ошибка загрузки Google Maps
-                </div>
-              ) : !isLoaded ? (
-                <div
-                  className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500"
-                  style={{ minHeight: mapHeight }}
-                >
-                  Загрузка карты...
-                </div>
-              ) : (
-                <GoogleMap
-                  mapContainerStyle={containerStyle}
-                  onLoad={(loadedMap) => {
-                    setMap(loadedMap);
-                    loadedMap.setCenter(defaultCenter);
-                    loadedMap.setZoom(4);
-                    updateVisibleMarkers(loadedMap);
-                  }}
-                  onIdle={() => {
-                    updateVisibleMarkers();
-                  }}
-                  options={{
-                    mapTypeControl: false,
-                    fullscreenControl: false,
-                    streetViewControl: false
-                  }}
-                >
-                  <MarkerClusterer
-                    options={{
-                      averageCenter: true,
-                      minimumClusterSize: 4,
-                      zoomOnClick: false
-                    }}
-                    onClick={handleClusterClick}
-                  >
-                    {(clusterer) => (
-                      <>
-                        {filteredMarkers.map((marker) => (
-                          <Marker
-                            key={marker.id}
-                            position={{ lat: marker.lat, lng: marker.lng }}
-                            clusterer={clusterer}
-                            animation={
-                              hoveredMarkerId === marker.id && typeof window !== "undefined" && window.google
-                                ? window.google.maps.Animation.BOUNCE
-                                : undefined
-                            }
-                            icon={{
-                              url: markerIconUrl(marker.markerStyle ?? "other"),
-                              scaledSize: new window.google.maps.Size(
-                                markerSize(marker.markerStyle ?? "other", 43).width,
-                                markerSize(marker.markerStyle ?? "other", 43).height
-                              ),
-                              anchor: new window.google.maps.Point(
-                                markerAnchor(marker.markerStyle ?? "other", 43).x,
-                                markerAnchor(marker.markerStyle ?? "other", 43).y
-                              )
-                            }}
-                            onClick={() => setActive(marker)}
-                          />
-                        ))}
-                      </>
-                    )}
-                  </MarkerClusterer>
-                  {active ? (
-                    <InfoWindow
-                      position={{ lat: active.lat, lng: active.lng }}
-                      onCloseClick={() => setActive(null)}
-                      options={{ maxWidth: 260 }}
-                    >
-                      <div className="max-w-[240px] text-sm">
-                        {active.previewPhotoUrl ? (
-                          <img
-                            src={
-                              active.previewPhotoUrl.startsWith("http")
-                                ? active.previewPhotoUrl
-                                : `${apiUrl}${active.previewPhotoUrl}`
-                            }
-                            alt="Фото питомца"
-                            className="mb-2 rounded-md object-cover"
-                            style={{ width: 180, height: 135 }}
-                            loading="lazy"
-                          />
-                        ) : null}
-                        <p className="font-semibold text-slate-900">{active.name}</p>
-                        <p className="text-slate-600">{active.epitaph ?? "Без эпитафии"}</p>
-                        <a className="mt-2 inline-block text-slate-900 underline" href={`/pets/${active.petId}`}>
-                          Открыть мемориал
-                        </a>
-                      </div>
-                    </InfoWindow>
-                  ) : null}
-                </GoogleMap>
-              )}
-            </div>
-          </div>
 
-          <div
-            className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-            style={{ height: mapCardHeight }}
-          >
+          <div className="flex max-h-[70vh] flex-col rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
               <span className="text-xs text-slate-500">{listMarkers.length}</span>
@@ -360,7 +337,7 @@ export default function MapClient() {
                     onMouseLeave={() => setHoveredMarkerId(null)}
                     onFocus={() => setHoveredMarkerId(marker.id)}
                     onBlur={() => setHoveredMarkerId(null)}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300"
+                    className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4 transition hover:border-slate-300"
                   >
                     <div className="flex items-center gap-3">
                       {marker.previewPhotoUrl ? (
@@ -381,9 +358,6 @@ export default function MapClient() {
                       <div className="flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-                          <span className="text-xs text-slate-400">
-                            {marker.lat.toFixed(3)}, {marker.lng.toFixed(3)}
-                          </span>
                         </div>
                         <p className="mt-1 text-xs text-slate-600">
                           {marker.epitaph ?? "Без эпитафии"}
@@ -392,11 +366,13 @@ export default function MapClient() {
                     </div>
                   </a>
                 ))}
+              </div>
             </div>
           </div>
+        </div>
+        <div className="pointer-events-auto">
           <ErrorToast message={error} onClose={() => setError(null)} />
         </div>
-        </section>
       </div>
     </main>
   );

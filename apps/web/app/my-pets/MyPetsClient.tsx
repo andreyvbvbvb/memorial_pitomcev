@@ -102,9 +102,7 @@ export default function MyPetsClient() {
       {viewMode === 5 ? <MyPets3DView pets={petsWithPreview} loading={loading} fullScreen /> : null}
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-12 pointer-events-none">
         <div className="pointer-events-auto">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-3xl font-semibold text-slate-900">Мои питомцы</h1>
-        </div>
+        <div className="flex flex-col items-center gap-2 text-center"></div>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm">
