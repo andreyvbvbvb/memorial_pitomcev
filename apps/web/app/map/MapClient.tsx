@@ -547,6 +547,12 @@ function RowCarouselStage({
   useFrame((_, delta) => {
     const count = items.length;
     if (count === 0) {
+      if (activeLightRef.current) {
+        activeLightRef.current.visible = false;
+      }
+      if (hoverLightRef.current) {
+        hoverLightRef.current.visible = false;
+      }
       return;
     }
     const desiredSpacing = 20;
@@ -561,11 +567,13 @@ function RowCarouselStage({
     let fromIndex = activeIndexRef.current;
     let toIndex = activeIndexRef.current;
     let blend = 0;
+    let eased = 0;
+    let centerAngle = -activeIndexRef.current * angleStep;
 
     if (animRef.current) {
       animRef.current.t += delta;
       blend = Math.min(animRef.current.t / animRef.current.duration, 1);
-      const eased = blend * blend * (3 - 2 * blend);
+      eased = blend * blend * (3 - 2 * blend);
       fromIndex = animRef.current.from;
       toIndex = animRef.current.to;
       const fromAngle = -fromIndex * angleStep;
@@ -576,9 +584,9 @@ function RowCarouselStage({
       } else if (deltaAngle < -Math.PI) {
         toAngle += Math.PI * 2;
       }
-      const angle = THREE.MathUtils.lerp(fromAngle, toAngle, eased);
-      camera.position.x = Math.cos(angle) * cameraRadius;
-      camera.position.z = Math.sin(angle) * cameraRadius;
+      centerAngle = THREE.MathUtils.lerp(fromAngle, toAngle, eased);
+      camera.position.x = Math.cos(centerAngle) * cameraRadius;
+      camera.position.z = Math.sin(centerAngle) * cameraRadius;
       camera.position.y = cameraHeight;
       camera.lookAt(0, 0, 0);
       camera.rotateX(-cameraTilt);
@@ -589,17 +597,42 @@ function RowCarouselStage({
         onAnimationEndRef.current();
       }
     } else {
-      const angle = -activeIndexRef.current * angleStep;
-      camera.position.x = Math.cos(angle) * cameraRadius;
-      camera.position.z = Math.sin(angle) * cameraRadius;
+      camera.position.x = Math.cos(centerAngle) * cameraRadius;
+      camera.position.z = Math.sin(centerAngle) * cameraRadius;
       camera.position.y = cameraHeight;
       camera.lookAt(0, 0, 0);
       camera.rotateX(-cameraTilt);
     }
 
-    const distanceBetween = (a: number, b: number) => {
-      const diff = Math.abs(a - b);
+    const wrapIndex = (value: number) => {
+      let wrapped = value % count;
+      if (wrapped < 0) {
+        wrapped += count;
+      }
+      return wrapped;
+    };
+
+    const centerIndexFloat = wrapIndex(-centerAngle / angleStep);
+
+    const distanceBetween = (index: number, center: number) => {
+      const diff = Math.abs(index - center);
       return Math.min(diff, count - diff);
+    };
+
+    const dimForDistance = (dist: number) => {
+      if (dist <= 0) {
+        return 0;
+      }
+      if (dist < 1) {
+        return THREE.MathUtils.lerp(0, 0.2, dist);
+      }
+      if (dist < 2) {
+        return THREE.MathUtils.lerp(0.2, 0.35, dist - 1);
+      }
+      if (dist < 3) {
+        return THREE.MathUtils.lerp(0.35, 0.5, dist - 2);
+      }
+      return 0.5;
     };
 
     instanceRefs.current.forEach((node, idx) => {
@@ -607,16 +640,8 @@ function RowCarouselStage({
         return;
       }
       const angle = idx * angleStep;
-      let pop = 0;
-      if (animRef.current) {
-        if (idx === fromIndex) {
-          pop = popDistance * (1 - blend);
-        } else if (idx === toIndex) {
-          pop = popDistance * blend;
-        }
-      } else if (idx === activeIndexRef.current) {
-        pop = popDistance;
-      }
+      const distToCenter = distanceBetween(idx, centerIndexFloat);
+      const pop = popDistance * Math.max(0, 1 - distToCenter);
       const radial = radiusRef.current + pop;
       node.position.x = Math.cos(angle) * radial;
       node.position.z = Math.sin(angle) * radial;
@@ -624,31 +649,20 @@ function RowCarouselStage({
       node.lookAt(0, 0, 0);
       node.rotateY(Math.PI);
 
-      const distFromFrom = distanceBetween(idx, fromIndex);
-      const distFromTo = distanceBetween(idx, toIndex);
-      const toneForDistance = (dist: number) =>
-        dist === 0 ? 0 : dist === 1 ? 0.2 : dist === 2 ? 0.35 : 0.5;
-      const toneFrom = toneForDistance(distFromFrom);
-      const toneTo = toneForDistance(distFromTo);
-      const dim = animRef.current ? THREE.MathUtils.lerp(toneFrom, toneTo, blend) : toneFrom;
+      const dim = dimForDistance(distToCenter);
       applyMaterialDimming(node, dim);
-
-      const hovered = hoveredRef.current === idx;
-      const activeHighlight = idx === activeIndexRef.current ? 0.45 : 0;
-      const hoverHighlight = hovered ? 0.9 : 0;
-      const highlight = Math.max(activeHighlight, hoverHighlight);
       applyMaterialHighlight(node, 0);
     });
 
-    const activeNode = instanceRefs.current[activeIndexRef.current] ?? null;
-    if (activeLightRef.current && activeNode) {
-      const pos = new THREE.Vector3();
-      activeNode.getWorldPosition(pos);
-      activeLightRef.current.position.set(pos.x, pos.y + 6, pos.z);
+    if (activeLightRef.current) {
+      const lightRadius = radiusRef.current + popDistance;
+      activeLightRef.current.position.set(
+        Math.cos(centerAngle) * lightRadius,
+        6,
+        Math.sin(centerAngle) * lightRadius
+      );
       activeLightRef.current.intensity = 1.6;
       activeLightRef.current.visible = true;
-    } else if (activeLightRef.current) {
-      activeLightRef.current.visible = false;
     }
 
     const hoveredIndex = hoveredRef.current;
@@ -678,12 +692,6 @@ function RowCarouselStage({
       <PointLight ref={hoverLightRef} color="#bae6fd" distance={40} decay={1.5} />
       <OcclusionPlane size={Math.max(220, radiusRef.current * 16)} />
       {items.map((item, idx) => {
-        const count = items.length;
-        const distanceBetween = (a: number, b: number) => {
-          const diff = Math.abs(a - b);
-          return Math.min(diff, count - diff);
-        };
-        const dist = distanceBetween(idx, activeIndex);
         return (
           <MemorialInstance
             key={item.id}
@@ -764,12 +772,11 @@ export default function MapClient() {
   const [carouselOrder, setCarouselOrder] = useState<MarkerDto[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
-  const [cameraSettings, setCameraSettings] = useState({
-    distanceOffset: 16,
-    height: 5.0,
-    tiltDeg: 3
-  });
-  const [showCameraSettings, setShowCameraSettings] = useState(true);
+  const cameraSettings = {
+    distanceOffset: 13.5,
+    height: 4.0,
+    tiltDeg: 13.5
+  };
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
 
@@ -1354,70 +1361,6 @@ export default function MapClient() {
                   >
                     →
                   </button>
-                </div>
-                <div className="pointer-events-auto mt-4 w-full max-w-md rounded-2xl border border-slate-200 bg-white/80 p-4 text-xs text-slate-700 shadow-sm backdrop-blur">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">Настройки камеры</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowCameraSettings((prev) => !prev)}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-600"
-                    >
-                      {showCameraSettings ? "Скрыть" : "Показать"}
-                    </button>
-                  </div>
-                  {showCameraSettings ? (
-                    <div className="mt-3 grid gap-3">
-                      <label className="grid gap-1">
-                        Дистанция: {cameraSettings.distanceOffset.toFixed(1)}
-                        <input
-                          type="range"
-                          min={6}
-                          max={30}
-                          step={0.5}
-                          value={cameraSettings.distanceOffset}
-                          onChange={(event) =>
-                            setCameraSettings((prev) => ({
-                              ...prev,
-                              distanceOffset: Number(event.target.value)
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className="grid gap-1">
-                        Высота: {cameraSettings.height.toFixed(1)}
-                        <input
-                          type="range"
-                          min={2}
-                          max={10}
-                          step={0.2}
-                          value={cameraSettings.height}
-                          onChange={(event) =>
-                            setCameraSettings((prev) => ({
-                              ...prev,
-                              height: Number(event.target.value)
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className="grid gap-1">
-                        Наклон: {cameraSettings.tiltDeg.toFixed(1)}°
-                        <input
-                          type="range"
-                          min={0}
-                          max={20}
-                          step={0.5}
-                          value={cameraSettings.tiltDeg}
-                          onChange={(event) =>
-                            setCameraSettings((prev) => ({
-                              ...prev,
-                              tiltDeg: Number(event.target.value)
-                            }))
-                          }
-                        />
-                      </label>
-                    </div>
-                  ) : null}
                 </div>
               </div>
               <div className="pointer-events-auto w-[320px] rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
