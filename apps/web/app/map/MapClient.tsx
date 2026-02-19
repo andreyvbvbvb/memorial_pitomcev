@@ -213,6 +213,48 @@ const applyMaterialHighlight = (root: THREE.Object3D, intensity = 0) => {
   });
 };
 
+const applyMaterialDimming = (root: THREE.Object3D, dim = 0) => {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((material) => {
+      const mat = material as THREE.Material & {
+        userData?: Record<string, unknown>;
+        color?: THREE.Color;
+        emissive?: THREE.Color;
+        emissiveIntensity?: number;
+      };
+      if (!mat.userData) {
+        mat.userData = {};
+      }
+      if (!mat.userData.baseColor && mat.color) {
+        mat.userData.baseColor = mat.color.clone();
+      }
+      if (!mat.userData.baseEmissive && mat.emissive) {
+        mat.userData.baseEmissive = mat.emissive.clone();
+        mat.userData.baseEmissiveIntensity = mat.emissiveIntensity ?? 0;
+      }
+      if (mat.color && mat.userData.baseColor) {
+        const base = mat.userData.baseColor as THREE.Color;
+        const color = base.clone();
+        if (dim > 0) {
+          color.multiplyScalar(1 - dim);
+        }
+        mat.color.copy(color);
+      }
+      if (mat.emissive && mat.userData.baseEmissive) {
+        const baseEmissive = mat.userData.baseEmissive as THREE.Color;
+        mat.emissive.copy(baseEmissive);
+        mat.emissiveIntensity = mat.userData.baseEmissiveIntensity as number;
+      }
+      mat.needsUpdate = true;
+    });
+  });
+};
+
 const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") => {
   if (!size || size <= 0) {
     return;
@@ -408,6 +450,7 @@ function RowCarouselStage({
     duration: number;
   } | null>(null);
   const radiusRef = useRef(20);
+  const highlightIndexRef = useRef<number | null>(null);
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
@@ -460,7 +503,7 @@ function RowCarouselStage({
       from: activeIndexRef.current,
       to: targetIndex,
       t: 0,
-      duration: 1
+      duration: 0.6
     };
   }, [targetIndex]);
 
@@ -473,7 +516,8 @@ function RowCarouselStage({
     const minRadius = 24;
     radiusRef.current = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
     const cameraRadius = radiusRef.current + 18;
-    const cameraHeight = 6.5;
+    const cameraHeight = 4.5;
+    const cameraTilt = THREE.MathUtils.degToRad(10);
     const popDistance = 2.6;
     const angleStep = (Math.PI * 2) / count;
 
@@ -500,6 +544,7 @@ function RowCarouselStage({
       camera.position.z = Math.sin(angle) * cameraRadius;
       camera.position.y = cameraHeight;
       camera.lookAt(0, 0, 0);
+      camera.rotateX(-cameraTilt);
       if (blend >= 1) {
         onArriveRef.current(toIndex);
         activeIndexRef.current = toIndex;
@@ -512,6 +557,7 @@ function RowCarouselStage({
       camera.position.z = Math.sin(angle) * cameraRadius;
       camera.position.y = cameraHeight;
       camera.lookAt(0, 0, 0);
+      camera.rotateX(-cameraTilt);
     }
 
     const distanceBetween = (a: number, b: number) => {
@@ -539,18 +585,21 @@ function RowCarouselStage({
       node.position.z = Math.sin(angle) * radial;
       node.position.y = 0;
       node.lookAt(0, 0, 0);
+      node.rotateY(Math.PI);
 
       const distFromFrom = distanceBetween(idx, fromIndex);
       const distFromTo = distanceBetween(idx, toIndex);
       const toneForDistance = (dist: number) =>
-        dist === 0 ? 1 : dist === 1 ? 0.7 : dist === 2 ? 0.45 : 0.3;
+        dist === 0 ? 0 : dist === 1 ? 0.2 : dist === 2 ? 0.35 : 0.5;
       const toneFrom = toneForDistance(distFromFrom);
       const toneTo = toneForDistance(distFromTo);
-      const tone = animRef.current ? THREE.MathUtils.lerp(toneFrom, toneTo, blend) : toneFrom;
-      applyMaterialTone(node, tone);
+      const dim = animRef.current ? THREE.MathUtils.lerp(toneFrom, toneTo, blend) : toneFrom;
+      applyMaterialDimming(node, dim);
 
       const hovered = hoveredRef.current === idx;
-      const highlight = hovered || idx === activeIndexRef.current ? 0.55 : 0;
+      const activeHighlight = idx === activeIndexRef.current ? 0.45 : 0;
+      const hoverHighlight = hovered ? 0.9 : 0;
+      const highlight = Math.max(activeHighlight, hoverHighlight);
       applyMaterialHighlight(node, highlight);
     });
   });
@@ -561,7 +610,7 @@ function RowCarouselStage({
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
-      <OcclusionPlane size={Math.max(120, radiusRef.current * 6)} />
+      <OcclusionPlane size={Math.max(140, radiusRef.current * 8)} />
       {items.map((item, idx) => {
         const count = items.length;
         const distanceBetween = (a: number, b: number) => {
