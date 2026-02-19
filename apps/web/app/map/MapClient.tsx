@@ -433,14 +433,14 @@ function RowCarouselStage({
   targetIndex,
   onArrive,
   onAnimationEnd,
-  onSelectIndex
+  cameraSettings
 }: {
   items: { data: MemorialSceneData | null; id: string }[];
   activeIndex: number;
   targetIndex: number | null;
   onArrive: (index: number) => void;
   onAnimationEnd: () => void;
-  onSelectIndex: (index: number) => void;
+  cameraSettings: { distanceOffset: number; height: number; tiltDeg: number };
 }) {
   const { camera } = useThree();
   const instanceRefs = useRef<(THREE.Group | null)[]>([]);
@@ -452,7 +452,6 @@ function RowCarouselStage({
     duration: number;
   } | null>(null);
   const radiusRef = useRef(20);
-  const highlightIndexRef = useRef<number | null>(null);
   const activeLightRef = useRef<THREE.PointLight>(null);
   const hoverLightRef = useRef<THREE.PointLight>(null);
   const activeIndexRef = useRef(activeIndex);
@@ -553,9 +552,9 @@ function RowCarouselStage({
     const desiredSpacing = 20;
     const minRadius = 30;
     radiusRef.current = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
-    const cameraRadius = radiusRef.current + 14;
-    const cameraHeight = 5.4;
-    const cameraTilt = THREE.MathUtils.degToRad(4);
+    const cameraRadius = radiusRef.current + cameraSettings.distanceOffset;
+    const cameraHeight = cameraSettings.height;
+    const cameraTilt = THREE.MathUtils.degToRad(cameraSettings.tiltDeg);
     const popDistance = 2.6;
     const angleStep = (Math.PI * 2) / count;
 
@@ -685,7 +684,6 @@ function RowCarouselStage({
           return Math.min(diff, count - diff);
         };
         const dist = distanceBetween(idx, activeIndex);
-        const clickable = dist === 1 && targetIndex === null;
         return (
           <MemorialInstance
             key={item.id}
@@ -702,7 +700,7 @@ function RowCarouselStage({
                 hoveredRef.current = null;
               }
             }}
-            onSelect={clickable ? () => onSelectIndex(idx) : undefined}
+            onSelect={undefined}
           />
         );
       })}
@@ -716,14 +714,14 @@ function CarouselScene({
   targetIndex,
   onArrive,
   onAnimationEnd,
-  onSelectIndex
+  cameraSettings
 }: {
   items: { data: MemorialSceneData | null; id: string }[];
   activeIndex: number;
   targetIndex: number | null;
   onArrive: (index: number) => void;
   onAnimationEnd: () => void;
-  onSelectIndex: (index: number) => void;
+  cameraSettings: { distanceOffset: number; height: number; tiltDeg: number };
 }) {
   return (
     <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
@@ -733,7 +731,7 @@ function CarouselScene({
         targetIndex={targetIndex}
         onArrive={onArrive}
         onAnimationEnd={onAnimationEnd}
-        onSelectIndex={onSelectIndex}
+        cameraSettings={cameraSettings}
       />
     </Canvas>
   );
@@ -766,6 +764,12 @@ export default function MapClient() {
   const [carouselOrder, setCarouselOrder] = useState<MarkerDto[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
+  const [cameraSettings, setCameraSettings] = useState({
+    distanceOffset: 16,
+    height: 5.0,
+    tiltDeg: 3
+  });
+  const [showCameraSettings, setShowCameraSettings] = useState(true);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
 
@@ -1316,13 +1320,22 @@ export default function MapClient() {
                     targetIndex={carouselTargetIndex}
                     onArrive={handleCarouselArrive}
                     onAnimationEnd={handleCarouselAnimationEnd}
-                    onSelectIndex={(index) => {
-                      if (carouselTargetIndex !== null) {
-                        return;
-                      }
-                      setCarouselTargetIndex(index);
-                    }}
+                    cameraSettings={cameraSettings}
                   />
+                  <div className="pointer-events-none absolute inset-0">
+                    <button
+                      type="button"
+                      aria-label="Предыдущий мемориал"
+                      onClick={handleCarouselPrev}
+                      className="pointer-events-auto absolute left-0 top-0 h-full w-[10%] bg-transparent"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Следующий мемориал"
+                      onClick={handleCarouselNext}
+                      className="pointer-events-auto absolute right-0 top-0 h-full w-[10%] bg-transparent"
+                    />
+                  </div>
                 </div>
                 <div className="pointer-events-auto mt-4 flex items-center gap-4">
                   <button
@@ -1341,6 +1354,70 @@ export default function MapClient() {
                   >
                     →
                   </button>
+                </div>
+                <div className="pointer-events-auto mt-4 w-full max-w-md rounded-2xl border border-slate-200 bg-white/80 p-4 text-xs text-slate-700 shadow-sm backdrop-blur">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">Настройки камеры</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowCameraSettings((prev) => !prev)}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-600"
+                    >
+                      {showCameraSettings ? "Скрыть" : "Показать"}
+                    </button>
+                  </div>
+                  {showCameraSettings ? (
+                    <div className="mt-3 grid gap-3">
+                      <label className="grid gap-1">
+                        Дистанция: {cameraSettings.distanceOffset.toFixed(1)}
+                        <input
+                          type="range"
+                          min={6}
+                          max={30}
+                          step={0.5}
+                          value={cameraSettings.distanceOffset}
+                          onChange={(event) =>
+                            setCameraSettings((prev) => ({
+                              ...prev,
+                              distanceOffset: Number(event.target.value)
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        Высота: {cameraSettings.height.toFixed(1)}
+                        <input
+                          type="range"
+                          min={2}
+                          max={10}
+                          step={0.2}
+                          value={cameraSettings.height}
+                          onChange={(event) =>
+                            setCameraSettings((prev) => ({
+                              ...prev,
+                              height: Number(event.target.value)
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        Наклон: {cameraSettings.tiltDeg.toFixed(1)}°
+                        <input
+                          type="range"
+                          min={0}
+                          max={20}
+                          step={0.5}
+                          value={cameraSettings.tiltDeg}
+                          onChange={(event) =>
+                            setCameraSettings((prev) => ({
+                              ...prev,
+                              tiltDeg: Number(event.target.value)
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                  ) : null}
                 </div>
               </div>
               <div className="pointer-events-auto w-[320px] rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
