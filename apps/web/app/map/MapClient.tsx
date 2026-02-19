@@ -7,7 +7,7 @@ import {
   MarkerClusterer,
   useJsApiLoader
 } from "@react-google-maps/api";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -261,15 +261,13 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
 
 function MemorialInstance({
   data,
-  position,
-  scale,
   tone,
+  innerRef,
   onSelect
 }: {
   data: MemorialSceneData | null;
-  position: [number, number, number];
-  scale: number;
   tone: number;
+  innerRef: (node: THREE.Group | null) => void;
   onSelect?: () => void;
 }) {
   if (!data) {
@@ -277,8 +275,7 @@ function MemorialInstance({
   }
   return (
     <Group
-      position={position}
-      scale={[scale, scale, scale]}
+      ref={innerRef}
       onPointerDown={(event: any) => {
         if (!onSelect) {
           return;
@@ -294,50 +291,135 @@ function MemorialInstance({
   );
 }
 
-function CarouselStage({
+function RowCarouselStage({
   items,
-  moveDir,
-  onMoveComplete,
-  onSelectOffset
+  activeIndex,
+  targetIndex,
+  onArrive,
+  onAnimationEnd,
+  onSelectIndex
 }: {
-  items: { data: MemorialSceneData | null }[];
-  moveDir: "prev" | "next" | null;
-  onMoveComplete: (dir: "prev" | "next") => void;
-  onSelectOffset: (offset: -1 | 1) => void;
+  items: { data: MemorialSceneData | null; id: string }[];
+  activeIndex: number;
+  targetIndex: number | null;
+  onArrive: (index: number) => void;
+  onAnimationEnd: () => void;
+  onSelectIndex: (index: number) => void;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const shiftRef = useRef(0);
-  const activeDirRef = useRef<"prev" | "next" | null>(null);
+  const { camera } = useThree();
   const spacing = 6.5;
-  const targetRef = useRef(0);
-  const onMoveCompleteRef = useRef(onMoveComplete);
+  const popDistance = 1.6;
+  const instanceRefs = useRef<(THREE.Group | null)[]>([]);
+  const phaseRef = useRef<"idle" | "collapse" | "move" | "expand">("idle");
+  const progressRef = useRef(0);
+  const popRef = useRef(1);
+  const fromIndexRef = useRef(activeIndex);
+  const toIndexRef = useRef<number | null>(null);
+  const activeIndexRef = useRef(activeIndex);
+  const onArriveRef = useRef(onArrive);
+  const onAnimationEndRef = useRef(onAnimationEnd);
 
   useEffect(() => {
-    onMoveCompleteRef.current = onMoveComplete;
-  }, [onMoveComplete]);
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
   useEffect(() => {
-    if (!moveDir) {
+    instanceRefs.current = new Array(items.length).fill(null);
+  }, [items.length]);
+
+  useEffect(() => {
+    onArriveRef.current = onArrive;
+  }, [onArrive]);
+
+  useEffect(() => {
+    onAnimationEndRef.current = onAnimationEnd;
+  }, [onAnimationEnd]);
+
+  useEffect(() => {
+    if (targetIndex === null || phaseRef.current !== "idle") {
       return;
     }
-    activeDirRef.current = moveDir;
-    targetRef.current = moveDir === "next" ? -spacing : spacing;
-  }, [moveDir, spacing]);
+    fromIndexRef.current = activeIndexRef.current;
+    toIndexRef.current = targetIndex;
+    progressRef.current = 0;
+    phaseRef.current = "collapse";
+  }, [targetIndex]);
 
   useFrame((_, delta) => {
-    if (!groupRef.current || !activeDirRef.current) {
-      return;
+    const activeIndexValue = activeIndexRef.current;
+    const fromIndex = fromIndexRef.current;
+    const toIndex = toIndexRef.current ?? fromIndex;
+    const collapseDuration = 0.25;
+    const moveDuration = 0.7;
+    const expandDuration = 0.25;
+
+    if (phaseRef.current === "idle") {
+      popRef.current = 1;
+      const x = activeIndexValue * spacing;
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, x, 6, delta);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
+      camera.lookAt(x, 0, 0);
+    } else if (phaseRef.current === "collapse") {
+      progressRef.current += delta;
+      const t = Math.min(progressRef.current / collapseDuration, 1);
+      popRef.current = 1 - t;
+      const x = fromIndex * spacing;
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, x, 6, delta);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
+      camera.lookAt(x, 0, 0);
+      if (t >= 1) {
+        progressRef.current = 0;
+        phaseRef.current = "move";
+      }
+    } else if (phaseRef.current === "move") {
+      progressRef.current += delta;
+      const t = Math.min(progressRef.current / moveDuration, 1);
+      const eased = t * (2 - t);
+      const fromX = fromIndex * spacing;
+      const toX = toIndex * spacing;
+      const x = THREE.MathUtils.lerp(fromX, toX, eased);
+      camera.position.x = x;
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
+      camera.lookAt(x, 0, 0);
+      popRef.current = 0;
+      if (t >= 1) {
+        onArriveRef.current(toIndex);
+        activeIndexRef.current = toIndex;
+        progressRef.current = 0;
+        phaseRef.current = "expand";
+      }
+    } else if (phaseRef.current === "expand") {
+      progressRef.current += delta;
+      const t = Math.min(progressRef.current / expandDuration, 1);
+      popRef.current = t;
+      const x = toIndex * spacing;
+      camera.position.x = THREE.MathUtils.damp(camera.position.x, x, 6, delta);
+      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
+      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
+      camera.lookAt(x, 0, 0);
+      if (t >= 1) {
+        progressRef.current = 0;
+        phaseRef.current = "idle";
+        toIndexRef.current = null;
+        onAnimationEndRef.current();
+      }
     }
-    const target = targetRef.current;
-    shiftRef.current = THREE.MathUtils.damp(shiftRef.current, target, 8, delta);
-    groupRef.current.position.x = shiftRef.current;
-    if (Math.abs(shiftRef.current - target) < 0.02) {
-      const dir = activeDirRef.current;
-      activeDirRef.current = null;
-      shiftRef.current = 0;
-      groupRef.current.position.x = 0;
-      onMoveCompleteRef.current(dir);
-    }
+
+    const pop = popRef.current * popDistance;
+    instanceRefs.current.forEach((node, idx) => {
+      if (!node) {
+        return;
+      }
+      const baseX = idx * spacing;
+      node.position.x = baseX;
+      node.position.y = 0;
+      node.position.z = idx === activeIndexRef.current ? pop : 0;
+      const baseScale = idx === activeIndexRef.current ? 1.05 : 0.95;
+      node.scale.setScalar(baseScale);
+    });
   });
 
   return (
@@ -346,54 +428,50 @@ function CarouselStage({
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
-      <Group ref={groupRef}>
-        {items.map((item, idx) => {
-          const offset = idx - 2;
-          const abs = Math.abs(offset);
-          const isActive = offset === 0;
-          const focusEnabled = !moveDir;
-          const baseZ = -abs * 1.1;
-          const focusBoost = focusEnabled && isActive ? 1.6 : 0;
-          const pos: [number, number, number] = [offset * spacing, 0, baseZ + focusBoost];
-          const scale = isActive ? 1.05 : abs === 1 ? 0.85 : 0.7;
-          const tone = isActive ? (focusEnabled ? 1 : 0.7) : abs === 1 ? 0.7 : 0.45;
-          const clickable = offset !== 0;
-          return (
-            <MemorialInstance
-              key={`carousel-${idx}`}
-              data={item.data}
-              position={pos}
-              scale={scale}
-              tone={tone}
-              onSelect={
-                clickable ? () => onSelectOffset(offset < 0 ? -1 : 1) : undefined
-              }
-            />
-          );
-        })}
-      </Group>
+      {items.map((item, idx) => {
+        const dist = Math.abs(idx - activeIndex);
+        const tone = dist === 0 ? 1 : dist === 1 ? 0.7 : dist === 2 ? 0.45 : 0.3;
+        const clickable = dist === 1 && targetIndex === null;
+        return (
+          <MemorialInstance
+            key={item.id}
+            data={item.data}
+            tone={tone}
+            innerRef={(node) => {
+              instanceRefs.current[idx] = node;
+            }}
+            onSelect={clickable ? () => onSelectIndex(idx) : undefined}
+          />
+        );
+      })}
     </>
   );
 }
 
 function CarouselScene({
   items,
-  moveDir,
-  onMoveComplete,
-  onSelectOffset
+  activeIndex,
+  targetIndex,
+  onArrive,
+  onAnimationEnd,
+  onSelectIndex
 }: {
-  items: { data: MemorialSceneData | null }[];
-  moveDir: "prev" | "next" | null;
-  onMoveComplete: (dir: "prev" | "next") => void;
-  onSelectOffset: (offset: -1 | 1) => void;
+  items: { data: MemorialSceneData | null; id: string }[];
+  activeIndex: number;
+  targetIndex: number | null;
+  onArrive: (index: number) => void;
+  onAnimationEnd: () => void;
+  onSelectIndex: (index: number) => void;
 }) {
   return (
     <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
-      <CarouselStage
+      <RowCarouselStage
         items={items}
-        moveDir={moveDir}
-        onMoveComplete={onMoveComplete}
-        onSelectOffset={onSelectOffset}
+        activeIndex={activeIndex}
+        targetIndex={targetIndex}
+        onArrive={onArrive}
+        onAnimationEnd={onAnimationEnd}
+        onSelectIndex={onSelectIndex}
       />
     </Canvas>
   );
@@ -425,7 +503,7 @@ export default function MapClient() {
   const [mapMode, setMapMode] = useState<"map" | "carousel">("map");
   const [carouselOrder, setCarouselOrder] = useState<MarkerDto[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [carouselAnimating, setCarouselAnimating] = useState<null | "prev" | "next">(null);
+  const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
 
@@ -487,29 +565,16 @@ export default function MapClient() {
     if (filteredMarkers.length === 0) {
       setCarouselOrder([]);
       setCarouselIndex(0);
-      setCarouselAnimating(null);
+      setCarouselTargetIndex(null);
       return;
     }
     const shuffled = [...filteredMarkers].sort(() => Math.random() - 0.5);
     setCarouselOrder(shuffled);
     setCarouselIndex(0);
-    setCarouselAnimating(null);
+    setCarouselTargetIndex(null);
   }, [filteredMarkers]);
 
-  const carouselMarkers = useMemo(() => {
-    if (carouselOrder.length === 0) {
-      return [null, null, null, null, null] as (MarkerDto | null)[];
-    }
-    if (carouselOrder.length === 1) {
-      return [null, null, carouselOrder[0] ?? null, null, null] as (MarkerDto | null)[];
-    }
-    return [-2, -1, 0, 1, 2].map((offset) => {
-      const idx = (carouselIndex + offset + carouselOrder.length) % carouselOrder.length;
-      return carouselOrder[idx] ?? null;
-    });
-  }, [carouselOrder, carouselIndex]);
-
-  const activeCarouselMarker = carouselMarkers[2] ?? null;
+  const activeCarouselMarker = carouselOrder[carouselIndex] ?? null;
 
   const listMarkers = useMemo(() => {
     const source = boundsReady ? visibleMarkers : markers;
@@ -617,13 +682,22 @@ export default function MapClient() {
     if (mapMode !== "carousel") {
       return;
     }
-    const ids = carouselMarkers
-      .map((item) => item?.petId)
-      .filter((id): id is string => Boolean(id));
+    if (carouselOrder.length === 0) {
+      return;
+    }
+    const range = 3;
+    const ids = new Set<string>();
+    for (let offset = -range; offset <= range; offset += 1) {
+      const idx = (carouselIndex + offset + carouselOrder.length) % carouselOrder.length;
+      const marker = carouselOrder[idx];
+      if (marker?.petId) {
+        ids.add(marker.petId);
+      }
+    }
     ids.forEach((id) => {
       void loadPetDetail(id);
     });
-  }, [mapMode, carouselMarkers]);
+  }, [mapMode, carouselIndex, carouselOrder]);
 
   const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
@@ -679,34 +753,37 @@ export default function MapClient() {
 
   const carouselItems = useMemo(
     () =>
-      carouselMarkers.map((marker) => ({
+      carouselOrder.map((marker) => ({
+        id: marker.id,
         data: buildMemorialSceneData(marker)
       })),
-    [carouselMarkers, buildMemorialSceneData]
+    [carouselOrder, buildMemorialSceneData]
   );
 
-  const startCarouselAnimation = (direction: "prev" | "next") => {
-    if (carouselOrder.length < 2 || carouselAnimating) {
-      return;
-    }
-    setCarouselAnimating(direction);
+  const handleCarouselArrive = (index: number) => {
+    setCarouselIndex(index);
   };
 
-  const handleCarouselMoveComplete = (direction: "prev" | "next") => {
-    if (carouselOrder.length < 2) {
-      setCarouselAnimating(null);
-      return;
-    }
-    setCarouselIndex((prev) =>
-      direction === "next"
-        ? (prev + 1) % carouselOrder.length
-        : (prev - 1 + carouselOrder.length) % carouselOrder.length
-    );
-    setCarouselAnimating(null);
+  const handleCarouselAnimationEnd = () => {
+    setCarouselTargetIndex(null);
   };
 
-  const handleCarouselPrev = () => startCarouselAnimation("prev");
-  const handleCarouselNext = () => startCarouselAnimation("next");
+  const handleCarouselPrev = () => {
+    if (carouselOrder.length < 2 || carouselTargetIndex !== null) {
+      return;
+    }
+    const nextIndex =
+      (carouselIndex - 1 + carouselOrder.length) % carouselOrder.length;
+    setCarouselTargetIndex(nextIndex);
+  };
+
+  const handleCarouselNext = () => {
+    if (carouselOrder.length < 2 || carouselTargetIndex !== null) {
+      return;
+    }
+    const nextIndex = (carouselIndex + 1) % carouselOrder.length;
+    setCarouselTargetIndex(nextIndex);
+  };
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
   const activePreviewUrl = activeCarouselMarker?.previewPhotoUrl;
@@ -715,7 +792,7 @@ export default function MapClient() {
       ? activePreviewUrl
       : `${apiUrl}${activePreviewUrl}`
     : null;
-  const canRotate = carouselOrder.length > 1;
+  const canRotate = carouselOrder.length > 1 && carouselTargetIndex === null;
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
@@ -973,11 +1050,16 @@ export default function MapClient() {
                 <div className="pointer-events-auto relative h-[60vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur">
                   <CarouselScene
                     items={carouselItems}
-                    moveDir={carouselAnimating}
-                    onMoveComplete={handleCarouselMoveComplete}
-                    onSelectOffset={(offset) =>
-                      startCarouselAnimation(offset < 0 ? "prev" : "next")
-                    }
+                    activeIndex={carouselIndex}
+                    targetIndex={carouselTargetIndex}
+                    onArrive={handleCarouselArrive}
+                    onAnimationEnd={handleCarouselAnimationEnd}
+                    onSelectIndex={(index) => {
+                      if (carouselTargetIndex !== null) {
+                        return;
+                      }
+                      setCarouselTargetIndex(index);
+                    }}
                   />
                 </div>
                 <div className="pointer-events-auto mt-4 flex items-center gap-4">
