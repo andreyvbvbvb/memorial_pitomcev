@@ -148,6 +148,54 @@ const applyMaterialTone = (root: THREE.Object3D, tone = 1) => {
   });
 };
 
+const HIGHLIGHT_COLOR = new THREE.Color("#7dd3fc");
+
+const applyMaterialHighlight = (root: THREE.Object3D, intensity = 0) => {
+  const last = root.userData.lastHighlight as number | undefined;
+  if (last !== undefined && Math.abs(last - intensity) < 0.01) {
+    return;
+  }
+  root.userData.lastHighlight = intensity;
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((material) => {
+      const mat = material as THREE.Material & {
+        emissive?: THREE.Color;
+        emissiveIntensity?: number;
+        userData?: Record<string, unknown>;
+      };
+      if (!mat.emissive) {
+        return;
+      }
+      if (!mat.userData) {
+        mat.userData = {};
+      }
+      if (!mat.userData.baseEmissive) {
+        mat.userData.baseEmissive = mat.emissive.clone();
+        mat.userData.baseEmissiveIntensity = mat.emissiveIntensity ?? 0;
+      }
+      if (intensity > 0) {
+        mat.emissive.copy(HIGHLIGHT_COLOR);
+        mat.emissiveIntensity = intensity;
+      } else {
+        const base = mat.userData.baseEmissive as THREE.Color | undefined;
+        const baseIntensity = mat.userData.baseEmissiveIntensity as number | undefined;
+        if (base) {
+          mat.emissive.copy(base);
+        }
+        if (typeof baseIntensity === "number") {
+          mat.emissiveIntensity = baseIntensity;
+        }
+      }
+      mat.needsUpdate = true;
+    });
+  });
+};
+
 const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") => {
   if (!size || size <= 0) {
     return;
@@ -263,12 +311,16 @@ function MemorialInstance({
   data,
   tone,
   innerRef,
-  onSelect
+  onSelect,
+  onHover,
+  onLeave
 }: {
   data: MemorialSceneData | null;
   tone: number;
   innerRef: (node: THREE.Group | null) => void;
   onSelect?: () => void;
+  onHover?: () => void;
+  onLeave?: () => void;
 }) {
   if (!data) {
     return null;
@@ -282,6 +334,20 @@ function MemorialInstance({
         }
         event.stopPropagation();
         onSelect();
+      }}
+      onPointerOver={(event: any) => {
+        if (!onHover) {
+          return;
+        }
+        event.stopPropagation();
+        onHover();
+      }}
+      onPointerOut={(event: any) => {
+        if (!onLeave) {
+          return;
+        }
+        event.stopPropagation();
+        onLeave();
       }}
     >
       <Group>
@@ -307,14 +373,14 @@ function RowCarouselStage({
   onSelectIndex: (index: number) => void;
 }) {
   const { camera } = useThree();
-  const spacing = 6.5;
-  const popDistance = 1.6;
   const instanceRefs = useRef<(THREE.Group | null)[]>([]);
-  const phaseRef = useRef<"idle" | "collapse" | "move" | "expand">("idle");
-  const progressRef = useRef(0);
-  const popRef = useRef(1);
-  const fromIndexRef = useRef(activeIndex);
-  const toIndexRef = useRef<number | null>(null);
+  const hoveredRef = useRef<number | null>(null);
+  const animRef = useRef<{
+    from: number;
+    to: number;
+    t: number;
+    duration: number;
+  } | null>(null);
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
@@ -336,89 +402,100 @@ function RowCarouselStage({
   }, [onAnimationEnd]);
 
   useEffect(() => {
-    if (targetIndex === null || phaseRef.current !== "idle") {
+    if (targetIndex === null || animRef.current) {
       return;
     }
-    fromIndexRef.current = activeIndexRef.current;
-    toIndexRef.current = targetIndex;
-    progressRef.current = 0;
-    phaseRef.current = "collapse";
+    animRef.current = {
+      from: activeIndexRef.current,
+      to: targetIndex,
+      t: 0,
+      duration: 1
+    };
   }, [targetIndex]);
 
   useFrame((_, delta) => {
-    const activeIndexValue = activeIndexRef.current;
-    const fromIndex = fromIndexRef.current;
-    const toIndex = toIndexRef.current ?? fromIndex;
-    const collapseDuration = 0.25;
-    const moveDuration = 0.7;
-    const expandDuration = 0.25;
+    const count = items.length;
+    if (count === 0) {
+      return;
+    }
+    const desiredSpacing = 10;
+    const minRadius = 14;
+    const radius = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
+    const cameraRadius = radius + 8;
+    const cameraHeight = 5;
+    const popDistance = 2;
+    const angleStep = (Math.PI * 2) / count;
 
-    if (phaseRef.current === "idle") {
-      popRef.current = 1;
-      const x = activeIndexValue * spacing;
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, x, 6, delta);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
-      camera.lookAt(x, 0, 0);
-    } else if (phaseRef.current === "collapse") {
-      progressRef.current += delta;
-      const t = Math.min(progressRef.current / collapseDuration, 1);
-      popRef.current = 1 - t;
-      const x = fromIndex * spacing;
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, x, 6, delta);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
-      camera.lookAt(x, 0, 0);
-      if (t >= 1) {
-        progressRef.current = 0;
-        phaseRef.current = "move";
-      }
-    } else if (phaseRef.current === "move") {
-      progressRef.current += delta;
-      const t = Math.min(progressRef.current / moveDuration, 1);
-      const eased = t * (2 - t);
-      const fromX = fromIndex * spacing;
-      const toX = toIndex * spacing;
-      const x = THREE.MathUtils.lerp(fromX, toX, eased);
-      camera.position.x = x;
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
-      camera.lookAt(x, 0, 0);
-      popRef.current = 0;
-      if (t >= 1) {
+    let fromIndex = activeIndexRef.current;
+    let toIndex = activeIndexRef.current;
+    let blend = 0;
+
+    if (animRef.current) {
+      animRef.current.t += delta;
+      blend = Math.min(animRef.current.t / animRef.current.duration, 1);
+      const eased = blend * blend * (3 - 2 * blend);
+      fromIndex = animRef.current.from;
+      toIndex = animRef.current.to;
+      const fromAngle = -fromIndex * angleStep;
+      const toAngle = -toIndex * angleStep;
+      const angle = THREE.MathUtils.lerp(fromAngle, toAngle, eased);
+      camera.position.x = Math.cos(angle) * cameraRadius;
+      camera.position.z = Math.sin(angle) * cameraRadius;
+      camera.position.y = cameraHeight;
+      camera.lookAt(0, 0, 0);
+      if (blend >= 1) {
         onArriveRef.current(toIndex);
         activeIndexRef.current = toIndex;
-        progressRef.current = 0;
-        phaseRef.current = "expand";
-      }
-    } else if (phaseRef.current === "expand") {
-      progressRef.current += delta;
-      const t = Math.min(progressRef.current / expandDuration, 1);
-      popRef.current = t;
-      const x = toIndex * spacing;
-      camera.position.x = THREE.MathUtils.damp(camera.position.x, x, 6, delta);
-      camera.position.y = THREE.MathUtils.damp(camera.position.y, 5, 6, delta);
-      camera.position.z = THREE.MathUtils.damp(camera.position.z, 16, 6, delta);
-      camera.lookAt(x, 0, 0);
-      if (t >= 1) {
-        progressRef.current = 0;
-        phaseRef.current = "idle";
-        toIndexRef.current = null;
+        animRef.current = null;
         onAnimationEndRef.current();
       }
+    } else {
+      const angle = -activeIndexRef.current * angleStep;
+      camera.position.x = Math.cos(angle) * cameraRadius;
+      camera.position.z = Math.sin(angle) * cameraRadius;
+      camera.position.y = cameraHeight;
+      camera.lookAt(0, 0, 0);
     }
 
-    const pop = popRef.current * popDistance;
+    const distanceBetween = (a: number, b: number) => {
+      const diff = Math.abs(a - b);
+      return Math.min(diff, count - diff);
+    };
+
     instanceRefs.current.forEach((node, idx) => {
       if (!node) {
         return;
       }
-      const baseX = idx * spacing;
-      node.position.x = baseX;
+      const angle = idx * angleStep;
+      let pop = 0;
+      if (animRef.current) {
+        if (idx === fromIndex) {
+          pop = popDistance * (1 - blend);
+        } else if (idx === toIndex) {
+          pop = popDistance * blend;
+        }
+      } else if (idx === activeIndexRef.current) {
+        pop = popDistance;
+      }
+      const radial = radius + pop;
+      node.position.x = Math.cos(angle) * radial;
+      node.position.z = Math.sin(angle) * radial;
       node.position.y = 0;
-      node.position.z = idx === activeIndexRef.current ? pop : 0;
-      const baseScale = idx === activeIndexRef.current ? 1.05 : 0.95;
-      node.scale.setScalar(baseScale);
+      node.lookAt(0, 0, 0);
+
+      const distFromFrom = distanceBetween(idx, fromIndex);
+      const distFromTo = distanceBetween(idx, toIndex);
+      const toneForDistance = (dist: number) =>
+        dist === 0 ? 1 : dist === 1 ? 0.7 : dist === 2 ? 0.45 : 0.3;
+      const toneFrom = toneForDistance(distFromFrom);
+      const toneTo = toneForDistance(distFromTo);
+      const tone = animRef.current ? THREE.MathUtils.lerp(toneFrom, toneTo, blend) : toneFrom;
+      applyMaterialTone(node, tone);
+
+      const hovered = hoveredRef.current === idx;
+      const highlight =
+        hovered || idx === activeIndexRef.current ? 0.55 : 0;
+      applyMaterialHighlight(node, highlight);
     });
   });
 
@@ -429,16 +506,28 @@ function RowCarouselStage({
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
       {items.map((item, idx) => {
-        const dist = Math.abs(idx - activeIndex);
-        const tone = dist === 0 ? 1 : dist === 1 ? 0.7 : dist === 2 ? 0.45 : 0.3;
+        const count = items.length;
+        const distanceBetween = (a: number, b: number) => {
+          const diff = Math.abs(a - b);
+          return Math.min(diff, count - diff);
+        };
+        const dist = distanceBetween(idx, activeIndex);
         const clickable = dist === 1 && targetIndex === null;
         return (
           <MemorialInstance
             key={item.id}
             data={item.data}
-            tone={tone}
+            tone={1}
             innerRef={(node) => {
               instanceRefs.current[idx] = node;
+            }}
+            onHover={() => {
+              hoveredRef.current = idx;
+            }}
+            onLeave={() => {
+              if (hoveredRef.current === idx) {
+                hoveredRef.current = null;
+              }
             }}
             onSelect={clickable ? () => onSelectIndex(idx) : undefined}
           />
