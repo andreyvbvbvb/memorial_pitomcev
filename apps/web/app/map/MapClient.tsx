@@ -215,7 +215,7 @@ function MemorialInstance({
     <Group
       position={position}
       scale={[scale, scale, scale]}
-      onPointerDown={(event) => {
+      onPointerDown={(event: any) => {
         if (!onSelect) {
           return;
         }
