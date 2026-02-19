@@ -59,6 +59,12 @@ type MemorialSceneData = {
   colors?: Record<string, string>;
 };
 
+const Group = "group" as unknown as React.ComponentType<any>;
+const Primitive = "primitive" as unknown as React.ComponentType<any>;
+const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
+const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
+const Color = "color" as unknown as React.ComponentType<any>;
+
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "100%" };
 const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles];
@@ -182,12 +188,12 @@ function TerrainWithHouseScene({ data }: { data: MemorialSceneData }) {
   }, [terrain, house, data.colors]);
 
   return (
-    <group>
-      <primitive object={terrain} />
+    <Group>
+      <Primitive object={terrain} />
       {data.parts.map((part) => (
         <PartInstance key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={data.colors} />
       ))}
-    </group>
+    </Group>
   );
 }
 
@@ -206,7 +212,7 @@ function MemorialInstance({
     return null;
   }
   return (
-    <group
+    <Group
       position={position}
       scale={[scale, scale, scale]}
       onPointerDown={(event) => {
@@ -217,10 +223,10 @@ function MemorialInstance({
         onSelect();
       }}
     >
-      <group>
+      <Group>
         <TerrainWithHouseScene data={data} />
-      </group>
-    </group>
+      </Group>
+    </Group>
   );
 }
 
@@ -272,11 +278,11 @@ function CarouselScene({
 
   return (
     <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
-      <color attach="background" args={["#f8fafc"]} />
-      <ambientLight intensity={0.85} />
-      <directionalLight intensity={1.1} position={[6, 8, 4]} />
-      <directionalLight intensity={0.6} position={[-6, 6, -4]} />
-      <group ref={groupRef}>
+      <Color attach="background" args={["#f8fafc"]} />
+      <AmbientLight intensity={0.85} />
+      <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
+      <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
+      <Group ref={groupRef}>
         {items.map((item, idx) => {
           const offset = idx - 2;
           const abs = Math.abs(offset);
@@ -295,7 +301,7 @@ function CarouselScene({
             />
           );
         })}
-      </group>
+      </Group>
     </Canvas>
   );
 }
