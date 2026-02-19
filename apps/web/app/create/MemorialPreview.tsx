@@ -44,6 +44,7 @@ type Props = {
   backgroundColor?: string;
   softEdges?: boolean;
   showControls?: boolean;
+  controlsEnabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -666,6 +667,7 @@ export default function MemorialPreview({
   backgroundColor = "#eef6ff",
   softEdges = false,
   showControls = true,
+  controlsEnabled = true,
   className,
   style
 }: Props) {
@@ -800,6 +802,9 @@ export default function MemorialPreview({
         </Suspense>
         <OrbitControls
           ref={controlsRef}
+          enabled={controlsEnabled}
+          enableRotate={controlsEnabled}
+          enableZoom={controlsEnabled}
           enablePan={false}
           minPolarAngle={0}
           maxPolarAngle={Math.PI / 2}

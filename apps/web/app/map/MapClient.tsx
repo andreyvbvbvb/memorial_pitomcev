@@ -80,8 +80,10 @@ export default function MapClient() {
   const [mapMode, setMapMode] = useState<"map" | "carousel">("map");
   const [carouselOrder, setCarouselOrder] = useState<MarkerDto[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselAnimating, setCarouselAnimating] = useState<null | "prev" | "next">(null);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
+  const carouselTimerRef = useRef<number | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
@@ -141,11 +143,21 @@ export default function MapClient() {
     if (filteredMarkers.length === 0) {
       setCarouselOrder([]);
       setCarouselIndex(0);
+      setCarouselAnimating(null);
+      if (carouselTimerRef.current) {
+        window.clearTimeout(carouselTimerRef.current);
+        carouselTimerRef.current = null;
+      }
       return;
     }
     const shuffled = [...filteredMarkers].sort(() => Math.random() - 0.5);
     setCarouselOrder(shuffled);
     setCarouselIndex(0);
+    setCarouselAnimating(null);
+    if (carouselTimerRef.current) {
+      window.clearTimeout(carouselTimerRef.current);
+      carouselTimerRef.current = null;
+    }
   }, [filteredMarkers]);
 
   const activeCarouselMarker =
@@ -338,25 +350,42 @@ export default function MapClient() {
           colors={sceneJson.colors ?? undefined}
           softEdges
           showControls={false}
+          controlsEnabled={false}
           className="h-full"
         />
       </div>
     );
   };
 
-  const handleCarouselPrev = () => {
-    if (carouselOrder.length === 0) {
+  const startCarouselAnimation = (direction: "prev" | "next") => {
+    if (carouselOrder.length < 2 || carouselAnimating) {
       return;
     }
-    setCarouselIndex((prev) => (prev - 1 + carouselOrder.length) % carouselOrder.length);
+    setCarouselAnimating(direction);
+    if (carouselTimerRef.current) {
+      window.clearTimeout(carouselTimerRef.current);
+    }
+    carouselTimerRef.current = window.setTimeout(() => {
+      setCarouselIndex((prev) =>
+        direction === "next"
+          ? (prev + 1) % carouselOrder.length
+          : (prev - 1 + carouselOrder.length) % carouselOrder.length
+      );
+      setCarouselAnimating(null);
+    }, 520);
   };
 
-  const handleCarouselNext = () => {
-    if (carouselOrder.length === 0) {
-      return;
-    }
-    setCarouselIndex((prev) => (prev + 1) % carouselOrder.length);
-  };
+  useEffect(() => {
+    return () => {
+      if (carouselTimerRef.current) {
+        window.clearTimeout(carouselTimerRef.current);
+        carouselTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleCarouselPrev = () => startCarouselAnimation("prev");
+  const handleCarouselNext = () => startCarouselAnimation("next");
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
   const activePreviewUrl = activeCarouselMarker?.previewPhotoUrl;
@@ -365,6 +394,12 @@ export default function MapClient() {
       ? activePreviewUrl
       : `${apiUrl}${activePreviewUrl}`
     : null;
+  const carouselTranslate =
+    carouselAnimating === "prev"
+      ? "translateX(0%)"
+      : carouselAnimating === "next"
+        ? "translateX(-66.6667%)"
+        : "translateX(-33.3333%)";
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
@@ -619,15 +654,38 @@ export default function MapClient() {
             </div>
             <div className="flex flex-1 items-center justify-center gap-8">
               <div className="flex flex-1 flex-col items-center justify-center">
-                <div className="relative flex h-[60vh] w-full max-w-5xl items-center justify-center">
-                  <div className="absolute left-0 top-1/2 h-[55vh] w-[26%] -translate-y-1/2">
-                    {renderMemorialPreview(leftCarouselMarker, "h-full pointer-events-none", true)}
-                  </div>
-                  <div className="absolute right-0 top-1/2 h-[55vh] w-[26%] -translate-y-1/2">
-                    {renderMemorialPreview(rightCarouselMarker, "h-full pointer-events-none", true)}
-                  </div>
-                  <div className="relative z-10 h-full w-[55%]">
-                    {renderMemorialPreview(activeCarouselMarker, "h-full pointer-events-auto")}
+                <div className="relative h-[60vh] w-full max-w-5xl overflow-hidden">
+                  <div
+                    className={`flex h-full w-[300%] ${
+                      carouselAnimating ? "transition-transform duration-500 ease-out" : ""
+                    }`}
+                    style={{ transform: carouselTranslate }}
+                  >
+                    <div className="flex h-full w-1/3 items-center justify-center px-4">
+                      <button
+                        type="button"
+                        aria-label="Предыдущий мемориал"
+                        onClick={handleCarouselPrev}
+                        className="pointer-events-auto h-[80%] w-full max-w-[260px] cursor-pointer rounded-3xl border-0 bg-transparent p-0 transition-transform duration-300 hover:scale-[0.98]"
+                      >
+                        {renderMemorialPreview(leftCarouselMarker, "h-full pointer-events-none", true)}
+                      </button>
+                    </div>
+                    <div className="flex h-full w-1/3 items-center justify-center px-4">
+                      <div className="pointer-events-none h-full w-full max-w-[420px]">
+                        {renderMemorialPreview(activeCarouselMarker, "h-full", false)}
+                      </div>
+                    </div>
+                    <div className="flex h-full w-1/3 items-center justify-center px-4">
+                      <button
+                        type="button"
+                        aria-label="Следующий мемориал"
+                        onClick={handleCarouselNext}
+                        className="pointer-events-auto h-[80%] w-full max-w-[260px] cursor-pointer rounded-3xl border-0 bg-transparent p-0 transition-transform duration-300 hover:scale-[0.98]"
+                      >
+                        {renderMemorialPreview(rightCarouselMarker, "h-full pointer-events-none", true)}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="pointer-events-auto mt-4 flex items-center gap-4">
