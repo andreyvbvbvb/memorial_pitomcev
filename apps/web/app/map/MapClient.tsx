@@ -94,6 +94,60 @@ const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, strin
   });
 };
 
+const applyMaterialTone = (root: THREE.Object3D, tone = 1) => {
+  if (tone >= 0.99) {
+    // restore base colors
+    root.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.material) {
+        return;
+      }
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      materials.forEach((material) => {
+        const mat = material as THREE.Material & { color?: THREE.Color; userData?: Record<string, unknown> };
+        if (!mat.color) {
+          return;
+        }
+        const base = mat.userData?.baseColor;
+        if (base && base instanceof THREE.Color) {
+          mat.color.copy(base);
+          mat.needsUpdate = true;
+        }
+      });
+    });
+    return;
+  }
+
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((material) => {
+      const mat = material as THREE.Material & { color?: THREE.Color; userData?: Record<string, unknown> };
+      if (!mat.color) {
+        return;
+      }
+      if (!mat.userData) {
+        mat.userData = {};
+      }
+      const base =
+        (mat.userData.baseColor as THREE.Color | undefined) ?? mat.color.clone();
+      if (!mat.userData.baseColor) {
+        mat.userData.baseColor = base.clone();
+      }
+      const color = base.clone();
+      const l = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+      const gray = new THREE.Color(l, l, l);
+      color.lerp(gray, 1 - tone);
+      color.multiplyScalar(0.6 + 0.4 * tone);
+      mat.color.copy(color);
+      mat.needsUpdate = true;
+    });
+  });
+};
+
 const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") => {
   if (!size || size <= 0) {
     return;
@@ -164,7 +218,7 @@ function PartInstance({
   return null;
 }
 
-function TerrainWithHouseScene({ data }: { data: MemorialSceneData }) {
+function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?: number }) {
   const { scene: terrainScene } = useGLTF(data.terrainUrl);
   const { scene: houseScene } = useGLTF(data.houseUrl);
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
@@ -187,6 +241,14 @@ function TerrainWithHouseScene({ data }: { data: MemorialSceneData }) {
     applyMaterialColors(house, data.colors);
   }, [terrain, house, data.colors]);
 
+  useEffect(() => {
+    if (typeof tone !== "number") {
+      return;
+    }
+    applyMaterialTone(terrain, tone);
+    applyMaterialTone(house, tone);
+  }, [terrain, house, tone]);
+
   return (
     <Group>
       <Primitive object={terrain} />
@@ -201,11 +263,13 @@ function MemorialInstance({
   data,
   position,
   scale,
+  tone,
   onSelect
 }: {
   data: MemorialSceneData | null;
   position: [number, number, number];
   scale: number;
+  tone: number;
   onSelect?: () => void;
 }) {
   if (!data) {
@@ -224,7 +288,7 @@ function MemorialInstance({
       }}
     >
       <Group>
-        <TerrainWithHouseScene data={data} />
+        <TerrainWithHouseScene data={data} tone={tone} />
       </Group>
     </Group>
   );
@@ -286,8 +350,13 @@ function CarouselStage({
         {items.map((item, idx) => {
           const offset = idx - 2;
           const abs = Math.abs(offset);
-          const scale = abs === 0 ? 1 : abs === 1 ? 0.85 : 0.7;
-          const pos: [number, number, number] = [offset * spacing, 0, -abs * 1.4];
+          const isActive = offset === 0;
+          const focusEnabled = !moveDir;
+          const baseZ = -abs * 1.1;
+          const focusBoost = focusEnabled && isActive ? 1.6 : 0;
+          const pos: [number, number, number] = [offset * spacing, 0, baseZ + focusBoost];
+          const scale = isActive ? 1.05 : abs === 1 ? 0.85 : 0.7;
+          const tone = isActive ? (focusEnabled ? 1 : 0.7) : abs === 1 ? 0.7 : 0.45;
           const clickable = offset !== 0;
           return (
             <MemorialInstance
@@ -295,6 +364,7 @@ function CarouselStage({
               data={item.data}
               position={pos}
               scale={scale}
+              tone={tone}
               onSelect={
                 clickable ? () => onSelectOffset(offset < 0 ? -1 : 1) : undefined
               }
