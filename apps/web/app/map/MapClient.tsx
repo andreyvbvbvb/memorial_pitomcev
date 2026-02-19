@@ -593,9 +593,6 @@ export default function MapClient() {
     setCarouselAnimating(direction);
   };
 
-  const handleCarouselPrev = () => startCarouselAnimation("prev");
-  const handleCarouselNext = () => startCarouselAnimation("next");
-
   const handleCarouselMoveComplete = (direction: "prev" | "next") => {
     if (carouselOrder.length < 2) {
       setCarouselAnimating(null);
