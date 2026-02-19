@@ -561,14 +561,24 @@ function RowCarouselStage({
     const cameraRadius = radiusRef.current + cameraSettings.distanceOffset;
     const cameraHeight = cameraSettings.height;
     const cameraTilt = THREE.MathUtils.degToRad(cameraSettings.tiltDeg);
-    const popDistance = 2.6;
     const angleStep = (Math.PI * 2) / count;
+    const popDistance = 3.6;
+    const scaleBoost = 0.1;
+
+    const wrapIndex = (value: number) => {
+      let wrapped = value % count;
+      if (wrapped < 0) {
+        wrapped += count;
+      }
+      return wrapped;
+    };
 
     let fromIndex = activeIndexRef.current;
     let toIndex = activeIndexRef.current;
     let blend = 0;
     let eased = 0;
-    let centerAngle = -activeIndexRef.current * angleStep;
+    let centerIndexFloat = activeIndexRef.current;
+    let centerAngle = centerIndexFloat * angleStep;
 
     if (animRef.current) {
       animRef.current.t += delta;
@@ -576,15 +586,14 @@ function RowCarouselStage({
       eased = blend * blend * (3 - 2 * blend);
       fromIndex = animRef.current.from;
       toIndex = animRef.current.to;
-      const fromAngle = -fromIndex * angleStep;
-      let toAngle = -toIndex * angleStep;
-      let deltaAngle = toAngle - fromAngle;
-      if (deltaAngle > Math.PI) {
-        toAngle -= Math.PI * 2;
-      } else if (deltaAngle < -Math.PI) {
-        toAngle += Math.PI * 2;
+      let deltaIndex = toIndex - fromIndex;
+      if (deltaIndex > count / 2) {
+        deltaIndex -= count;
+      } else if (deltaIndex < -count / 2) {
+        deltaIndex += count;
       }
-      centerAngle = THREE.MathUtils.lerp(fromAngle, toAngle, eased);
+      centerIndexFloat = wrapIndex(fromIndex + deltaIndex * eased);
+      centerAngle = centerIndexFloat * angleStep;
       camera.position.x = Math.cos(centerAngle) * cameraRadius;
       camera.position.z = Math.sin(centerAngle) * cameraRadius;
       camera.position.y = cameraHeight;
@@ -603,16 +612,6 @@ function RowCarouselStage({
       camera.lookAt(0, 0, 0);
       camera.rotateX(-cameraTilt);
     }
-
-    const wrapIndex = (value: number) => {
-      let wrapped = value % count;
-      if (wrapped < 0) {
-        wrapped += count;
-      }
-      return wrapped;
-    };
-
-    const centerIndexFloat = wrapIndex(-centerAngle / angleStep);
 
     const distanceBetween = (index: number, center: number) => {
       const diff = Math.abs(index - center);
@@ -641,11 +640,14 @@ function RowCarouselStage({
       }
       const angle = idx * angleStep;
       const distToCenter = distanceBetween(idx, centerIndexFloat);
-      const pop = popDistance * Math.max(0, 1 - distToCenter);
+      const centerWeight = Math.max(0, 1 - distToCenter);
+      const pop = popDistance * centerWeight;
       const radial = radiusRef.current + pop;
       node.position.x = Math.cos(angle) * radial;
       node.position.z = Math.sin(angle) * radial;
       node.position.y = 0;
+      const scale = 1 + scaleBoost * centerWeight;
+      node.scale.setScalar(scale);
       node.lookAt(0, 0, 0);
       node.rotateY(Math.PI);
 
