@@ -561,7 +561,7 @@ function RowCarouselStage({
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
-      <OcclusionPlane size={Math.max(120, radius * 6)} />
+      <OcclusionPlane size={Math.max(120, radiusRef.current * 6)} />
       {items.map((item, idx) => {
         const count = items.length;
         const distanceBetween = (a: number, b: number) => {
