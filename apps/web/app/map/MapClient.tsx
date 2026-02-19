@@ -553,8 +553,8 @@ function RowCarouselStage({
     const desiredSpacing = 20;
     const minRadius = 30;
     radiusRef.current = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
-    const cameraRadius = radiusRef.current + 12;
-    const cameraHeight = 6.2;
+    const cameraRadius = radiusRef.current + 14;
+    const cameraHeight = 5.4;
     const cameraTilt = THREE.MathUtils.degToRad(4);
     const popDistance = 2.6;
     const angleStep = (Math.PI * 2) / count;
@@ -646,7 +646,7 @@ function RowCarouselStage({
       const pos = new THREE.Vector3();
       activeNode.getWorldPosition(pos);
       activeLightRef.current.position.set(pos.x, pos.y + 6, pos.z);
-      activeLightRef.current.intensity = 1.1;
+      activeLightRef.current.intensity = 1.6;
       activeLightRef.current.visible = true;
     } else if (activeLightRef.current) {
       activeLightRef.current.visible = false;
@@ -659,7 +659,7 @@ function RowCarouselStage({
         const pos = new THREE.Vector3();
         hoveredNode.getWorldPosition(pos);
         hoverLightRef.current.position.set(pos.x, pos.y + 7, pos.z);
-        hoverLightRef.current.intensity = 1.9;
+        hoverLightRef.current.intensity = 2.5;
         hoverLightRef.current.visible = true;
       } else {
         hoverLightRef.current.visible = false;
@@ -675,8 +675,8 @@ function RowCarouselStage({
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
-      <PointLight ref={activeLightRef} color="#93c5fd" distance={30} decay={1.5} />
-      <PointLight ref={hoverLightRef} color="#bae6fd" distance={36} decay={1.5} />
+      <PointLight ref={activeLightRef} color="#93c5fd" distance={34} decay={1.5} />
+      <PointLight ref={hoverLightRef} color="#bae6fd" distance={40} decay={1.5} />
       <OcclusionPlane size={Math.max(220, radiusRef.current * 16)} />
       {items.map((item, idx) => {
         const count = items.length;
