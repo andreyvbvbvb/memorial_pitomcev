@@ -61,6 +61,9 @@ type MemorialSceneData = {
 
 const Group = "group" as unknown as React.ComponentType<any>;
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
+const Mesh = "mesh" as unknown as React.ComponentType<any>;
+const PlaneGeometry = "planeGeometry" as unknown as React.ComponentType<any>;
+const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
@@ -91,6 +94,20 @@ const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, strin
         mat.needsUpdate = true;
       }
     });
+  });
+};
+
+const cloneMeshMaterials = (root: THREE.Object3D) => {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    if (Array.isArray(mesh.material)) {
+      mesh.material = mesh.material.map((material) => material?.clone?.() ?? material);
+    } else if (mesh.material.clone) {
+      mesh.material = mesh.material.clone();
+    }
   });
 };
 
@@ -239,6 +256,7 @@ function PartInstance({
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
     const cloned = scene.clone(true);
+    cloneMeshMaterials(cloned);
     if (slot === "mat_slot") {
       applyPartFitScale(cloned, 1, 1.5);
     }
@@ -269,8 +287,16 @@ function PartInstance({
 function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?: number }) {
   const { scene: terrainScene } = useGLTF(data.terrainUrl);
   const { scene: houseScene } = useGLTF(data.houseUrl);
-  const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
-  const house = useMemo(() => houseScene.clone(true), [houseScene]);
+  const terrain = useMemo(() => {
+    const cloned = terrainScene.clone(true);
+    cloneMeshMaterials(cloned);
+    return cloned;
+  }, [terrainScene]);
+  const house = useMemo(() => {
+    const cloned = houseScene.clone(true);
+    cloneMeshMaterials(cloned);
+    return cloned;
+  }, [houseScene]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
@@ -381,6 +407,7 @@ function RowCarouselStage({
     t: number;
     duration: number;
   } | null>(null);
+  const radiusRef = useRef(20);
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
@@ -402,6 +429,30 @@ function RowCarouselStage({
   }, [onAnimationEnd]);
 
   useEffect(() => {
+    return () => {
+      hoveredRef.current = null;
+    };
+  }, []);
+
+  const OcclusionPlane = ({ size }: { size: number }) => {
+    const { camera } = useThree();
+    const planeRef = useRef<THREE.Mesh>(null);
+    useFrame(() => {
+      if (!planeRef.current) {
+        return;
+      }
+      planeRef.current.position.set(0, 0, 0);
+      planeRef.current.lookAt(camera.position);
+    });
+    return (
+      <Mesh ref={planeRef} renderOrder={-10}>
+        <PlaneGeometry args={[size, size]} />
+        <MeshBasicMaterial colorWrite={false} depthWrite depthTest />
+      </Mesh>
+    );
+  };
+
+  useEffect(() => {
     if (targetIndex === null || animRef.current) {
       return;
     }
@@ -418,12 +469,12 @@ function RowCarouselStage({
     if (count === 0) {
       return;
     }
-    const desiredSpacing = 10;
-    const minRadius = 14;
-    const radius = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
-    const cameraRadius = radius + 8;
-    const cameraHeight = 5;
-    const popDistance = 2;
+    const desiredSpacing = 16;
+    const minRadius = 24;
+    radiusRef.current = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
+    const cameraRadius = radiusRef.current + 18;
+    const cameraHeight = 6.5;
+    const popDistance = 2.6;
     const angleStep = (Math.PI * 2) / count;
 
     let fromIndex = activeIndexRef.current;
@@ -437,7 +488,13 @@ function RowCarouselStage({
       fromIndex = animRef.current.from;
       toIndex = animRef.current.to;
       const fromAngle = -fromIndex * angleStep;
-      const toAngle = -toIndex * angleStep;
+      let toAngle = -toIndex * angleStep;
+      let deltaAngle = toAngle - fromAngle;
+      if (deltaAngle > Math.PI) {
+        toAngle -= Math.PI * 2;
+      } else if (deltaAngle < -Math.PI) {
+        toAngle += Math.PI * 2;
+      }
       const angle = THREE.MathUtils.lerp(fromAngle, toAngle, eased);
       camera.position.x = Math.cos(angle) * cameraRadius;
       camera.position.z = Math.sin(angle) * cameraRadius;
@@ -477,7 +534,7 @@ function RowCarouselStage({
       } else if (idx === activeIndexRef.current) {
         pop = popDistance;
       }
-      const radial = radius + pop;
+      const radial = radiusRef.current + pop;
       node.position.x = Math.cos(angle) * radial;
       node.position.z = Math.sin(angle) * radial;
       node.position.y = 0;
@@ -493,8 +550,7 @@ function RowCarouselStage({
       applyMaterialTone(node, tone);
 
       const hovered = hoveredRef.current === idx;
-      const highlight =
-        hovered || idx === activeIndexRef.current ? 0.55 : 0;
+      const highlight = hovered || idx === activeIndexRef.current ? 0.55 : 0;
       applyMaterialHighlight(node, highlight);
     });
   });
@@ -505,6 +561,7 @@ function RowCarouselStage({
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
+      <OcclusionPlane size={Math.max(120, radius * 6)} />
       {items.map((item, idx) => {
         const count = items.length;
         const distanceBetween = (a: number, b: number) => {
