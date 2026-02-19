@@ -7,11 +7,13 @@ import {
   MarkerClusterer,
   useJsApiLoader
 } from "@react-google-maps/api";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
+import * as THREE from "three";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
-import MemorialPreview from "../create/MemorialPreview";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -50,9 +52,253 @@ type PetDetail = {
   } | null;
 };
 
+type MemorialSceneData = {
+  terrainUrl: string;
+  houseUrl: string;
+  parts: { slot: string; url: string }[];
+  colors?: Record<string, string>;
+};
+
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "100%" };
 const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles];
+
+const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, string>) => {
+  if (!colors) {
+    return;
+  }
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((material) => {
+      if (!material) {
+        return;
+      }
+      const key = material.name;
+      const color = colors[key];
+      const mat = material as THREE.Material & { color?: THREE.Color };
+      if (color && mat.color) {
+        mat.color.set(color);
+        mat.needsUpdate = true;
+      }
+    });
+  });
+};
+
+const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") => {
+  if (!size || size <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  const current = axis === "z" ? sizeVec.z : sizeVec.x;
+  if (current <= 0) {
+    return;
+  }
+  const scale = size / current;
+  target.scale.setScalar(scale);
+};
+
+const applyPartFitScale = (target: THREE.Object3D, maxWidth: number, maxLength: number) => {
+  if (!maxWidth || !maxLength || maxWidth <= 0 || maxLength <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0 || sizeVec.z <= 0) {
+    return;
+  }
+  const scale = Math.min(maxWidth / sizeVec.x, maxLength / sizeVec.z);
+  target.scale.setScalar(scale);
+};
+
+function PartInstance({
+  house,
+  slot,
+  url,
+  colors
+}: {
+  house: THREE.Object3D;
+  slot: string;
+  url: string;
+  colors?: Record<string, string>;
+}) {
+  const { scene } = useGLTF(url);
+  const part = useMemo(() => {
+    const cloned = scene.clone(true);
+    if (slot === "mat_slot") {
+      applyPartFitScale(cloned, 1, 1.5);
+    }
+    if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
+      applyPartScale(cloned, 0.5, "x");
+    }
+    return cloned;
+  }, [scene, slot]);
+
+  useEffect(() => {
+    const anchor = house.getObjectByName(slot);
+    if (!anchor) {
+      return;
+    }
+    anchor.add(part);
+    return () => {
+      anchor.remove(part);
+    };
+  }, [house, slot, part]);
+
+  useEffect(() => {
+    applyMaterialColors(part, colors);
+  }, [part, colors]);
+
+  return null;
+}
+
+function TerrainWithHouseScene({ data }: { data: MemorialSceneData }) {
+  const { scene: terrainScene } = useGLTF(data.terrainUrl);
+  const { scene: houseScene } = useGLTF(data.houseUrl);
+  const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
+  const house = useMemo(() => houseScene.clone(true), [houseScene]);
+
+  useEffect(() => {
+    const domSlot = terrain.getObjectByName("dom_slot");
+    if (!domSlot) {
+      terrain.add(house);
+      return;
+    }
+    domSlot.add(house);
+    return () => {
+      domSlot.remove(house);
+    };
+  }, [terrain, house]);
+
+  useEffect(() => {
+    applyMaterialColors(terrain, data.colors);
+    applyMaterialColors(house, data.colors);
+  }, [terrain, house, data.colors]);
+
+  return (
+    <group>
+      <primitive object={terrain} />
+      {data.parts.map((part) => (
+        <PartInstance key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={data.colors} />
+      ))}
+    </group>
+  );
+}
+
+function MemorialInstance({
+  data,
+  position,
+  scale,
+  onSelect
+}: {
+  data: MemorialSceneData | null;
+  position: [number, number, number];
+  scale: number;
+  onSelect?: () => void;
+}) {
+  if (!data) {
+    return null;
+  }
+  return (
+    <group
+      position={position}
+      scale={[scale, scale, scale]}
+      onPointerDown={(event) => {
+        if (!onSelect) {
+          return;
+        }
+        event.stopPropagation();
+        onSelect();
+      }}
+    >
+      <group>
+        <TerrainWithHouseScene data={data} />
+      </group>
+    </group>
+  );
+}
+
+function CarouselScene({
+  items,
+  moveDir,
+  onMoveComplete,
+  onSelectOffset
+}: {
+  items: { data: MemorialSceneData | null }[];
+  moveDir: "prev" | "next" | null;
+  onMoveComplete: (dir: "prev" | "next") => void;
+  onSelectOffset: (offset: -1 | 1) => void;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const shiftRef = useRef(0);
+  const activeDirRef = useRef<"prev" | "next" | null>(null);
+  const spacing = 6.5;
+  const targetRef = useRef(0);
+  const onMoveCompleteRef = useRef(onMoveComplete);
+
+  useEffect(() => {
+    onMoveCompleteRef.current = onMoveComplete;
+  }, [onMoveComplete]);
+
+  useEffect(() => {
+    if (!moveDir) {
+      return;
+    }
+    activeDirRef.current = moveDir;
+    targetRef.current = moveDir === "next" ? -spacing : spacing;
+  }, [moveDir, spacing]);
+
+  useFrame((_, delta) => {
+    if (!groupRef.current || !activeDirRef.current) {
+      return;
+    }
+    const target = targetRef.current;
+    shiftRef.current = THREE.MathUtils.damp(shiftRef.current, target, 8, delta);
+    groupRef.current.position.x = shiftRef.current;
+    if (Math.abs(shiftRef.current - target) < 0.02) {
+      const dir = activeDirRef.current;
+      activeDirRef.current = null;
+      shiftRef.current = 0;
+      groupRef.current.position.x = 0;
+      onMoveCompleteRef.current(dir);
+    }
+  });
+
+  return (
+    <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
+      <color attach="background" args={["#f8fafc"]} />
+      <ambientLight intensity={0.85} />
+      <directionalLight intensity={1.1} position={[6, 8, 4]} />
+      <directionalLight intensity={0.6} position={[-6, 6, -4]} />
+      <group ref={groupRef}>
+        {items.map((item, idx) => {
+          const offset = idx - 2;
+          const abs = Math.abs(offset);
+          const scale = abs === 0 ? 1 : abs === 1 ? 0.85 : 0.7;
+          const pos: [number, number, number] = [offset * spacing, 0, -abs * 1.4];
+          const clickable = offset !== 0;
+          return (
+            <MemorialInstance
+              key={`carousel-${idx}`}
+              data={item.data}
+              position={pos}
+              scale={scale}
+              onSelect={
+                clickable ? () => onSelectOffset(offset < 0 ? -1 : 1) : undefined
+              }
+            />
+          );
+        })}
+      </group>
+    </Canvas>
+  );
+}
 
 const matchesFilters = (marker: MarkerDto, typeFilter: string, nameFilter: string) => {
   const normalizedName = nameFilter.trim().toLowerCase();
@@ -83,7 +329,6 @@ export default function MapClient() {
   const [carouselAnimating, setCarouselAnimating] = useState<null | "prev" | "next">(null);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
-  const carouselTimerRef = useRef<number | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
@@ -144,32 +389,28 @@ export default function MapClient() {
       setCarouselOrder([]);
       setCarouselIndex(0);
       setCarouselAnimating(null);
-      if (carouselTimerRef.current) {
-        window.clearTimeout(carouselTimerRef.current);
-        carouselTimerRef.current = null;
-      }
       return;
     }
     const shuffled = [...filteredMarkers].sort(() => Math.random() - 0.5);
     setCarouselOrder(shuffled);
     setCarouselIndex(0);
     setCarouselAnimating(null);
-    if (carouselTimerRef.current) {
-      window.clearTimeout(carouselTimerRef.current);
-      carouselTimerRef.current = null;
-    }
   }, [filteredMarkers]);
 
-  const activeCarouselMarker =
-    carouselOrder.length > 0 ? carouselOrder[carouselIndex % carouselOrder.length] ?? null : null;
-  const leftCarouselMarker =
-    carouselOrder.length > 1
-      ? carouselOrder[(carouselIndex - 1 + carouselOrder.length) % carouselOrder.length] ?? null
-      : null;
-  const rightCarouselMarker =
-    carouselOrder.length > 1
-      ? carouselOrder[(carouselIndex + 1) % carouselOrder.length] ?? null
-      : null;
+  const carouselMarkers = useMemo(() => {
+    if (carouselOrder.length === 0) {
+      return [null, null, null, null, null] as (MarkerDto | null)[];
+    }
+    if (carouselOrder.length === 1) {
+      return [null, null, carouselOrder[0] ?? null, null, null] as (MarkerDto | null)[];
+    }
+    return [-2, -1, 0, 1, 2].map((offset) => {
+      const idx = (carouselIndex + offset + carouselOrder.length) % carouselOrder.length;
+      return carouselOrder[idx] ?? null;
+    });
+  }, [carouselOrder, carouselIndex]);
+
+  const activeCarouselMarker = carouselMarkers[2] ?? null;
 
   const listMarkers = useMemo(() => {
     const source = boundsReady ? visibleMarkers : markers;
@@ -277,36 +518,24 @@ export default function MapClient() {
     if (mapMode !== "carousel") {
       return;
     }
-    const ids = [activeCarouselMarker, leftCarouselMarker, rightCarouselMarker]
+    const ids = carouselMarkers
       .map((item) => item?.petId)
       .filter((id): id is string => Boolean(id));
     ids.forEach((id) => {
       void loadPetDetail(id);
     });
-  }, [mapMode, activeCarouselMarker, leftCarouselMarker, rightCarouselMarker]);
+  }, [mapMode, carouselMarkers]);
 
-  const renderMemorialPreview = (
-    marker: MarkerDto | null,
-    className: string,
-    dimmed?: boolean
-  ) => {
+  const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
-      return (
-        <div className={`flex h-full items-center justify-center rounded-3xl bg-white/60 ${className}`}>
-          <span className="text-xs text-slate-500">Нет мемориалов</span>
-        </div>
-      );
+      return null;
     }
     const pet = petCache[marker.petId];
     const memorial = pet?.memorial;
     const environmentUrl = resolveEnvironmentModel(memorial?.environmentId);
     const houseUrl = resolveHouseModel(memorial?.houseId);
     if (!environmentUrl || !houseUrl) {
-      return (
-        <div className={`flex h-full items-center justify-center rounded-3xl bg-white/60 ${className}`}>
-          <span className="text-xs text-slate-500">Загрузка модели...</span>
-        </div>
-      );
+      return null;
     }
     const houseSlots = getHouseSlots(memorial?.houseId);
     const sceneJson = (memorial?.sceneJson ?? {}) as {
@@ -341,48 +570,44 @@ export default function MapClient() {
         : null
     ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
 
-    return (
-      <div className={`${className} ${dimmed ? "opacity-40" : ""}`}>
-        <MemorialPreview
-          terrainUrl={environmentUrl}
-          houseUrl={houseUrl}
-          parts={parts}
-          colors={sceneJson.colors ?? undefined}
-          softEdges
-          showControls={false}
-          controlsEnabled={false}
-          className="h-full"
-        />
-      </div>
-    );
-  };
+    return {
+      terrainUrl: environmentUrl,
+      houseUrl,
+      parts,
+      colors: sceneJson.colors ?? undefined
+    };
+  }, [petCache]);
+
+  const carouselItems = useMemo(
+    () =>
+      carouselMarkers.map((marker) => ({
+        data: buildMemorialSceneData(marker)
+      })),
+    [carouselMarkers, buildMemorialSceneData]
+  );
 
   const startCarouselAnimation = (direction: "prev" | "next") => {
     if (carouselOrder.length < 2 || carouselAnimating) {
       return;
     }
     setCarouselAnimating(direction);
-    if (carouselTimerRef.current) {
-      window.clearTimeout(carouselTimerRef.current);
-    }
-    carouselTimerRef.current = window.setTimeout(() => {
-      setCarouselIndex((prev) =>
-        direction === "next"
-          ? (prev + 1) % carouselOrder.length
-          : (prev - 1 + carouselOrder.length) % carouselOrder.length
-      );
-      setCarouselAnimating(null);
-    }, 520);
   };
 
-  useEffect(() => {
-    return () => {
-      if (carouselTimerRef.current) {
-        window.clearTimeout(carouselTimerRef.current);
-        carouselTimerRef.current = null;
-      }
-    };
-  }, []);
+  const handleCarouselPrev = () => startCarouselAnimation("prev");
+  const handleCarouselNext = () => startCarouselAnimation("next");
+
+  const handleCarouselMoveComplete = (direction: "prev" | "next") => {
+    if (carouselOrder.length < 2) {
+      setCarouselAnimating(null);
+      return;
+    }
+    setCarouselIndex((prev) =>
+      direction === "next"
+        ? (prev + 1) % carouselOrder.length
+        : (prev - 1 + carouselOrder.length) % carouselOrder.length
+    );
+    setCarouselAnimating(null);
+  };
 
   const handleCarouselPrev = () => startCarouselAnimation("prev");
   const handleCarouselNext = () => startCarouselAnimation("next");
@@ -394,12 +619,7 @@ export default function MapClient() {
       ? activePreviewUrl
       : `${apiUrl}${activePreviewUrl}`
     : null;
-  const carouselTranslate =
-    carouselAnimating === "prev"
-      ? "translateX(0%)"
-      : carouselAnimating === "next"
-        ? "translateX(-66.6667%)"
-        : "translateX(-33.3333%)";
+  const canRotate = carouselOrder.length > 1;
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
@@ -654,52 +874,30 @@ export default function MapClient() {
             </div>
             <div className="flex flex-1 items-center justify-center gap-8">
               <div className="flex flex-1 flex-col items-center justify-center">
-                <div className="relative h-[60vh] w-full max-w-5xl overflow-hidden">
-                  <div
-                    className={`flex h-full w-[300%] ${
-                      carouselAnimating ? "transition-transform duration-500 ease-out" : ""
-                    }`}
-                    style={{ transform: carouselTranslate }}
-                  >
-                    <div className="flex h-full w-1/3 items-center justify-center px-4">
-                      <button
-                        type="button"
-                        aria-label="Предыдущий мемориал"
-                        onClick={handleCarouselPrev}
-                        className="pointer-events-auto h-[80%] w-full max-w-[260px] cursor-pointer rounded-3xl border-0 bg-transparent p-0 transition-transform duration-300 hover:scale-[0.98]"
-                      >
-                        {renderMemorialPreview(leftCarouselMarker, "h-full pointer-events-none", true)}
-                      </button>
-                    </div>
-                    <div className="flex h-full w-1/3 items-center justify-center px-4">
-                      <div className="pointer-events-none h-full w-full max-w-[420px]">
-                        {renderMemorialPreview(activeCarouselMarker, "h-full", false)}
-                      </div>
-                    </div>
-                    <div className="flex h-full w-1/3 items-center justify-center px-4">
-                      <button
-                        type="button"
-                        aria-label="Следующий мемориал"
-                        onClick={handleCarouselNext}
-                        className="pointer-events-auto h-[80%] w-full max-w-[260px] cursor-pointer rounded-3xl border-0 bg-transparent p-0 transition-transform duration-300 hover:scale-[0.98]"
-                      >
-                        {renderMemorialPreview(rightCarouselMarker, "h-full pointer-events-none", true)}
-                      </button>
-                    </div>
-                  </div>
+                <div className="pointer-events-auto relative h-[60vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur">
+                  <CarouselScene
+                    items={carouselItems}
+                    moveDir={carouselAnimating}
+                    onMoveComplete={handleCarouselMoveComplete}
+                    onSelectOffset={(offset) =>
+                      startCarouselAnimation(offset < 0 ? "prev" : "next")
+                    }
+                  />
                 </div>
                 <div className="pointer-events-auto mt-4 flex items-center gap-4">
                   <button
                     type="button"
                     onClick={handleCarouselPrev}
-                    className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300"
+                    disabled={!canRotate}
+                    className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     ←
                   </button>
                   <button
                     type="button"
                     onClick={handleCarouselNext}
-                    className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300"
+                    disabled={!canRotate}
+                    className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     →
                   </button>
