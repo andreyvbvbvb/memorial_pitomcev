@@ -8,7 +8,7 @@ import {
   useJsApiLoader
 } from "@react-google-maps/api";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../../lib/config";
@@ -62,10 +62,12 @@ type MemorialSceneData = {
 const Group = "group" as unknown as React.ComponentType<any>;
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
 const Mesh = "mesh" as unknown as React.ComponentType<any>;
+const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
 const PlaneGeometry = "planeGeometry" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
+const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
@@ -451,6 +453,8 @@ function RowCarouselStage({
   } | null>(null);
   const radiusRef = useRef(20);
   const highlightIndexRef = useRef<number | null>(null);
+  const activeLightRef = useRef<THREE.PointLight>(null);
+  const hoverLightRef = useRef<THREE.PointLight>(null);
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
@@ -488,10 +492,44 @@ function RowCarouselStage({
       planeRef.current.lookAt(camera.position);
     });
     return (
-      <Mesh ref={planeRef} renderOrder={-10}>
+      <Mesh ref={planeRef} renderOrder={-10} raycast={() => null}>
         <PlaneGeometry args={[size, size]} />
         <MeshBasicMaterial colorWrite={false} depthWrite depthTest />
       </Mesh>
+    );
+  };
+
+  const SkyBackground = () => {
+    const texture = useTexture("/nebo.png");
+    const sphereRef = useRef<THREE.Mesh>(null);
+
+    useEffect(() => {
+      if (!texture?.image) {
+        return;
+      }
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+    }, [texture]);
+
+    useFrame(({ camera }) => {
+      if (!sphereRef.current) {
+        return;
+      }
+      sphereRef.current.position.copy(camera.position);
+    });
+
+    if (!texture?.image) {
+      return <Color attach="background" args={["#f8fafc"]} />;
+    }
+
+    return (
+      <>
+        <Color attach="background" args={["#f8fafc"]} />
+        <Mesh ref={sphereRef} renderOrder={-20}>
+          <SphereGeometry args={[120, 64, 64]} />
+          <MeshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
+        </Mesh>
+      </>
     );
   };
 
@@ -503,7 +541,7 @@ function RowCarouselStage({
       from: activeIndexRef.current,
       to: targetIndex,
       t: 0,
-      duration: 0.6
+      duration: 0.42
     };
   }, [targetIndex]);
 
@@ -512,12 +550,12 @@ function RowCarouselStage({
     if (count === 0) {
       return;
     }
-    const desiredSpacing = 16;
-    const minRadius = 24;
+    const desiredSpacing = 18;
+    const minRadius = 28;
     radiusRef.current = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
-    const cameraRadius = radiusRef.current + 18;
-    const cameraHeight = 4.5;
-    const cameraTilt = THREE.MathUtils.degToRad(10);
+    const cameraRadius = radiusRef.current + 15;
+    const cameraHeight = 5.4;
+    const cameraTilt = THREE.MathUtils.degToRad(6);
     const popDistance = 2.6;
     const angleStep = (Math.PI * 2) / count;
 
@@ -600,17 +638,46 @@ function RowCarouselStage({
       const activeHighlight = idx === activeIndexRef.current ? 0.45 : 0;
       const hoverHighlight = hovered ? 0.9 : 0;
       const highlight = Math.max(activeHighlight, hoverHighlight);
-      applyMaterialHighlight(node, highlight);
+      applyMaterialHighlight(node, 0);
     });
+
+    const activeNode = instanceRefs.current[activeIndexRef.current] ?? null;
+    if (activeLightRef.current && activeNode) {
+      const pos = new THREE.Vector3();
+      activeNode.getWorldPosition(pos);
+      activeLightRef.current.position.set(pos.x, pos.y + 6, pos.z);
+      activeLightRef.current.intensity = 0.9;
+      activeLightRef.current.visible = true;
+    } else if (activeLightRef.current) {
+      activeLightRef.current.visible = false;
+    }
+
+    const hoveredIndex = hoveredRef.current;
+    if (hoverLightRef.current && hoveredIndex !== null) {
+      const hoveredNode = instanceRefs.current[hoveredIndex];
+      if (hoveredNode) {
+        const pos = new THREE.Vector3();
+        hoveredNode.getWorldPosition(pos);
+        hoverLightRef.current.position.set(pos.x, pos.y + 6.5, pos.z);
+        hoverLightRef.current.intensity = 1.5;
+        hoverLightRef.current.visible = true;
+      } else {
+        hoverLightRef.current.visible = false;
+      }
+    } else if (hoverLightRef.current) {
+      hoverLightRef.current.visible = false;
+    }
   });
 
   return (
     <>
-      <Color attach="background" args={["#f8fafc"]} />
+      <SkyBackground />
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
-      <OcclusionPlane size={Math.max(140, radiusRef.current * 8)} />
+      <PointLight ref={activeLightRef} color="#93c5fd" distance={22} decay={2} />
+      <PointLight ref={hoverLightRef} color="#bae6fd" distance={26} decay={2} />
+      <OcclusionPlane size={Math.max(180, radiusRef.current * 12)} />
       {items.map((item, idx) => {
         const count = items.length;
         const distanceBetween = (a: number, b: number) => {
