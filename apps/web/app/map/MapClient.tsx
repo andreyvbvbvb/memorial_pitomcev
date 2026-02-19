@@ -230,7 +230,7 @@ function MemorialInstance({
   );
 }
 
-function CarouselScene({
+function CarouselStage({
   items,
   moveDir,
   onMoveComplete,
@@ -277,7 +277,7 @@ function CarouselScene({
   });
 
   return (
-    <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
+    <>
       <Color attach="background" args={["#f8fafc"]} />
       <AmbientLight intensity={0.85} />
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
@@ -302,6 +302,29 @@ function CarouselScene({
           );
         })}
       </Group>
+    </>
+  );
+}
+
+function CarouselScene({
+  items,
+  moveDir,
+  onMoveComplete,
+  onSelectOffset
+}: {
+  items: { data: MemorialSceneData | null }[];
+  moveDir: "prev" | "next" | null;
+  onMoveComplete: (dir: "prev" | "next") => void;
+  onSelectOffset: (offset: -1 | 1) => void;
+}) {
+  return (
+    <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
+      <CarouselStage
+        items={items}
+        moveDir={moveDir}
+        onMoveComplete={onMoveComplete}
+        onSelectOffset={onSelectOffset}
+      />
     </Canvas>
   );
 }
