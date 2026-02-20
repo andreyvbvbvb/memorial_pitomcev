@@ -775,7 +775,7 @@ export default function MapClient() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const cameraSettings = {
-    distanceOffset: 13.5,
+    distanceOffset: 15,
     height: 4.0,
     tiltDeg: 13.5
   };
@@ -1280,95 +1280,93 @@ export default function MapClient() {
             </div>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col gap-6 p-6">
-            <div className="pointer-events-auto mx-auto w-full max-w-4xl rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
-              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Вид питомца
-                  <select
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={typeFilter}
-                    onChange={(event) => setTypeFilter(event.target.value)}
-                  >
-                    {petTypeOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Имя питомца
-                  <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={nameFilter}
-                    onChange={(event) => setNameFilter(event.target.value)}
-                    placeholder="Барсик"
-                  />
-                </label>
+          <div className="relative h-full w-full overflow-hidden">
+            <div className="absolute inset-0">
+              <CarouselScene
+                items={carouselItems}
+                activeIndex={carouselIndex}
+                targetIndex={carouselTargetIndex}
+                onArrive={handleCarouselArrive}
+                onAnimationEnd={handleCarouselAnimationEnd}
+                cameraSettings={cameraSettings}
+              />
+              <div className="pointer-events-none absolute inset-0">
                 <button
                   type="button"
-                  onClick={() => {
-                    setTypeFilter("all");
-                    setNameFilter("");
-                  }}
-                  disabled={!hasFilters}
-                  className="h-[42px] rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Сбросить
-                </button>
-                <div className="flex justify-start md:justify-end">{modeToggle}</div>
+                  aria-label="Предыдущий мемориал"
+                  onClick={handleCarouselNext}
+                  className="pointer-events-auto absolute left-0 top-0 h-full w-[10%] bg-transparent"
+                />
+                <button
+                  type="button"
+                  aria-label="Следующий мемориал"
+                  onClick={handleCarouselPrev}
+                  className="pointer-events-auto absolute right-0 top-0 h-full w-[10%] bg-transparent"
+                />
               </div>
             </div>
-            <div className="flex flex-1 items-center justify-center gap-8">
-              <div className="flex flex-1 flex-col items-center justify-center">
-                <div className="pointer-events-auto relative h-[60vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur">
-                  <CarouselScene
-                    items={carouselItems}
-                    activeIndex={carouselIndex}
-                    targetIndex={carouselTargetIndex}
-                    onArrive={handleCarouselArrive}
-                    onAnimationEnd={handleCarouselAnimationEnd}
-                    cameraSettings={cameraSettings}
-                  />
-                  <div className="pointer-events-none absolute inset-0">
-                    <button
-                      type="button"
-                      aria-label="Предыдущий мемориал"
-                      onClick={handleCarouselPrev}
-                      className="pointer-events-auto absolute left-0 top-0 h-full w-[10%] bg-transparent"
-                    />
-                    <button
-                      type="button"
-                      aria-label="Следующий мемориал"
-                      onClick={handleCarouselNext}
-                      className="pointer-events-auto absolute right-0 top-0 h-full w-[10%] bg-transparent"
-                    />
-                  </div>
-                </div>
-                <div className="pointer-events-auto mt-4 flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={handleCarouselPrev}
-                    disabled={!canRotate}
-                    className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCarouselNext}
-                    disabled={!canRotate}
-                    className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    →
-                  </button>
-                </div>
+            <div className="pointer-events-auto absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4">
+              <button
+                type="button"
+                onClick={handleCarouselNext}
+                disabled={!canRotate}
+                className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                onClick={handleCarouselPrev}
+                disabled={!canRotate}
+                className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                →
+              </button>
+            </div>
+            <div className="pointer-events-auto absolute left-6 top-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold text-slate-900">Фильтры</h2>
+                {modeToggle}
               </div>
-              <div className="pointer-events-auto w-[320px] rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
-                {activeCarouselMarker ? (
-                  <div className="grid gap-3">
-                    {activePreviewSrc ? (
+              <label className="grid gap-1 text-sm text-slate-700">
+                Вид питомца
+                <select
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value)}
+                >
+                  {petTypeOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Имя питомца
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={nameFilter}
+                  onChange={(event) => setNameFilter(event.target.value)}
+                  placeholder="Барсик"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setTypeFilter("all");
+                  setNameFilter("");
+                }}
+                disabled={!hasFilters}
+                className="self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Сбросить
+              </button>
+            </div>
+            <div className="pointer-events-auto absolute right-6 top-6 z-20 w-[320px] rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+              {activeCarouselMarker ? (
+                <div className="grid gap-3">
+                  {activePreviewSrc ? (
                       <img
                         src={activePreviewSrc}
                         alt="Фото питомца"
