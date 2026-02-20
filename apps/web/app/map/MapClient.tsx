@@ -1367,35 +1367,35 @@ export default function MapClient() {
               {activeCarouselMarker ? (
                 <div className="grid gap-3">
                   {activePreviewSrc ? (
-                      <img
-                        src={activePreviewSrc}
-                        alt="Фото питомца"
-                        className="h-44 w-full rounded-2xl object-contain"
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">
-                        {activeCarouselMarker.name}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {activeCarouselMarker.epitaph ?? "Без эпитафии"}
-                      </p>
-                    </div>
-                    {activeCarouselPet?.story ? (
-                      <p className="text-xs text-slate-500 line-clamp-4">{activeCarouselPet.story}</p>
-                    ) : null}
-                    <a
-                      className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
-                      href={`/pets/${activeCarouselMarker.petId}`}
-                    >
-                      Открыть мемориал
-                    </a>
+                    <img
+                      src={activePreviewSrc}
+                      alt="Фото питомца"
+                      className="h-44 w-full rounded-2xl object-contain"
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {activeCarouselMarker.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {activeCarouselMarker.epitaph ?? "Без эпитафии"}
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-slate-500">Нет мемориалов</p>
-                )}
-              </div>
+                  {activeCarouselPet?.story ? (
+                    <p className="text-xs text-slate-500 line-clamp-4">{activeCarouselPet.story}</p>
+                  ) : null}
+                  <a
+                    className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
+                    href={`/pets/${activeCarouselMarker.petId}`}
+                  >
+                    Открыть мемориал
+                  </a>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Нет мемориалов</p>
+              )}
+            </div>
             </div>
           </div>
         )}
