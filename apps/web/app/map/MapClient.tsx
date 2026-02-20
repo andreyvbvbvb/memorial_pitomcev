@@ -1396,7 +1396,6 @@ export default function MapClient() {
                 <p className="text-sm text-slate-500">Нет мемориалов</p>
               )}
             </div>
-            </div>
           </div>
         )}
         <div className="pointer-events-auto absolute bottom-6 right-6">
