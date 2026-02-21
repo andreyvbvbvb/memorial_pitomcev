@@ -783,6 +783,7 @@ export default function MapClient() {
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [carouselQueue, setCarouselQueue] = useState(0);
   const [headerOffset, setHeaderOffset] = useState(56);
+  const overlayTop = headerOffset + 24;
   const cameraSettings = {
     distanceOffset: 16,
     height: 4.0,
@@ -1249,7 +1250,10 @@ export default function MapClient() {
       <div className="relative z-10 h-full w-full pointer-events-none">
         {mapMode === "map" ? (
           <div className="relative h-full w-full">
-            <div className="pointer-events-auto absolute left-6 top-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+            <div
+              className="pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
+              style={{ top: overlayTop }}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="ml-auto">{modeToggle}</div>
               </div>
@@ -1289,7 +1293,10 @@ export default function MapClient() {
                 Сбросить
               </button>
             </div>
-            <div className="pointer-events-auto absolute right-6 top-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+            <div
+              className="pointer-events-auto absolute right-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
+              style={{ top: overlayTop }}
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
                 <span className="text-xs text-slate-500">{listMarkers.length}</span>
@@ -1373,7 +1380,10 @@ export default function MapClient() {
                 />
               </div>
             </div>
-            <div className="pointer-events-auto absolute left-6 top-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+            <div
+              className="pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
+              style={{ top: overlayTop }}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="ml-auto">{modeToggle}</div>
               </div>
