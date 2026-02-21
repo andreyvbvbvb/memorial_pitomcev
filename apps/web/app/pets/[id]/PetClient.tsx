@@ -97,6 +97,7 @@ export default function PetClient({ id }: Props) {
   const [giftCatalogLoading, setGiftCatalogLoading] = useState(true);
   const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [giftPanelOpen, setGiftPanelOpen] = useState(true);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
 
@@ -217,7 +218,9 @@ export default function PetClient({ id }: Props) {
           return aCode.localeCompare(bCode, "ru");
         });
         setGiftCatalog(sorted);
-        setSelectedGiftId((prev) => prev ?? sorted[0]?.id ?? null);
+        setSelectedGiftId((prev) =>
+          prev && sorted.some((gift) => gift.id === prev) ? prev : null
+        );
       } catch (err) {
         setGiftError(err instanceof Error ? err.message : "Ошибка загрузки подарков");
       } finally {
@@ -304,8 +307,7 @@ export default function PetClient({ id }: Props) {
     });
   }, [availableSlots, giftCatalog]);
 
-  const selectedGift =
-    giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? giftsWithSlots[0] ?? null;
+  const selectedGift = giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
   const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
@@ -328,7 +330,7 @@ export default function PetClient({ id }: Props) {
       if (prev && giftsWithSlots.some((gift) => gift.id === prev)) {
         return prev;
       }
-      return giftsWithSlots[0]?.id ?? null;
+      return null;
     });
   }, [giftsWithSlots]);
 
@@ -371,6 +373,8 @@ export default function PetClient({ id }: Props) {
     setSelectedGiftId(giftId);
     setGiftPreviewEnabled(true);
   };
+
+  const toggleGiftPanel = () => setGiftPanelOpen((prev) => !prev);
 
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot) {
@@ -688,19 +692,29 @@ export default function PetClient({ id }: Props) {
 
         <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex items-center justify-between">
-            <div />
+            <button
+              type="button"
+              onClick={toggleGiftPanel}
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
+            >
+              {giftPanelOpen ? "Скрыть дарение" : "Показать дарение"}
+            </button>
           </div>
           {currentUser ? (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <div
+              className={`mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all ${
+                giftPanelOpen ? "opacity-100" : "pointer-events-none max-h-0 overflow-hidden p-0 opacity-0"
+              }`}
+            >
               <div className="grid gap-3">
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid max-h-72 grid-cols-2 gap-3 overflow-y-auto pr-1">
                     {giftCatalogLoading ? (
-                      Array.from({ length: 6 }).map((_, index) => (
+                      Array.from({ length: 8 }).map((_, index) => (
                         <div
                           key={`gift-skeleton-${index}`}
-                          className="h-24 w-24 animate-pulse rounded-2xl border border-slate-200 bg-white"
+                          className="h-24 w-full animate-pulse rounded-2xl border border-slate-200 bg-white"
                         >
                           <div className="m-2 h-16 rounded-xl bg-slate-200" />
                         </div>
@@ -717,13 +731,13 @@ export default function PetClient({ id }: Props) {
                         key={gift.id}
                         type="button"
                         onClick={() => handleSelectGift(gift.id)}
-                        className={`relative flex h-24 w-24 items-center justify-center rounded-2xl border ${
+                        className={`relative flex h-24 w-full items-center justify-center rounded-xl border ${
                           selectedGiftId === gift.id
-                            ? "border-slate-900 bg-slate-900 text-white"
+                            ? "border-sky-400/70 bg-sky-50 text-slate-900"
                             : "border-slate-200 bg-white text-slate-700"
                         }`}
                       >
-                        <span className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                        <span className="relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
                           {iconUrl ? (
                             <img
                               src={iconUrl ?? undefined}
@@ -737,7 +751,7 @@ export default function PetClient({ id }: Props) {
                             />
                           ) : null}
                         </span>
-                        <span className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
+                        <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
                           {gift.price}
                         </span>
                       </button>
