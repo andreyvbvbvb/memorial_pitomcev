@@ -17,6 +17,7 @@ import {
   bowlWaterModelByIdGenerated
 } from "../../lib/memorial-models.generated";
 import {
+  getGiftCodeFromUrl,
   isGiftSlotName,
   parseGiftSlot,
   resolveGiftSizeMultiplier,
@@ -68,6 +69,7 @@ const Mesh = "mesh" as unknown as React.ComponentType<any>;
 const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 const HemisphereLight = "hemisphereLight" as unknown as React.ComponentType<any>;
+const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
 const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
@@ -424,6 +426,10 @@ function GiftPlacementAttachment({
   onLeave?: () => void;
 }) {
   const { scene } = useGLTF(url);
+  const isStarGift = useMemo(() => {
+    const code = getGiftCodeFromUrl(url);
+    return Boolean(code?.startsWith("star"));
+  }, [url]);
   const gift = useMemo(() => {
     const cloned = scene.clone(true);
     const targetWidth = resolveGiftTargetWidth({ modelUrl: url });
@@ -472,6 +478,15 @@ function GiftPlacementAttachment({
       }}
     >
       <Primitive object={gift} />
+      {isStarGift ? (
+        <PointLight
+          intensity={0.6}
+          distance={4}
+          decay={2}
+          color={"#ffe8a3"}
+          position={[0, 0.45, 0]}
+        />
+      ) : null}
     </Group>
   );
 }
