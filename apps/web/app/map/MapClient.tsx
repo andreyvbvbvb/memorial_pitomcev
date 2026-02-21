@@ -787,7 +787,6 @@ export default function MapClient() {
     height: 4.0,
     tiltDeg: 14.5
   };
-  const carouselIndexRef = useRef(carouselIndex);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
 
@@ -1050,46 +1049,18 @@ export default function MapClient() {
     setCarouselIndex(index);
   };
 
-  useEffect(() => {
-    carouselIndexRef.current = carouselIndex;
-  }, [carouselIndex]);
-
-  const startCarouselStep = useCallback(
-    (step: number) => {
-      if (carouselOrder.length < 2) {
-        return;
-      }
-      const nextIndex =
-        (carouselIndexRef.current + step + carouselOrder.length) % carouselOrder.length;
-      setCarouselTargetIndex(nextIndex);
-    },
-    [carouselOrder.length]
-  );
-
   const queueCarouselStep = useCallback(
     (step: number) => {
       if (carouselOrder.length < 2) {
         return;
       }
-      if (carouselTargetIndex === null) {
-        startCarouselStep(step);
-        return;
-      }
       setCarouselQueue((prev) => prev + step);
     },
-    [carouselOrder.length, carouselTargetIndex, startCarouselStep]
+    [carouselOrder.length]
   );
 
   const handleCarouselAnimationEnd = () => {
     setCarouselTargetIndex(null);
-    setCarouselQueue((prev) => {
-      if (prev === 0) {
-        return 0;
-      }
-      const step = prev > 0 ? 1 : -1;
-      startCarouselStep(step);
-      return prev - step;
-    });
   };
 
   const handleCarouselPrev = () => {
@@ -1099,6 +1070,17 @@ export default function MapClient() {
   const handleCarouselNext = () => {
     queueCarouselStep(1);
   };
+
+  useEffect(() => {
+    if (carouselTargetIndex !== null || carouselQueue === 0 || carouselOrder.length < 2) {
+      return;
+    }
+    const step = carouselQueue > 0 ? 1 : -1;
+    const nextIndex =
+      (carouselIndex + step + carouselOrder.length) % carouselOrder.length;
+    setCarouselTargetIndex(nextIndex);
+    setCarouselQueue((prev) => prev - step);
+  }, [carouselTargetIndex, carouselQueue, carouselIndex, carouselOrder.length]);
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
   const activePreviewUrl = activeCarouselMarker?.previewPhotoUrl;
@@ -1217,51 +1199,48 @@ export default function MapClient() {
 
       <div className="relative z-10 h-full w-full pointer-events-none">
         {mapMode === "map" ? (
-          <div className="flex h-full w-full flex-col gap-6 p-6 lg:flex-row lg:items-start">
-            <div className="pointer-events-auto flex h-full flex-col gap-4">
-              <div className="flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="ml-auto">{modeToggle}</div>
-                </div>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Вид питомца
-                  <select
-                    className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
-                    style={selectArrowStyle}
-                    value={typeFilter}
-                    onChange={(event) => setTypeFilter(event.target.value)}
-                  >
-                    {petTypeOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Имя питомца
-                  <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={nameFilter}
-                    onChange={(event) => setNameFilter(event.target.value)}
-                    placeholder="Барсик"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTypeFilter("all");
-                    setNameFilter("");
-                  }}
-                  disabled={!hasFilters}
-                  className="mt-auto self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Сбросить
-                </button>
+          <div className="relative h-full w-full">
+            <div className="pointer-events-auto absolute left-6 top-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <div className="ml-auto">{modeToggle}</div>
               </div>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Вид питомца
+                <select
+                  className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                  style={selectArrowStyle}
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value)}
+                >
+                  {petTypeOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm text-slate-700">
+                Имя питомца
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={nameFilter}
+                  onChange={(event) => setNameFilter(event.target.value)}
+                  placeholder="Барсик"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setTypeFilter("all");
+                  setNameFilter("");
+                }}
+                disabled={!hasFilters}
+                className="self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Сбросить
+              </button>
             </div>
-            <div className="hidden flex-1 lg:flex" />
-            <div className="pointer-events-auto relative z-10 flex max-h-[78vh] w-full max-w-[360px] flex-col self-start rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
                 <span className="text-xs text-slate-500">{listMarkers.length}</span>
