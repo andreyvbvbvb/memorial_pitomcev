@@ -716,7 +716,7 @@ export default function PetClient({ id }: Props) {
               <div className="grid gap-3">
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
-                  <div className="grid max-h-52 grid-cols-2 gap-3 overflow-y-auto pr-1">
+                  <div className="flex max-h-52 flex-wrap gap-3 overflow-y-auto pr-1">
                     {giftCatalogLoading ? (
                       Array.from({ length: 8 }).map((_, index) => (
                         <div
@@ -738,7 +738,7 @@ export default function PetClient({ id }: Props) {
                         key={gift.id}
                         type="button"
                         onClick={() => handleSelectGift(gift.id)}
-                        className={`relative flex h-24 w-full items-center justify-center rounded-xl border ${
+                        className={`relative flex h-24 w-24 items-center justify-center rounded-xl border ${
                           selectedGiftId === gift.id
                             ? "border-sky-400/70 bg-sky-50 text-slate-900"
                             : "border-slate-200 bg-white text-slate-700"
@@ -758,7 +758,7 @@ export default function PetClient({ id }: Props) {
                             />
                           ) : null}
                         </span>
-                        <span className="absolute bottom-2 left-1/2 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
+                        <span className="absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[9px] font-semibold text-white">
                           {gift.price}
                         </span>
                       </button>
