@@ -280,22 +280,41 @@ export default function PetClient({ id }: Props) {
     pet?.gifts?.filter((gift) => !gift.expiresAt || new Date(gift.expiresAt) > new Date()) ?? [];
   const occupiedSlots = new Set(activeGifts.map((gift) => gift.slotName));
   const availableSlots = terrainGiftSlots.filter((slot) => !occupiedSlots.has(slot));
+  const giftsWithSlots = useMemo(() => {
+    if (availableSlots.length === 0) {
+      return [];
+    }
+    const slotTypes = new Set(
+      availableSlots
+        .map((slot) => getGiftSlotType(slot))
+        .filter((type): type is string => Boolean(type))
+    );
+    return giftCatalog.filter((gift) =>
+      getGiftAvailableTypes(gift).some((type) => slotTypes.has(type))
+    );
+  }, [availableSlots, giftCatalog]);
+
   const selectedGift =
-    giftCatalog.find((gift) => gift.id === selectedGiftId) ?? giftCatalog[0] ?? null;
+    giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? giftsWithSlots[0] ?? null;
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
   const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
-  const availableSlotTypes = new Set(
-    availableSlots
-      .map((slot) => getGiftSlotType(slot))
-      .filter((type): type is string => Boolean(type))
-  );
-  const hasTypeMatch =
-    selectedGiftTypes.length > 0 && selectedGiftTypes.some((type) => availableSlotTypes.has(type));
-  const filteredAvailableSlots =
-    hasTypeMatch
-      ? availableSlots.filter((slot) => selectedGiftTypes.includes(getGiftSlotType(slot)))
-      : availableSlots;
+  const filteredAvailableSlots = selectedGift
+    ? availableSlots.filter((slot) => selectedGiftTypes.includes(getGiftSlotType(slot)))
+    : [];
+
+  useEffect(() => {
+    if (giftsWithSlots.length === 0) {
+      setSelectedGiftId(null);
+      return;
+    }
+    setSelectedGiftId((prev) => {
+      if (prev && giftsWithSlots.some((gift) => gift.id === prev)) {
+        return prev;
+      }
+      return giftsWithSlots[0]?.id ?? null;
+    });
+  }, [giftsWithSlots]);
 
   useEffect(() => {
     if (!selectedGiftSupportsSize) {
@@ -605,7 +624,10 @@ export default function PetClient({ id }: Props) {
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
                   <div className="flex flex-wrap gap-3">
-                    {giftCatalog.map((gift) => {
+                    {giftsWithSlots.length === 0 ? (
+                      <p className="text-sm text-slate-500">Нет доступных подарков.</p>
+                    ) : (
+                      giftsWithSlots.map((gift) => {
                       const iconUrl = resolveGiftIconUrl(gift);
                       const fallbackIcon =
                         "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
@@ -639,7 +661,8 @@ export default function PetClient({ id }: Props) {
                         </span>
                       </button>
                     );
-                  })}
+                  })
+                    )}
                   </div>
                 </div>
 
