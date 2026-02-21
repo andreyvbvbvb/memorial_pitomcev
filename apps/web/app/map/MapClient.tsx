@@ -984,35 +984,6 @@ export default function MapClient() {
     });
   }, [mapMode, carouselIndex, carouselOrder]);
 
-  useEffect(() => {
-    if (mapMode !== "carousel") {
-      return;
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        handleCarouselNext();
-      } else if (event.key === "ArrowRight") {
-        event.preventDefault();
-        handleCarouselPrev();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [mapMode, handleCarouselNext, handleCarouselPrev]);
-
   const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
       return null;
@@ -1099,6 +1070,35 @@ export default function MapClient() {
   const handleCarouselNext = () => {
     queueCarouselStep(1);
   };
+
+  useEffect(() => {
+    if (mapMode !== "carousel") {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        handleCarouselNext();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        handleCarouselPrev();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mapMode, handleCarouselNext, handleCarouselPrev]);
 
   useEffect(() => {
     if (carouselTargetIndex !== null || carouselQueue === 0 || carouselOrder.length < 2) {
