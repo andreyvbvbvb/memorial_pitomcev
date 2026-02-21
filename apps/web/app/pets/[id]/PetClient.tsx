@@ -695,9 +695,17 @@ export default function PetClient({ id }: Props) {
             <button
               type="button"
               onClick={toggleGiftPanel}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
+              className="flex items-center gap-2 text-xs font-semibold text-slate-700"
             >
-              {giftPanelOpen ? "Скрыть дарение" : "Показать дарение"}
+              <span>{giftPanelOpen ? "Свернуть" : "Развернуть"}</span>
+              <span
+                className={`inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 transition-transform ${
+                  giftPanelOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              >
+                ↓
+              </span>
             </button>
           </div>
           {currentUser ? (
@@ -709,7 +717,7 @@ export default function PetClient({ id }: Props) {
               <div className="grid gap-3">
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
-                  <div className="grid max-h-72 grid-cols-2 gap-3 overflow-y-auto pr-1">
+                  <div className="grid max-h-72 grid-rows-2 grid-flow-col auto-cols-[96px] gap-3 overflow-x-auto pb-2">
                     {giftCatalogLoading ? (
                       Array.from({ length: 8 }).map((_, index) => (
                         <div
