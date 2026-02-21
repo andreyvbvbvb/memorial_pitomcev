@@ -464,6 +464,46 @@ export default function PetClient({ id }: Props) {
     { id: "l", label: "L", helper: "Большая" }
   ];
 
+  const selectedSlotType = selectedSlot ? getGiftSlotType(selectedSlot) : null;
+  const previewGiftUrl =
+    resolveGiftModelUrl({ gift: selectedGift ?? undefined, slotType: selectedSlotType }) ??
+    selectedGift?.modelUrl ??
+    null;
+  const handleGiftPreloaded = useCallback((url: string) => {
+    setPreloadedGiftUrls((prev) => {
+      if (prev[url]) {
+        return prev;
+      }
+      return { ...prev, [url]: true };
+    });
+  }, []);
+  const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
+
+  useEffect(() => {
+    if (
+      !previewGiftUrl ||
+      !giftPreviewEnabled ||
+      !selectedGift ||
+      !selectedSlot ||
+      occupiedSlots.has(selectedSlot)
+    ) {
+      setPendingPreviewUrl(null);
+      return;
+    }
+    if (preloadedGiftUrls[previewGiftUrl]) {
+      setPendingPreviewUrl(null);
+      return;
+    }
+    setPendingPreviewUrl(previewGiftUrl);
+  }, [
+    giftPreviewEnabled,
+    occupiedSlots,
+    preloadedGiftUrls,
+    previewGiftUrl,
+    selectedGift,
+    selectedSlot
+  ]);
+
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 px-6 py-16">
@@ -556,45 +596,6 @@ export default function PetClient({ id }: Props) {
       size: gift.size ?? null
     };
   });
-  const selectedSlotType = selectedSlot ? getGiftSlotType(selectedSlot) : null;
-  const previewGiftUrl =
-    resolveGiftModelUrl({ gift: selectedGift ?? undefined, slotType: selectedSlotType }) ??
-    selectedGift?.modelUrl ??
-    null;
-  const handleGiftPreloaded = useCallback((url: string) => {
-    setPreloadedGiftUrls((prev) => {
-      if (prev[url]) {
-        return prev;
-      }
-      return { ...prev, [url]: true };
-    });
-  }, []);
-  const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
-
-  useEffect(() => {
-    if (
-      !previewGiftUrl ||
-      !giftPreviewEnabled ||
-      !selectedGift ||
-      !selectedSlot ||
-      occupiedSlots.has(selectedSlot)
-    ) {
-      setPendingPreviewUrl(null);
-      return;
-    }
-    if (preloadedGiftUrls[previewGiftUrl]) {
-      setPendingPreviewUrl(null);
-      return;
-    }
-    setPendingPreviewUrl(previewGiftUrl);
-  }, [
-    giftPreviewEnabled,
-    occupiedSlots,
-    preloadedGiftUrls,
-    previewGiftUrl,
-    selectedGift,
-    selectedSlot
-  ]);
   const previewGift =
     giftPreviewEnabled &&
     selectedGift &&
