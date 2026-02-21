@@ -344,15 +344,13 @@ function GiftSlotButtons({
   slots,
   visible,
   selectedSlot,
-  onSelectSlot,
-  onSlotsDetected
+  onSelectSlot
 }: {
   terrain: THREE.Object3D;
   slots: string[];
   visible: boolean;
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
-  onSlotsDetected?: (slots: string[]) => void;
 }) {
   const [anchors, setAnchors] = useState<{ slot: string; position: [number, number, number] }[]>([]);
 
@@ -374,8 +372,7 @@ function GiftSlotButtons({
       })
       .filter((item): item is { slot: string; position: [number, number, number] } => Boolean(item));
     setAnchors(points);
-    onSlotsDetected?.(points.map((item) => item.slot));
-  }, [terrain, slots, visible, onSlotsDetected]);
+  }, [terrain, slots, visible]);
 
   if (!visible || !onSelectSlot) {
     return null;
@@ -632,7 +629,6 @@ function TerrainWithHouse({
           visible={showGiftSlots}
           selectedSlot={selectedSlot}
           onSelectSlot={onSelectSlot}
-          onSlotsDetected={onSlotsDetected}
         />
       ) : null}
       {gifts?.map((gift) => (
