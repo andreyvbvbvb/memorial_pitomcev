@@ -76,7 +76,14 @@ export const getGiftAvailableTypes = (gift?: { code?: string | null; modelUrl?: 
   const types = Object.keys(entry)
     .filter((key) => key !== "default")
     .map((type) => type.toLowerCase());
-  return types.length > 0 ? types : [DEFAULT_SLOT_TYPE];
+  if (types.length === 0) {
+    return [DEFAULT_SLOT_TYPE];
+  }
+  const codePrefix = code.split("_")[0]?.toLowerCase() ?? "";
+  if (codePrefix && types.every((type) => type === codePrefix)) {
+    return [DEFAULT_SLOT_TYPE];
+  }
+  return types;
 };
 
 export const resolveGiftModelUrl = (options: {
