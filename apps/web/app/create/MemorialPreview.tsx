@@ -45,6 +45,8 @@ type Props = {
   softEdges?: boolean;
   showControls?: boolean;
   controlsEnabled?: boolean;
+  preloadGiftUrl?: string | null;
+  onGiftPreloaded?: (url: string) => void;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -631,23 +633,48 @@ function TerrainWithHouse({
           onSelectSlot={onSelectSlot}
         />
       ) : null}
-      {gifts?.map((gift) => (
-        <GiftPlacementAttachment
-          key={`${gift.slot}-${gift.url}`}
-          terrain={terrain}
-          slot={gift.slot}
-          url={gift.url}
-          info={{ name: gift.name, owner: gift.owner, expiresAt: gift.expiresAt }}
-          size={gift.size ?? undefined}
-          onHover={onGiftHover}
-          onLeave={onGiftLeave}
-        />
-      ))}
+      <Suspense fallback={null}>
+        {gifts?.map((gift) => (
+          <GiftPlacementAttachment
+            key={`${gift.slot}-${gift.url}`}
+            terrain={terrain}
+            slot={gift.slot}
+            url={gift.url}
+            info={{ name: gift.name, owner: gift.owner, expiresAt: gift.expiresAt }}
+            size={gift.size ?? undefined}
+            onHover={onGiftHover}
+            onLeave={onGiftLeave}
+          />
+        ))}
+      </Suspense>
       {parts?.map((part) => (
         <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={colors} />
       ))}
     </>
   );
+}
+
+function GiftModelPreloader({
+  url,
+  onReady
+}: {
+  url: string;
+  onReady?: (url: string) => void;
+}) {
+  useGLTF(url);
+
+  useEffect(() => {
+    onReady?.(url);
+  }, [onReady, url]);
+
+  return null;
+}
+
+function SceneReady({ onReady }: { onReady: () => void }) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return null;
 }
 
 export default function MemorialPreview({
@@ -665,6 +692,8 @@ export default function MemorialPreview({
   softEdges = false,
   showControls = true,
   controlsEnabled = true,
+  preloadGiftUrl,
+  onGiftPreloaded,
   className,
   style
 }: Props) {
@@ -674,10 +703,15 @@ export default function MemorialPreview({
   const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
+  const [sceneReady, setSceneReady] = useState(false);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
   }, []);
+
+  useEffect(() => {
+    setSceneReady(false);
+  }, [terrainUrl, houseUrl]);
 
   useEffect(() => {
     if (showControls && onSelectSlot) {
@@ -736,6 +770,15 @@ export default function MemorialPreview({
           </button>
         </>
       ) : null}
+      {!sceneReady ? (
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl bg-white/70">
+          <div className="w-3/4 max-w-md animate-pulse space-y-4">
+            <div className="h-4 w-1/2 rounded-full bg-slate-200" />
+            <div className="h-3 w-3/4 rounded-full bg-slate-200" />
+            <div className="h-64 w-full rounded-2xl bg-slate-200" />
+          </div>
+        </div>
+      ) : null}
       <Canvas
         camera={{ position: [4, 3, 4], fov: 45 }}
         style={
@@ -781,6 +824,7 @@ export default function MemorialPreview({
           {!terrainUrl && houseUrl ? (
             <Model url={houseUrl} position={[0, 0, 0]} />
           ) : null}
+          <SceneReady onReady={() => setSceneReady(true)} />
           {hoveredGift ? (
             <Html position={hoveredGift.position} center distanceFactor={8} className="pointer-events-none">
               <div className="inline-block min-w-[180px] max-w-[280px] break-words rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-[6px] leading-snug text-slate-700 shadow-lg">
@@ -795,6 +839,11 @@ export default function MemorialPreview({
                 ) : null}
               </div>
             </Html>
+          ) : null}
+        </Suspense>
+        <Suspense fallback={null}>
+          {preloadGiftUrl ? (
+            <GiftModelPreloader url={preloadGiftUrl} onReady={onGiftPreloaded} />
           ) : null}
         </Suspense>
         <OrbitControls

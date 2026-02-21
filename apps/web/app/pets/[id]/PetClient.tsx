@@ -94,6 +94,9 @@ export default function PetClient({ id }: Props) {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(1);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [giftCatalogLoading, setGiftCatalogLoading] = useState(true);
+  const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
 
@@ -189,6 +192,7 @@ export default function PetClient({ id }: Props) {
 
   useEffect(() => {
     const loadCatalog = async () => {
+      setGiftCatalogLoading(true);
       try {
         const response = await fetch(`${apiUrl}/gifts`);
         if (!response.ok) {
@@ -216,6 +220,8 @@ export default function PetClient({ id }: Props) {
         setSelectedGiftId((prev) => prev ?? sorted[0]?.id ?? null);
       } catch (err) {
         setGiftError(err instanceof Error ? err.message : "Ошибка загрузки подарков");
+      } finally {
+        setGiftCatalogLoading(false);
       }
     };
     loadCatalog();
@@ -461,8 +467,28 @@ export default function PetClient({ id }: Props) {
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 px-6 py-16">
-        <div className="mx-auto max-w-6xl text-center">
-          <p className="text-slate-500">Загрузка мемориала...</p>
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="animate-pulse rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="h-5 w-32 rounded-full bg-slate-200" />
+            <div className="mt-4 h-8 w-64 rounded-full bg-slate-200" />
+            <div className="mt-3 h-4 w-48 rounded-full bg-slate-200" />
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={`info-skeleton-${index}`} className="h-20 rounded-2xl bg-slate-100" />
+              ))}
+            </div>
+          </div>
+          <div className="animate-pulse rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="h-4 w-40 rounded-full bg-slate-200" />
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="h-[320px] rounded-2xl bg-slate-100" />
+              <div className="space-y-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={`gift-skeleton-${index}`} className="h-10 rounded-xl bg-slate-100" />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -535,12 +561,47 @@ export default function PetClient({ id }: Props) {
     resolveGiftModelUrl({ gift: selectedGift ?? undefined, slotType: selectedSlotType }) ??
     selectedGift?.modelUrl ??
     null;
+  const handleGiftPreloaded = useCallback((url: string) => {
+    setPreloadedGiftUrls((prev) => {
+      if (prev[url]) {
+        return prev;
+      }
+      return { ...prev, [url]: true };
+    });
+  }, []);
+  const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
+
+  useEffect(() => {
+    if (
+      !previewGiftUrl ||
+      !giftPreviewEnabled ||
+      !selectedGift ||
+      !selectedSlot ||
+      occupiedSlots.has(selectedSlot)
+    ) {
+      setPendingPreviewUrl(null);
+      return;
+    }
+    if (preloadedGiftUrls[previewGiftUrl]) {
+      setPendingPreviewUrl(null);
+      return;
+    }
+    setPendingPreviewUrl(previewGiftUrl);
+  }, [
+    giftPreviewEnabled,
+    occupiedSlots,
+    preloadedGiftUrls,
+    previewGiftUrl,
+    selectedGift,
+    selectedSlot
+  ]);
   const previewGift =
     giftPreviewEnabled &&
     selectedGift &&
     selectedSlot &&
     !occupiedSlots.has(selectedSlot) &&
-    previewGiftUrl
+    previewGiftUrl &&
+    previewReady
       ? {
           slot: selectedSlot,
           url: previewGiftUrl,
@@ -634,7 +695,16 @@ export default function PetClient({ id }: Props) {
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
                   <div className="flex flex-wrap gap-3">
-                    {giftsWithSlots.length === 0 ? (
+                    {giftCatalogLoading ? (
+                      Array.from({ length: 6 }).map((_, index) => (
+                        <div
+                          key={`gift-skeleton-${index}`}
+                          className="h-24 w-24 animate-pulse rounded-2xl border border-slate-200 bg-white"
+                        >
+                          <div className="m-2 h-16 rounded-xl bg-slate-200" />
+                        </div>
+                      ))
+                    ) : giftsWithSlots.length === 0 ? (
                       <p className="text-sm text-slate-500">Нет доступных подарков.</p>
                     ) : (
                       giftsWithSlots.map((gift) => {
@@ -772,6 +842,8 @@ export default function PetClient({ id }: Props) {
               selectedSlot={selectedSlot}
               onSelectSlot={handleSelectSlot}
               onGiftSlotsDetected={setDetectedSlots}
+              preloadGiftUrl={pendingPreviewUrl}
+              onGiftPreloaded={handleGiftPreloaded}
               colors={colorOverrides}
             />
           </div>
