@@ -73,6 +73,13 @@ const Color = "color" as unknown as React.ComponentType<any>;
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "100%" };
 const petTypeOptions = [{ id: "all", name: "Все виды" }, ...markerStyles];
+const selectArrowStyle = {
+  backgroundImage:
+    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 8l4 4 4-4'/></svg>\")",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 0.75rem center",
+  backgroundSize: "12px 12px"
+} as const;
 
 const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, string>) => {
   if (!colors) {
@@ -540,7 +547,7 @@ function RowCarouselStage({
       from: activeIndexRef.current,
       to: targetIndex,
       t: 0,
-      duration: 0.32
+      duration: 0.22
     };
   }, [targetIndex]);
 
@@ -774,11 +781,13 @@ export default function MapClient() {
   const [carouselOrder, setCarouselOrder] = useState<MarkerDto[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
+  const [carouselQueue, setCarouselQueue] = useState(0);
   const cameraSettings = {
-    distanceOffset: 15,
+    distanceOffset: 16,
     height: 4.0,
-    tiltDeg: 13.5
+    tiltDeg: 14.5
   };
+  const carouselIndexRef = useRef(carouselIndex);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
 
@@ -841,12 +850,14 @@ export default function MapClient() {
       setCarouselOrder([]);
       setCarouselIndex(0);
       setCarouselTargetIndex(null);
+      setCarouselQueue(0);
       return;
     }
     const shuffled = [...filteredMarkers].sort(() => Math.random() - 0.5);
     setCarouselOrder(shuffled);
     setCarouselIndex(0);
     setCarouselTargetIndex(null);
+    setCarouselQueue(0);
   }, [filteredMarkers]);
 
   const activeCarouselMarker = carouselOrder[carouselIndex] ?? null;
@@ -1039,25 +1050,54 @@ export default function MapClient() {
     setCarouselIndex(index);
   };
 
+  useEffect(() => {
+    carouselIndexRef.current = carouselIndex;
+  }, [carouselIndex]);
+
+  const startCarouselStep = useCallback(
+    (step: number) => {
+      if (carouselOrder.length < 2) {
+        return;
+      }
+      const nextIndex =
+        (carouselIndexRef.current + step + carouselOrder.length) % carouselOrder.length;
+      setCarouselTargetIndex(nextIndex);
+    },
+    [carouselOrder.length]
+  );
+
+  const queueCarouselStep = useCallback(
+    (step: number) => {
+      if (carouselOrder.length < 2) {
+        return;
+      }
+      if (carouselTargetIndex === null) {
+        startCarouselStep(step);
+        return;
+      }
+      setCarouselQueue((prev) => prev + step);
+    },
+    [carouselOrder.length, carouselTargetIndex, startCarouselStep]
+  );
+
   const handleCarouselAnimationEnd = () => {
     setCarouselTargetIndex(null);
+    setCarouselQueue((prev) => {
+      if (prev === 0) {
+        return 0;
+      }
+      const step = prev > 0 ? 1 : -1;
+      startCarouselStep(step);
+      return prev - step;
+    });
   };
 
   const handleCarouselPrev = () => {
-    if (carouselOrder.length < 2 || carouselTargetIndex !== null) {
-      return;
-    }
-    const nextIndex =
-      (carouselIndex - 1 + carouselOrder.length) % carouselOrder.length;
-    setCarouselTargetIndex(nextIndex);
+    queueCarouselStep(-1);
   };
 
   const handleCarouselNext = () => {
-    if (carouselOrder.length < 2 || carouselTargetIndex !== null) {
-      return;
-    }
-    const nextIndex = (carouselIndex + 1) % carouselOrder.length;
-    setCarouselTargetIndex(nextIndex);
+    queueCarouselStep(1);
   };
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
@@ -1067,7 +1107,7 @@ export default function MapClient() {
       ? activePreviewUrl
       : `${apiUrl}${activePreviewUrl}`
     : null;
-  const canRotate = carouselOrder.length > 1 && carouselTargetIndex === null;
+  const canRotate = carouselOrder.length > 1;
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
@@ -1179,15 +1219,15 @@ export default function MapClient() {
         {mapMode === "map" ? (
           <div className="flex h-full w-full flex-col gap-6 p-6 lg:flex-row lg:items-start">
             <div className="pointer-events-auto flex h-full flex-col gap-4">
-              <div className="flex min-h-[260px] w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+              <div className="flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold text-slate-900">Фильтры</h2>
-                  {modeToggle}
+                  <div className="ml-auto">{modeToggle}</div>
                 </div>
                 <label className="grid gap-1 text-sm text-slate-700">
                   Вид питомца
                   <select
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                    style={selectArrowStyle}
                     value={typeFilter}
                     onChange={(event) => setTypeFilter(event.target.value)}
                   >
@@ -1295,13 +1335,13 @@ export default function MapClient() {
                   type="button"
                   aria-label="Предыдущий мемориал"
                   onClick={handleCarouselNext}
-                  className="pointer-events-auto absolute left-0 top-0 h-full w-[10%] bg-transparent"
+                  className="pointer-events-auto absolute left-0 top-0 h-full w-[20%] bg-transparent"
                 />
                 <button
                   type="button"
                   aria-label="Следующий мемориал"
                   onClick={handleCarouselPrev}
-                  className="pointer-events-auto absolute right-0 top-0 h-full w-[10%] bg-transparent"
+                  className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
                 />
               </div>
             </div>
@@ -1325,13 +1365,13 @@ export default function MapClient() {
             </div>
             <div className="pointer-events-auto absolute left-6 top-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-slate-900">Фильтры</h2>
-                {modeToggle}
+                <div className="ml-auto">{modeToggle}</div>
               </div>
               <label className="grid gap-1 text-sm text-slate-700">
                 Вид питомца
                 <select
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                  style={selectArrowStyle}
                   value={typeFilter}
                   onChange={(event) => setTypeFilter(event.target.value)}
                 >
@@ -1363,14 +1403,14 @@ export default function MapClient() {
                 Сбросить
               </button>
             </div>
-            <div className="pointer-events-auto absolute right-6 top-6 z-20 w-[320px] rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 h-[60%] w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
               {activeCarouselMarker ? (
-                <div className="grid gap-3">
+                <div className="flex h-full flex-col gap-3">
                   {activePreviewSrc ? (
                     <img
                       src={activePreviewSrc}
                       alt="Фото питомца"
-                      className="h-44 w-full rounded-2xl object-contain"
+                      className="h-40 w-full flex-shrink-0 rounded-2xl object-contain"
                       loading="lazy"
                     />
                   ) : null}
@@ -1383,7 +1423,9 @@ export default function MapClient() {
                     </p>
                   </div>
                   {activeCarouselPet?.story ? (
-                    <p className="text-xs text-slate-500 line-clamp-4">{activeCarouselPet.story}</p>
+                    <p className="flex-1 overflow-y-auto text-xs text-slate-500">
+                      {activeCarouselPet.story}
+                    </p>
                   ) : null}
                   <a
                     className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
