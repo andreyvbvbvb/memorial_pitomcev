@@ -163,6 +163,7 @@ export default function CreateMemorialClient() {
   const photosRef = useRef<PhotoDraft[]>([]);
   const [showOtherMarkers, setShowOtherMarkers] = useState(false);
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
+  const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -187,17 +188,29 @@ export default function CreateMemorialClient() {
     () => markerVariantsForSpecies(form.species),
     [form.species]
   );
-  const environmentUrl = resolveEnvironmentModel(form.environmentId, "summer");
-  const houseUrl = resolveHouseModel(form.houseId);
+  const hoveredId = (category: string) =>
+    hoveredOption?.category === category ? hoveredOption.id : null;
+  const environmentPreviewId = hoveredId("environment") ?? form.environmentId;
+  const housePreviewId = hoveredId("house") ?? form.houseId;
+  const roofPreviewId = hoveredId("roof") ?? form.roofId;
+  const wallPreviewId = hoveredId("wall") ?? form.wallId;
+  const signPreviewId = hoveredId("sign") ?? form.signId;
+  const frameLeftPreviewId = hoveredId("frame-left") ?? form.frameLeftId;
+  const frameRightPreviewId = hoveredId("frame-right") ?? form.frameRightId;
+  const matPreviewId = hoveredId("mat") ?? form.matId;
+  const bowlFoodPreviewId = hoveredId("bowl-food") ?? form.bowlFoodId;
+  const bowlWaterPreviewId = hoveredId("bowl-water") ?? form.bowlWaterId;
+  const environmentUrl = resolveEnvironmentModel(environmentPreviewId, "summer");
+  const houseUrl = resolveHouseModel(housePreviewId);
   const houseSlots = getHouseSlots(form.houseId);
-  const roofUrl = resolveRoofModel(form.roofId);
-  const wallUrl = resolveWallModel(form.wallId);
-  const signUrl = resolveSignModel(form.signId);
-  const frameLeftUrl = resolveFrameLeftModel(form.frameLeftId);
-  const frameRightUrl = resolveFrameRightModel(form.frameRightId);
-  const matUrl = resolveMatModel(form.matId);
-  const bowlFoodUrl = resolveBowlFoodModel(form.bowlFoodId);
-  const bowlWaterUrl = resolveBowlWaterModel(form.bowlWaterId);
+  const roofUrl = resolveRoofModel(roofPreviewId);
+  const wallUrl = resolveWallModel(wallPreviewId);
+  const signUrl = resolveSignModel(signPreviewId);
+  const frameLeftUrl = resolveFrameLeftModel(frameLeftPreviewId);
+  const frameRightUrl = resolveFrameRightModel(frameRightPreviewId);
+  const matUrl = resolveMatModel(matPreviewId);
+  const bowlFoodUrl = resolveBowlFoodModel(bowlFoodPreviewId);
+  const bowlWaterUrl = resolveBowlWaterModel(bowlWaterPreviewId);
   const partList = [
     houseSlots.roof ? { slot: houseSlots.roof, url: roofUrl } : null,
     houseSlots.wall ? { slot: houseSlots.wall, url: wallUrl } : null,
@@ -224,6 +237,10 @@ export default function CreateMemorialClient() {
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+
+  useEffect(() => {
+    setHoveredOption(null);
+  }, [step]);
 
   const isMobile = layoutMode === "mobile" ? true : false;
 
@@ -555,6 +572,14 @@ export default function CreateMemorialClient() {
             key={option.id}
             type="button"
             onClick={() => onSelect(option.id)}
+            onMouseEnter={() => setHoveredOption({ category, id: option.id })}
+            onMouseLeave={() =>
+              setHoveredOption((prev) => (prev?.category === category ? null : prev))
+            }
+            onFocus={() => setHoveredOption({ category, id: option.id })}
+            onBlur={() =>
+              setHoveredOption((prev) => (prev?.category === category ? null : prev))
+            }
             aria-label={option.name}
             title={option.name}
             className={`flex h-[84px] w-[84px] items-center justify-center rounded-lg border p-1 transition ${
