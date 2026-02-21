@@ -203,7 +203,11 @@ function applyGiftGlow(target: THREE.Object3D, color: THREE.Color, intensity: nu
       }
       return mat;
     });
-    mesh.material = Array.isArray(mesh.material) ? nextMaterials : nextMaterials[0];
+    if (Array.isArray(mesh.material)) {
+      mesh.material = nextMaterials;
+    } else {
+      mesh.material = nextMaterials[0] ?? mesh.material;
+    }
   });
 }
 
