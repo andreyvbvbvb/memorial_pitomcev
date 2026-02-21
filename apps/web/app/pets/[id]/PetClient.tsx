@@ -695,16 +695,15 @@ export default function PetClient({ id }: Props) {
             <button
               type="button"
               onClick={toggleGiftPanel}
-              className="flex items-center gap-2 text-xs font-semibold text-slate-700"
+              className="flex items-center text-xs font-semibold text-slate-700"
             >
-              <span>{giftPanelOpen ? "Свернуть" : "Развернуть"}</span>
               <span
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 transition-transform ${
+                className={`inline-flex items-center justify-center transition-transform ${
                   giftPanelOpen ? "rotate-180" : ""
                 }`}
                 aria-hidden
               >
-                ↓
+                ▾
               </span>
             </button>
           </div>
@@ -717,7 +716,7 @@ export default function PetClient({ id }: Props) {
               <div className="grid gap-3">
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
-                  <div className="grid max-h-72 grid-rows-2 grid-flow-col auto-cols-[96px] gap-3 overflow-x-auto pb-2">
+                  <div className="grid max-h-52 grid-cols-2 gap-3 overflow-y-auto pr-1">
                     {giftCatalogLoading ? (
                       Array.from({ length: 8 }).map((_, index) => (
                         <div
@@ -759,7 +758,7 @@ export default function PetClient({ id }: Props) {
                             />
                           ) : null}
                         </span>
-                        <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
+                        <span className="absolute bottom-2 left-1/2 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[10px] font-semibold text-white">
                           {gift.price}
                         </span>
                       </button>
