@@ -782,6 +782,7 @@ export default function MapClient() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [carouselQueue, setCarouselQueue] = useState(0);
+  const [headerOffset, setHeaderOffset] = useState(56);
   const cameraSettings = {
     distanceOffset: 16,
     height: 4.0,
@@ -838,6 +839,24 @@ export default function MapClient() {
     }
     updateVisibleMarkers();
   }, [map, markers]);
+
+  useEffect(() => {
+    const header = document.querySelector("header");
+    const updateOffset = () => {
+      if (!header) {
+        return;
+      }
+      const height = header.getBoundingClientRect().height;
+      if (height) {
+        setHeaderOffset(Math.round(height));
+      }
+    };
+    updateOffset();
+    window.addEventListener("resize", updateOffset);
+    return () => {
+      window.removeEventListener("resize", updateOffset);
+    };
+  }, []);
 
   const filteredMarkers = useMemo(
     () => markers.filter((marker) => matchesFilters(marker, typeFilter, nameFilter)),
@@ -1119,7 +1138,10 @@ export default function MapClient() {
       : `${apiUrl}${activePreviewUrl}`
     : null;
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
+    <main
+      className="relative w-screen overflow-hidden bg-slate-50"
+      style={{ height: `calc(100vh - ${headerOffset}px)` }}
+    >
       <div className="absolute inset-0">
         {mapMode === "map" ? (
           !apiKey ? (
