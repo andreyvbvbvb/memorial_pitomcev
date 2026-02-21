@@ -984,6 +984,35 @@ export default function MapClient() {
     });
   }, [mapMode, carouselIndex, carouselOrder]);
 
+  useEffect(() => {
+    if (mapMode !== "carousel") {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        handleCarouselNext();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        handleCarouselPrev();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mapMode, handleCarouselNext, handleCarouselPrev]);
+
   const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
       return null;
@@ -1089,8 +1118,6 @@ export default function MapClient() {
       ? activePreviewUrl
       : `${apiUrl}${activePreviewUrl}`
     : null;
-  const canRotate = carouselOrder.length > 1;
-
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-50">
       <div className="absolute inset-0">
@@ -1323,24 +1350,6 @@ export default function MapClient() {
                   className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
                 />
               </div>
-            </div>
-            <div className="pointer-events-auto absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4">
-              <button
-                type="button"
-                onClick={handleCarouselNext}
-                disabled={!canRotate}
-                className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                onClick={handleCarouselPrev}
-                disabled={!canRotate}
-                className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                →
-              </button>
             </div>
             <div className="pointer-events-auto absolute left-6 top-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
               <div className="flex items-center justify-between gap-3">
