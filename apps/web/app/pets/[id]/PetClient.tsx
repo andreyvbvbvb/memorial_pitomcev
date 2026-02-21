@@ -201,8 +201,19 @@ export default function PetClient({ id }: Props) {
           price: number;
           modelUrl: string;
         }[];
-        setGiftCatalog(data);
-        setSelectedGiftId((prev) => prev ?? data[0]?.id ?? null);
+        const sorted = [...data].sort((a, b) => {
+          const aCode = (getGiftCode(a) ?? a.code ?? a.name ?? "").toLowerCase();
+          const bCode = (getGiftCode(b) ?? b.code ?? b.name ?? "").toLowerCase();
+          const aType = aCode.split("_")[0] ?? "";
+          const bType = bCode.split("_")[0] ?? "";
+          const typeDiff = aType.localeCompare(bType, "ru");
+          if (typeDiff !== 0) {
+            return typeDiff;
+          }
+          return aCode.localeCompare(bCode, "ru");
+        });
+        setGiftCatalog(sorted);
+        setSelectedGiftId((prev) => prev ?? sorted[0]?.id ?? null);
       } catch (err) {
         setGiftError(err instanceof Error ? err.message : "Ошибка загрузки подарков");
       }
@@ -274,8 +285,15 @@ export default function PetClient({ id }: Props) {
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
   const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
+  const availableSlotTypes = new Set(
+    availableSlots
+      .map((slot) => getGiftSlotType(slot))
+      .filter((type): type is string => Boolean(type))
+  );
+  const hasTypeMatch =
+    selectedGiftTypes.length > 0 && selectedGiftTypes.some((type) => availableSlotTypes.has(type));
   const filteredAvailableSlots =
-    selectedGiftTypes.length > 0
+    hasTypeMatch
       ? availableSlots.filter((slot) => selectedGiftTypes.includes(getGiftSlotType(slot)))
       : availableSlots;
 

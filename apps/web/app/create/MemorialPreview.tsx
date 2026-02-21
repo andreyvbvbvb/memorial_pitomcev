@@ -17,7 +17,6 @@ import {
   bowlWaterModelByIdGenerated
 } from "../../lib/memorial-models.generated";
 import {
-  getGiftCodeFromUrl,
   isGiftSlotName,
   parseGiftSlot,
   resolveGiftSizeMultiplier,
@@ -181,35 +180,6 @@ function applyGiftScale(target: THREE.Object3D, width: number) {
   target.scale.setScalar(scale);
 }
 
-function applyGiftGlow(target: THREE.Object3D, color: THREE.Color, intensity: number) {
-  target.traverse((node) => {
-    const mesh = node as THREE.Mesh;
-    if (!mesh.isMesh || !mesh.material) {
-      return;
-    }
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    const nextMaterials = materials.map((material) => {
-      if (!material) {
-        return material;
-      }
-      const mat = material.clone() as THREE.Material & {
-        emissive?: THREE.Color;
-        emissiveIntensity?: number;
-      };
-      if (mat.emissive) {
-        mat.emissive = color.clone();
-        mat.emissiveIntensity = Math.max(mat.emissiveIntensity ?? 0, intensity);
-        mat.needsUpdate = true;
-      }
-      return mat;
-    });
-    if (Array.isArray(mesh.material)) {
-      mesh.material = nextMaterials;
-    } else {
-      mesh.material = nextMaterials[0] ?? mesh.material;
-    }
-  });
-}
 
 function applyPartScale(target: THREE.Object3D, size: number, axis: "x" | "z") {
   if (!size || size <= 0) {
@@ -457,7 +427,6 @@ function GiftPlacementAttachment({
   const { scene } = useGLTF(url);
   const gift = useMemo(() => {
     const cloned = scene.clone(true);
-    const giftCode = getGiftCodeFromUrl(url);
     const targetWidth = resolveGiftTargetWidth({ modelUrl: url });
     if (targetWidth) {
       applyGiftScale(cloned, targetWidth);
@@ -465,9 +434,6 @@ function GiftPlacementAttachment({
     const sizeMultiplier = resolveGiftSizeMultiplier({ gift: { modelUrl: url }, size });
     if (sizeMultiplier && sizeMultiplier !== 1) {
       cloned.scale.multiplyScalar(sizeMultiplier);
-    }
-    if (giftCode?.startsWith("star")) {
-      applyGiftGlow(cloned, new THREE.Color("#fde68a"), 0.6);
     }
     return cloned;
   }, [scene, url, size]);

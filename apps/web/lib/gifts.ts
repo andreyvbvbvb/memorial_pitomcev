@@ -110,9 +110,9 @@ export const resolveGiftIconUrl = (gift?: { code?: string | null; modelUrl?: str
 
 const giftWidthRules = [{ prefix: "flower_", width: 0.6 }];
 const starSizeMultipliers: Record<GiftSize, number> = {
-  s: 0.7,
-  m: 1,
-  l: 1.4
+  s: 0.35,
+  m: 0.5,
+  l: 0.7
 };
 
 const resolveCandleWidth = (code: string) => {
