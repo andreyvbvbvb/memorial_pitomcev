@@ -72,5 +72,29 @@ export const giftModelsGenerated = {
   },
   "flower_9": {
     "flower": "/models/gifts/flower/flower_9.glb"
+  },
+  "star_1": {
+    "star": "/models/gifts/star/star_1.glb"
+  },
+  "star_2": {
+    "star": "/models/gifts/star/star_2.glb"
+  },
+  "star_3": {
+    "star": "/models/gifts/star/star_3.glb"
+  },
+  "star_4": {
+    "star": "/models/gifts/star/star_4.glb"
+  },
+  "star_5": {
+    "star": "/models/gifts/star/star_5.glb"
+  },
+  "star_6": {
+    "star": "/models/gifts/star/star_6.glb"
+  },
+  "star_7": {
+    "star": "/models/gifts/star/star_7.glb"
+  },
+  "star_8": {
+    "star": "/models/gifts/star/star_8.glb"
   }
 } as const;

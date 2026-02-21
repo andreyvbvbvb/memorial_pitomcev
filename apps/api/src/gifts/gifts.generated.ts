@@ -144,5 +144,53 @@ export const generatedGifts = [
     "name": "Цветок 9",
     "price": 20,
     "modelUrl": "/models/gifts/flower/flower_9.glb"
+  },
+  {
+    "code": "star_1",
+    "name": "Звезда 1",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_1.glb"
+  },
+  {
+    "code": "star_2",
+    "name": "Звезда 2",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_2.glb"
+  },
+  {
+    "code": "star_3",
+    "name": "Звезда 3",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_3.glb"
+  },
+  {
+    "code": "star_4",
+    "name": "Звезда 4",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_4.glb"
+  },
+  {
+    "code": "star_5",
+    "name": "Звезда 5",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_5.glb"
+  },
+  {
+    "code": "star_6",
+    "name": "Звезда 6",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_6.glb"
+  },
+  {
+    "code": "star_7",
+    "name": "Звезда 7",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_7.glb"
+  },
+  {
+    "code": "star_8",
+    "name": "Звезда 8",
+    "price": 20,
+    "modelUrl": "/models/gifts/star/star_8.glb"
   }
 ] as const;

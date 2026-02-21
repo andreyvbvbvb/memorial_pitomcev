@@ -873,5 +873,4 @@ const preloadUrls = [
 preloadUrls.forEach((url) => {
   useGLTF.preload(url);
 });
-useGLTF.preload("/models/gifts/candle.glb");
 useGLTF.preload("/models/gifts/slot_placeholder.glb");
