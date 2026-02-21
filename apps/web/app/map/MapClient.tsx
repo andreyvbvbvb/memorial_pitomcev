@@ -1140,7 +1140,7 @@ export default function MapClient() {
   return (
     <main
       className="relative w-screen overflow-hidden bg-slate-50"
-      style={{ height: `calc(100vh - ${headerOffset}px)` }}
+      style={{ height: `calc(100vh - ${headerOffset}px)`, marginTop: -headerOffset }}
     >
       <div className="absolute inset-0">
         {mapMode === "map" ? (
