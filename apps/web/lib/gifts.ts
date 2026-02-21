@@ -1,6 +1,6 @@
 import { giftModelsGenerated } from "./gifts.generated";
 
-const DEFAULT_SLOT_TYPE = "ground";
+const DEFAULT_SLOT_TYPE = "default";
 const LEGACY_PREFIX = "gift_slot_";
 const SLOT_PREFIX = "gift_";
 
@@ -76,14 +76,7 @@ export const getGiftAvailableTypes = (gift?: { code?: string | null; modelUrl?: 
   const types = Object.keys(entry)
     .filter((key) => key !== "default")
     .map((type) => type.toLowerCase());
-  if (types.length === 0) {
-    return [DEFAULT_SLOT_TYPE];
-  }
-  const codePrefix = code.split("_")[0]?.toLowerCase() ?? "";
-  if (codePrefix && types.every((type) => type === codePrefix)) {
-    return [DEFAULT_SLOT_TYPE];
-  }
-  return types;
+  return types.length > 0 ? types : [DEFAULT_SLOT_TYPE];
 };
 
 export const resolveGiftModelUrl = (options: {

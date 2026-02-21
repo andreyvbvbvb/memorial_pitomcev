@@ -289,9 +289,13 @@ export default function PetClient({ id }: Props) {
         .map((slot) => getGiftSlotType(slot))
         .filter((type): type is string => Boolean(type))
     );
-    return giftCatalog.filter((gift) =>
-      getGiftAvailableTypes(gift).some((type) => slotTypes.has(type))
-    );
+    const hasDefaultSlots = slotTypes.has("default");
+    return giftCatalog.filter((gift) => {
+      if (hasDefaultSlots) {
+        return true;
+      }
+      return getGiftAvailableTypes(gift).some((type) => slotTypes.has(type));
+    });
   }, [availableSlots, giftCatalog]);
 
   const selectedGift =
@@ -300,7 +304,13 @@ export default function PetClient({ id }: Props) {
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
   const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
   const filteredAvailableSlots = selectedGift
-    ? availableSlots.filter((slot) => selectedGiftTypes.includes(getGiftSlotType(slot)))
+    ? availableSlots.filter((slot) => {
+        const slotType = getGiftSlotType(slot);
+        if (slotType === "default" || selectedGiftTypes.includes("default")) {
+          return true;
+        }
+        return selectedGiftTypes.includes(slotType);
+      })
     : [];
 
   useEffect(() => {
