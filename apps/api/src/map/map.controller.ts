@@ -43,6 +43,8 @@ export class MapController {
         petId: marker.petId,
         name: marker.pet.name,
         epitaph: marker.pet.epitaph,
+        birthDate: marker.pet.birthDate,
+        deathDate: marker.pet.deathDate,
         lat: marker.lat,
         lng: marker.lng,
         markerStyle: marker.markerStyle ?? null,

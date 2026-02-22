@@ -33,6 +33,8 @@ type MarkerDto = {
   petId: string;
   name: string;
   epitaph: string | null;
+  birthDate?: string | null;
+  deathDate?: string | null;
   lat: number;
   lng: number;
   markerStyle?: string | null;
@@ -80,6 +82,20 @@ const selectArrowStyle = {
   backgroundPosition: "right 0.75rem center",
   backgroundSize: "12px 12px"
 } as const;
+
+const formatDate = (value?: string | null) => {
+  if (!value) {
+    return "—";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+};
 
 const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, string>) => {
   if (!colors) {
@@ -1074,7 +1090,15 @@ export default function MapClient() {
       if (carouselOrder.length < 2) {
         return;
       }
-      setCarouselQueue((prev) => prev + step);
+      setCarouselQueue((prev) => {
+        if (step > 0 && prev >= 4) {
+          return prev;
+        }
+        if (step < 0 && prev <= -4) {
+          return prev;
+        }
+        return prev + step;
+      });
     },
     [carouselOrder.length]
   );
@@ -1321,7 +1345,7 @@ export default function MapClient() {
                       onMouseLeave={() => setHoveredMarkerId(null)}
                       onFocus={() => setHoveredMarkerId(marker.id)}
                       onBlur={() => setHoveredMarkerId(null)}
-                      className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4 transition hover:border-slate-300"
+                      className="group relative rounded-2xl border border-slate-200 bg-slate-50/90 p-4 transition hover:border-slate-300"
                     >
                       <div className="flex items-center gap-3">
                         {marker.previewPhotoUrl ? (
@@ -1333,21 +1357,35 @@ export default function MapClient() {
                             }
                             alt="Фото питомца"
                             className="rounded-xl object-cover"
-                            style={{ width: 44, height: 44 }}
+                            style={{ width: 56, height: 56 }}
                             loading="lazy"
                           />
                         ) : (
-                          <div className="rounded-xl bg-slate-200" style={{ width: 44, height: 44 }} />
+                          <div className="rounded-xl bg-slate-200" style={{ width: 56, height: 56 }} />
                         )}
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
                           </div>
                           <p className="mt-1 text-xs text-slate-600">
-                            {marker.epitaph ?? "Без эпитафии"}
+                            {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
                           </p>
                         </div>
                       </div>
+                      {marker.previewPhotoUrl ? (
+                        <div className="pointer-events-none absolute right-3 top-3 hidden rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block">
+                          <img
+                            src={
+                              marker.previewPhotoUrl.startsWith("http")
+                                ? marker.previewPhotoUrl
+                                : `${apiUrl}${marker.previewPhotoUrl}`
+                            }
+                            alt="Обложка мемориала"
+                            className="h-20 w-28 rounded-lg object-contain"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : null}
                     </a>
                   ))}
                 </div>
