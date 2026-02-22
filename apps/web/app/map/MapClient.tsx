@@ -450,6 +450,30 @@ function MemorialInstance({
   );
 }
 
+function MemorialCardPreview({ data }: { data: MemorialSceneData | null }) {
+  if (!data) {
+    return <div className="h-24 w-full animate-pulse rounded-2xl bg-slate-200" />;
+  }
+  return (
+    <div className="h-24 w-full overflow-hidden rounded-2xl bg-slate-100">
+      <Canvas
+        camera={{ position: [6, 4, 6], fov: 35 }}
+        style={{ pointerEvents: "none" }}
+      >
+        <Color attach="background" args={["#f8fafc"]} />
+        <AmbientLight intensity={0.9} />
+        <DirectionalLight intensity={1} position={[6, 8, 4]} />
+        <DirectionalLight intensity={0.5} position={[-6, 5, -4]} />
+        <Suspense fallback={null}>
+          <Group rotation={[0, Math.PI, 0]}>
+            <TerrainWithHouseScene data={data} tone={0.1} />
+          </Group>
+        </Suspense>
+      </Canvas>
+    </div>
+  );
+}
+
 function RowCarouselStage({
   items,
   activeIndex,
@@ -798,6 +822,7 @@ export default function MapClient() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [carouselQueue, setCarouselQueue] = useState(0);
+  const carouselQueueRef = useRef(0);
   const [headerOffset, setHeaderOffset] = useState(56);
   const overlayTop = headerOffset + 24;
   const cameraSettings = {
@@ -894,6 +919,10 @@ export default function MapClient() {
     setCarouselTargetIndex(null);
     setCarouselQueue(0);
   }, [filteredMarkers]);
+
+  useEffect(() => {
+    carouselQueueRef.current = carouselQueue;
+  }, [carouselQueue]);
 
   const activeCarouselMarker = carouselOrder[carouselIndex] ?? null;
 
@@ -1020,6 +1049,21 @@ export default function MapClient() {
     });
   }, [mapMode, carouselIndex, carouselOrder]);
 
+  useEffect(() => {
+    if (mapMode !== "map") {
+      return;
+    }
+    const ids = new Set<string>();
+    listMarkers.forEach((marker) => {
+      if (marker.petId) {
+        ids.add(marker.petId);
+      }
+    });
+    ids.forEach((id) => {
+      void loadPetDetail(id);
+    });
+  }, [mapMode, listMarkers]);
+
   const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
       return null;
@@ -1088,6 +1132,12 @@ export default function MapClient() {
   const queueCarouselStep = useCallback(
     (step: number) => {
       if (carouselOrder.length < 2) {
+        return;
+      }
+      if (step > 0 && carouselQueueRef.current >= 4) {
+        return;
+      }
+      if (step < 0 && carouselQueueRef.current <= -4) {
         return;
       }
       setCarouselQueue((prev) => {
@@ -1348,20 +1398,7 @@ export default function MapClient() {
                       onBlur={() => setHoveredMarkerId(null)}
                       className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
                     >
-                      <div className="h-24 w-full bg-slate-200">
-                        {marker.previewPhotoUrl ? (
-                          <img
-                            src={
-                              marker.previewPhotoUrl.startsWith("http")
-                                ? marker.previewPhotoUrl
-                                : `${apiUrl}${marker.previewPhotoUrl}`
-                            }
-                            alt="Фото питомца"
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : null}
-                      </div>
+                      <MemorialCardPreview data={buildMemorialSceneData(marker)} />
                       <div className="p-3">
                         <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
                         <p className="mt-1 text-xs text-slate-600">
@@ -1377,7 +1414,7 @@ export default function MapClient() {
                                 : `${apiUrl}${marker.previewPhotoUrl}`
                             }
                             alt="Обложка мемориала"
-                            className="h-20 w-28 rounded-lg object-contain"
+                            className="h-40 w-56 rounded-lg object-contain"
                             loading="lazy"
                           />
                         </div>
