@@ -13,7 +13,8 @@ export const environmentSeasonModelsByIdGenerated = {
 } as const;
 export const houseModelByIdGenerated = {
   "budka_1": "/models/houses/DOM_budka_1.glb",
-  "budka_2": "/models/houses/DOM_budka_2.glb"
+  "budka_2": "/models/houses/DOM_budka_2.glb",
+  "budka_3": "/models/houses/DOM_budka_3.glb"
 } as const;
 export const roofModelByIdGenerated = {
   "roof_1": "/models/parts/roof/roof_1.glb",

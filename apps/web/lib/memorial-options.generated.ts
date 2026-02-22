@@ -23,6 +23,11 @@ export const houseOptionsGenerated = [
     "id": "budka_2",
     "name": "Будка 2",
     "description": "Вариант 2"
+  },
+  {
+    "id": "budka_3",
+    "name": "Будка 3",
+    "description": "Вариант 3"
   }
 ] as const;
 export const roofOptionsGenerated = [
