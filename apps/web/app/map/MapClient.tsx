@@ -1091,13 +1091,14 @@ export default function MapClient() {
         return;
       }
       setCarouselQueue((prev) => {
-        if (step > 0 && prev >= 4) {
-          return prev;
+        const next = prev + step;
+        if (next > 4) {
+          return 4;
         }
-        if (step < 0 && prev <= -4) {
-          return prev;
+        if (next < -4) {
+          return -4;
         }
-        return prev + step;
+        return next;
       });
     },
     [carouselOrder.length]
@@ -1345,9 +1346,9 @@ export default function MapClient() {
                       onMouseLeave={() => setHoveredMarkerId(null)}
                       onFocus={() => setHoveredMarkerId(marker.id)}
                       onBlur={() => setHoveredMarkerId(null)}
-                      className="group relative rounded-2xl border border-slate-200 bg-slate-50/90 p-4 transition hover:border-slate-300"
+                      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="h-24 w-full bg-slate-200">
                         {marker.previewPhotoUrl ? (
                           <img
                             src={
@@ -1356,21 +1357,16 @@ export default function MapClient() {
                                 : `${apiUrl}${marker.previewPhotoUrl}`
                             }
                             alt="Фото питомца"
-                            className="rounded-xl object-cover"
-                            style={{ width: 56, height: 56 }}
+                            className="h-full w-full object-cover"
                             loading="lazy"
                           />
-                        ) : (
-                          <div className="rounded-xl bg-slate-200" style={{ width: 56, height: 56 }} />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-                          </div>
-                          <p className="mt-1 text-xs text-slate-600">
-                            {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
-                          </p>
-                        </div>
+                        ) : null}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
+                        </p>
                       </div>
                       {marker.previewPhotoUrl ? (
                         <div className="pointer-events-none absolute right-3 top-3 hidden rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block">
