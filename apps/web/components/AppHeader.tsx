@@ -23,6 +23,7 @@ export default function AppHeader() {
   const [topUpVisible, setTopUpVisible] = useState(false);
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -45,6 +46,26 @@ export default function AppHeader() {
   useEffect(() => {
     fetchMe();
   }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const updateHeaderHeight = () => {
+      const height = headerRef.current?.getBoundingClientRect().height;
+      if (height) {
+        document.documentElement.style.setProperty(
+          "--app-header-height",
+          `${Math.round(height)}px`
+        );
+      }
+    };
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+    return () => {
+      window.removeEventListener("resize", updateHeaderHeight);
+    };
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -119,7 +140,10 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-[rgba(215,230,242,0.6)] bg-white/60 backdrop-blur-md">
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-40 border-b border-[rgba(215,230,242,0.6)] bg-white/60 backdrop-blur-md"
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2">
           <Link href="/" className="chip">
             Memorial

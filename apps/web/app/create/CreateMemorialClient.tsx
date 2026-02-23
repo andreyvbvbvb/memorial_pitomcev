@@ -683,7 +683,10 @@ export default function CreateMemorialClient() {
   );
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-4 py-10">
+    <main
+      className="bg-gradient-to-b from-slate-50 to-slate-200 px-4 pb-8 pt-6"
+      style={{ minHeight: "calc(100vh - var(--app-header-height, 56px))" }}
+    >
       <div className="mx-auto w-full max-w-none lg:w-[90vw]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">

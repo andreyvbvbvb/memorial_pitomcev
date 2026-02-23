@@ -828,7 +828,7 @@ export default function MapClient() {
   const [carouselQueue, setCarouselQueue] = useState(0);
   const carouselQueueRef = useRef(0);
   const [headerOffset, setHeaderOffset] = useState(56);
-  const overlayTop = headerOffset + 24;
+  const overlayTop = 24;
   const cameraSettings = {
     distanceOffset: 16,
     height: 4.0,
@@ -1344,7 +1344,7 @@ export default function MapClient() {
     return (
       <main
         className="relative w-screen overflow-hidden bg-slate-50"
-        style={{ height: `calc(100vh - ${headerOffset}px)`, marginTop: -headerOffset }}
+        style={{ height: `calc(100vh - ${headerOffset}px)` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100" />
         <div className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4 pt-4">
@@ -1600,7 +1600,7 @@ export default function MapClient() {
   return (
     <main
       className="relative w-screen overflow-hidden bg-slate-50"
-      style={{ height: `calc(100vh - ${headerOffset}px)`, marginTop: -headerOffset }}
+      style={{ height: `calc(100vh - ${headerOffset}px)` }}
     >
       <div className="absolute inset-0">
         {mapMode === "map" ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
 import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
@@ -83,7 +84,8 @@ export default function PetClient({ id }: Props) {
   const [walletLoading, setWalletLoading] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [topUpVisible, setTopUpVisible] = useState(false);
-  const [topUpError, setTopUpError] = useState<string | null>(null);
+  const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
+  const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [giftCatalog, setGiftCatalog] = useState<
     { id: string; code?: string | null; name: string; price: number; modelUrl: string }[]
   >([]);
@@ -102,6 +104,7 @@ export default function PetClient({ id }: Props) {
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
+  const router = useRouter();
 
   const loadPet = useCallback(async () => {
     setLoading(true);
@@ -425,46 +428,14 @@ export default function PetClient({ id }: Props) {
 
   const closeTopUp = () => {
     setTopUpVisible(false);
-    setTopUpError(null);
     setTimeout(() => setTopUpOpen(false), 180);
   };
 
-  const handleTopUp = async (amount: number) => {
-    if (!currentUser?.id) {
-      setTopUpError("Войдите, чтобы пополнить баланс");
-      return;
-    }
-    setWalletLoading(true);
-    setTopUpError(null);
-    try {
-      const response = await fetch(`${apiUrl}/wallet/top-up`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: currentUser.id, amount })
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Не удалось пополнить баланс");
-      }
-      const data = (await response.json()) as { coinBalance?: number };
-      if (typeof data.coinBalance === "number") {
-        setWalletBalance(data.coinBalance);
-      } else if (currentUser?.id) {
-        loadWallet(currentUser.id);
-      }
-      closeTopUp();
-    } catch (err) {
-      setTopUpError(err instanceof Error ? err.message : "Ошибка пополнения");
-    } finally {
-      setWalletLoading(false);
-    }
-  };
-
   const topUpOptions = [
-    { coins: 50, rub: 50 },
-    { coins: 100, rub: 100 },
-    { coins: 200, rub: 150 },
-    { coins: 500, rub: 350 }
+    { coins: 100, rub: 100, usd: 1 },
+    { coins: 200, rub: 200, usd: 2 },
+    { coins: 500, rub: 500, usd: 500 },
+    { coins: 1000, rub: 1000, usd: 10 }
   ];
   const starSizeOptions: { id: GiftSize; label: string; helper: string }[] = [
     { id: "s", label: "S", helper: "Маленькая" },
@@ -971,24 +942,58 @@ export default function PetClient({ id }: Props) {
             <p className="mt-1 text-sm text-slate-600">
               Баланс: {walletBalance ?? 0} монет
             </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Выберите пакет монет. Оплата пока тестовая.
-            </p>
-            <div className="mt-4 grid gap-2">
-              {topUpOptions.map((option) => (
-                <button
-                  key={option.coins}
-                  type="button"
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 hover:border-slate-300"
-                  onClick={() => handleTopUp(option.coins)}
-                  disabled={walletLoading}
-                >
-                  <span className="font-semibold">{option.coins} монет</span>
-                  <span className="text-slate-500">{option.rub} ₽</span>
-                </button>
-              ))}
+            <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
+              {(["RUB", "USD"] as const).map((currency) => {
+                const isActive = topUpCurrency === currency;
+                return (
+                  <button
+                    key={currency}
+                    type="button"
+                    onClick={() => setTopUpCurrency(currency)}
+                    className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold ${
+                      isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                    }`}
+                  >
+                    {currency}
+                  </button>
+                );
+              })}
             </div>
-            <ErrorToast message={topUpError} onClose={() => setTopUpError(null)} offset={72} />
+            <div className="mt-4 grid gap-2">
+              {topUpOptions.map((option) => {
+                const isSelected = topUpPlan === option.coins;
+                const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
+                return (
+                  <button
+                    key={option.coins}
+                    type="button"
+                    onClick={() => setTopUpPlan(option.coins)}
+                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                      isSelected
+                        ? "border-sky-400 bg-sky-50 text-slate-900"
+                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="font-semibold">{option.coins} монет</span>
+                    <span className="text-slate-500">{price}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              onClick={() => {
+                if (!topUpPlan) {
+                  return;
+                }
+                router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
+                closeTopUp();
+              }}
+              disabled={!topUpPlan || walletLoading}
+            >
+              Продолжить
+            </button>
           </div>
         </div>
       ) : null}
