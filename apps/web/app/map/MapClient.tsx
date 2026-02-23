@@ -452,10 +452,10 @@ function MemorialInstance({
 
 function MemorialCardPreview({ data }: { data: MemorialSceneData | null }) {
   if (!data) {
-    return <div className="h-24 w-full animate-pulse rounded-2xl bg-slate-200" />;
+    return <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-200" />;
   }
   return (
-    <div className="h-24 w-full overflow-hidden rounded-2xl bg-slate-100">
+    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-slate-100">
       <Canvas
         camera={{ position: [6, 4, 6], fov: 35 }}
         style={{ pointerEvents: "none" }}

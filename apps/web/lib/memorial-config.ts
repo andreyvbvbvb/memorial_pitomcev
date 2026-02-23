@@ -37,6 +37,9 @@ export const HOUSE_SLOTS: Record<string, HouseSlots> = {
 export const getHouseSlots = (houseId?: string | null): HouseSlots =>
   HOUSE_SLOTS[houseId ?? ""] ?? DEFAULT_HOUSE_SLOTS;
 
+export const getConfiguredHouseSlots = (houseId?: string | null): HouseSlots | null =>
+  HOUSE_SLOTS[houseId ?? ""] ?? null;
+
 export const DEFAULT_TERRAIN_GIFT_SLOTS = [
   "gift_default_1",
   "gift_default_2",

@@ -27,6 +27,7 @@ import {
 } from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
+import { getConfiguredHouseSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
 import {
   environmentOptions,
@@ -160,6 +161,10 @@ export default function CreateMemorialClient() {
   const [authReady, setAuthReady] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [topUpVisible, setTopUpVisible] = useState(false);
+  const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
+  const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
@@ -206,7 +211,8 @@ export default function CreateMemorialClient() {
   const bowlWaterPreviewId = hoveredId("bowl-water") ?? form.bowlWaterId;
   const environmentUrl = resolveEnvironmentModel(environmentPreviewId, "summer");
   const houseUrl = resolveHouseModel(housePreviewId);
-  const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? {};
+  const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
+  const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? configuredHouseSlots ?? {};
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
   const signUrl = resolveSignModel(signPreviewId);
@@ -247,8 +253,25 @@ export default function CreateMemorialClient() {
   }, [step]);
 
   useEffect(() => {
-    setDetectedHouseSlots(null);
+    setDetectedHouseSlots(getConfiguredHouseSlots(form.houseId));
   }, [form.houseId]);
+
+  const openTopUp = () => {
+    setTopUpOpen(true);
+    requestAnimationFrame(() => setTopUpVisible(true));
+  };
+
+  const closeTopUp = () => {
+    setTopUpVisible(false);
+    setTimeout(() => setTopUpOpen(false), 180);
+  };
+
+  const topUpOptions = [
+    { coins: 100, rub: 100, usd: 1 },
+    { coins: 200, rub: 200, usd: 2 },
+    { coins: 500, rub: 500, usd: 500 },
+    { coins: 1000, rub: 1000, usd: 10 }
+  ];
 
   const isMobile = layoutMode === "mobile" ? true : false;
 
@@ -462,7 +485,8 @@ export default function CreateMemorialClient() {
       return;
     }
     if (walletBalance < MEMORIAL_YEAR_PRICE) {
-      setError("Недостаточно монет для оплаты мемориала");
+      setError(null);
+      openTopUp();
       return;
     }
 
@@ -974,7 +998,9 @@ export default function CreateMemorialClient() {
 
                 <div
                   className={`grid gap-4 overflow-y-auto ${
-                    isMobile ? "max-h-[38vh] px-4 pb-6" : "max-h-[60vh]"
+                    isMobile
+                      ? "min-h-[38vh] max-h-[38vh] px-4 pb-6"
+                      : "min-h-[60vh] max-h-[60vh]"
                   }`}
                 >
                 <div className="grid gap-3">
@@ -992,10 +1018,6 @@ export default function CreateMemorialClient() {
                     setFocusSlot("dom_slot");
                   })}
                 </div>
-
-                {!detectedHouseSlots ? (
-                  <p className="text-xs text-slate-500">Загружаем детали домика…</p>
-                ) : null}
 
                 {houseSlots.roof ? (
                   <div className="grid gap-3">
@@ -1245,6 +1267,85 @@ export default function CreateMemorialClient() {
           {renderNavButtons()}
         </div>
       </div>
+
+      {topUpOpen ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            topUpVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={closeTopUp}
+          />
+          <div
+            className={`relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+              topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Пополнение баланса</h3>
+              <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeTopUp}>
+                Закрыть
+              </button>
+            </div>
+            <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
+              {(["RUB", "USD"] as const).map((currency) => {
+                const isActive = topUpCurrency === currency;
+                return (
+                  <button
+                    key={currency}
+                    type="button"
+                    onClick={() => setTopUpCurrency(currency)}
+                    className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold ${
+                      isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                    }`}
+                  >
+                    {currency}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 grid gap-2">
+              {topUpOptions.map((option) => {
+                const isSelected = topUpPlan === option.coins;
+                const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
+                return (
+                  <button
+                    key={option.coins}
+                    type="button"
+                    onClick={() => setTopUpPlan(option.coins)}
+                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                      isSelected
+                        ? "border-sky-400 bg-sky-50 text-slate-900"
+                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="font-semibold">{option.coins} монет</span>
+                    <span className="text-slate-500">{price}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              onClick={() => {
+                if (!topUpPlan) {
+                  return;
+                }
+                router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
+                closeTopUp();
+              }}
+              disabled={!topUpPlan}
+            >
+              Продолжить
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
