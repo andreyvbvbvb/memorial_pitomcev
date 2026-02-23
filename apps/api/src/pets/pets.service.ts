@@ -6,6 +6,8 @@ import { S3Service } from "../storage/s3.service";
 import { CreatePetDto } from "./dto/create-pet.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 
+const MEMORIAL_YEAR_PRICE = 100;
+
 @Injectable()
 export class PetsService {
   constructor(
@@ -14,16 +16,16 @@ export class PetsService {
   ) {}
 
   private async ensureOwner(ownerId: string) {
+    const safeId = ownerId.trim();
     const existing = await this.prisma.user.findUnique({
-      where: { id: ownerId }
+      where: { id: safeId }
     });
     if (existing) {
-      return;
+      return existing;
     }
-    const safeId = ownerId.trim();
     const email =
       safeId.includes("@") ? safeId : `${safeId.replace(/\s+/g, "_")}@dev.local`;
-    await this.prisma.user.create({
+    return this.prisma.user.create({
       data: {
         id: safeId,
         email
@@ -32,43 +34,62 @@ export class PetsService {
   }
 
   async create(dto: CreatePetDto) {
-    await this.ensureOwner(dto.ownerId);
+    const owner = await this.ensureOwner(dto.ownerId);
+    if (owner.coinBalance < MEMORIAL_YEAR_PRICE) {
+      throw new BadRequestException("Недостаточно монет для создания мемориала");
+    }
     const hasCoords = typeof dto.lat === "number" && typeof dto.lng === "number";
+    const now = new Date();
+    const paidUntil = this.addYears(now, 1);
+    const baseSceneJson =
+      dto.sceneJson && typeof dto.sceneJson === "object" && !Array.isArray(dto.sceneJson)
+        ? (dto.sceneJson as Record<string, unknown>)
+        : {};
+    const sceneJson: Prisma.InputJsonValue = {
+      ...baseSceneJson,
+      memorialPaidAt: now.toISOString(),
+      memorialPaidUntil: paidUntil.toISOString()
+    };
 
-    return this.prisma.pet.create({
-      data: {
-        ownerId: dto.ownerId,
-        name: dto.name,
-        species: dto.species ?? null,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
-        deathDate: dto.deathDate ? new Date(dto.deathDate) : null,
-        epitaph: dto.epitaph ?? null,
-        favoriteTreats: dto.favoriteTreats ?? null,
-        favoriteToys: dto.favoriteToys ?? null,
-        favoriteSleepPlaces: dto.favoriteSleepPlaces ?? null,
-        story: dto.story ?? null,
-        isPublic: dto.isPublic ?? false,
-        memorial: {
-          create: {
-            environmentId: dto.environmentId ?? null,
-            houseId: dto.houseId ?? null,
-            sceneJson:
-              dto.sceneJson === undefined
-                ? undefined
-                : (dto.sceneJson as Prisma.InputJsonValue)
-          }
-        },
-        marker: hasCoords
-          ? {
-              create: {
-                lat: dto.lat!,
-                lng: dto.lng!,
-                markerStyle: dto.markerStyle ?? null
-              }
+    const [, pet] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: owner.id },
+        data: { coinBalance: { decrement: MEMORIAL_YEAR_PRICE } }
+      }),
+      this.prisma.pet.create({
+        data: {
+          ownerId: owner.id,
+          name: dto.name,
+          species: dto.species ?? null,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+          deathDate: dto.deathDate ? new Date(dto.deathDate) : null,
+          epitaph: dto.epitaph ?? null,
+          favoriteTreats: dto.favoriteTreats ?? null,
+          favoriteToys: dto.favoriteToys ?? null,
+          favoriteSleepPlaces: dto.favoriteSleepPlaces ?? null,
+          story: dto.story ?? null,
+          isPublic: dto.isPublic ?? false,
+          memorial: {
+            create: {
+              environmentId: dto.environmentId ?? null,
+              houseId: dto.houseId ?? null,
+              sceneJson
             }
-          : undefined
-      }
-    });
+          },
+          marker: hasCoords
+            ? {
+                create: {
+                  lat: dto.lat!,
+                  lng: dto.lng!,
+                  markerStyle: dto.markerStyle ?? null
+                }
+              }
+            : undefined
+        }
+      })
+    ]);
+
+    return pet;
   }
 
   async findAll(ownerId?: string, visibility?: string) {
@@ -193,5 +214,11 @@ export class PetsService {
       data: { previewPhotoId: photoId }
     });
     return { ok: true };
+  }
+
+  private addYears(date: Date, years: number) {
+    const next = new Date(date);
+    next.setFullYear(next.getFullYear() + years);
+    return next;
   }
 }

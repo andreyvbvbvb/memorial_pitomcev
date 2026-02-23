@@ -23,6 +23,7 @@ import {
   resolveGiftSizeMultiplier,
   resolveGiftTargetWidth
 } from "../../lib/gifts";
+import type { HouseSlots } from "../../lib/memorial-config";
 
 type Props = {
   terrainUrl?: string | null;
@@ -48,6 +49,7 @@ type Props = {
   controlsEnabled?: boolean;
   preloadGiftUrl?: string | null;
   onGiftPreloaded?: (url: string) => void;
+  onHouseSlotsDetected?: (slots: HouseSlots) => void;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -548,7 +550,8 @@ function TerrainWithHouse({
   onGiftLeave,
   focusSlot,
   onFocusPosition,
-  onFocusDirection
+  onFocusDirection,
+  onHouseSlotsDetected
 }: {
   terrainUrl: string;
   houseUrl: string;
@@ -572,6 +575,7 @@ function TerrainWithHouse({
   focusSlot?: string | null;
   onFocusPosition?: (position: [number, number, number] | null) => void;
   onFocusDirection?: (direction: [number, number, number] | null) => void;
+  onHouseSlotsDetected?: (slots: HouseSlots) => void;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -634,6 +638,38 @@ function TerrainWithHouse({
     const detected = collectGiftSlots(terrain);
     onSlotsDetected(detected);
   }, [terrain, onSlotsDetected]);
+
+  useEffect(() => {
+    if (!onHouseSlotsDetected) {
+      return;
+    }
+    const detected: HouseSlots = {};
+    if (house.getObjectByName("roof_slot")) {
+      detected.roof = "roof_slot";
+    }
+    if (house.getObjectByName("wall_slot")) {
+      detected.wall = "wall_slot";
+    }
+    if (house.getObjectByName("sign_slot")) {
+      detected.sign = "sign_slot";
+    }
+    if (house.getObjectByName("frame_left_slot")) {
+      detected.frameLeft = "frame_left_slot";
+    }
+    if (house.getObjectByName("frame_right_slot")) {
+      detected.frameRight = "frame_right_slot";
+    }
+    if (house.getObjectByName("mat_slot")) {
+      detected.mat = "mat_slot";
+    }
+    if (house.getObjectByName("bowl_food_slot")) {
+      detected.bowlFood = "bowl_food_slot";
+    }
+    if (house.getObjectByName("bowl_water_slot")) {
+      detected.bowlWater = "bowl_water_slot";
+    }
+    onHouseSlotsDetected(detected);
+  }, [house, onHouseSlotsDetected]);
 
   return (
     <>
@@ -709,6 +745,7 @@ export default function MemorialPreview({
   controlsEnabled = true,
   preloadGiftUrl,
   onGiftPreloaded,
+  onHouseSlotsDetected,
   className,
   style
 }: Props) {
@@ -834,6 +871,7 @@ export default function MemorialPreview({
               focusSlot={focusSlot}
               onFocusPosition={setFocusPosition}
               onFocusDirection={setFocusDirection}
+              onHouseSlotsDetected={onHouseSlotsDetected}
             />
           ) : null}
           {!terrainUrl && houseUrl ? (

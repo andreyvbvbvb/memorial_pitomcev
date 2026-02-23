@@ -27,7 +27,7 @@ import {
 } from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
-import { getHouseSlots } from "../../lib/memorial-config";
+import type { HouseSlots } from "../../lib/memorial-config";
 import {
   environmentOptions,
   houseOptions,
@@ -89,6 +89,7 @@ const steps = [
   "Фото и история",
   "Проверка"
 ];
+const MEMORIAL_YEAR_PRICE = 100;
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const mapContainerStyle = { width: "100%", height: "60vh" };
 const colorPalette = [
@@ -157,6 +158,9 @@ export default function CreateMemorialClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<"desktop" | "mobile">("desktop");
@@ -202,7 +206,7 @@ export default function CreateMemorialClient() {
   const bowlWaterPreviewId = hoveredId("bowl-water") ?? form.bowlWaterId;
   const environmentUrl = resolveEnvironmentModel(environmentPreviewId, "summer");
   const houseUrl = resolveHouseModel(housePreviewId);
-  const houseSlots = getHouseSlots(form.houseId);
+  const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? {};
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
   const signUrl = resolveSignModel(signPreviewId);
@@ -242,6 +246,10 @@ export default function CreateMemorialClient() {
     setHoveredOption(null);
   }, [step]);
 
+  useEffect(() => {
+    setDetectedHouseSlots(null);
+  }, [form.houseId]);
+
   const isMobile = layoutMode === "mobile" ? true : false;
 
   useEffect(() => {
@@ -262,6 +270,28 @@ export default function CreateMemorialClient() {
     };
     loadMe();
   }, [apiUrl, router]);
+
+  useEffect(() => {
+    if (!form.ownerId) {
+      return;
+    }
+    const loadWallet = async () => {
+      setWalletLoading(true);
+      try {
+        const response = await fetch(`${apiUrl}/wallet/${form.ownerId}`);
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить баланс");
+        }
+        const data = (await response.json()) as { coinBalance: number };
+        setWalletBalance(typeof data.coinBalance === "number" ? data.coinBalance : null);
+      } catch {
+        setWalletBalance(null);
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+    void loadWallet();
+  }, [apiUrl, form.ownerId]);
 
   useEffect(() => {
     return () => {
@@ -427,6 +457,15 @@ export default function CreateMemorialClient() {
       }
     }
 
+    if (walletBalance === null) {
+      setError("Не удалось загрузить баланс для оплаты мемориала");
+      return;
+    }
+    if (walletBalance < MEMORIAL_YEAR_PRICE) {
+      setError("Недостаточно монет для оплаты мемориала");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -514,6 +553,9 @@ export default function CreateMemorialClient() {
           }
         }
       }
+      setWalletBalance((prev) =>
+        typeof prev === "number" ? Math.max(prev - MEMORIAL_YEAR_PRICE, 0) : prev
+      );
       router.push(`/pets/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания");
@@ -921,6 +963,7 @@ export default function CreateMemorialClient() {
                     colors={colorOverrides}
                     focusSlot={focusSlot}
                     softEdges
+                    onHouseSlotsDetected={setDetectedHouseSlots}
                     style={
                       isMobile
                         ? { height: "34vh", minHeight: "240px" }
@@ -949,6 +992,10 @@ export default function CreateMemorialClient() {
                     setFocusSlot("dom_slot");
                   })}
                 </div>
+
+                {!detectedHouseSlots ? (
+                  <p className="text-xs text-slate-500">Загружаем детали домика…</p>
+                ) : null}
 
                 {houseSlots.roof ? (
                   <div className="grid gap-3">
@@ -1158,6 +1205,25 @@ export default function CreateMemorialClient() {
                     </div>
                   </div>
                 ) : null}
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="grid gap-2 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">Оплата мемориала (1 год)</p>
+                  <p>Стоимость: {MEMORIAL_YEAR_PRICE} монет</p>
+                  <p>
+                    Баланс:{" "}
+                    {walletLoading
+                      ? "Загрузка..."
+                      : walletBalance !== null
+                        ? `${walletBalance} монет`
+                        : "—"}
+                  </p>
+                  {walletBalance !== null && walletBalance < MEMORIAL_YEAR_PRICE ? (
+                    <p className="text-xs text-rose-500">
+                      Недостаточно монет для публикации. Пополни баланс.
+                    </p>
+                  ) : null}
+                </div>
               </div>
               <div className="grid gap-3">
                 <MemorialPreview

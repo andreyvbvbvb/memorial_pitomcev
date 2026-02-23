@@ -816,6 +816,10 @@ export default function MapClient() {
   const [map, setMap] = useState<any>(null);
   const [typeFilter, setTypeFilter] = useState("all");
   const [nameFilter, setNameFilter] = useState("");
+  const [pendingTypeFilter, setPendingTypeFilter] = useState("all");
+  const [pendingNameFilter, setPendingNameFilter] = useState("");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
   const [mapMode, setMapMode] = useState<"map" | "carousel">("map");
   const [carouselOrder, setCarouselOrder] = useState<MarkerDto[]>([]);
@@ -835,6 +839,38 @@ export default function MapClient() {
 
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const media = window.matchMedia("(max-width: 1024px)");
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+      return () => media.removeEventListener("change", handleChange);
+    }
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) {
+      return;
+    }
+    if (mapMode !== "carousel") {
+      setMapMode("carousel");
+    }
+  }, [isMobile, mapMode]);
+
+  useEffect(() => {
+    if (!filterSheetOpen) {
+      return;
+    }
+    setPendingTypeFilter(typeFilter);
+    setPendingNameFilter(nameFilter);
+  }, [filterSheetOpen, typeFilter, nameFilter]);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey
@@ -932,8 +968,38 @@ export default function MapClient() {
   }, [boundsReady, visibleMarkers, markers, typeFilter, nameFilter]);
 
   const hasFilters = typeFilter !== "all" || nameFilter.trim().length > 0;
+  const activeTypeFilter = isMobile ? pendingTypeFilter : typeFilter;
+  const activeNameFilter = isMobile ? pendingNameFilter : nameFilter;
+  const resetFilters = () => {
+    if (isMobile) {
+      setPendingTypeFilter("all");
+      setPendingNameFilter("");
+      return;
+    }
+    setTypeFilter("all");
+    setNameFilter("");
+  };
+  const applyFilters = () => {
+    setTypeFilter(pendingTypeFilter);
+    setNameFilter(pendingNameFilter);
+    setFilterSheetOpen(false);
+  };
+  const handleTypeFilterChange = (value: string) => {
+    if (isMobile) {
+      setPendingTypeFilter(value);
+      return;
+    }
+    setTypeFilter(value);
+  };
+  const handleNameFilterChange = (value: string) => {
+    if (isMobile) {
+      setPendingNameFilter(value);
+      return;
+    }
+    setNameFilter(value);
+  };
 
-  const modeToggle = (
+  const modeToggle = !isMobile ? (
     <div className="flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] text-slate-600 shadow-sm">
       <button
         type="button"
@@ -954,7 +1020,7 @@ export default function MapClient() {
         3D
       </button>
     </div>
-  );
+  ) : null;
 
   useEffect(() => {
     if (active && !filteredMarkers.some((marker) => marker.id === active.id)) {
@@ -1029,7 +1095,7 @@ export default function MapClient() {
   };
 
   useEffect(() => {
-    if (mapMode !== "carousel") {
+    if (mapMode !== "carousel" && !isMobile) {
       return;
     }
     if (carouselOrder.length === 0) {
@@ -1047,10 +1113,10 @@ export default function MapClient() {
     ids.forEach((id) => {
       void loadPetDetail(id);
     });
-  }, [mapMode, carouselIndex, carouselOrder]);
+  }, [mapMode, isMobile, carouselIndex, carouselOrder]);
 
   useEffect(() => {
-    if (mapMode !== "map") {
+    if (mapMode !== "map" && !isMobile) {
       return;
     }
     const ids = new Set<string>();
@@ -1062,7 +1128,7 @@ export default function MapClient() {
     ids.forEach((id) => {
       void loadPetDetail(id);
     });
-  }, [mapMode, listMarkers]);
+  }, [mapMode, isMobile, listMarkers]);
 
   const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
@@ -1213,6 +1279,167 @@ export default function MapClient() {
       ? activePreviewUrl
       : `${apiUrl}${activePreviewUrl}`
     : null;
+
+  const memorialListContent = (
+    <div className="grid gap-3">
+      {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
+      {!loading && !error && listMarkers.length === 0 ? (
+        <p className="text-sm text-slate-500">
+          {hasFilters
+            ? "По заданным фильтрам ничего не найдено."
+            : boundsReady
+              ? "В выбранной области нет мемориалов."
+              : "Пока нет публичных мемориалов."}
+        </p>
+      ) : null}
+      {listMarkers.map((marker) => (
+        <a
+          key={marker.id}
+          href={`/pets/${marker.petId}`}
+          onMouseEnter={() => setHoveredMarkerId(marker.id)}
+          onMouseLeave={() => setHoveredMarkerId(null)}
+          onFocus={() => setHoveredMarkerId(marker.id)}
+          onBlur={() => setHoveredMarkerId(null)}
+          className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
+        >
+          <MemorialCardPreview data={buildMemorialSceneData(marker)} />
+          <div className="p-3">
+            <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
+            <p className="mt-1 text-xs text-slate-600">
+              {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
+            </p>
+          </div>
+          {marker.previewPhotoUrl ? (
+            <div className="pointer-events-none absolute right-3 top-3 hidden rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block">
+              <img
+                src={
+                  marker.previewPhotoUrl.startsWith("http")
+                    ? marker.previewPhotoUrl
+                    : `${apiUrl}${marker.previewPhotoUrl}`
+                }
+                alt="Обложка мемориала"
+                className="h-40 w-56 rounded-lg object-contain"
+                loading="lazy"
+              />
+            </div>
+          ) : null}
+        </a>
+      ))}
+    </div>
+  );
+  if (isMobile) {
+    return (
+      <main
+        className="relative w-screen overflow-hidden bg-slate-50"
+        style={{ height: `calc(100vh - ${headerOffset}px)`, marginTop: -headerOffset }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100" />
+        <div className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4 pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setFilterSheetOpen(true)}
+              className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 shadow-sm"
+            >
+              Фильтры
+            </button>
+          </div>
+          <div className="relative h-[42vh] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur">
+            <CarouselScene
+              items={carouselItems}
+              activeIndex={carouselIndex}
+              targetIndex={carouselTargetIndex}
+              onArrive={handleCarouselArrive}
+              onAnimationEnd={handleCarouselAnimationEnd}
+              cameraSettings={cameraSettings}
+            />
+            <div className="pointer-events-none absolute inset-0">
+              <button
+                type="button"
+                aria-label="Предыдущий мемориал"
+                onClick={handleCarouselNext}
+                className="pointer-events-auto absolute left-0 top-0 h-full w-[20%] bg-transparent"
+              />
+              <button
+                type="button"
+                aria-label="Следующий мемориал"
+                onClick={handleCarouselPrev}
+                className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-base font-semibold text-slate-900">Мемориалы</h2>
+            <span className="text-xs text-slate-500">{listMarkers.length}</span>
+          </div>
+          <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+            {memorialListContent}
+          </div>
+        </div>
+        {filterSheetOpen ? (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/30 px-4 py-6 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-slate-900">Фильтры</h2>
+                <button
+                  type="button"
+                  onClick={() => setFilterSheetOpen(false)}
+                  className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
+                  aria-label="Закрыть"
+                >
+                  ✕
+                </button>
+              </div>
+              <label className="mt-4 grid gap-1 text-sm text-slate-700">
+                Вид питомца
+                <select
+                  className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                  style={selectArrowStyle}
+                  value={pendingTypeFilter}
+                  onChange={(event) => handleTypeFilterChange(event.target.value)}
+                >
+                  {petTypeOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="mt-3 grid gap-1 text-sm text-slate-700">
+                Имя питомца
+                <input
+                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  value={pendingNameFilter}
+                  onChange={(event) => handleNameFilterChange(event.target.value)}
+                  placeholder="Барсик"
+                />
+              </label>
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700"
+                >
+                  Сбросить
+                </button>
+                <button
+                  type="button"
+                  onClick={applyFilters}
+                  className="flex-1 rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
+                >
+                  Применить
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        <div className="pointer-events-auto absolute bottom-4 right-4">
+          <ErrorToast message={error} onClose={() => setError(null)} />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main
       className="relative w-screen overflow-hidden bg-slate-50"
@@ -1337,8 +1564,8 @@ export default function MapClient() {
                 <select
                   className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
                   style={selectArrowStyle}
-                  value={typeFilter}
-                  onChange={(event) => setTypeFilter(event.target.value)}
+                  value={activeTypeFilter}
+                  onChange={(event) => handleTypeFilterChange(event.target.value)}
                 >
                   {petTypeOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -1351,17 +1578,14 @@ export default function MapClient() {
                 Имя питомца
                 <input
                   className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={nameFilter}
-                  onChange={(event) => setNameFilter(event.target.value)}
+                  value={activeNameFilter}
+                  onChange={(event) => handleNameFilterChange(event.target.value)}
                   placeholder="Барсик"
                 />
               </label>
               <button
                 type="button"
-                onClick={() => {
-                  setTypeFilter("all");
-                  setNameFilter("");
-                }}
+                onClick={resetFilters}
                 disabled={!hasFilters}
                 className="self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -1376,53 +1600,7 @@ export default function MapClient() {
                 <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
                 <span className="text-xs text-slate-500">{listMarkers.length}</span>
               </div>
-              <div className="mt-4 flex-1 overflow-y-auto pr-1">
-                <div className="grid gap-3">
-                  {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
-                  {!loading && !error && listMarkers.length === 0 ? (
-                    <p className="text-sm text-slate-500">
-                      {hasFilters
-                        ? "По заданным фильтрам ничего не найдено."
-                        : boundsReady
-                          ? "В выбранной области нет мемориалов."
-                          : "Пока нет публичных мемориалов."}
-                    </p>
-                  ) : null}
-                  {listMarkers.map((marker) => (
-                    <a
-                      key={marker.id}
-                      href={`/pets/${marker.petId}`}
-                      onMouseEnter={() => setHoveredMarkerId(marker.id)}
-                      onMouseLeave={() => setHoveredMarkerId(null)}
-                      onFocus={() => setHoveredMarkerId(marker.id)}
-                      onBlur={() => setHoveredMarkerId(null)}
-                      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
-                    >
-                      <MemorialCardPreview data={buildMemorialSceneData(marker)} />
-                      <div className="p-3">
-                        <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-                        <p className="mt-1 text-xs text-slate-600">
-                          {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
-                        </p>
-                      </div>
-                      {marker.previewPhotoUrl ? (
-                        <div className="pointer-events-none absolute right-3 top-3 hidden rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block">
-                          <img
-                            src={
-                              marker.previewPhotoUrl.startsWith("http")
-                                ? marker.previewPhotoUrl
-                                : `${apiUrl}${marker.previewPhotoUrl}`
-                            }
-                            alt="Обложка мемориала"
-                            className="h-40 w-56 rounded-lg object-contain"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : null}
-                    </a>
-                  ))}
-                </div>
-              </div>
+              <div className="mt-4 flex-1 overflow-y-auto pr-1">{memorialListContent}</div>
             </div>
           </div>
         ) : (
@@ -1463,8 +1641,8 @@ export default function MapClient() {
                 <select
                   className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
                   style={selectArrowStyle}
-                  value={typeFilter}
-                  onChange={(event) => setTypeFilter(event.target.value)}
+                  value={activeTypeFilter}
+                  onChange={(event) => handleTypeFilterChange(event.target.value)}
                 >
                   {petTypeOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -1477,17 +1655,14 @@ export default function MapClient() {
                 Имя питомца
                 <input
                   className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={nameFilter}
-                  onChange={(event) => setNameFilter(event.target.value)}
+                  value={activeNameFilter}
+                  onChange={(event) => handleNameFilterChange(event.target.value)}
                   placeholder="Барсик"
                 />
               </label>
               <button
                 type="button"
-                onClick={() => {
-                  setTypeFilter("all");
-                  setNameFilter("");
-                }}
+                onClick={resetFilters}
                 disabled={!hasFilters}
                 className="self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
