@@ -31,7 +31,8 @@ export const HOUSE_SLOTS: Record<string, HouseSlots> = {
     mat: "mat_slot",
     bowlFood: "bowl_food_slot",
     bowlWater: "bowl_water_slot"
-  }
+  },
+  budka_3: DEFAULT_HOUSE_SLOTS
 };
 
 export const getHouseSlots = (houseId?: string | null): HouseSlots =>

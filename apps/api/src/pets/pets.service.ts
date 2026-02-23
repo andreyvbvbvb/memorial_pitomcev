@@ -6,7 +6,12 @@ import { S3Service } from "../storage/s3.service";
 import { CreatePetDto } from "./dto/create-pet.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 
-const MEMORIAL_YEAR_PRICE = 100;
+const MEMORIAL_PLAN_PRICES = new Map<number, number>([
+  [1, 100],
+  [2, 200],
+  [5, 500],
+  [0, 1500]
+]);
 
 @Injectable()
 export class PetsService {
@@ -35,12 +40,18 @@ export class PetsService {
 
   async create(dto: CreatePetDto) {
     const owner = await this.ensureOwner(dto.ownerId);
-    if (owner.coinBalance < MEMORIAL_YEAR_PRICE) {
+    const planYears =
+      typeof dto.memorialPlanYears === "number" ? dto.memorialPlanYears : 1;
+    const planPrice = MEMORIAL_PLAN_PRICES.get(planYears);
+    if (planPrice === undefined) {
+      throw new BadRequestException("Неверный тариф оплаты мемориала");
+    }
+    if (owner.coinBalance < planPrice) {
       throw new BadRequestException("Недостаточно монет для создания мемориала");
     }
     const hasCoords = typeof dto.lat === "number" && typeof dto.lng === "number";
     const now = new Date();
-    const paidUntil = this.addYears(now, 1);
+    const paidUntil = planYears === 0 ? null : this.addYears(now, planYears);
     const baseSceneJson =
       dto.sceneJson && typeof dto.sceneJson === "object" && !Array.isArray(dto.sceneJson)
         ? (dto.sceneJson as Record<string, unknown>)
@@ -48,13 +59,15 @@ export class PetsService {
     const sceneJson: Prisma.InputJsonValue = {
       ...baseSceneJson,
       memorialPaidAt: now.toISOString(),
-      memorialPaidUntil: paidUntil.toISOString()
+      memorialPaidUntil: paidUntil ? paidUntil.toISOString() : null,
+      memorialPlanYears: planYears,
+      memorialPaidPrice: planPrice
     };
 
     const [, pet] = await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: owner.id },
-        data: { coinBalance: { decrement: MEMORIAL_YEAR_PRICE } }
+        data: { coinBalance: { decrement: planPrice } }
       }),
       this.prisma.pet.create({
         data: {

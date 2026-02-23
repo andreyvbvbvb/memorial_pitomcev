@@ -401,6 +401,10 @@ export default function PetClient({ id }: Props) {
       });
       if (!response.ok) {
         const text = await response.text();
+        if (text.toLowerCase().includes("недостаточно")) {
+          openTopUp();
+          return;
+        }
         throw new Error(text || "Ошибка покупки подарка");
       }
       await loadPet();
@@ -964,6 +968,9 @@ export default function PetClient({ id }: Props) {
                 Закрыть
               </button>
             </div>
+            <p className="mt-1 text-sm text-slate-600">
+              Баланс: {walletBalance ?? 0} монет
+            </p>
             <p className="mt-2 text-sm text-slate-600">
               Выберите пакет монет. Оплата пока тестовая.
             </p>

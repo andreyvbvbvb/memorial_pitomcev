@@ -91,6 +91,13 @@ export class CreatePetDto {
   houseId?: string;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(50)
+  memorialPlanYears?: number;
+
+  @IsOptional()
   @IsObject()
   sceneJson?: Record<string, unknown>;
 }

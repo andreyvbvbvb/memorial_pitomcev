@@ -508,10 +508,10 @@ function PartAttachment({
   const part = useMemo(() => {
     const cloned = scene.clone(true);
     if (slot === "mat_slot") {
-      applyPartFitScale(cloned, 1, 1.5);
+      applyPartFitScale(cloned, 1.25, 1.875);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.5, "x");
+      applyPartScale(cloned, 0.575, "x");
     }
     return cloned;
   }, [scene, slot]);

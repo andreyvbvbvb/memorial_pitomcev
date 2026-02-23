@@ -325,10 +325,10 @@ function PartInstance({
     const cloned = scene.clone(true);
     cloneMeshMaterials(cloned);
     if (slot === "mat_slot") {
-      applyPartFitScale(cloned, 1, 1.5);
+      applyPartFitScale(cloned, 1.25, 1.875);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.5, "x");
+      applyPartScale(cloned, 0.575, "x");
     }
     return cloned;
   }, [scene, slot]);
@@ -465,7 +465,7 @@ function MemorialCardPreview({ data }: { data: MemorialSceneData | null }) {
         <DirectionalLight intensity={1} position={[6, 8, 4]} />
         <DirectionalLight intensity={0.5} position={[-6, 5, -4]} />
         <Suspense fallback={null}>
-          <Group rotation={[0, Math.PI, 0]}>
+          <Group>
             <TerrainWithHouseScene data={data} tone={0.1} />
           </Group>
         </Suspense>
@@ -856,15 +856,6 @@ export default function MapClient() {
   }, []);
 
   useEffect(() => {
-    if (!isMobile) {
-      return;
-    }
-    if (mapMode !== "carousel") {
-      setMapMode("carousel");
-    }
-  }, [isMobile, mapMode]);
-
-  useEffect(() => {
     if (!filterSheetOpen) {
       return;
     }
@@ -1000,6 +991,28 @@ export default function MapClient() {
   };
 
   const modeToggle = !isMobile ? (
+    <div className="flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] text-slate-600 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setMapMode("map")}
+        className={`rounded-full px-3 py-1 transition ${
+          mapMode === "map" ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+        }`}
+      >
+        Карта
+      </button>
+      <button
+        type="button"
+        onClick={() => setMapMode("carousel")}
+        className={`rounded-full px-3 py-1 transition ${
+          mapMode === "carousel" ? "bg-slate-900 text-white" : "hover:bg-slate-100"
+        }`}
+      >
+        3D
+      </button>
+    </div>
+  ) : null;
+  const modeToggleMobile = isMobile ? (
     <div className="flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] text-slate-600 shadow-sm">
       <button
         type="button"
@@ -1343,38 +1356,182 @@ export default function MapClient() {
             >
               Фильтры
             </button>
+            {modeToggleMobile}
           </div>
-          <div className="relative h-[42vh] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur">
-            <CarouselScene
-              items={carouselItems}
-              activeIndex={carouselIndex}
-              targetIndex={carouselTargetIndex}
-              onArrive={handleCarouselArrive}
-              onAnimationEnd={handleCarouselAnimationEnd}
-              cameraSettings={cameraSettings}
-            />
-            <div className="pointer-events-none absolute inset-0">
-              <button
-                type="button"
-                aria-label="Предыдущий мемориал"
-                onClick={handleCarouselNext}
-                className="pointer-events-auto absolute left-0 top-0 h-full w-[20%] bg-transparent"
-              />
-              <button
-                type="button"
-                aria-label="Следующий мемориал"
-                onClick={handleCarouselPrev}
-                className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-base font-semibold text-slate-900">Мемориалы</h2>
-            <span className="text-xs text-slate-500">{listMarkers.length}</span>
-          </div>
-          <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
-            {memorialListContent}
-          </div>
+          {mapMode === "map" ? (
+            <>
+              <div className="relative h-[42vh] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur">
+                {!apiKey ? (
+                  <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
+                    Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
+                  </div>
+                ) : loadError ? (
+                  <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-red-600">
+                    Ошибка загрузки Google Maps
+                  </div>
+                ) : !isLoaded ? (
+                  <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
+                    Загрузка карты...
+                  </div>
+                ) : (
+                  <GoogleMap
+                    mapContainerStyle={containerStyle}
+                    onLoad={(loadedMap) => {
+                      setMap(loadedMap);
+                      loadedMap.setCenter(defaultCenter);
+                      loadedMap.setZoom(4);
+                      updateVisibleMarkers(loadedMap);
+                    }}
+                    onIdle={() => {
+                      updateVisibleMarkers();
+                    }}
+                    options={{
+                      mapTypeControl: false,
+                      fullscreenControl: false,
+                      streetViewControl: false
+                    }}
+                  >
+                    <MarkerClusterer
+                      options={{
+                        averageCenter: true,
+                        minimumClusterSize: 4,
+                        zoomOnClick: false
+                      }}
+                      onClick={handleClusterClick}
+                    >
+                      {(clusterer) => (
+                        <>
+                          {filteredMarkers.map((marker) => (
+                            <Marker
+                              key={marker.id}
+                              position={{ lat: marker.lat, lng: marker.lng }}
+                              clusterer={clusterer}
+                              animation={
+                                hoveredMarkerId === marker.id &&
+                                typeof window !== "undefined" &&
+                                window.google
+                                  ? window.google.maps.Animation.BOUNCE
+                                  : undefined
+                              }
+                              icon={{
+                                url: markerIconUrl(marker.markerStyle ?? "other"),
+                                scaledSize: new window.google.maps.Size(
+                                  markerSize(marker.markerStyle ?? "other", 43).width,
+                                  markerSize(marker.markerStyle ?? "other", 43).height
+                                ),
+                                anchor: new window.google.maps.Point(
+                                  markerAnchor(marker.markerStyle ?? "other", 43).x,
+                                  markerAnchor(marker.markerStyle ?? "other", 43).y
+                                )
+                              }}
+                              onClick={() => setActive(marker)}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </MarkerClusterer>
+                    {active ? (
+                      <InfoWindow
+                        position={{ lat: active.lat, lng: active.lng }}
+                        onCloseClick={() => setActive(null)}
+                        options={{ maxWidth: 260 }}
+                      >
+                        <div className="max-w-[240px] text-sm">
+                          {active.previewPhotoUrl ? (
+                            <img
+                              src={
+                                active.previewPhotoUrl.startsWith("http")
+                                  ? active.previewPhotoUrl
+                                  : `${apiUrl}${active.previewPhotoUrl}`
+                              }
+                              alt="Фото питомца"
+                              className="mb-2 w-full rounded-md object-contain"
+                              style={{ maxHeight: 160 }}
+                              loading="lazy"
+                            />
+                          ) : null}
+                          <p className="font-semibold text-slate-900">{active.name}</p>
+                          <p className="text-slate-600">{active.epitaph ?? "Без эпитафии"}</p>
+                          <a className="mt-2 inline-block text-slate-900 underline" href={`/pets/${active.petId}`}>
+                            Открыть мемориал
+                          </a>
+                        </div>
+                      </InfoWindow>
+                    ) : null}
+                  </GoogleMap>
+                )}
+              </div>
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-base font-semibold text-slate-900">Мемориалы</h2>
+                <span className="text-xs text-slate-500">{listMarkers.length}</span>
+              </div>
+              <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+                {memorialListContent}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative h-[42vh] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur">
+                <CarouselScene
+                  items={carouselItems}
+                  activeIndex={carouselIndex}
+                  targetIndex={carouselTargetIndex}
+                  onArrive={handleCarouselArrive}
+                  onAnimationEnd={handleCarouselAnimationEnd}
+                  cameraSettings={cameraSettings}
+                />
+                <div className="pointer-events-none absolute inset-0">
+                  <button
+                    type="button"
+                    aria-label="Предыдущий мемориал"
+                    onClick={handleCarouselNext}
+                    className="pointer-events-auto absolute left-0 top-0 h-full w-[20%] bg-transparent"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Следующий мемориал"
+                    onClick={handleCarouselPrev}
+                    className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+                {activeCarouselMarker ? (
+                  <div className="flex h-full flex-col gap-3">
+                    {activePreviewSrc ? (
+                      <img
+                        src={activePreviewSrc}
+                        alt="Фото питомца"
+                        className="h-40 w-full flex-shrink-0 rounded-2xl object-contain"
+                        loading="lazy"
+                      />
+                    ) : null}
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-900">
+                        {activeCarouselMarker.name}
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {activeCarouselMarker.epitaph ?? "Без эпитафии"}
+                      </p>
+                    </div>
+                    {activeCarouselPet?.story ? (
+                      <p className="flex-1 overflow-y-auto text-xs text-slate-500">
+                        {activeCarouselPet.story}
+                      </p>
+                    ) : null}
+                    <a
+                      className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
+                      href={`/pets/${activeCarouselMarker.petId}`}
+                    >
+                      Открыть мемориал
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Нет мемориалов</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
         {filterSheetOpen ? (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/30 px-4 py-6 backdrop-blur-sm">

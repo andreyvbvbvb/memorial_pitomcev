@@ -90,7 +90,13 @@ const steps = [
   "Фото и история",
   "Проверка"
 ];
-const MEMORIAL_YEAR_PRICE = 100;
+const MEMORIAL_PLANS = [
+  { id: "1y", years: 1, label: "1 год", price: 100 },
+  { id: "2y", years: 2, label: "2 года", price: 200 },
+  { id: "5y", years: 5, label: "5 лет", price: 500 },
+  { id: "lifetime", years: 0, label: "Бессрочно", price: 1500 }
+] as const;
+type MemorialPlanId = (typeof MEMORIAL_PLANS)[number]["id"];
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const mapContainerStyle = { width: "100%", height: "60vh" };
 const colorPalette = [
@@ -165,6 +171,7 @@ export default function CreateMemorialClient() {
   const [topUpVisible, setTopUpVisible] = useState(false);
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
+  const [memorialPlanId, setMemorialPlanId] = useState<MemorialPlanId>("1y");
   const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
@@ -197,6 +204,11 @@ export default function CreateMemorialClient() {
     () => markerVariantsForSpecies(form.species),
     [form.species]
   );
+  const memorialPlan = useMemo(
+    () => MEMORIAL_PLANS.find((plan) => plan.id === memorialPlanId) ?? MEMORIAL_PLANS[0],
+    [memorialPlanId]
+  );
+  const memorialPrice = memorialPlan.price;
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
   const environmentPreviewId = hoveredId("environment") ?? form.environmentId;
@@ -484,7 +496,7 @@ export default function CreateMemorialClient() {
       setError("Не удалось загрузить баланс для оплаты мемориала");
       return;
     }
-    if (walletBalance < MEMORIAL_YEAR_PRICE) {
+    if (walletBalance < memorialPrice) {
       setError(null);
       openTopUp();
       return;
@@ -507,6 +519,7 @@ export default function CreateMemorialClient() {
       markerStyle: form.markerStyle,
       environmentId: form.environmentId,
       houseId: form.houseId,
+      memorialPlanYears: memorialPlan.years,
       sceneJson: {
         parts: {
           roof: form.roofId,
@@ -578,7 +591,7 @@ export default function CreateMemorialClient() {
         }
       }
       setWalletBalance((prev) =>
-        typeof prev === "number" ? Math.max(prev - MEMORIAL_YEAR_PRICE, 0) : prev
+        typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev
       );
       router.push(`/pets/${created.id}`);
     } catch (err) {
@@ -614,7 +627,7 @@ export default function CreateMemorialClient() {
           className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
           disabled={loading}
         >
-          {loading ? "Публикация..." : "Опубликовать мемориал"}
+          {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
         </button>
       )}
     </div>
@@ -997,7 +1010,7 @@ export default function CreateMemorialClient() {
                 </div>
 
                 <div
-                  className={`grid gap-4 overflow-y-auto ${
+                  className={`flex flex-col gap-4 overflow-y-auto ${
                     isMobile
                       ? "min-h-[38vh] max-h-[38vh] px-4 pb-6"
                       : "min-h-[60vh] max-h-[60vh]"
@@ -1228,25 +1241,6 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="grid gap-2 text-sm text-slate-700">
-                  <p className="font-semibold text-slate-900">Оплата мемориала (1 год)</p>
-                  <p>Стоимость: {MEMORIAL_YEAR_PRICE} монет</p>
-                  <p>
-                    Баланс:{" "}
-                    {walletLoading
-                      ? "Загрузка..."
-                      : walletBalance !== null
-                        ? `${walletBalance} монет`
-                        : "—"}
-                  </p>
-                  {walletBalance !== null && walletBalance < MEMORIAL_YEAR_PRICE ? (
-                    <p className="text-xs text-rose-500">
-                      Недостаточно монет для публикации. Пополни баланс.
-                    </p>
-                  ) : null}
-                </div>
-              </div>
               <div className="grid gap-3">
                 <MemorialPreview
                   terrainUrl={environmentUrl}
@@ -1256,6 +1250,31 @@ export default function CreateMemorialClient() {
                   softEdges
                   className="h-[648px]"
                 />
+                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <div className="grid gap-3 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">Оплата мемориала</p>
+                    <div className="grid gap-2">
+                      {MEMORIAL_PLANS.map((plan) => {
+                        const isSelected = plan.id === memorialPlanId;
+                        return (
+                          <button
+                            key={plan.id}
+                            type="button"
+                            onClick={() => setMemorialPlanId(plan.id)}
+                            className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                              isSelected
+                                ? "border-sky-400 bg-sky-50 text-slate-900"
+                                : "border-slate-200 text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <span className="font-semibold">{plan.label}</span>
+                            <span className="text-slate-500">{plan.price} монет</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ) : null}
@@ -1291,6 +1310,14 @@ export default function CreateMemorialClient() {
                 Закрыть
               </button>
             </div>
+            <p className="mt-1 text-sm text-slate-600">
+              Баланс:{" "}
+              {walletLoading
+                ? "Загрузка..."
+                : walletBalance !== null
+                  ? `${walletBalance} монет`
+                  : "—"}
+            </p>
             <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
               {(["RUB", "USD"] as const).map((currency) => {
                 const isActive = topUpCurrency === currency;

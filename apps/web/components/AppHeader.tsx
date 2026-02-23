@@ -252,6 +252,9 @@ export default function AppHeader() {
                 Закрыть
               </button>
             </div>
+            <p className="mt-1 text-sm text-slate-600">
+              Баланс: {user?.coinBalance ?? 0} монет
+            </p>
             <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
               {(["RUB", "USD"] as const).map((currency) => {
                 const isActive = topUpCurrency === currency;
