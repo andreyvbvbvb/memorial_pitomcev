@@ -429,7 +429,10 @@ const giftsList = Object.entries(giftModels)
     const number = numberMatch ? Number(numberMatch[1]) : null;
     const label = giftTypeLabels[type] ?? "Подарок";
     const name = number ? `${label} ${number}` : label;
-    const price = giftTypePrices[type] ?? 20;
+    let price = giftTypePrices[type] ?? 20;
+    if (type === "candle" && number !== null && number >= 9) {
+      price = 50;
+    }
     return {
       code,
       name,

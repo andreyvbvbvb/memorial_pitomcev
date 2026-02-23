@@ -10,19 +10,19 @@ export const generatedGifts = [
   {
     "code": "candle_10",
     "name": "Свеча 10",
-    "price": 30,
+    "price": 50,
     "modelUrl": "/models/gifts/candle/candle_10.glb"
   },
   {
     "code": "candle_11",
     "name": "Свеча 11",
-    "price": 30,
+    "price": 50,
     "modelUrl": "/models/gifts/candle/candle_11.glb"
   },
   {
     "code": "candle_12",
     "name": "Свеча 12",
-    "price": 30,
+    "price": 50,
     "modelUrl": "/models/gifts/candle/candle_12.glb"
   },
   {
@@ -70,7 +70,7 @@ export const generatedGifts = [
   {
     "code": "candle_9",
     "name": "Свеча 9",
-    "price": 30,
+    "price": 50,
     "modelUrl": "/models/gifts/candle/candle_9.glb"
   },
   {

@@ -120,7 +120,7 @@ const resolveCandleWidth = (code: string) => {
   if (!match) return null;
   const number = Number(match[1]);
   if (Number.isNaN(number)) return null;
-  return number <= 8 ? 0.3 : 1;
+  return 0.39;
 };
 
 export const resolveGiftTargetWidth = (gift?: { code?: string | null; modelUrl?: string | null }) => {

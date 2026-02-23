@@ -94,7 +94,7 @@ export default function PetClient({ id }: Props) {
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
   const [selectedGiftSize, setSelectedGiftSize] = useState<GiftSize>("m");
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedDuration, setSelectedDuration] = useState(1);
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [giftCatalogLoading, setGiftCatalogLoading] = useState(true);
   const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
@@ -346,6 +346,12 @@ export default function PetClient({ id }: Props) {
   }, [selectedGiftSupportsSize, selectedGiftCode]);
 
   useEffect(() => {
+    if (!selectedGiftId) {
+      setSelectedDuration(null);
+    }
+  }, [selectedGiftId]);
+
+  useEffect(() => {
     if (filteredAvailableSlots.length === 0) {
       setSelectedSlot(null);
       return;
@@ -375,13 +381,14 @@ export default function PetClient({ id }: Props) {
   const handleSelectGift = (giftId: string) => {
     setSelectedGiftId(giftId);
     setGiftPreviewEnabled(true);
+    setSelectedDuration(null);
   };
 
   const toggleGiftPanel = () => setGiftPanelOpen((prev) => !prev);
 
   const handlePlaceGift = async () => {
-    if (!selectedGiftId || !selectedSlot) {
-      setGiftError("Выбери подарок и слот");
+    if (!selectedGiftId || !selectedSlot || !selectedDuration) {
+      setGiftError("Выбери подарок, срок и слот");
       return;
     }
     if (!currentUser?.id) {
@@ -592,41 +599,28 @@ export default function PetClient({ id }: Props) {
         }
       : null;
   const previewGifts = previewGift ? [...giftInstances, previewGift] : giftInstances;
-  const totalPrice = selectedGift ? selectedGift.price * selectedDuration : null;
+  const totalPrice =
+    selectedGift && selectedDuration ? selectedGift.price * selectedDuration : null;
+  const formatDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleDateString("ru-RU") : "—";
+  const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
       <div className="mx-auto max-w-6xl">
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Мемориал</p>
-              <h1 className="mt-2 text-3xl font-semibold text-slate-900">{pet.name}</h1>
-              <p className="mt-2 text-sm text-slate-500">
-                Владелец: {pet.owner?.login ?? pet.owner?.email ?? pet.ownerId}
-              </p>
-            </div>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <h1 className="text-3xl font-semibold text-slate-900">{pet.name}</h1>
+            <p className="text-sm text-slate-500">
+              Владелец: {pet.owner?.login ?? pet.owner?.email ?? pet.ownerId}
+            </p>
+            <p className="text-sm text-slate-600">{dateRange}</p>
             <span className="rounded-full border border-slate-200 px-4 py-2 text-xs text-slate-600">
               {pet.isPublic ? "Публичный" : "Приватный"}
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Рождение</p>
-              <p className="mt-2 text-sm text-slate-700">
-                {pet.birthDate ? new Date(pet.birthDate).toLocaleDateString() : "—"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Уход</p>
-              <p className="mt-2 text-sm text-slate-700">
-                {pet.deathDate ? new Date(pet.deathDate).toLocaleDateString() : "—"}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Эпитафия</p>
             <p className="mt-2 text-base text-slate-800">{pet.epitaph ?? "Без эпитафии"}</p>
           </div>
@@ -656,7 +650,7 @@ export default function PetClient({ id }: Props) {
             </div>
           ) : null}
 
-          <div className="mt-6">
+          <div className="mt-6 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">История</p>
             <p className="mt-3 text-sm leading-relaxed text-slate-700">
               {pet.story ?? "История пока не заполнена."}
@@ -691,7 +685,7 @@ export default function PetClient({ id }: Props) {
               <div className="grid gap-3">
                 <div className="grid gap-2 text-sm text-slate-700">
                   Подарок
-                  <div className="flex max-h-52 flex-wrap gap-3 overflow-y-auto pr-1">
+                  <div className="flex max-h-60 flex-wrap gap-3 overflow-y-auto pr-1">
                     {giftCatalogLoading ? (
                       Array.from({ length: 8 }).map((_, index) => (
                         <div
@@ -789,7 +783,7 @@ export default function PetClient({ id }: Props) {
                 <div className="grid gap-2 text-sm text-slate-700">
                   Слот
                   {filteredAvailableSlots.length === 0 ? (
-                    <p className="text-sm text-slate-500">Нет свободных слотов.</p>
+                    <p className="text-sm text-slate-500">Выберите подарок.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {filteredAvailableSlots.map((slot, index) => (
@@ -816,8 +810,12 @@ export default function PetClient({ id }: Props) {
                 <button
                   type="button"
                   onClick={handlePlaceGift}
-                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                  disabled={giftLoading}
+                  className={`rounded-2xl px-4 py-2 text-sm font-semibold ${
+                    selectedGiftId && selectedSlot && selectedDuration && !giftLoading
+                      ? "bg-slate-900 text-white"
+                      : "cursor-not-allowed bg-slate-300 text-slate-500"
+                  }`}
+                  disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                 >
                   {giftLoading
                     ? "Покупка..."
@@ -868,37 +866,56 @@ export default function PetClient({ id }: Props) {
                     const expiresLabel = gift.expiresAt
                       ? new Date(gift.expiresAt).toLocaleDateString()
                       : null;
+                    const iconUrl = resolveGiftIconUrl(gift.gift);
+                    const fallbackIcon =
+                      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
                     return (
                       <div
                         key={gift.id}
-                        className="group relative rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
+                        className="group relative flex gap-3 rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
                       >
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold">{gift.gift.name}</p>
+                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                          {iconUrl ? (
+                            <img
+                              src={iconUrl ?? undefined}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = fallbackIcon;
+                              }}
+                            />
+                          ) : null}
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          От хозяина:{" "}
-                          {ownerPets.length > 0 ? (
-                            <span className="inline-flex flex-wrap gap-1">
-                              {ownerPets.map((petItem, index) => (
-                                <span key={petItem.id} className="inline-flex items-center gap-1">
-                                  <a
-                                    href={`/pets/${petItem.id}`}
-                                    className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
-                                  >
-                                    {petItem.name}
-                                  </a>
-                                  {index < ownerPets.length - 1 ? "," : null}
-                                </span>
-                              ))}
-                            </span>
-                          ) : (
-                            ownerName
-                          )}
-                        </p>
-                        {expiresLabel ? (
-                          <p className="text-xs text-slate-500">До: {expiresLabel}</p>
-                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold">{gift.gift.name}</p>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500">
+                            От хозяина:{" "}
+                            {ownerPets.length > 0 ? (
+                              <span className="inline-flex flex-wrap gap-1">
+                                {ownerPets.map((petItem, index) => (
+                                  <span key={petItem.id} className="inline-flex items-center gap-1">
+                                    <a
+                                      href={`/pets/${petItem.id}`}
+                                      className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+                                    >
+                                      {petItem.name}
+                                    </a>
+                                    {index < ownerPets.length - 1 ? "," : null}
+                                  </span>
+                                ))}
+                              </span>
+                            ) : (
+                              ownerName
+                            )}
+                          </p>
+                          {expiresLabel ? (
+                            <p className="text-xs text-slate-500">До: {expiresLabel}</p>
+                          ) : null}
+                        </div>
                         <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
                           <p className="font-semibold text-slate-800">{gift.gift.name}</p>
                           <p className="mt-1">От: {ownerLabel}</p>
