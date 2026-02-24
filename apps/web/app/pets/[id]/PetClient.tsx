@@ -62,6 +62,19 @@ type Pet = {
   }[];
 };
 
+type OwnerMemorial = {
+  id: string;
+  name: string;
+  birthDate: string | null;
+  deathDate: string | null;
+  photos?: { id: string; url: string }[];
+  memorial?: {
+    environmentId: string | null;
+    houseId: string | null;
+    sceneJson: Record<string, unknown> | null;
+  } | null;
+};
+
 type AuthUser = {
   id: string;
   login?: string | null;
@@ -102,6 +115,7 @@ export default function PetClient({ id }: Props) {
   const [giftPanelOpen, setGiftPanelOpen] = useState(true);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
+  const [ownerMemorials, setOwnerMemorials] = useState<OwnerMemorial[]>([]);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -176,6 +190,26 @@ export default function PetClient({ id }: Props) {
       loadWallet(currentUser.id);
     }
   }, [currentUser, loadWallet]);
+
+  useEffect(() => {
+    if (!pet?.ownerId) {
+      setOwnerMemorials([]);
+      return;
+    }
+    const loadOwnerMemorials = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/pets?ownerId=${pet.ownerId}`);
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить мемориалы владельца");
+        }
+        const data = (await response.json()) as OwnerMemorial[];
+        setOwnerMemorials(Array.isArray(data) ? data : []);
+      } catch {
+        setOwnerMemorials([]);
+      }
+    };
+    loadOwnerMemorials();
+  }, [apiUrl, pet?.ownerId]);
 
   useEffect(() => {
     if (!topUpOpen) {
@@ -604,78 +638,112 @@ export default function PetClient({ id }: Props) {
   const formatDate = (value?: string | null) =>
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
+  const coverPhoto = photos[0] ?? null;
+  const coverUrl = coverPhoto
+    ? coverPhoto.url.startsWith("http")
+      ? coverPhoto.url
+      : `${apiUrl}${coverPhoto.url}`
+    : null;
+  const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-200 px-6 py-16">
-      <div className="mx-auto max-w-6xl">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <h1 className="text-3xl font-semibold text-slate-900">{pet.name}</h1>
-            <p className="text-sm text-slate-500">
-              Владелец: {pet.owner?.login ?? pet.owner?.email ?? pet.ownerId}
-            </p>
-            <p className="text-sm text-slate-600">{dateRange}</p>
-            <span className="rounded-full border border-slate-200 px-4 py-2 text-xs text-slate-600">
-              {pet.isPublic ? "Публичный" : "Приватный"}
-            </span>
-          </div>
+    <main className="relative min-h-screen overflow-x-hidden bg-[#fbf7f5] px-6 py-16">
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0 opacity-40 blur-[2px]">
+          <MemorialPreview
+            className="h-full w-full rounded-none"
+            terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
+            houseUrl={resolveHouseModel(pet.memorial?.houseId)}
+            parts={partList}
+            gifts={giftInstances}
+            colors={colorOverrides}
+            showControls={false}
+            controlsEnabled={false}
+            softEdges
+            backgroundColor="#fbf7f5"
+          />
+        </div>
+        <div className="absolute inset-0 bg-[#fbf7f5]/70" />
+      </div>
 
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Эпитафия</p>
-            <p className="mt-2 text-base text-slate-800">{pet.epitaph ?? "Без эпитафии"}</p>
-          </div>
-
-          {photos.length > 0 ? (
-            <div className="mt-6">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Фотографии</p>
-              <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
-                {photos.map((photo, index) => (
-                  <button
-                    key={photo.id}
-                    type="button"
-                    onClick={() => openLightbox(index)}
-                    className="shrink-0 cursor-zoom-in"
-                  >
-                    <img
-                      src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
-                      alt="Фото питомца"
-                      className="rounded-xl object-cover"
-                      style={{ width: 324, height: 252 }}
-                      loading="lazy"
-                      onClick={() => openLightbox(index)}
-                    />
-                  </button>
-                ))}
+      <div className="relative z-10 mx-auto max-w-5xl space-y-10">
+        <div className="flex justify-center">
+          {coverUrl ? (
+            <div
+              className="relative w-full max-w-3xl border-[10px] border-white bg-white shadow-2xl"
+              style={{ transform: "rotate(-30deg)" }}
+            >
+              <img src={coverUrl} alt="Фото питомца" className="block w-full object-cover" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white drop-shadow-[0_4px_6px_rgba(0,0,0,0.35)]">
+                <h1 className="text-3xl font-semibold">{pet.name}</h1>
+                <p className="mt-2 text-lg">{dateRange}</p>
+                <div className="mt-3 h-px w-40 bg-current opacity-80" />
+                <p className="mt-3 text-sm">{pet.epitaph ?? "Без эпитафии"}</p>
               </div>
             </div>
-          ) : null}
-
-          <div className="mt-6 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">История</p>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700">
-              {pet.story ?? "История пока не заполнена."}
-            </p>
-          </div>
-
+          ) : (
+            <div className="w-full rounded-3xl border border-slate-200 bg-white/80 p-8 text-center shadow-sm">
+              <h1 className="text-3xl font-semibold text-slate-900">{pet.name}</h1>
+              <p className="mt-2 text-sm text-slate-600">{dateRange}</p>
+              <div className="mx-auto mt-3 h-px w-40 bg-slate-400/70" />
+              <p className="mt-3 text-sm text-slate-700">{pet.epitaph ?? "Без эпитафии"}</p>
+            </div>
+          )}
         </div>
 
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={toggleGiftPanel}
-              className="flex items-center text-xs font-semibold text-slate-700"
-            >
-              <span
-                className={`inline-flex items-center justify-center transition-transform ${
-                  giftPanelOpen ? "rotate-180" : ""
-                }`}
-                aria-hidden
-              >
-                ▾
-              </span>
-            </button>
+        {photos.length > 0 ? (
+          <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400 text-center">
+              Фотографии
+            </p>
+            <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+              {photos.map((photo, index) => (
+                <button
+                  key={photo.id}
+                  type="button"
+                  onClick={() => openLightbox(index)}
+                  className="shrink-0 cursor-zoom-in"
+                >
+                  <img
+                    src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
+                    alt="Фото питомца"
+                    className="rounded-xl object-cover"
+                    style={{ width: 324, height: 252 }}
+                    loading="lazy"
+                    onClick={() => openLightbox(index)}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
+        ) : null}
+
+        <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 text-center shadow-sm">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">История</p>
+          <p className="mt-3 text-sm leading-relaxed text-slate-700">
+            {pet.story ?? "История пока не заполнена."}
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm">
+          {currentUser ? (
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={toggleGiftPanel}
+                className="flex items-center text-xs font-semibold text-slate-700"
+              >
+                <span
+                  className={`inline-flex items-center justify-center transition-transform ${
+                    giftPanelOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden
+                >
+                  ▾
+                </span>
+              </button>
+            </div>
+          ) : null}
           {currentUser ? (
             <div
               className={`mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all ${
@@ -826,7 +894,7 @@ export default function PetClient({ id }: Props) {
               </div>
             </div>
           ) : null}
-          <div className="mt-6">
+          <div className={currentUser ? "mt-6" : "mt-4"}>
             <MemorialPreview
               className="h-[660px]"
               terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
@@ -844,93 +912,128 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
 
-        {currentUser ? (
-          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              {activeGifts.length > 0 ? (
-                <div className="grid gap-2 text-sm text-slate-700">
-                  {activeGifts.map((gift) => {
-                    const ownerPets = gift.owner?.pets ?? [];
-                    const ownerName =
-                      gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
-                    const ownerLabel =
-                      ownerPets.length > 0
-                        ? ownerPets.map((petItem) => petItem.name).join(", ")
-                        : ownerName;
-                    const expiresLabel = gift.expiresAt
-                      ? new Date(gift.expiresAt).toLocaleDateString()
-                      : null;
-                    const iconUrl = resolveGiftIconUrl(gift.gift);
-                    const fallbackIcon =
-                      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
-                    return (
-                      <div
-                        key={gift.id}
-                        className="group relative flex gap-3 rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
-                      >
-                        <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                          {iconUrl ? (
-                            <img
-                              src={iconUrl ?? undefined}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                              onError={(event) => {
-                                event.currentTarget.onerror = null;
-                                event.currentTarget.src = fallbackIcon;
-                              }}
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="font-semibold">{gift.gift.name}</p>
-                          </div>
-                          <p className="mt-1 text-xs text-slate-500">
-                            От хозяина:{" "}
-                            {ownerPets.length > 0 ? (
-                              <span className="inline-flex flex-wrap gap-1">
-                                {ownerPets.map((petItem, index) => (
-                                  <span key={petItem.id} className="inline-flex items-center gap-1">
-                                    <a
-                                      href={`/pets/${petItem.id}`}
-                                      className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
-                                    >
-                                      {petItem.name}
-                                    </a>
-                                    {index < ownerPets.length - 1 ? "," : null}
-                                  </span>
-                                ))}
-                              </span>
-                            ) : (
-                              ownerName
-                            )}
-                          </p>
-                          {expiresLabel ? (
-                            <p className="text-xs text-slate-500">До: {expiresLabel}</p>
-                          ) : null}
-                        </div>
-                        <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
-                          <p className="font-semibold text-slate-800">{gift.gift.name}</p>
-                          <p className="mt-1">От: {ownerLabel}</p>
-                          {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">Пока нет подарков.</p>
-              )}
+        {otherMemorials.length > 0 ? (
+          <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400 text-center">
+              Другие мемориалы хозяина
+            </p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {otherMemorials.map((item) => {
+                const photo = item.photos?.[0];
+                const url = photo
+                  ? photo.url.startsWith("http")
+                    ? photo.url
+                    : `${apiUrl}${photo.url}`
+                  : null;
+                return (
+                  <a
+                    key={item.id}
+                    href={`/pets/${item.id}`}
+                    className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300"
+                  >
+                    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                      {url ? (
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                      ) : null}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{item.name}</p>
+                      <p className="text-xs text-slate-500">
+                        {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
+                      </p>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </div>
         ) : null}
+
+        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            {activeGifts.length > 0 ? (
+              <div className="grid gap-2 text-sm text-slate-700">
+                {activeGifts.map((gift) => {
+                  const ownerPets = gift.owner?.pets ?? [];
+                  const ownerName =
+                    gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
+                  const ownerLabel =
+                    ownerPets.length > 0
+                      ? ownerPets.map((petItem) => petItem.name).join(", ")
+                      : ownerName;
+                  const expiresLabel = gift.expiresAt
+                    ? new Date(gift.expiresAt).toLocaleDateString()
+                    : null;
+                  const iconUrl = resolveGiftIconUrl(gift.gift);
+                  const fallbackIcon =
+                    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                  return (
+                    <div
+                      key={gift.id}
+                      className="group relative flex gap-3 rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
+                    >
+                      <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                        {iconUrl ? (
+                          <img
+                            src={iconUrl ?? undefined}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = fallbackIcon;
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold">{gift.gift.name}</p>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          От хозяина:{" "}
+                          {ownerPets.length > 0 ? (
+                            <span className="inline-flex flex-wrap gap-1">
+                              {ownerPets.map((petItem, index) => (
+                                <span key={petItem.id} className="inline-flex items-center gap-1">
+                                  <a
+                                    href={`/pets/${petItem.id}`}
+                                    className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+                                  >
+                                    {petItem.name}
+                                  </a>
+                                  {index < ownerPets.length - 1 ? "," : null}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            ownerName
+                          )}
+                        </p>
+                        {expiresLabel ? (
+                          <p className="text-xs text-slate-500">До: {expiresLabel}</p>
+                        ) : null}
+                      </div>
+                      <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
+                        <p className="font-semibold text-slate-800">{gift.gift.name}</p>
+                        <p className="mt-1">От: {ownerLabel}</p>
+                        {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">Пока нет подарков.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {topUpOpen ? (
