@@ -638,57 +638,16 @@ export default function PetClient({ id }: Props) {
   const formatDate = (value?: string | null) =>
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
-  const coverPhoto = photos[0] ?? null;
-  const coverUrl = coverPhoto
-    ? coverPhoto.url.startsWith("http")
-      ? coverPhoto.url
-      : `${apiUrl}${coverPhoto.url}`
-    : null;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#fbf7f5] px-6 py-16">
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 opacity-40 blur-[2px]">
-          <MemorialPreview
-            className="h-full w-full rounded-none"
-            terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
-            houseUrl={resolveHouseModel(pet.memorial?.houseId)}
-            parts={partList}
-            gifts={giftInstances}
-            colors={colorOverrides}
-            showControls={false}
-            controlsEnabled={false}
-            softEdges
-            backgroundColor="#fbf7f5"
-          />
-        </div>
-        <div className="absolute inset-0 bg-[#fbf7f5]/70" />
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-5xl space-y-10">
-        <div className="flex justify-center">
-          {coverUrl ? (
-            <div
-              className="relative w-full max-w-3xl border-[10px] border-white bg-white shadow-2xl"
-              style={{ transform: "rotate(-30deg)" }}
-            >
-              <img src={coverUrl} alt="Фото питомца" className="block w-full object-cover" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white drop-shadow-[0_4px_6px_rgba(0,0,0,0.35)]">
-                <h1 className="text-3xl font-semibold">{pet.name}</h1>
-                <p className="mt-2 text-lg">{dateRange}</p>
-                <div className="mt-3 h-px w-40 bg-current opacity-80" />
-                <p className="mt-3 text-sm">{pet.epitaph ?? "Без эпитафии"}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="w-full rounded-3xl border border-slate-200 bg-white/80 p-8 text-center shadow-sm">
-              <h1 className="text-3xl font-semibold text-slate-900">{pet.name}</h1>
-              <p className="mt-2 text-sm text-slate-600">{dateRange}</p>
-              <div className="mx-auto mt-3 h-px w-40 bg-slate-400/70" />
-              <p className="mt-3 text-sm text-slate-700">{pet.epitaph ?? "Без эпитафии"}</p>
-            </div>
-          )}
+    <main className="relative min-h-screen overflow-x-hidden bg-[#eef6ff] px-6 py-16">
+      <div className="mx-auto max-w-5xl space-y-10">
+        <div className="rounded-3xl border border-slate-200 bg-white/80 p-10 text-center shadow-sm">
+          <h1 className="text-4xl font-semibold text-slate-900">{pet.name}</h1>
+          <p className="mt-3 text-sm text-slate-600">{dateRange}</p>
+          <div className="mx-auto mt-4 h-px w-48 bg-slate-400/70" />
+          <p className="mt-4 text-base text-slate-800">{pet.epitaph ?? "Без эпитафии"}</p>
         </div>
 
         {photos.length > 0 ? (
