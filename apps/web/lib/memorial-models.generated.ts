@@ -12,9 +12,16 @@ export const environmentSeasonModelsByIdGenerated = {
   }
 } as const;
 export const houseModelByIdGenerated = {
-  "budka_1": "/models/houses/DOM_budka_1.glb",
-  "budka_2": "/models/houses/DOM_budka_2.glb",
-  "budka_3": "/models/houses/DOM_budka_3.glb"
+  "budka_1__base": "/models/houses/DOM_budka_1__base.glb",
+  "budka_1__brown": "/models/houses/DOM_budka_1__brown.glb",
+  "budka_1__soso": "/models/houses/DOM_budka_1__soso.glb",
+  "budka_1__tuntun": "/models/houses/DOM_budka_1__tuntun.glb",
+  "budka_1__white": "/models/houses/DOM_budka_1__white.glb",
+  "budka_2__base": "/models/houses/DOM_budka_2__base.glb",
+  "budka_2__brown": "/models/houses/DOM_budka_2__brown.glb",
+  "budka_2__normal": "/models/houses/DOM_budka_2__normal.glb",
+  "budka_2__toy": "/models/houses/DOM_budka_2__toy.glb",
+  "budka_2__white": "/models/houses/DOM_budka_2__white.glb"
 } as const;
 export const roofModelByIdGenerated = {
   "roof_1": "/models/parts/roof/roof_1.glb",

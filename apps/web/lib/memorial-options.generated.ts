@@ -15,19 +15,54 @@ export const environmentOptionsGenerated = [
 ] as const;
 export const houseOptionsGenerated = [
   {
-    "id": "budka_1",
-    "name": "Будка 1",
-    "description": "Вариант 1"
+    "id": "budka_1__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
   },
   {
-    "id": "budka_2",
-    "name": "Будка 2",
-    "description": "Вариант 2"
+    "id": "budka_1__brown",
+    "name": "Будка",
+    "description": "Автодобавлено"
   },
   {
-    "id": "budka_3",
-    "name": "Будка 3",
-    "description": "Вариант 3"
+    "id": "budka_1__soso",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_1__tuntun",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_1__white",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_2__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_2__brown",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_2__normal",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_2__toy",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_2__white",
+    "name": "Будка",
+    "description": "Автодобавлено"
   }
 ] as const;
 export const roofOptionsGenerated = [

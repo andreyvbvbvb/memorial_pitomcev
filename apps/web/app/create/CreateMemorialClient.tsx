@@ -17,6 +17,10 @@ import {
   resolveBowlWaterModel
 } from "../../lib/memorial-models";
 import {
+  buildHouseVariantGroup,
+  splitHouseVariantId
+} from "../../lib/house-variants";
+import {
   firstMarkerVariantId,
   markerAnchor,
   markerIconUrl,
@@ -209,10 +213,27 @@ export default function CreateMemorialClient() {
     [memorialPlanId]
   );
   const memorialPrice = memorialPlan.price;
+  const houseVariantGroup = useMemo(
+    () => buildHouseVariantGroup(houseOptions),
+    [houseOptions]
+  );
+  const selectedHouseVariant = splitHouseVariantId(form.houseId);
+  const selectedHouseBaseId =
+    selectedHouseVariant.baseId || houseVariantGroup.baseOptions[0]?.id || form.houseId;
+  const houseBaseOptions = houseVariantGroup.baseOptions;
+  const houseTextureOptions =
+    houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
   const environmentPreviewId = hoveredId("environment") ?? form.environmentId;
-  const housePreviewId = hoveredId("house") ?? form.houseId;
+  const hoveredHouseVariantId = hoveredId("house-texture");
+  const hoveredHouseBaseId = hoveredId("house-base");
+  const housePreviewId =
+    hoveredHouseVariantId ??
+    (hoveredHouseBaseId
+      ? houseVariantGroup.defaultVariantByBase[hoveredHouseBaseId] ?? hoveredHouseBaseId
+      : null) ??
+    form.houseId;
   const roofPreviewId = hoveredId("roof") ?? form.roofId;
   const wallPreviewId = hoveredId("wall") ?? form.wallId;
   const signPreviewId = hoveredId("sign") ?? form.signId;
@@ -640,12 +661,13 @@ export default function CreateMemorialClient() {
     category: string,
     options: typeof environmentOptions,
     selectedId: string,
-    onSelect: (id: string) => void
+    onSelect: (id: string) => void,
+    imageCategory: string = category
   ) => (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
-        const imageUrl = option.id === "none" ? null : optionImage(category, option.id);
+        const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
         return (
           <button
             key={option.id}
@@ -1029,11 +1051,29 @@ export default function CreateMemorialClient() {
 
                 <div className="grid gap-3">
                   <h2 className="text-base font-semibold text-slate-900">Домик</h2>
-                  {renderOptionGrid("house", houseOptions, form.houseId, (id) => {
-                    handleChange("houseId", id);
+                  {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
+                    const nextVariant =
+                      houseVariantGroup.defaultVariantByBase[id] ?? id;
+                    handleChange("houseId", nextVariant);
                     setFocusSlot("dom_slot");
-                  })}
+                  }, "house")}
                 </div>
+
+                {houseTextureOptions.length > 0 ? (
+                  <div className="grid gap-3">
+                    <h2 className="text-base font-semibold text-slate-900">Текстура домика</h2>
+                    {renderOptionGrid(
+                      "house-texture",
+                      houseTextureOptions,
+                      form.houseId,
+                      (id) => {
+                        handleChange("houseId", id);
+                        setFocusSlot("dom_slot");
+                      },
+                      "house-texture"
+                    )}
+                  </div>
+                ) : null}
 
                 {houseSlots.roof ? (
                   <div className="grid gap-3">
