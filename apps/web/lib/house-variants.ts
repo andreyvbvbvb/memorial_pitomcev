@@ -81,7 +81,12 @@ export const buildHouseVariantGroup = (houseOptions: OptionItem[]): HouseVariant
     if (!variantsByBase[variant.baseId]) {
       variantsByBase[variant.baseId] = [];
     }
-    variantsByBase[variant.baseId].push(variant);
+    const list = variantsByBase[variant.baseId];
+    if (list) {
+      list.push(variant);
+    } else {
+      variantsByBase[variant.baseId] = [variant];
+    }
   });
 
   Object.values(variantsByBase).forEach((list) => {
