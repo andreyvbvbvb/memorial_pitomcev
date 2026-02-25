@@ -28,7 +28,8 @@ export class GiftsService {
     return this.prisma.user.create({
       data: {
         id: safeId,
-        email
+        email,
+        createdAt: new Date()
       }
     });
   }

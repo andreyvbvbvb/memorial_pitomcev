@@ -30,7 +30,8 @@ export class AuthService {
       data: {
         email,
         passwordHash,
-        login
+        login,
+        createdAt: new Date()
       }
     });
     return user;

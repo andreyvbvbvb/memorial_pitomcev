@@ -33,7 +33,8 @@ export class PetsService {
     return this.prisma.user.create({
       data: {
         id: safeId,
-        email
+        email,
+        createdAt: new Date()
       }
     });
   }
@@ -82,11 +83,13 @@ export class PetsService {
           favoriteSleepPlaces: dto.favoriteSleepPlaces ?? null,
           story: dto.story ?? null,
           isPublic: dto.isPublic ?? false,
+          createdAt: now,
           memorial: {
             create: {
               environmentId: dto.environmentId ?? null,
               houseId: dto.houseId ?? null,
-              sceneJson
+              sceneJson,
+              createdAt: now
             }
           },
           marker: hasCoords
@@ -94,7 +97,8 @@ export class PetsService {
                 create: {
                   lat: dto.lat!,
                   lng: dto.lng!,
-                  markerStyle: dto.markerStyle ?? null
+                  markerStyle: dto.markerStyle ?? null,
+                  createdAt: now
                 }
               }
             : undefined
