@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   Inject,
   Post,
   Req
@@ -112,5 +113,36 @@ export class AdminController {
       type: "delete",
       affected: typeof affected === "bigint" ? affected.toString() : affected
     };
+  }
+
+  @Get("schema")
+  async getSchema(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const rawTables = (await this.prisma.$queryRawUnsafe(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
+    )) as Array<{ table_name: string }>;
+    const rawColumns = (await this.prisma.$queryRawUnsafe(
+      "SELECT table_name, column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, ordinal_position"
+    )) as Array<{ table_name: string; column_name: string; data_type: string; is_nullable: string }>;
+
+    const tableMap = new Map<string, { name: string; columns: { name: string; type: string; nullable: boolean }[] }>();
+    rawTables.forEach((table) => {
+      tableMap.set(table.table_name, { name: table.table_name, columns: [] });
+    });
+    rawColumns.forEach((column) => {
+      const entry =
+        tableMap.get(column.table_name) ?? { name: column.table_name, columns: [] };
+      entry.columns.push({
+        name: column.column_name,
+        type: column.data_type,
+        nullable: column.is_nullable === "YES"
+      });
+      tableMap.set(column.table_name, entry);
+    });
+
+    const tables = Array.from(tableMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    return { tables };
   }
 }
