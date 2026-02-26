@@ -46,7 +46,7 @@ const QUICK_QUERIES = [
 ] as const;
 
 type SqlResult = {
-  type: "select" | "delete";
+  type: "select" | "delete" | "update";
   rowCount?: number;
   affected?: number | string;
   rows?: unknown;
@@ -360,8 +360,8 @@ export default function AdminSqlPage() {
                 {result.type === "select"
                   ? `Строк: ${result.rowCount ?? 0}`
                   : result.rows
-                    ? `Удалено строк: ${result.rowCount ?? 0}`
-                    : `Затронуто: ${result.affected ?? 0}`}
+                    ? `${result.type === "update" ? "Обновлено" : "Удалено"} строк: ${result.rowCount ?? 0}`
+                    : `${result.type === "update" ? "Обновлено" : "Удалено"}: ${result.affected ?? 0}`}
               </span>
             ) : null}
           </div>
@@ -381,7 +381,7 @@ export default function AdminSqlPage() {
       <div className="mx-auto w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">Админ · SQL консоль</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Разрешены только SELECT и DELETE. Выполняется на сервере API.
+          Разрешены только SELECT, DELETE и UPDATE. Выполняется на сервере API.
         </p>
         {content}
       </div>

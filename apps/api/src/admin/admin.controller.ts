@@ -80,10 +80,11 @@ export class AdminController {
     const lower = normalized.toLowerCase();
     const isSelect = /^select\b/.test(lower);
     const isDelete = /^delete\b/.test(lower);
-    if (!isSelect && !isDelete) {
-      throw new BadRequestException("Разрешены только SELECT и DELETE");
+    const isUpdate = /^update\b/.test(lower);
+    if (!isSelect && !isDelete && !isUpdate) {
+      throw new BadRequestException("Разрешены только SELECT, DELETE и UPDATE");
     }
-    if (/\b(insert|update|drop|alter|create|truncate|grant|revoke)\b/.test(lower)) {
+    if (/\b(insert|drop|alter|create|truncate|grant|revoke)\b/.test(lower)) {
       throw new BadRequestException("Запрос содержит запрещённые операции");
     }
 
@@ -102,7 +103,7 @@ export class AdminController {
       const rows = await this.prisma.$queryRawUnsafe(trimmed);
       const safeRows = toSafeJson(rows);
       return {
-        type: "delete",
+        type: isUpdate ? "update" : "delete",
         rowCount: Array.isArray(rows) ? rows.length : 0,
         rows: safeRows
       };
@@ -110,7 +111,7 @@ export class AdminController {
 
     const affected = await this.prisma.$executeRawUnsafe(trimmed);
     return {
-      type: "delete",
+      type: isUpdate ? "update" : "delete",
       affected: typeof affected === "bigint" ? affected.toString() : affected
     };
   }

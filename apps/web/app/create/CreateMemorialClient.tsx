@@ -103,6 +103,105 @@ const MEMORIAL_PLANS = [
 type MemorialPlanId = (typeof MEMORIAL_PLANS)[number]["id"];
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const mapContainerStyle = { width: "100%", height: "60vh" };
+
+type Step3TabId =
+  | "environment"
+  | "house"
+  | "roof"
+  | "wall"
+  | "sign"
+  | "frameLeft"
+  | "frameRight"
+  | "mat"
+  | "bowlFood"
+  | "bowlWater";
+
+type Step3Tab = {
+  id: Step3TabId;
+  label: string;
+  focusSlot?: string | null;
+};
+
+const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
+  switch (id) {
+    case "environment":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="7" cy="7" r="2" />
+          <path d="M3 19l6-7 4 5 3-4 5 6" />
+        </svg>
+      );
+    case "house":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 11l9-7 9 7" />
+          <path d="M5 10v9h14v-9" />
+          <path d="M9 19v-6h6v6" />
+        </svg>
+      );
+    case "roof":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 14l8-7 8 7" />
+          <path d="M6 14h12" />
+        </svg>
+      );
+    case "wall":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="4" y="6" width="16" height="12" rx="1.5" />
+          <path d="M4 11h16" />
+          <path d="M10 6v12" />
+        </svg>
+      );
+    case "sign":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 4v16" />
+          <rect x="8" y="6" width="10" height="6" rx="1" />
+        </svg>
+      );
+    case "frameLeft":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+          <path d="M9 5v14" />
+        </svg>
+      );
+    case "frameRight":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="5" width="14" height="14" rx="2" />
+          <path d="M15 5v14" />
+        </svg>
+      );
+    case "mat":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="6" width="14" height="12" rx="2" />
+          <path d="M9 6v12" />
+        </svg>
+      );
+    case "bowlFood":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 11h16" />
+          <path d="M6 11l2 6h8l2-6" />
+          <circle cx="12" cy="7.5" r="1.5" />
+        </svg>
+      );
+    case "bowlWater":
+      return (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 4l6 6" />
+          <path d="M12 4l-6 6" />
+          <path d="M6 10c0 4 3 7 6 7s6-3 6-7" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
 const colorPalette = [
   "#F36C6C",
   "#F28C6B",
@@ -246,6 +345,26 @@ export default function CreateMemorialClient() {
   const houseUrl = resolveHouseModel(housePreviewId);
   const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
   const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? configuredHouseSlots ?? {};
+  const step3Tabs = useMemo<Step3Tab[]>(() => {
+    const tabs: Step3Tab[] = [
+      { id: "environment", label: "Поверхность", focusSlot: "dom_slot" },
+      { id: "house", label: "Домик", focusSlot: "dom_slot" }
+    ];
+    if (houseSlots.roof) tabs.push({ id: "roof", label: "Крыша", focusSlot: houseSlots.roof });
+    if (houseSlots.wall) tabs.push({ id: "wall", label: "Стены", focusSlot: houseSlots.wall });
+    if (houseSlots.sign) tabs.push({ id: "sign", label: "Украшение", focusSlot: houseSlots.sign });
+    if (houseSlots.frameLeft)
+      tabs.push({ id: "frameLeft", label: "Рамка слева", focusSlot: houseSlots.frameLeft });
+    if (houseSlots.frameRight)
+      tabs.push({ id: "frameRight", label: "Рамка справа", focusSlot: houseSlots.frameRight });
+    if (houseSlots.mat) tabs.push({ id: "mat", label: "Коврик", focusSlot: houseSlots.mat });
+    if (houseSlots.bowlFood)
+      tabs.push({ id: "bowlFood", label: "Миска (еда)", focusSlot: houseSlots.bowlFood });
+    if (houseSlots.bowlWater)
+      tabs.push({ id: "bowlWater", label: "Миска (вода)", focusSlot: houseSlots.bowlWater });
+    return tabs;
+  }, [houseSlots]);
+  const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
   const signUrl = resolveSignModel(signPreviewId);
@@ -289,6 +408,15 @@ export default function CreateMemorialClient() {
     setDetectedHouseSlots(getConfiguredHouseSlots(form.houseId));
   }, [form.houseId]);
 
+  useEffect(() => {
+    if (step3Tabs.length === 0) {
+      return;
+    }
+    if (!step3Tabs.some((tab) => tab.id === activeStep3Tab)) {
+      setActiveStep3Tab(step3Tabs[0]!.id);
+    }
+  }, [step3Tabs, activeStep3Tab]);
+
   const openTopUp = () => {
     setTopUpOpen(true);
     requestAnimationFrame(() => setTopUpVisible(true));
@@ -297,6 +425,11 @@ export default function CreateMemorialClient() {
   const closeTopUp = () => {
     setTopUpVisible(false);
     setTimeout(() => setTopUpOpen(false), 180);
+  };
+
+  const handleStep3TabSelect = (tab: Step3Tab) => {
+    setActiveStep3Tab(tab.id);
+    setFocusSlot(tab.focusSlot ?? null);
   };
 
   const topUpOptions = [
@@ -704,6 +837,131 @@ export default function CreateMemorialClient() {
     </div>
   );
 
+  const renderStep3TabContent = () => {
+    switch (activeStep3Tab) {
+      case "environment":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
+            {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
+              handleChange("environmentId", id);
+              setFocusSlot("dom_slot");
+            })}
+          </div>
+        );
+      case "house":
+        return (
+          <div className="grid gap-4">
+            <div className="grid gap-3">
+              <h2 className="text-base font-semibold text-slate-900">Домик</h2>
+              {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
+                const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
+                handleChange("houseId", nextVariant);
+                setFocusSlot("dom_slot");
+              }, "house")}
+            </div>
+            {houseTextureOptions.length > 0 ? (
+              <div className="grid gap-3">
+                <h2 className="text-base font-semibold text-slate-900">Текстура домика</h2>
+                {renderOptionGrid(
+                  "house-texture",
+                  houseTextureOptions,
+                  form.houseId,
+                  (id) => {
+                    handleChange("houseId", id);
+                    setFocusSlot("dom_slot");
+                  },
+                  "house-texture"
+                )}
+              </div>
+            ) : null}
+          </div>
+        );
+      case "roof":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Крыша домика</h2>
+            {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
+              handleChange("roofId", id);
+              setFocusSlot(houseSlots.roof ?? null);
+            })}
+          </div>
+        );
+      case "wall":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
+            {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
+              handleChange("wallId", id);
+              setFocusSlot(houseSlots.wall ?? null);
+            })}
+          </div>
+        );
+      case "sign":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Украшение над входом</h2>
+            {renderOptionGrid("sign", signOptions, form.signId, (id) => {
+              handleChange("signId", id);
+              setFocusSlot(houseSlots.sign ?? null);
+            })}
+          </div>
+        );
+      case "frameLeft":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
+            {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
+              handleChange("frameLeftId", id);
+              setFocusSlot(houseSlots.frameLeft ?? null);
+            })}
+          </div>
+        );
+      case "frameRight":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Рамка справа</h2>
+            {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
+              handleChange("frameRightId", id);
+              setFocusSlot(houseSlots.frameRight ?? null);
+            })}
+          </div>
+        );
+      case "mat":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
+            {renderOptionGrid("mat", matOptions, form.matId, (id) => {
+              handleChange("matId", id);
+              setFocusSlot(houseSlots.mat ?? null);
+            })}
+          </div>
+        );
+      case "bowlFood":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Миска с едой</h2>
+            {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
+              handleChange("bowlFoodId", id);
+              setFocusSlot(houseSlots.bowlFood ?? null);
+            })}
+          </div>
+        );
+      case "bowlWater":
+        return (
+          <div className="grid gap-3">
+            <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
+            {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
+              handleChange("bowlWaterId", id);
+              setFocusSlot(houseSlots.bowlWater ?? null);
+            })}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <main
       className="bg-gradient-to-b from-slate-50 to-slate-200 px-4 pb-8 pt-6"
@@ -1041,120 +1299,31 @@ export default function CreateMemorialClient() {
                       : "min-h-[60vh] max-h-[60vh]"
                   }`}
                 >
-                <div className="grid gap-3">
-                  <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
-                  {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
-                    handleChange("environmentId", id);
-                    setFocusSlot("dom_slot");
-                  })}
-                </div>
+                  <div className="flex gap-4">
+                    <div className="flex w-12 flex-col items-center gap-2">
+                      {step3Tabs.map((tab) => {
+                        const isActive = activeStep3Tab === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => handleStep3TabSelect(tab)}
+                            title={tab.label}
+                            className={`flex h-11 w-11 items-center justify-center rounded-xl border text-sm transition ${
+                              isActive
+                                ? "border-sky-400 bg-sky-50 text-sky-700"
+                                : "border-slate-200 bg-white text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            <Step3TabIcon id={tab.id} />
+                            <span className="sr-only">{tab.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
 
-                <div className="grid gap-3">
-                  <h2 className="text-base font-semibold text-slate-900">Домик</h2>
-                  {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
-                    const nextVariant =
-                      houseVariantGroup.defaultVariantByBase[id] ?? id;
-                    handleChange("houseId", nextVariant);
-                    setFocusSlot("dom_slot");
-                  }, "house")}
-                </div>
-
-                {houseTextureOptions.length > 0 ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Текстура домика</h2>
-                    {renderOptionGrid(
-                      "house-texture",
-                      houseTextureOptions,
-                      form.houseId,
-                      (id) => {
-                        handleChange("houseId", id);
-                        setFocusSlot("dom_slot");
-                      },
-                      "house-texture"
-                    )}
+                    <div className="min-w-0 flex-1">{renderStep3TabContent()}</div>
                   </div>
-                ) : null}
-
-                {houseSlots.roof ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Крыша домика</h2>
-                    {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
-                      handleChange("roofId", id);
-                      setFocusSlot(houseSlots.roof ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.wall ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
-                    {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
-                      handleChange("wallId", id);
-                      setFocusSlot(houseSlots.wall ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.sign ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Украшение над входом</h2>
-                    {renderOptionGrid("sign", signOptions, form.signId, (id) => {
-                      handleChange("signId", id);
-                      setFocusSlot(houseSlots.sign ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.frameLeft ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
-                    {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
-                      handleChange("frameLeftId", id);
-                      setFocusSlot(houseSlots.frameLeft ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.frameRight ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Рамка справа</h2>
-                    {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
-                      handleChange("frameRightId", id);
-                      setFocusSlot(houseSlots.frameRight ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.mat ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
-                    {renderOptionGrid("mat", matOptions, form.matId, (id) => {
-                      handleChange("matId", id);
-                      setFocusSlot(houseSlots.mat ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.bowlFood ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Миска с едой</h2>
-                    {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
-                      handleChange("bowlFoodId", id);
-                      setFocusSlot(houseSlots.bowlFood ?? null);
-                    })}
-                  </div>
-                ) : null}
-
-                {houseSlots.bowlWater ? (
-                  <div className="grid gap-3">
-                    <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
-                    {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
-                      handleChange("bowlWaterId", id);
-                      setFocusSlot(houseSlots.bowlWater ?? null);
-                    })}
-                  </div>
-                ) : null}
-
                 </div>
               </div>
             </div>
