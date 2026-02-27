@@ -42,6 +42,8 @@ type Props = {
   onSelectSlot?: (slot: string) => void;
   onGiftSlotsDetected?: (slots: string[]) => void;
   focusSlot?: string | null;
+  focusRequestId?: number;
+  onDetailClick?: (detail: DetailClick) => void;
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
@@ -62,6 +64,11 @@ type GiftHover = {
   expiresAt?: string | null;
 };
 
+type DetailClick = {
+  slot?: string;
+  area?: "environment" | "house";
+};
+
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
@@ -75,6 +82,30 @@ const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
 const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
+const isSelectableSlotName = (name: string) =>
+  name.endsWith("_slot") && name !== "dom_slot" && !isGiftSlotName(name);
+
+const findDetailSlot = (object: THREE.Object3D | null) => {
+  let current: THREE.Object3D | null = object;
+  while (current) {
+    if (isSelectableSlotName(current.name)) {
+      return current.name;
+    }
+    current = current.parent;
+  }
+  return null;
+};
+
+const isDescendantOf = (object: THREE.Object3D | null, ancestor: THREE.Object3D) => {
+  let current: THREE.Object3D | null = object;
+  while (current) {
+    if (current === ancestor) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
+};
 
 const collectGiftSlots = (target: THREE.Object3D) => {
   const found = new Set<string>();
@@ -549,9 +580,11 @@ function TerrainWithHouse({
   onGiftHover,
   onGiftLeave,
   focusSlot,
+  focusRequestId,
   onFocusPosition,
   onFocusDirection,
-  onHouseSlotsDetected
+  onHouseSlotsDetected,
+  onDetailClick
 }: {
   terrainUrl: string;
   houseUrl: string;
@@ -573,9 +606,11 @@ function TerrainWithHouse({
   onGiftHover?: (gift: GiftHover) => void;
   onGiftLeave?: () => void;
   focusSlot?: string | null;
+  focusRequestId?: number;
   onFocusPosition?: (position: [number, number, number] | null) => void;
   onFocusDirection?: (direction: [number, number, number] | null) => void;
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
+  onDetailClick?: (detail: DetailClick) => void;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -629,7 +664,7 @@ function TerrainWithHouse({
         onFocusDirection([dir.x, dir.y, dir.z]);
       }
     }
-  }, [focusSlot, house, terrain, onFocusPosition, onFocusDirection]);
+  }, [focusSlot, focusRequestId, onFocusPosition, onFocusDirection]);
 
   useEffect(() => {
     if (!onSlotsDetected) {
@@ -671,8 +706,35 @@ function TerrainWithHouse({
     onHouseSlotsDetected(detected);
   }, [house, onHouseSlotsDetected]);
 
+  const handleDetailClick = (event: any) => {
+    if (!onDetailClick) {
+      return;
+    }
+    const target = event?.object as THREE.Object3D | undefined;
+    if (!target) {
+      return;
+    }
+    const isInHouse = isDescendantOf(target, house);
+    const isInTerrain = isDescendantOf(target, terrain);
+    const slot = findDetailSlot(target);
+    if (slot) {
+      onDetailClick({
+        slot,
+        area: isInHouse ? "house" : isInTerrain ? "environment" : undefined
+      });
+      return;
+    }
+    if (isInHouse) {
+      onDetailClick({ area: "house" });
+      return;
+    }
+    if (isInTerrain) {
+      onDetailClick({ area: "environment" });
+    }
+  };
+
   return (
-    <>
+    <Group onClick={onDetailClick ? handleDetailClick : undefined}>
       <Primitive object={terrain} />
       <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
       {giftSlots && giftSlots.length > 0 ? (
@@ -701,7 +763,7 @@ function TerrainWithHouse({
       {parts?.map((part) => (
         <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={colors} />
       ))}
-    </>
+    </Group>
   );
 }
 
@@ -738,6 +800,8 @@ export default function MemorialPreview({
   onSelectSlot,
   onGiftSlotsDetected,
   focusSlot,
+  focusRequestId,
+  onDetailClick,
   colors,
   backgroundColor = "#eef6ff",
   softEdges = false,
@@ -869,9 +933,11 @@ export default function MemorialPreview({
               onGiftHover={setHoveredGift}
               onGiftLeave={() => setHoveredGift(null)}
               focusSlot={focusSlot}
+              focusRequestId={focusRequestId}
               onFocusPosition={setFocusPosition}
               onFocusDirection={setFocusDirection}
               onHouseSlotsDetected={onHouseSlotsDetected}
+              onDetailClick={onDetailClick}
             />
           ) : null}
           {!terrainUrl && houseUrl ? (

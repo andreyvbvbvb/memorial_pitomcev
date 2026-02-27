@@ -202,6 +202,19 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       return null;
   }
 };
+
+const STEP3_TAB_DESCRIPTIONS: Record<Step3TabId, string> = {
+  environment: "Выбор покрытия и цвета площадки вокруг домика.",
+  house: "Выбор формы домика и его текстуры.",
+  roof: "Крыша домика и её цвет.",
+  wall: "Стены домика и материалы.",
+  sign: "Украшение над входом.",
+  frameLeft: "Левая фоторамка у домика.",
+  frameRight: "Правая фоторамка у домика.",
+  mat: "Коврик перед входом.",
+  bowlFood: "Миска с кормом.",
+  bowlWater: "Миска с водой."
+};
 const colorPalette = [
   "#F36C6C",
   "#F28C6B",
@@ -282,7 +295,10 @@ export default function CreateMemorialClient() {
   const photosRef = useRef<PhotoDraft[]>([]);
   const [showOtherMarkers, setShowOtherMarkers] = useState(false);
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
+  const [focusRequestId, setFocusRequestId] = useState(0);
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
+  const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
+  const tooltipTimerRef = useRef<number | null>(null);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -364,6 +380,18 @@ export default function CreateMemorialClient() {
       tabs.push({ id: "bowlWater", label: "Миска (вода)", focusSlot: houseSlots.bowlWater });
     return tabs;
   }, [houseSlots]);
+  const step3TabBySlot = useMemo(() => {
+    const mapping = new Map<string, Step3TabId>();
+    if (houseSlots.roof) mapping.set(houseSlots.roof, "roof");
+    if (houseSlots.wall) mapping.set(houseSlots.wall, "wall");
+    if (houseSlots.sign) mapping.set(houseSlots.sign, "sign");
+    if (houseSlots.frameLeft) mapping.set(houseSlots.frameLeft, "frameLeft");
+    if (houseSlots.frameRight) mapping.set(houseSlots.frameRight, "frameRight");
+    if (houseSlots.mat) mapping.set(houseSlots.mat, "mat");
+    if (houseSlots.bowlFood) mapping.set(houseSlots.bowlFood, "bowlFood");
+    if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
+    return mapping;
+  }, [houseSlots]);
   const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
@@ -404,6 +432,19 @@ export default function CreateMemorialClient() {
     setHoveredOption(null);
   }, [step]);
 
+  const clearStep3TooltipTimer = () => {
+    if (tooltipTimerRef.current !== null) {
+      window.clearTimeout(tooltipTimerRef.current);
+      tooltipTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearStep3TooltipTimer();
+    };
+  }, []);
+
   useEffect(() => {
     setDetectedHouseSlots(getConfiguredHouseSlots(form.houseId));
   }, [form.houseId]);
@@ -417,6 +458,11 @@ export default function CreateMemorialClient() {
     }
   }, [step3Tabs, activeStep3Tab]);
 
+  const requestFocus = (slot: string | null) => {
+    setFocusSlot(slot);
+    setFocusRequestId((prev) => prev + 1);
+  };
+
   const openTopUp = () => {
     setTopUpOpen(true);
     requestAnimationFrame(() => setTopUpVisible(true));
@@ -429,7 +475,27 @@ export default function CreateMemorialClient() {
 
   const handleStep3TabSelect = (tab: Step3Tab) => {
     setActiveStep3Tab(tab.id);
-    setFocusSlot(tab.focusSlot ?? null);
+    requestFocus(tab.focusSlot ?? null);
+  };
+
+  const handlePreviewDetailClick = (detail: { slot?: string; area?: "environment" | "house" }) => {
+    if (detail.slot) {
+      const tabId = step3TabBySlot.get(detail.slot);
+      if (tabId) {
+        setActiveStep3Tab(tabId);
+        requestFocus(detail.slot);
+        return;
+      }
+    }
+    if (detail.area === "environment") {
+      setActiveStep3Tab("environment");
+      requestFocus("dom_slot");
+      return;
+    }
+    if (detail.area === "house") {
+      setActiveStep3Tab("house");
+      requestFocus("dom_slot");
+    }
   };
 
   const topUpOptions = [
@@ -845,7 +911,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
             {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
               handleChange("environmentId", id);
-              setFocusSlot("dom_slot");
+              requestFocus("dom_slot");
             })}
           </div>
         );
@@ -857,7 +923,7 @@ export default function CreateMemorialClient() {
               {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
                 const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
                 handleChange("houseId", nextVariant);
-                setFocusSlot("dom_slot");
+                requestFocus("dom_slot");
               }, "house")}
             </div>
             {houseTextureOptions.length > 0 ? (
@@ -869,7 +935,7 @@ export default function CreateMemorialClient() {
                   form.houseId,
                   (id) => {
                     handleChange("houseId", id);
-                    setFocusSlot("dom_slot");
+                    requestFocus("dom_slot");
                   },
                   "house-texture"
                 )}
@@ -883,7 +949,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Крыша домика</h2>
             {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
               handleChange("roofId", id);
-              setFocusSlot(houseSlots.roof ?? null);
+              requestFocus(houseSlots.roof ?? null);
             })}
           </div>
         );
@@ -893,7 +959,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
             {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
               handleChange("wallId", id);
-              setFocusSlot(houseSlots.wall ?? null);
+              requestFocus(houseSlots.wall ?? null);
             })}
           </div>
         );
@@ -903,7 +969,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Украшение над входом</h2>
             {renderOptionGrid("sign", signOptions, form.signId, (id) => {
               handleChange("signId", id);
-              setFocusSlot(houseSlots.sign ?? null);
+              requestFocus(houseSlots.sign ?? null);
             })}
           </div>
         );
@@ -913,7 +979,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
             {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
               handleChange("frameLeftId", id);
-              setFocusSlot(houseSlots.frameLeft ?? null);
+              requestFocus(houseSlots.frameLeft ?? null);
             })}
           </div>
         );
@@ -923,7 +989,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Рамка справа</h2>
             {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
               handleChange("frameRightId", id);
-              setFocusSlot(houseSlots.frameRight ?? null);
+              requestFocus(houseSlots.frameRight ?? null);
             })}
           </div>
         );
@@ -933,7 +999,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
             {renderOptionGrid("mat", matOptions, form.matId, (id) => {
               handleChange("matId", id);
-              setFocusSlot(houseSlots.mat ?? null);
+              requestFocus(houseSlots.mat ?? null);
             })}
           </div>
         );
@@ -943,7 +1009,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Миска с едой</h2>
             {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
               handleChange("bowlFoodId", id);
-              setFocusSlot(houseSlots.bowlFood ?? null);
+              requestFocus(houseSlots.bowlFood ?? null);
             })}
           </div>
         );
@@ -953,7 +1019,7 @@ export default function CreateMemorialClient() {
             <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
             {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
               handleChange("bowlWaterId", id);
-              setFocusSlot(houseSlots.bowlWater ?? null);
+              requestFocus(houseSlots.bowlWater ?? null);
             })}
           </div>
         );
@@ -1282,8 +1348,10 @@ export default function CreateMemorialClient() {
                     parts={partList}
                     colors={colorOverrides}
                     focusSlot={focusSlot}
+                    focusRequestId={focusRequestId}
                     softEdges
                     onHouseSlotsDetected={setDetectedHouseSlots}
+                    onDetailClick={handlePreviewDetailClick}
                     style={
                       isMobile
                         ? { height: "34vh", minHeight: "240px" }
@@ -1303,21 +1371,52 @@ export default function CreateMemorialClient() {
                     <div className="flex w-12 flex-col items-center gap-2">
                       {step3Tabs.map((tab) => {
                         const isActive = activeStep3Tab === tab.id;
+                        const isTooltipVisible = tooltipTabId === tab.id;
+                        const description = STEP3_TAB_DESCRIPTIONS[tab.id];
                         return (
-                          <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => handleStep3TabSelect(tab)}
-                            title={tab.label}
-                            className={`flex h-11 w-11 items-center justify-center rounded-xl border text-sm transition ${
-                              isActive
-                                ? "border-sky-400 bg-sky-50 text-sky-700"
-                                : "border-slate-200 bg-white text-slate-500 hover:text-slate-800"
-                            }`}
-                          >
-                            <Step3TabIcon id={tab.id} />
-                            <span className="sr-only">{tab.label}</span>
-                          </button>
+                          <div key={tab.id} className="relative">
+                            <button
+                              type="button"
+                              onClick={() => handleStep3TabSelect(tab)}
+                              onMouseEnter={() => {
+                                clearStep3TooltipTimer();
+                                setTooltipTabId(null);
+                                tooltipTimerRef.current = window.setTimeout(() => {
+                                  setTooltipTabId(tab.id);
+                                }, 500);
+                              }}
+                              onMouseLeave={() => {
+                                clearStep3TooltipTimer();
+                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
+                              }}
+                              onFocus={() => {
+                                clearStep3TooltipTimer();
+                                setTooltipTabId(null);
+                                tooltipTimerRef.current = window.setTimeout(() => {
+                                  setTooltipTabId(tab.id);
+                                }, 500);
+                              }}
+                              onBlur={() => {
+                                clearStep3TooltipTimer();
+                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
+                              }}
+                              aria-label={tab.label}
+                              className={`flex h-11 w-11 items-center justify-center rounded-xl border text-sm transition ${
+                                isActive
+                                  ? "border-sky-400 bg-sky-50 text-sky-700"
+                                  : "border-slate-200 bg-white text-slate-500 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+                              }`}
+                            >
+                              <Step3TabIcon id={tab.id} />
+                              <span className="sr-only">{tab.label}</span>
+                            </button>
+                            {isTooltipVisible ? (
+                              <div className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 w-48 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
+                                <div className="font-semibold text-slate-900">{tab.label}</div>
+                                <div className="mt-1 text-slate-500">{description}</div>
+                              </div>
+                            ) : null}
+                          </div>
                         );
                       })}
                     </div>
