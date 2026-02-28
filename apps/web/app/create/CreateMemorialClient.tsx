@@ -883,7 +883,9 @@ export default function CreateMemorialClient() {
             aria-label={option.name}
             title={option.name}
             className={`flex h-[84px] w-[84px] items-center justify-center rounded-lg border p-1 transition ${
-              isSelected ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-transparent"
+              isSelected
+                ? "border-sky-400 bg-sky-50"
+                : "border-slate-200 bg-transparent hover:border-sky-300 hover:bg-sky-50"
             }`}
           >
             <div className="flex h-[74px] w-[74px] items-center justify-center overflow-hidden rounded-md bg-slate-100">
@@ -1345,11 +1347,13 @@ export default function CreateMemorialClient() {
                   <MemorialPreview
                     terrainUrl={environmentUrl}
                     houseUrl={houseUrl}
+                    houseId={housePreviewId}
                     parts={partList}
                     colors={colorOverrides}
                     focusSlot={focusSlot}
                     focusRequestId={focusRequestId}
                     softEdges
+                    lockHorizontalOrbit
                     onHouseSlotsDetected={setDetectedHouseSlots}
                     onDetailClick={handlePreviewDetailClick}
                     style={
@@ -1556,6 +1560,7 @@ export default function CreateMemorialClient() {
                 <MemorialPreview
                   terrainUrl={environmentUrl}
                   houseUrl={houseUrl}
+                  houseId={form.houseId}
                   parts={partList}
                   colors={colorOverrides}
                   softEdges

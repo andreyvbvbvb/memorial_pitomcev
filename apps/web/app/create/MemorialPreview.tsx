@@ -24,10 +24,12 @@ import {
   resolveGiftTargetWidth
 } from "../../lib/gifts";
 import type { HouseSlots } from "../../lib/memorial-config";
+import { splitHouseVariantId } from "../../lib/house-variants";
 
 type Props = {
   terrainUrl?: string | null;
   houseUrl?: string | null;
+  houseId?: string | null;
   parts?: { slot: string; url: string }[];
   gifts?: {
     slot: string;
@@ -44,6 +46,7 @@ type Props = {
   focusSlot?: string | null;
   focusRequestId?: number;
   onDetailClick?: (detail: DetailClick) => void;
+  lockHorizontalOrbit?: boolean;
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
@@ -82,6 +85,8 @@ const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
 const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
+const HOUSE_FOCUS_OFFSET = new THREE.Vector3(3.4, 2.0, 2.4);
+const LOCKED_POLAR_ANGLE = 1.1;
 const isSelectableSlotName = (name: string) =>
   name.endsWith("_slot") && name !== "dom_slot" && !isGiftSlotName(name);
 
@@ -277,12 +282,16 @@ function SceneCameraRig({
       ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2])
       : DEFAULT_TARGET.clone();
     let offset = DEFAULT_FOCUS_OFFSET.clone();
+    const isDomFocus = focusSlot === "dom_slot";
+    if (focus && isDomFocus) {
+      offset = HOUSE_FOCUS_OFFSET.clone();
+    }
     const isSideFrame =
       focusSlot === "frame_right_slot" || focusSlot === "frame_left_slot";
     if (focus && isSideFrame) {
       const sideSign = focus[0] >= 0 ? 1 : -1;
       offset = new THREE.Vector3(2.8 * sideSign, 1.4, 0.4);
-    } else if (focus && direction) {
+    } else if (focus && direction && !isDomFocus) {
       const dir = new THREE.Vector3(direction[0], direction[1], direction[2]);
       if (dir.lengthSq() > 0.0001) {
         offset = dir.normalize().multiplyScalar(2.6);
@@ -528,18 +537,21 @@ function PartAttachment({
   house,
   slot,
   url,
-  colors
+  colors,
+  houseBaseId
 }: {
   house: THREE.Object3D;
   slot: string;
   url: string;
   colors?: Record<string, string>;
+  houseBaseId?: string;
 }) {
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
     const cloned = scene.clone(true);
     if (slot === "mat_slot") {
-      applyPartFitScale(cloned, 1.25, 1.875);
+      const scale = houseBaseId === "budka_2" ? 1.15 : 1;
+      applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
       applyPartScale(cloned, 0.575, "x");
@@ -584,7 +596,9 @@ function TerrainWithHouse({
   onFocusPosition,
   onFocusDirection,
   onHouseSlotsDetected,
-  onDetailClick
+  onDetailClick,
+  allowFocus,
+  houseBaseId
 }: {
   terrainUrl: string;
   houseUrl: string;
@@ -611,6 +625,8 @@ function TerrainWithHouse({
   onFocusDirection?: (direction: [number, number, number] | null) => void;
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
   onDetailClick?: (detail: DetailClick) => void;
+  allowFocus?: boolean;
+  houseBaseId?: string;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -636,12 +652,15 @@ function TerrainWithHouse({
   }, [terrain, house, colors]);
 
   useEffect(() => {
-    if (!onFocusPosition && !onFocusDirection) {
-      return;
-    }
     if (!focusSlot) {
       onFocusPosition?.(null);
       onFocusDirection?.(null);
+      return;
+    }
+    if (!onFocusPosition && !onFocusDirection) {
+      return;
+    }
+    if (typeof focusRequestId === "number" && allowFocus === false) {
       return;
     }
     const anchor = house.getObjectByName(focusSlot) ?? terrain.getObjectByName(focusSlot);
@@ -761,7 +780,14 @@ function TerrainWithHouse({
         ))}
       </Suspense>
       {parts?.map((part) => (
-        <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={colors} />
+        <PartAttachment
+          key={`${part.slot}-${part.url}`}
+          house={house}
+          slot={part.slot}
+          url={part.url}
+          colors={colors}
+          houseBaseId={houseBaseId}
+        />
       ))}
     </Group>
   );
@@ -793,6 +819,7 @@ function SceneReady({ onReady }: { onReady: () => void }) {
 export default function MemorialPreview({
   terrainUrl,
   houseUrl,
+  houseId,
   parts,
   gifts,
   giftSlots,
@@ -802,6 +829,7 @@ export default function MemorialPreview({
   focusSlot,
   focusRequestId,
   onDetailClick,
+  lockHorizontalOrbit = false,
   colors,
   backgroundColor = "#eef6ff",
   softEdges = false,
@@ -820,6 +848,31 @@ export default function MemorialPreview({
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
+  const lastFocusRequestRef = useRef<number | null>(null);
+
+  const houseBaseId = useMemo(() => {
+    const parsed = splitHouseVariantId(houseId);
+    return parsed.baseId || houseId || "";
+  }, [houseId]);
+
+  const allowFocus = useMemo(() => {
+    if (typeof focusRequestId !== "number") {
+      return true;
+    }
+    if (focusPosition === null) {
+      return true;
+    }
+    return focusRequestId !== lastFocusRequestRef.current;
+  }, [focusPosition, focusRequestId]);
+
+  useEffect(() => {
+    if (typeof focusRequestId !== "number") {
+      return;
+    }
+    if (focusRequestId !== lastFocusRequestRef.current) {
+      lastFocusRequestRef.current = focusRequestId;
+    }
+  }, [focusRequestId]);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
@@ -938,6 +991,8 @@ export default function MemorialPreview({
               onFocusDirection={setFocusDirection}
               onHouseSlotsDetected={onHouseSlotsDetected}
               onDetailClick={onDetailClick}
+              allowFocus={allowFocus}
+              houseBaseId={houseBaseId}
             />
           ) : null}
           {!terrainUrl && houseUrl ? (
@@ -971,8 +1026,8 @@ export default function MemorialPreview({
           enableRotate={controlsEnabled}
           enableZoom={controlsEnabled}
           enablePan={false}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI / 2}
+          minPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : 0}
+          maxPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : Math.PI / 2}
           minDistance={baseDistance / 2}
           maxDistance={baseDistance * 2.6}
         />

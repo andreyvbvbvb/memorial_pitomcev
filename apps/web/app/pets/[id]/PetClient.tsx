@@ -858,6 +858,7 @@ export default function PetClient({ id }: Props) {
               className="h-[660px]"
               terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
               houseUrl={resolveHouseModel(pet.memorial?.houseId)}
+              houseId={pet.memorial?.houseId ?? null}
               parts={partList}
               gifts={previewGifts}
               giftSlots={filteredAvailableSlots}
