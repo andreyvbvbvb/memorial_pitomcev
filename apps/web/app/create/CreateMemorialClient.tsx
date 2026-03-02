@@ -398,6 +398,7 @@ export default function CreateMemorialClient() {
   const houseUrl = resolveHouseModel(housePreviewId);
   const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
   const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? configuredHouseSlots ?? {};
+  const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
   const step3Tabs = useMemo<Step3Tab[]>(() => {
     const tabs: Step3Tab[] = [
       { id: "environment", label: "Поверхность", focusSlot: "dom_slot" },
@@ -437,7 +438,6 @@ export default function CreateMemorialClient() {
   const activeCameraAdjustment = activeFocusSlot
     ? cameraOffsetAdjustments[activeFocusSlot] ?? { x: 0, y: 0, z: 0 }
     : { x: 0, y: 0, z: 0 };
-  const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
   const signUrl = resolveSignModel(signPreviewId);
