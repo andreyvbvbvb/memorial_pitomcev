@@ -1634,8 +1634,8 @@ export default function CreateMemorialClient() {
                                   </div>
                                   <input
                                     type="range"
-                                    min={-4}
-                                    max={4}
+                                    min={-40}
+                                    max={40}
                                     step={0.1}
                                     value={activeCameraAdjustment.x}
                                     onChange={(event) =>
@@ -1650,8 +1650,8 @@ export default function CreateMemorialClient() {
                                   </div>
                                   <input
                                     type="range"
-                                    min={-3}
-                                    max={3}
+                                    min={-30}
+                                    max={30}
                                     step={0.1}
                                     value={activeCameraAdjustment.y}
                                     onChange={(event) =>
@@ -1666,8 +1666,8 @@ export default function CreateMemorialClient() {
                                   </div>
                                   <input
                                     type="range"
-                                    min={-4}
-                                    max={4}
+                                    min={-40}
+                                    max={40}
                                     step={0.1}
                                     value={activeCameraAdjustment.z}
                                     onChange={(event) =>
