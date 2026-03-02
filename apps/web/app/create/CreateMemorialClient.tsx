@@ -141,18 +141,20 @@ const SEASON_LABELS: Record<SeasonKey, string> = {
   winter: "Зима"
 };
 
+const STEP3_ICON_CLASS = "h-8 w-8";
+
 const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
   switch (id) {
     case "environment":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <circle cx="7" cy="7" r="2" />
           <path d="M3 19l6-7 4 5 3-4 5 6" />
         </svg>
       );
     case "house":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 11l9-7 9 7" />
           <path d="M5 10v9h14v-9" />
           <path d="M9 19v-6h6v6" />
@@ -160,14 +162,14 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     case "roof":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 14l8-7 8 7" />
           <path d="M6 14h12" />
         </svg>
       );
     case "wall":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="6" width="16" height="12" rx="1.5" />
           <path d="M4 11h16" />
           <path d="M10 6v12" />
@@ -175,35 +177,35 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     case "sign":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 4v16" />
           <rect x="8" y="6" width="10" height="6" rx="1" />
         </svg>
       );
     case "frameLeft":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <rect x="5" y="5" width="14" height="14" rx="2" />
           <path d="M9 5v14" />
         </svg>
       );
     case "frameRight":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <rect x="5" y="5" width="14" height="14" rx="2" />
           <path d="M15 5v14" />
         </svg>
       );
     case "mat":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <rect x="5" y="6" width="14" height="12" rx="2" />
           <path d="M9 6v12" />
         </svg>
       );
     case "bowlFood":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 11h16" />
           <path d="M6 11l2 6h8l2-6" />
           <circle cx="12" cy="7.5" r="1.5" />
@@ -211,7 +213,7 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     case "bowlWater":
       return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 4l6 6" />
           <path d="M12 4l-6 6" />
           <path d="M6 10c0 4 3 7 6 7s6-3 6-7" />
@@ -322,14 +324,11 @@ export default function CreateMemorialClient() {
   const tooltipTimerRef = useRef<number | null>(null);
   const [assetsReady, setAssetsReady] = useState(false);
   const assetsLoadStartedRef = useRef(false);
-  const [cameraOffsetAdjustments, setCameraOffsetAdjustments] = useState<
-    Record<string, CameraOffset>
-  >({
+  const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
     sign_slot: { x: 0, y: 0, z: 2.85 }
   });
-  const [cameraTunerOpen, setCameraTunerOpen] = useState(false);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -434,11 +433,10 @@ export default function CreateMemorialClient() {
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
     return mapping;
   }, [houseSlots]);
-  const activeStep3TabEntry = useMemo(
-    () => step3Tabs.find((tab) => tab.id === activeStep3Tab) ?? null,
+  const activeFocusSlot = useMemo(
+    () => step3Tabs.find((tab) => tab.id === activeStep3Tab)?.focusSlot ?? null,
     [activeStep3Tab, step3Tabs]
   );
-  const activeFocusSlot = activeStep3TabEntry?.focusSlot ?? null;
   const activeCameraKey = useMemo(() => {
     if (!activeFocusSlot) {
       return null;
@@ -451,9 +449,6 @@ export default function CreateMemorialClient() {
     }
     return activeFocusSlot;
   }, [activeFocusSlot, activeStep3Tab]);
-  const activeCameraAdjustment = activeCameraKey
-    ? cameraOffsetAdjustments[activeCameraKey] ?? { x: 0, y: 0, z: 0 }
-    : { x: 0, y: 0, z: 0 };
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
   const signUrl = resolveSignModel(signPreviewId);
@@ -571,36 +566,6 @@ export default function CreateMemorialClient() {
     }
   };
 
-  const updateCameraAdjustment = (axis: keyof CameraOffset, value: number) => {
-    if (!activeCameraKey) {
-      return;
-    }
-    setCameraOffsetAdjustments((prev) => {
-      const current = prev[activeCameraKey] ?? { x: 0, y: 0, z: 0 };
-      return {
-        ...prev,
-        [activeCameraKey]: { ...current, [axis]: value }
-      };
-    });
-  };
-
-  const handleOrbitCapture = (payload: { key: string; adjustment: CameraOffset }) => {
-    setCameraOffsetAdjustments((prev) => ({
-      ...prev,
-      [payload.key]: payload.adjustment
-    }));
-  };
-
-  const resetCameraAdjustment = () => {
-    if (!activeCameraKey) {
-      return;
-    }
-    setCameraOffsetAdjustments((prev) => {
-      const next = { ...prev };
-      delete next[activeCameraKey];
-      return next;
-    });
-  };
 
   const topUpOptions = [
     { coins: 100, rub: 100, usd: 1 },
@@ -1021,7 +986,7 @@ export default function CreateMemorialClient() {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 gap-3">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -1040,18 +1005,18 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex h-[84px] w-[84px] items-center justify-center rounded-lg border p-1 transition ${
+            className={`flex w-full aspect-square items-center justify-center rounded-xl border p-3 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
-                : "border-slate-200 bg-transparent hover:border-sky-300 hover:bg-sky-50"
+                : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
             }`}
           >
-            <div className="flex h-[74px] w-[74px] items-center justify-center overflow-hidden rounded-md bg-slate-100">
+            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={option.name}
-                  className="h-[74px] w-[74px] object-contain"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <div className="text-xs text-slate-500">Нет</div>
@@ -1068,7 +1033,6 @@ export default function CreateMemorialClient() {
       case "environment":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Поверхность</h2>
             {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
               handleChange("environmentId", id);
               requestFocus("dom_slot");
@@ -1117,7 +1081,6 @@ export default function CreateMemorialClient() {
         return (
           <div className="grid gap-4">
             <div className="grid gap-3">
-              <h2 className="text-base font-semibold text-slate-900">Домик</h2>
               {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
                 const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
                 handleChange("houseId", nextVariant);
@@ -1144,7 +1107,6 @@ export default function CreateMemorialClient() {
       case "roof":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Крыша домика</h2>
             {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
               handleChange("roofId", id);
               requestFocus(houseSlots.roof ?? null);
@@ -1154,7 +1116,6 @@ export default function CreateMemorialClient() {
       case "wall":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Стены домика</h2>
             {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
               handleChange("wallId", id);
               requestFocus(houseSlots.wall ?? null);
@@ -1164,7 +1125,6 @@ export default function CreateMemorialClient() {
       case "sign":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Украшение над входом</h2>
             {renderOptionGrid("sign", signOptions, form.signId, (id) => {
               handleChange("signId", id);
               requestFocus(houseSlots.sign ?? null);
@@ -1174,7 +1134,6 @@ export default function CreateMemorialClient() {
       case "frameLeft":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Рамка слева</h2>
             {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
               handleChange("frameLeftId", id);
               requestFocus(houseSlots.frameLeft ?? null);
@@ -1184,7 +1143,6 @@ export default function CreateMemorialClient() {
       case "frameRight":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Рамка справа</h2>
             {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
               handleChange("frameRightId", id);
               requestFocus(houseSlots.frameRight ?? null);
@@ -1194,7 +1152,6 @@ export default function CreateMemorialClient() {
       case "mat":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Коврик</h2>
             {renderOptionGrid("mat", matOptions, form.matId, (id) => {
               handleChange("matId", id);
               requestFocus(houseSlots.mat ?? null);
@@ -1204,7 +1161,6 @@ export default function CreateMemorialClient() {
       case "bowlFood":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Миска с едой</h2>
             {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
               handleChange("bowlFoodId", id);
               requestFocus(houseSlots.bowlFood ?? null);
@@ -1214,7 +1170,6 @@ export default function CreateMemorialClient() {
       case "bowlWater":
         return (
           <div className="grid gap-3">
-            <h2 className="text-base font-semibold text-slate-900">Миска с водой</h2>
             {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
               handleChange("bowlWaterId", id);
               requestFocus(houseSlots.bowlWater ?? null);
@@ -1559,7 +1514,6 @@ export default function CreateMemorialClient() {
                     softEdges
                     cameraOffsetAdjustments={cameraOffsetAdjustments}
                     cameraAdjustmentKey={activeCameraKey}
-                    onOrbitEndCapture={cameraTunerOpen ? handleOrbitCapture : undefined}
                     onHouseSlotsDetected={setDetectedHouseSlots}
                     onDetailClick={handlePreviewDetailClick}
                     style={
@@ -1571,14 +1525,13 @@ export default function CreateMemorialClient() {
                 </div>
 
                 <div
-                  className={`flex flex-col gap-4 overflow-y-auto ${
+                  className={`flex gap-4 overflow-visible ${
                     isMobile
                       ? "min-h-[38vh] max-h-[38vh] px-4 pb-6"
                       : "min-h-[60vh] max-h-[60vh]"
                   }`}
                 >
-                  <div className="flex gap-4">
-                    <div className="flex w-12 flex-col items-center gap-2">
+                  <div className="relative z-20 flex w-[72px] flex-col items-center gap-3 self-start overflow-visible">
                       {step3Tabs.map((tab) => {
                         const isActive = activeStep3Tab === tab.id;
                         const isTooltipVisible = tooltipTabId === tab.id;
@@ -1611,17 +1564,17 @@ export default function CreateMemorialClient() {
                                 setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                               }}
                               aria-label={tab.label}
-                              className={`flex h-11 w-11 items-center justify-center rounded-xl border text-sm transition ${
+                              className={`flex h-[72px] w-[72px] items-center justify-center rounded-2xl border text-sm transition ${
                                 isActive
                                   ? "border-sky-400 bg-sky-50 text-sky-700"
-                                  : "border-slate-200 bg-white text-slate-500 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+                                  : "border-slate-200 bg-white text-slate-500 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
                               }`}
                             >
                               <Step3TabIcon id={tab.id} />
                               <span className="sr-only">{tab.label}</span>
                             </button>
                             {isTooltipVisible ? (
-                              <div className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 w-48 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
+                              <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
                                 <div className="font-semibold text-slate-900">{tab.label}</div>
                                 <div className="mt-1 text-slate-500">{description}</div>
                               </div>
@@ -1629,96 +1582,14 @@ export default function CreateMemorialClient() {
                           </div>
                         );
                       })}
-                    </div>
+                  </div>
 
-                    <div className="min-w-0 flex-1">
-                      {renderStep3TabContent()}
-                      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
-                        <button
-                          type="button"
-                          onClick={() => setCameraTunerOpen((prev) => !prev)}
-                          className="flex w-full items-center justify-between text-left text-xs font-semibold text-slate-700"
-                        >
-                          Настройка камеры
-                          <span className="text-base leading-none text-slate-400">
-                            {cameraTunerOpen ? "−" : "+"}
-                          </span>
-                        </button>
-                        {cameraTunerOpen ? (
-                          <div className="mt-3 grid gap-3 text-xs text-slate-600">
-                            <div className="text-[11px] text-slate-500">
-                              Фокус: {activeStep3TabEntry?.label ?? "—"}
-                            </div>
-                            <div className="text-[11px] text-slate-500">
-                              После вращения превью значения обновляются автоматически.
-                            </div>
-                            {activeFocusSlot ? (
-                              <>
-                                <label className="grid gap-1 text-[11px]">
-                                  <div className="flex items-center justify-between">
-                                    <span>Смещение X</span>
-                                    <span>{activeCameraAdjustment.x.toFixed(2)}</span>
-                                  </div>
-                                  <input
-                                    type="range"
-                                    min={-40}
-                                    max={40}
-                                    step={0.1}
-                                    value={activeCameraAdjustment.x}
-                                    onChange={(event) =>
-                                      updateCameraAdjustment("x", Number(event.target.value))
-                                    }
-                                  />
-                                </label>
-                                <label className="grid gap-1 text-[11px]">
-                                  <div className="flex items-center justify-between">
-                                    <span>Смещение Y</span>
-                                    <span>{activeCameraAdjustment.y.toFixed(2)}</span>
-                                  </div>
-                                  <input
-                                    type="range"
-                                    min={-30}
-                                    max={30}
-                                    step={0.1}
-                                    value={activeCameraAdjustment.y}
-                                    onChange={(event) =>
-                                      updateCameraAdjustment("y", Number(event.target.value))
-                                    }
-                                  />
-                                </label>
-                                <label className="grid gap-1 text-[11px]">
-                                  <div className="flex items-center justify-between">
-                                    <span>Смещение Z</span>
-                                    <span>{activeCameraAdjustment.z.toFixed(2)}</span>
-                                  </div>
-                                  <input
-                                    type="range"
-                                    min={-40}
-                                    max={40}
-                                    step={0.1}
-                                    value={activeCameraAdjustment.z}
-                                    onChange={(event) =>
-                                      updateCameraAdjustment("z", Number(event.target.value))
-                                    }
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={resetCameraAdjustment}
-                                  className="w-fit rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800"
-                                >
-                                  Сбросить для этой детали
-                                </button>
-                              </>
-                            ) : (
-                              <div className="text-[11px] text-slate-500">
-                                Выбери вкладку детали, чтобы настроить камеру.
-                              </div>
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
+                  <div
+                    className={`relative z-10 min-w-0 flex-1 overflow-y-auto pr-2 ${
+                      isMobile ? "max-h-[38vh]" : "max-h-[60vh]"
+                    }`}
+                  >
+                    {renderStep3TabContent()}
                   </div>
                 </div>
               </div>

@@ -621,6 +621,7 @@ function TerrainWithHouse({
   onHouseSlotsDetected,
   onDetailClick,
   orbitMovedRef,
+  orbitLastChangeRef,
   allowFocus,
   houseBaseId
 }: {
@@ -650,6 +651,7 @@ function TerrainWithHouse({
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
   onDetailClick?: (detail: DetailClick) => void;
   orbitMovedRef?: React.MutableRefObject<boolean>;
+  orbitLastChangeRef?: React.MutableRefObject<number | null>;
   allowFocus?: boolean;
   houseBaseId?: string;
 }) {
@@ -658,6 +660,54 @@ function TerrainWithHouse({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => houseScene.clone(true), [houseScene]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
+  const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
+  const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
+
+  const clearHoverHighlight = () => {
+    const mesh = hoveredMeshRef.current;
+    const material = hoveredMaterialRef.current;
+    if (mesh && material) {
+      mesh.material = material;
+    }
+    hoveredMeshRef.current = null;
+    hoveredMaterialRef.current = null;
+  };
+
+  const applyHoverHighlight = (object: THREE.Object3D | null) => {
+    if (!object || !(object as THREE.Mesh).isMesh) {
+      clearHoverHighlight();
+      return;
+    }
+    const mesh = object as THREE.Mesh;
+    if (mesh === hoveredMeshRef.current) {
+      return;
+    }
+    clearHoverHighlight();
+    const original = mesh.material;
+    hoveredMeshRef.current = mesh;
+    hoveredMaterialRef.current = original;
+    const highlightColor = new THREE.Color("#7dd3fc");
+    const applyHighlight = (material: THREE.Material) => {
+      const cloned = material.clone() as THREE.Material & {
+        emissive?: THREE.Color;
+        emissiveIntensity?: number;
+        color?: THREE.Color;
+      };
+      if (cloned.emissive) {
+        cloned.emissive = highlightColor.clone();
+        cloned.emissiveIntensity = 0.6;
+      }
+      if (cloned.color) {
+        cloned.color = cloned.color.clone().lerp(highlightColor, 0.2);
+      }
+      return cloned;
+    };
+    if (Array.isArray(original)) {
+      mesh.material = original.map((mat) => applyHighlight(mat));
+    } else {
+      mesh.material = applyHighlight(original);
+    }
+  };
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
@@ -676,6 +726,16 @@ function TerrainWithHouse({
     applyMaterialColors(terrain, colors);
     applyMaterialColors(house, colors);
   }, [terrain, house, colors]);
+
+  useEffect(() => {
+    clearHoverHighlight();
+  }, [terrain, house]);
+
+  useEffect(() => {
+    return () => {
+      clearHoverHighlight();
+    };
+  }, []);
 
   useEffect(() => {
     if (!focusSlot) {
@@ -795,6 +855,9 @@ function TerrainWithHouse({
   };
 
   const handlePointerDown = (event: any) => {
+    if (orbitMovedRef) {
+      orbitMovedRef.current = false;
+    }
     pointerStateRef.current = {
       x: event.clientX,
       y: event.clientY,
@@ -804,21 +867,31 @@ function TerrainWithHouse({
   };
 
   const handlePointerMove = (event: any) => {
+    if (orbitMovedRef?.current) {
+      clearHoverHighlight();
+      return;
+    }
     const state = pointerStateRef.current;
-    if (!state) {
+    if (state && state.pointerId !== null && event.pointerId !== state.pointerId) {
       return;
     }
-    if (state.pointerId !== null && event.pointerId !== state.pointerId) {
-      return;
+    if (state) {
+      const dx = event.clientX - state.x;
+      const dy = event.clientY - state.y;
+      if (Math.hypot(dx, dy) >= CLICK_DRAG_THRESHOLD) {
+        state.moved = true;
+      }
     }
-    const dx = event.clientX - state.x;
-    const dy = event.clientY - state.y;
-    if (Math.hypot(dx, dy) >= CLICK_DRAG_THRESHOLD) {
-      state.moved = true;
-    }
+    const hoverTarget = event?.intersections?.[0]?.object ?? null;
+    applyHoverHighlight(hoverTarget);
   };
 
   const handlePointerUp = (event: any) => {
+    const now = Date.now();
+    if (orbitLastChangeRef?.current && now - orbitLastChangeRef.current < 250) {
+      pointerStateRef.current = null;
+      return;
+    }
     if (orbitMovedRef?.current) {
       orbitMovedRef.current = false;
       pointerStateRef.current = null;
@@ -826,10 +899,17 @@ function TerrainWithHouse({
     }
     const state = pointerStateRef.current;
     pointerStateRef.current = null;
+    if (!state) {
+      return;
+    }
     if (state?.moved) {
       return;
     }
     handleDetailClick(event);
+  };
+
+  const handlePointerOut = () => {
+    clearHoverHighlight();
   };
 
   return (
@@ -837,6 +917,7 @@ function TerrainWithHouse({
       onPointerDown={onDetailClick ? handlePointerDown : undefined}
       onPointerMove={onDetailClick ? handlePointerMove : undefined}
       onPointerUp={onDetailClick ? handlePointerUp : undefined}
+      onPointerOut={onDetailClick ? handlePointerOut : undefined}
     >
       <Primitive object={terrain} />
       <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
@@ -938,6 +1019,7 @@ export default function MemorialPreview({
   const lastFocusRequestRef = useRef<number | null>(null);
   const orbitingRef = useRef(false);
   const orbitMovedRef = useRef(false);
+  const orbitLastChangeRef = useRef<number | null>(null);
   const orbitEndTimeoutRef = useRef<number | null>(null);
 
   const offsetAdjustment = useMemo(() => {
@@ -1129,6 +1211,7 @@ export default function MemorialPreview({
               onHouseSlotsDetected={onHouseSlotsDetected}
               onDetailClick={onDetailClick}
               orbitMovedRef={orbitMovedRef}
+              orbitLastChangeRef={orbitLastChangeRef}
               allowFocus={allowFocus}
               houseBaseId={houseBaseId}
             />
@@ -1174,6 +1257,7 @@ export default function MemorialPreview({
           onChange={() => {
             if (orbitingRef.current) {
               orbitMovedRef.current = true;
+              orbitLastChangeRef.current = Date.now();
             }
           }}
           onEnd={() => {
