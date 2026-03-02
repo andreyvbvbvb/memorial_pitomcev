@@ -128,6 +128,12 @@ type Step3Tab = {
   focusSlot?: string | null;
 };
 
+type CameraOffset = {
+  x: number;
+  y: number;
+  z: number;
+};
+
 const SEASON_LABELS: Record<SeasonKey, string> = {
   spring: "Весна",
   summer: "Лето",
@@ -270,7 +276,7 @@ const initialState: FormState = {
   markerStyle: markerStyles[0]?.id ?? "dog",
   environmentId: environmentOptions[0]?.id ?? "summer",
   environmentSeason: getSeasonForDate(),
-  environmentSeasonAuto: true,
+  environmentSeasonAuto: false,
   houseId: houseOptions[0]?.id ?? "budka_1",
   roofId: roofOptions[0]?.id ?? "roof_1",
   wallId: wallOptions[0]?.id ?? "wall_1",
@@ -316,6 +322,10 @@ export default function CreateMemorialClient() {
   const tooltipTimerRef = useRef<number | null>(null);
   const [assetsReady, setAssetsReady] = useState(false);
   const assetsLoadStartedRef = useRef(false);
+  const [cameraOffsetAdjustments, setCameraOffsetAdjustments] = useState<
+    Record<string, CameraOffset>
+  >({});
+  const [cameraTunerOpen, setCameraTunerOpen] = useState(false);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -419,6 +429,14 @@ export default function CreateMemorialClient() {
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
     return mapping;
   }, [houseSlots]);
+  const activeStep3TabEntry = useMemo(
+    () => step3Tabs.find((tab) => tab.id === activeStep3Tab) ?? null,
+    [activeStep3Tab, step3Tabs]
+  );
+  const activeFocusSlot = activeStep3TabEntry?.focusSlot ?? null;
+  const activeCameraAdjustment = activeFocusSlot
+    ? cameraOffsetAdjustments[activeFocusSlot] ?? { x: 0, y: 0, z: 0 }
+    : { x: 0, y: 0, z: 0 };
   const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
@@ -535,6 +553,30 @@ export default function CreateMemorialClient() {
       setActiveStep3Tab("house");
       requestFocus("dom_slot");
     }
+  };
+
+  const updateCameraAdjustment = (axis: keyof CameraOffset, value: number) => {
+    if (!activeFocusSlot) {
+      return;
+    }
+    setCameraOffsetAdjustments((prev) => {
+      const current = prev[activeFocusSlot] ?? { x: 0, y: 0, z: 0 };
+      return {
+        ...prev,
+        [activeFocusSlot]: { ...current, [axis]: value }
+      };
+    });
+  };
+
+  const resetCameraAdjustment = () => {
+    if (!activeFocusSlot) {
+      return;
+    }
+    setCameraOffsetAdjustments((prev) => {
+      const next = { ...prev };
+      delete next[activeFocusSlot];
+      return next;
+    });
   };
 
   const topUpOptions = [
@@ -1030,7 +1072,7 @@ export default function CreateMemorialClient() {
                     );
                   })}
                 </div>
-                <label className="flex items-center gap-2 text-xs text-slate-600">
+                <label className="group relative flex items-center gap-2 text-xs text-slate-600">
                   <input
                     type="checkbox"
                     className="h-4 w-4"
@@ -1040,12 +1082,10 @@ export default function CreateMemorialClient() {
                     }
                   />
                   Автосмена сезонов
+                  <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                    Если включить, поверхность будет меняться по текущей дате.
+                  </span>
                 </label>
-                {form.environmentSeasonAuto ? (
-                  <p className="text-[11px] text-slate-500">
-                    При включении автосмены поверхность будет подбираться по текущей дате.
-                  </p>
-                ) : null}
               </div>
             ) : null}
           </div>
@@ -1495,6 +1535,7 @@ export default function CreateMemorialClient() {
                     focusRequestId={focusRequestId}
                     softEdges
                     lockHorizontalOrbit
+                    cameraOffsetAdjustments={cameraOffsetAdjustments}
                     onHouseSlotsDetected={setDetectedHouseSlots}
                     onDetailClick={handlePreviewDetailClick}
                     style={
@@ -1566,7 +1607,91 @@ export default function CreateMemorialClient() {
                       })}
                     </div>
 
-                    <div className="min-w-0 flex-1">{renderStep3TabContent()}</div>
+                    <div className="min-w-0 flex-1">
+                      {renderStep3TabContent()}
+                      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                        <button
+                          type="button"
+                          onClick={() => setCameraTunerOpen((prev) => !prev)}
+                          className="flex w-full items-center justify-between text-left text-xs font-semibold text-slate-700"
+                        >
+                          Настройка камеры
+                          <span className="text-base leading-none text-slate-400">
+                            {cameraTunerOpen ? "−" : "+"}
+                          </span>
+                        </button>
+                        {cameraTunerOpen ? (
+                          <div className="mt-3 grid gap-3 text-xs text-slate-600">
+                            <div className="text-[11px] text-slate-500">
+                              Фокус: {activeStep3TabEntry?.label ?? "—"}
+                            </div>
+                            {activeFocusSlot ? (
+                              <>
+                                <label className="grid gap-1 text-[11px]">
+                                  <div className="flex items-center justify-between">
+                                    <span>Смещение X</span>
+                                    <span>{activeCameraAdjustment.x.toFixed(2)}</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min={-4}
+                                    max={4}
+                                    step={0.1}
+                                    value={activeCameraAdjustment.x}
+                                    onChange={(event) =>
+                                      updateCameraAdjustment("x", Number(event.target.value))
+                                    }
+                                  />
+                                </label>
+                                <label className="grid gap-1 text-[11px]">
+                                  <div className="flex items-center justify-between">
+                                    <span>Смещение Y</span>
+                                    <span>{activeCameraAdjustment.y.toFixed(2)}</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min={-3}
+                                    max={3}
+                                    step={0.1}
+                                    value={activeCameraAdjustment.y}
+                                    onChange={(event) =>
+                                      updateCameraAdjustment("y", Number(event.target.value))
+                                    }
+                                  />
+                                </label>
+                                <label className="grid gap-1 text-[11px]">
+                                  <div className="flex items-center justify-between">
+                                    <span>Смещение Z</span>
+                                    <span>{activeCameraAdjustment.z.toFixed(2)}</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min={-4}
+                                    max={4}
+                                    step={0.1}
+                                    value={activeCameraAdjustment.z}
+                                    onChange={(event) =>
+                                      updateCameraAdjustment("z", Number(event.target.value))
+                                    }
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={resetCameraAdjustment}
+                                  className="w-fit rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-800"
+                                >
+                                  Сбросить для этой детали
+                                </button>
+                              </>
+                            ) : (
+                              <div className="text-[11px] text-slate-500">
+                                Выбери вкладку детали, чтобы настроить камеру.
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

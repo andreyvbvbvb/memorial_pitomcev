@@ -48,6 +48,7 @@ type Props = {
   focusRequestId?: number;
   onDetailClick?: (detail: DetailClick) => void;
   lockHorizontalOrbit?: boolean;
+  cameraOffsetAdjustments?: Record<string, { x: number; y: number; z: number }>;
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
@@ -258,11 +259,13 @@ function SceneCameraRig({
   focus,
   direction,
   focusSlot,
+  offsetAdjustment,
   controlsRef
 }: {
   focus: [number, number, number] | null;
   direction: [number, number, number] | null;
   focusSlot?: string | null;
+  offsetAdjustment?: [number, number, number] | null;
   controlsRef: React.MutableRefObject<any>;
 }) {
   const { camera } = useThree();
@@ -300,6 +303,9 @@ function SceneCameraRig({
         offset.y += 1.4;
       }
     }
+    if (offsetAdjustment) {
+      offset.add(new THREE.Vector3(offsetAdjustment[0], offsetAdjustment[1], offsetAdjustment[2]));
+    }
     const endPos = focus ? endTarget.clone().add(offset) : DEFAULT_CAMERA.clone();
     animationRef.current = {
       elapsed: 0,
@@ -309,7 +315,7 @@ function SceneCameraRig({
       endPos,
       endTarget
     };
-  }, [focus, direction, focusSlot, camera, controlsRef]);
+  }, [focus, direction, focusSlot, offsetAdjustment, camera, controlsRef]);
 
   useFrame((_, delta) => {
     const anim = animationRef.current;
@@ -796,6 +802,11 @@ function TerrainWithHouse({
   };
 
   const handlePointerUp = (event: any) => {
+    if (orbitMovedRef.current) {
+      orbitMovedRef.current = false;
+      pointerStateRef.current = null;
+      return;
+    }
     const state = pointerStateRef.current;
     pointerStateRef.current = null;
     if (state?.moved) {
@@ -886,6 +897,7 @@ export default function MemorialPreview({
   focusRequestId,
   onDetailClick,
   lockHorizontalOrbit = false,
+  cameraOffsetAdjustments,
   colors,
   backgroundColor = "#eef6ff",
   softEdges = false,
@@ -905,6 +917,20 @@ export default function MemorialPreview({
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
   const lastFocusRequestRef = useRef<number | null>(null);
+  const orbitingRef = useRef(false);
+  const orbitMovedRef = useRef(false);
+  const orbitEndTimeoutRef = useRef<number | null>(null);
+
+  const offsetAdjustment = useMemo(() => {
+    if (!focusSlot || !cameraOffsetAdjustments) {
+      return null;
+    }
+    const entry = cameraOffsetAdjustments[focusSlot];
+    if (!entry) {
+      return null;
+    }
+    return [entry.x, entry.y, entry.z] as [number, number, number];
+  }, [cameraOffsetAdjustments, focusSlot]);
 
   const houseBaseId = useMemo(() => {
     const parsed = splitHouseVariantId(houseId);
@@ -929,6 +955,14 @@ export default function MemorialPreview({
       lastFocusRequestRef.current = focusRequestId;
     }
   }, [focusRequestId]);
+
+  useEffect(() => {
+    return () => {
+      if (orbitEndTimeoutRef.current !== null) {
+        window.clearTimeout(orbitEndTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();
@@ -1082,6 +1116,27 @@ export default function MemorialPreview({
           enableRotate={controlsEnabled}
           enableZoom={controlsEnabled}
           enablePan={false}
+          onStart={() => {
+            if (orbitEndTimeoutRef.current !== null) {
+              window.clearTimeout(orbitEndTimeoutRef.current);
+            }
+            orbitingRef.current = true;
+            orbitMovedRef.current = false;
+          }}
+          onChange={() => {
+            if (orbitingRef.current) {
+              orbitMovedRef.current = true;
+            }
+          }}
+          onEnd={() => {
+            if (orbitEndTimeoutRef.current !== null) {
+              window.clearTimeout(orbitEndTimeoutRef.current);
+            }
+            orbitEndTimeoutRef.current = window.setTimeout(() => {
+              orbitingRef.current = false;
+              orbitMovedRef.current = false;
+            }, 200);
+          }}
           minPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : 0}
           maxPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : Math.PI / 2}
           minDistance={baseDistance / 2}
@@ -1091,6 +1146,7 @@ export default function MemorialPreview({
           focus={focusPosition}
           direction={focusDirection}
           focusSlot={focusSlot}
+          offsetAdjustment={offsetAdjustment}
           controlsRef={controlsRef}
         />
       </Canvas>
