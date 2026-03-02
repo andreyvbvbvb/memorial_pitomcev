@@ -49,7 +49,8 @@ type Props = {
   onDetailClick?: (detail: DetailClick) => void;
   lockHorizontalOrbit?: boolean;
   cameraOffsetAdjustments?: Record<string, { x: number; y: number; z: number }>;
-  onOrbitEndCapture?: (payload: { slot: string; adjustment: { x: number; y: number; z: number } }) => void;
+  cameraAdjustmentKey?: string | null;
+  onOrbitEndCapture?: (payload: { key: string; adjustment: { x: number; y: number; z: number } }) => void;
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
@@ -914,6 +915,7 @@ export default function MemorialPreview({
   onDetailClick,
   lockHorizontalOrbit = false,
   cameraOffsetAdjustments,
+  cameraAdjustmentKey,
   onOrbitEndCapture,
   colors,
   backgroundColor = "#eef6ff",
@@ -939,20 +941,21 @@ export default function MemorialPreview({
   const orbitEndTimeoutRef = useRef<number | null>(null);
 
   const offsetAdjustment = useMemo(() => {
-    if (!focusSlot || !cameraOffsetAdjustments) {
+    const key = cameraAdjustmentKey ?? focusSlot;
+    if (!key || !cameraOffsetAdjustments) {
       return null;
     }
-    const entry = cameraOffsetAdjustments[focusSlot];
+    const entry = cameraOffsetAdjustments[key];
     if (!entry) {
       return null;
     }
     return [entry.x, entry.y, entry.z] as [number, number, number];
-  }, [cameraOffsetAdjustments, focusSlot]);
+  }, [cameraAdjustmentKey, cameraOffsetAdjustments, focusSlot]);
 
   const computeCameraAdjustment = useCallback(
-    (slotOverride?: string | null) => {
-      const slot = slotOverride ?? focusSlot;
-      if (!slot || !focusPosition) {
+    () => {
+      const key = cameraAdjustmentKey ?? focusSlot;
+      if (!key || !focusPosition) {
         return null;
       }
       const controls = controlsRef.current;
@@ -963,17 +966,17 @@ export default function MemorialPreview({
       const baseOffset = getBaseFocusOffset({
         focus: focusPosition,
         direction: focusDirection,
-        focusSlot: slot
+        focusSlot
       });
       const target = buildFocusTarget(focusPosition);
       const currentOffset = camera.position.clone().sub(target);
       const adjustment = currentOffset.sub(baseOffset);
       return {
-        slot,
+        key,
         adjustment: { x: adjustment.x, y: adjustment.y, z: adjustment.z }
       };
     },
-    [focusDirection, focusPosition, focusSlot]
+    [cameraAdjustmentKey, focusDirection, focusPosition, focusSlot]
   );
 
   const houseBaseId = useMemo(() => {

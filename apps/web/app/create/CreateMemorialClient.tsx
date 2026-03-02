@@ -324,7 +324,11 @@ export default function CreateMemorialClient() {
   const assetsLoadStartedRef = useRef(false);
   const [cameraOffsetAdjustments, setCameraOffsetAdjustments] = useState<
     Record<string, CameraOffset>
-  >({});
+  >({
+    dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
+    dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
+    sign_slot: { x: 0, y: 0, z: 2.85 }
+  });
   const [cameraTunerOpen, setCameraTunerOpen] = useState(false);
 
   const router = useRouter();
@@ -435,8 +439,20 @@ export default function CreateMemorialClient() {
     [activeStep3Tab, step3Tabs]
   );
   const activeFocusSlot = activeStep3TabEntry?.focusSlot ?? null;
-  const activeCameraAdjustment = activeFocusSlot
-    ? cameraOffsetAdjustments[activeFocusSlot] ?? { x: 0, y: 0, z: 0 }
+  const activeCameraKey = useMemo(() => {
+    if (!activeFocusSlot) {
+      return null;
+    }
+    if (activeStep3Tab === "environment") {
+      return "dom_slot_environment";
+    }
+    if (activeStep3Tab === "house") {
+      return "dom_slot_house";
+    }
+    return activeFocusSlot;
+  }, [activeFocusSlot, activeStep3Tab]);
+  const activeCameraAdjustment = activeCameraKey
+    ? cameraOffsetAdjustments[activeCameraKey] ?? { x: 0, y: 0, z: 0 }
     : { x: 0, y: 0, z: 0 };
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
@@ -556,32 +572,32 @@ export default function CreateMemorialClient() {
   };
 
   const updateCameraAdjustment = (axis: keyof CameraOffset, value: number) => {
-    if (!activeFocusSlot) {
+    if (!activeCameraKey) {
       return;
     }
     setCameraOffsetAdjustments((prev) => {
-      const current = prev[activeFocusSlot] ?? { x: 0, y: 0, z: 0 };
+      const current = prev[activeCameraKey] ?? { x: 0, y: 0, z: 0 };
       return {
         ...prev,
-        [activeFocusSlot]: { ...current, [axis]: value }
+        [activeCameraKey]: { ...current, [axis]: value }
       };
     });
   };
 
-  const handleOrbitCapture = (payload: { slot: string; adjustment: CameraOffset }) => {
+  const handleOrbitCapture = (payload: { key: string; adjustment: CameraOffset }) => {
     setCameraOffsetAdjustments((prev) => ({
       ...prev,
-      [payload.slot]: payload.adjustment
+      [payload.key]: payload.adjustment
     }));
   };
 
   const resetCameraAdjustment = () => {
-    if (!activeFocusSlot) {
+    if (!activeCameraKey) {
       return;
     }
     setCameraOffsetAdjustments((prev) => {
       const next = { ...prev };
-      delete next[activeFocusSlot];
+      delete next[activeCameraKey];
       return next;
     });
   };
@@ -1532,21 +1548,21 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
                 <div className={`grid gap-3 ${isMobile ? "px-4" : "sticky top-24 self-start"}`}>
-                    <MemorialPreview
-                      terrainUrl={environmentUrl}
-                      houseUrl={houseUrl}
-                      houseId={housePreviewId}
-                      parts={partList}
-                      colors={colorOverrides}
-                      focusSlot={focusSlot}
-                      focusRequestId={focusRequestId}
-                      softEdges
-                      lockHorizontalOrbit
-                      cameraOffsetAdjustments={cameraOffsetAdjustments}
-                      onOrbitEndCapture={cameraTunerOpen ? handleOrbitCapture : undefined}
-                      onHouseSlotsDetected={setDetectedHouseSlots}
-                      onDetailClick={handlePreviewDetailClick}
-                      style={
+                  <MemorialPreview
+                    terrainUrl={environmentUrl}
+                    houseUrl={houseUrl}
+                    houseId={housePreviewId}
+                    parts={partList}
+                    colors={colorOverrides}
+                    focusSlot={focusSlot}
+                    focusRequestId={focusRequestId}
+                    softEdges
+                    cameraOffsetAdjustments={cameraOffsetAdjustments}
+                    cameraAdjustmentKey={activeCameraKey}
+                    onOrbitEndCapture={cameraTunerOpen ? handleOrbitCapture : undefined}
+                    onHouseSlotsDetected={setDetectedHouseSlots}
+                    onDetailClick={handlePreviewDetailClick}
+                    style={
                       isMobile
                         ? { height: "34vh", minHeight: "240px" }
                         : { height: "calc(100vh - 320px)", minHeight: "440px" }
