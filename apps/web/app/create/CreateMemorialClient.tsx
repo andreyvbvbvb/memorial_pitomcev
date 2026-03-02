@@ -1,10 +1,13 @@
 "use client";
 
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useGLTF } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 import {
+  getEnvironmentSeasons,
+  getSeasonForDate,
   resolveEnvironmentModel,
   resolveHouseModel,
   resolveRoofModel,
@@ -16,6 +19,7 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../../lib/memorial-models";
+import type { SeasonKey } from "../../lib/memorial-models";
 import {
   buildHouseVariantGroup,
   splitHouseVariantId
@@ -29,7 +33,7 @@ import {
   markerStyles,
   markerVariantsForSpecies
 } from "../../lib/markers";
-import MemorialPreview from "./MemorialPreview";
+import MemorialPreview, { MEMORIAL_PRELOAD_URLS } from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
 import { getConfiguredHouseSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
@@ -62,6 +66,8 @@ type FormState = {
   lng: string;
   markerStyle: string;
   environmentId: string;
+  environmentSeason: SeasonKey;
+  environmentSeasonAuto: boolean;
   houseId: string;
   roofId: string;
   wallId: string;
@@ -120,6 +126,13 @@ type Step3Tab = {
   id: Step3TabId;
   label: string;
   focusSlot?: string | null;
+};
+
+const SEASON_LABELS: Record<SeasonKey, string> = {
+  spring: "Весна",
+  summer: "Лето",
+  autumn: "Осень",
+  winter: "Зима"
 };
 
 const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
@@ -256,6 +269,8 @@ const initialState: FormState = {
   lng: "",
   markerStyle: markerStyles[0]?.id ?? "dog",
   environmentId: environmentOptions[0]?.id ?? "summer",
+  environmentSeason: getSeasonForDate(),
+  environmentSeasonAuto: true,
   houseId: houseOptions[0]?.id ?? "budka_1",
   roofId: roofOptions[0]?.id ?? "roof_1",
   wallId: wallOptions[0]?.id ?? "wall_1",
@@ -299,6 +314,8 @@ export default function CreateMemorialClient() {
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
   const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
   const tooltipTimerRef = useRef<number | null>(null);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const assetsLoadStartedRef = useRef(false);
 
   const router = useRouter();
   const apiUrl = useMemo(() => API_BASE, []);
@@ -328,6 +345,10 @@ export default function CreateMemorialClient() {
     [memorialPlanId]
   );
   const memorialPrice = memorialPlan.price;
+  const environmentSeasons = useMemo(
+    () => getEnvironmentSeasons(form.environmentId),
+    [form.environmentId]
+  );
   const houseVariantGroup = useMemo(
     () => buildHouseVariantGroup(houseOptions),
     [houseOptions]
@@ -341,6 +362,9 @@ export default function CreateMemorialClient() {
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
   const environmentPreviewId = hoveredId("environment") ?? form.environmentId;
+  const environmentPreviewSeason = form.environmentSeasonAuto
+    ? "auto"
+    : form.environmentSeason;
   const hoveredHouseVariantId = hoveredId("house-texture");
   const hoveredHouseBaseId = hoveredId("house-base");
   const housePreviewId =
@@ -357,7 +381,10 @@ export default function CreateMemorialClient() {
   const matPreviewId = hoveredId("mat") ?? form.matId;
   const bowlFoodPreviewId = hoveredId("bowl-food") ?? form.bowlFoodId;
   const bowlWaterPreviewId = hoveredId("bowl-water") ?? form.bowlWaterId;
-  const environmentUrl = resolveEnvironmentModel(environmentPreviewId, "summer");
+  const environmentUrl = resolveEnvironmentModel(
+    environmentPreviewId,
+    environmentPreviewSeason
+  );
   const houseUrl = resolveHouseModel(housePreviewId);
   const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
   const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? configuredHouseSlots ?? {};
@@ -448,6 +475,18 @@ export default function CreateMemorialClient() {
   useEffect(() => {
     setDetectedHouseSlots(getConfiguredHouseSlots(form.houseId));
   }, [form.houseId]);
+
+  useEffect(() => {
+    if (environmentSeasons.length === 0) {
+      return;
+    }
+    if (!environmentSeasons.includes(form.environmentSeason)) {
+      setForm((prev) => ({
+        ...prev,
+        environmentSeason: environmentSeasons[0] ?? getSeasonForDate()
+      }));
+    }
+  }, [environmentSeasons, form.environmentSeason]);
 
   useEffect(() => {
     if (step3Tabs.length === 0) {
@@ -559,6 +598,12 @@ export default function CreateMemorialClient() {
       setFocusSlot(null);
     }
   }, [step]);
+
+  useEffect(() => {
+    if (step >= 1) {
+      void preloadAssets();
+    }
+  }, [step, preloadAssets]);
 
   const today = useMemo(() => {
     const now = new Date();
@@ -725,6 +770,10 @@ export default function CreateMemorialClient() {
     setLoading(true);
     setError(null);
 
+    const environmentId = form.environmentSeasonAuto
+      ? form.environmentId
+      : `${form.environmentId}_${form.environmentSeason}`;
+
     const payload = {
       ownerId: form.ownerId.trim(),
       name: form.name.trim(),
@@ -737,7 +786,7 @@ export default function CreateMemorialClient() {
       lat: canShowMarker ? lat : undefined,
       lng: canShowMarker ? lng : undefined,
       markerStyle: form.markerStyle,
-      environmentId: form.environmentId,
+      environmentId,
       houseId: form.houseId,
       memorialPlanYears: memorialPlan.years,
       sceneJson: {
@@ -856,6 +905,50 @@ export default function CreateMemorialClient() {
   const optionImage = (category: string, id: string) =>
     `/memorial/options/${category}/${id}.png`;
 
+  const preloadImageUrls = useMemo(() => {
+    const urls = new Set<string>();
+    const add = (category: string, id: string) => {
+      if (!id || id === "none") {
+        return;
+      }
+      urls.add(optionImage(category, id));
+    };
+    environmentOptions.forEach((option) => add("environment", option.id));
+    houseVariantGroup.baseOptions.forEach((option) => add("house", option.id));
+    houseOptions.forEach((option) => add("house-texture", option.id));
+    roofOptions.forEach((option) => add("roof", option.id));
+    wallOptions.forEach((option) => add("wall", option.id));
+    signOptions.forEach((option) => add("sign", option.id));
+    frameLeftOptions.forEach((option) => add("frame-left", option.id));
+    frameRightOptions.forEach((option) => add("frame-right", option.id));
+    matOptions.forEach((option) => add("mat", option.id));
+    bowlFoodOptions.forEach((option) => add("bowl-food", option.id));
+    bowlWaterOptions.forEach((option) => add("bowl-water", option.id));
+    return Array.from(urls.values());
+  }, [houseVariantGroup.baseOptions]);
+
+  const preloadAssets = useCallback(async () => {
+    if (assetsLoadStartedRef.current) {
+      return;
+    }
+    assetsLoadStartedRef.current = true;
+    MEMORIAL_PRELOAD_URLS.forEach((url) => useGLTF.preload(url));
+    const imagePromises = preloadImageUrls.map(
+      (url) =>
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          img.src = url;
+        })
+    );
+    try {
+      await Promise.all(imagePromises);
+    } finally {
+      setAssetsReady(true);
+    }
+  }, [preloadImageUrls]);
+
   const renderOptionGrid = (
     category: string,
     options: typeof environmentOptions,
@@ -915,6 +1008,46 @@ export default function CreateMemorialClient() {
               handleChange("environmentId", id);
               requestFocus("dom_slot");
             })}
+            {environmentSeasons.length > 0 ? (
+              <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3">
+                <div className="text-sm font-semibold text-slate-900">Время года</div>
+                <div className="flex flex-wrap gap-2">
+                  {environmentSeasons.map((season) => {
+                    const isActive = form.environmentSeason === season;
+                    return (
+                      <button
+                        key={season}
+                        type="button"
+                        onClick={() => handleChange("environmentSeason", season)}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                          isActive
+                            ? "border-sky-400 bg-sky-50 text-sky-700"
+                            : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+                        }`}
+                      >
+                        {SEASON_LABELS[season]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={form.environmentSeasonAuto}
+                    onChange={(event) =>
+                      handleChange("environmentSeasonAuto", event.target.checked)
+                    }
+                  />
+                  Автосмена сезонов
+                </label>
+                {form.environmentSeasonAuto ? (
+                  <p className="text-[11px] text-slate-500">
+                    При включении автосмены поверхность будет подбираться по текущей дате.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         );
       case "house":
@@ -1326,7 +1459,15 @@ export default function CreateMemorialClient() {
           ) : null}
 
           {step === 2 ? (
-            <div className="grid gap-3">
+            <div className="relative grid gap-3">
+              {!assetsReady ? (
+                <div className="absolute inset-0 z-30 grid place-items-center rounded-2xl bg-white/80">
+                  <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                    Происходит загрузка страницы...
+                  </div>
+                </div>
+              ) : null}
               <div
                 className={isMobile ? "flex flex-col gap-4" : "grid gap-4"}
                 style={

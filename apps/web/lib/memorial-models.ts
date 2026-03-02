@@ -48,6 +48,17 @@ export type SeasonKey = "spring" | "summer" | "autumn" | "winter";
 
 const seasonSuffixes: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
 
+const extractSeasonFromId = (id?: string | null): SeasonKey | null => {
+  if (!id) return null;
+  const normalized = id.trim().toLowerCase();
+  for (const season of seasonSuffixes) {
+    if (normalized.endsWith(`_${season}`)) {
+      return season;
+    }
+  }
+  return null;
+};
+
 const normalizeEnvironmentId = (id?: string | null) => {
   if (!id) return "";
   const normalized = id.trim();
@@ -70,6 +81,15 @@ export const getSeasonForDate = (date = new Date()): SeasonKey => {
   return "winter";
 };
 
+export const getEnvironmentSeasons = (id?: string | null): SeasonKey[] => {
+  const baseId = normalizeEnvironmentId(id);
+  const seasonal = environmentSeasonModelsById[baseId];
+  if (!seasonal) {
+    return [];
+  }
+  return seasonSuffixes.filter((season) => seasonal[season]);
+};
+
 export const resolveEnvironmentModel = (
   id?: string | null,
   season?: SeasonKey | "auto" | null
@@ -77,8 +97,9 @@ export const resolveEnvironmentModel = (
   const baseId = normalizeEnvironmentId(id);
   const seasonal = environmentSeasonModelsById[baseId];
   if (seasonal) {
+    const explicitSeason = extractSeasonFromId(id);
     const seasonKey =
-      season === "auto" ? getSeasonForDate() : season ?? "summer";
+      explicitSeason ?? (season === "auto" ? getSeasonForDate() : season ?? "summer");
     return seasonal[seasonKey] ?? seasonal.summer ?? Object.values(seasonal)[0];
   }
   return (

@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   environmentModelByIdGenerated,
+  environmentSeasonModelsByIdGenerated,
   houseModelByIdGenerated,
   roofModelByIdGenerated,
   wallModelByIdGenerated,
@@ -85,8 +86,9 @@ const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
 const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
-const HOUSE_FOCUS_OFFSET = new THREE.Vector3(3.4, 2.0, 2.4);
+const HOUSE_FOCUS_OFFSET = new THREE.Vector3(4.2, 1.6, 3.0);
 const LOCKED_POLAR_ANGLE = 1.1;
+const CLICK_DRAG_THRESHOLD = 5;
 const isSelectableSlotName = (name: string) =>
   name.endsWith("_slot") && name !== "dom_slot" && !isGiftSlotName(name);
 
@@ -632,6 +634,7 @@ function TerrainWithHouse({
   const { scene: houseScene } = useGLTF(houseUrl);
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => houseScene.clone(true), [houseScene]);
+  const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
@@ -725,11 +728,27 @@ function TerrainWithHouse({
     onHouseSlotsDetected(detected);
   }, [house, onHouseSlotsDetected]);
 
+  const resolveClickTarget = (event: any) => {
+    const intersections = event?.intersections as Array<{ object: THREE.Object3D }> | undefined;
+    if (intersections && intersections.length > 0) {
+      const slotHit = intersections.find((hit) => findDetailSlot(hit.object));
+      if (slotHit) {
+        return slotHit.object;
+      }
+      const houseHit = intersections.find((hit) => isDescendantOf(hit.object, house));
+      if (houseHit) {
+        return houseHit.object;
+      }
+      return intersections[0]?.object ?? null;
+    }
+    return (event?.object as THREE.Object3D | undefined) ?? null;
+  };
+
   const handleDetailClick = (event: any) => {
     if (!onDetailClick) {
       return;
     }
-    const target = event?.object as THREE.Object3D | undefined;
+    const target = resolveClickTarget(event);
     if (!target) {
       return;
     }
@@ -752,8 +771,45 @@ function TerrainWithHouse({
     }
   };
 
+  const handlePointerDown = (event: any) => {
+    pointerStateRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+      pointerId: typeof event.pointerId === "number" ? event.pointerId : null
+    };
+  };
+
+  const handlePointerMove = (event: any) => {
+    const state = pointerStateRef.current;
+    if (!state) {
+      return;
+    }
+    if (state.pointerId !== null && event.pointerId !== state.pointerId) {
+      return;
+    }
+    const dx = event.clientX - state.x;
+    const dy = event.clientY - state.y;
+    if (Math.hypot(dx, dy) >= CLICK_DRAG_THRESHOLD) {
+      state.moved = true;
+    }
+  };
+
+  const handlePointerUp = (event: any) => {
+    const state = pointerStateRef.current;
+    pointerStateRef.current = null;
+    if (state?.moved) {
+      return;
+    }
+    handleDetailClick(event);
+  };
+
   return (
-    <Group onClick={onDetailClick ? handleDetailClick : undefined}>
+    <Group
+      onPointerDown={onDetailClick ? handlePointerDown : undefined}
+      onPointerMove={onDetailClick ? handlePointerMove : undefined}
+      onPointerUp={onDetailClick ? handlePointerUp : undefined}
+    >
       <Primitive object={terrain} />
       <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
       {giftSlots && giftSlots.length > 0 ? (
@@ -1044,6 +1100,9 @@ export default function MemorialPreview({
 
 const preloadUrls = [
   ...Object.values(environmentModelByIdGenerated),
+  ...Object.values(environmentSeasonModelsByIdGenerated).flatMap((entry) =>
+    Object.values(entry)
+  ),
   ...Object.values(houseModelByIdGenerated),
   ...Object.values(roofModelByIdGenerated),
   ...Object.values(wallModelByIdGenerated),
@@ -1054,6 +1113,8 @@ const preloadUrls = [
   ...Object.values(bowlFoodModelByIdGenerated),
   ...Object.values(bowlWaterModelByIdGenerated)
 ];
+
+export const MEMORIAL_PRELOAD_URLS = preloadUrls;
 
 preloadUrls.forEach((url) => {
   useGLTF.preload(url);
