@@ -605,6 +605,7 @@ function TerrainWithHouse({
   onFocusDirection,
   onHouseSlotsDetected,
   onDetailClick,
+  orbitMovedRef,
   allowFocus,
   houseBaseId
 }: {
@@ -633,6 +634,7 @@ function TerrainWithHouse({
   onFocusDirection?: (direction: [number, number, number] | null) => void;
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
   onDetailClick?: (detail: DetailClick) => void;
+  orbitMovedRef?: React.MutableRefObject<boolean>;
   allowFocus?: boolean;
   houseBaseId?: string;
 }) {
@@ -802,7 +804,7 @@ function TerrainWithHouse({
   };
 
   const handlePointerUp = (event: any) => {
-    if (orbitMovedRef.current) {
+    if (orbitMovedRef?.current) {
       orbitMovedRef.current = false;
       pointerStateRef.current = null;
       return;
@@ -1081,6 +1083,7 @@ export default function MemorialPreview({
               onFocusDirection={setFocusDirection}
               onHouseSlotsDetected={onHouseSlotsDetected}
               onDetailClick={onDetailClick}
+              orbitMovedRef={orbitMovedRef}
               allowFocus={allowFocus}
               houseBaseId={houseBaseId}
             />
