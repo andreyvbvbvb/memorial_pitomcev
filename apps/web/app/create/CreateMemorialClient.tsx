@@ -568,6 +568,13 @@ export default function CreateMemorialClient() {
     });
   };
 
+  const handleOrbitCapture = (payload: { slot: string; adjustment: CameraOffset }) => {
+    setCameraOffsetAdjustments((prev) => ({
+      ...prev,
+      [payload.slot]: payload.adjustment
+    }));
+  };
+
   const resetCameraAdjustment = () => {
     if (!activeFocusSlot) {
       return;
@@ -1525,20 +1532,21 @@ export default function CreateMemorialClient() {
                   </div>
                 ) : null}
                 <div className={`grid gap-3 ${isMobile ? "px-4" : "sticky top-24 self-start"}`}>
-                  <MemorialPreview
-                    terrainUrl={environmentUrl}
-                    houseUrl={houseUrl}
-                    houseId={housePreviewId}
-                    parts={partList}
-                    colors={colorOverrides}
-                    focusSlot={focusSlot}
-                    focusRequestId={focusRequestId}
-                    softEdges
-                    lockHorizontalOrbit
-                    cameraOffsetAdjustments={cameraOffsetAdjustments}
-                    onHouseSlotsDetected={setDetectedHouseSlots}
-                    onDetailClick={handlePreviewDetailClick}
-                    style={
+                    <MemorialPreview
+                      terrainUrl={environmentUrl}
+                      houseUrl={houseUrl}
+                      houseId={housePreviewId}
+                      parts={partList}
+                      colors={colorOverrides}
+                      focusSlot={focusSlot}
+                      focusRequestId={focusRequestId}
+                      softEdges
+                      lockHorizontalOrbit
+                      cameraOffsetAdjustments={cameraOffsetAdjustments}
+                      onOrbitEndCapture={cameraTunerOpen ? handleOrbitCapture : undefined}
+                      onHouseSlotsDetected={setDetectedHouseSlots}
+                      onDetailClick={handlePreviewDetailClick}
+                      style={
                       isMobile
                         ? { height: "34vh", minHeight: "240px" }
                         : { height: "calc(100vh - 320px)", minHeight: "440px" }
@@ -1624,6 +1632,9 @@ export default function CreateMemorialClient() {
                           <div className="mt-3 grid gap-3 text-xs text-slate-600">
                             <div className="text-[11px] text-slate-500">
                               Фокус: {activeStep3TabEntry?.label ?? "—"}
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              После вращения превью значения обновляются автоматически.
                             </div>
                             {activeFocusSlot ? (
                               <>

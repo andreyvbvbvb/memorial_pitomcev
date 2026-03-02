@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   environmentModelByIdGenerated,
   environmentSeasonModelsByIdGenerated,
@@ -49,6 +49,7 @@ type Props = {
   onDetailClick?: (detail: DetailClick) => void;
   lockHorizontalOrbit?: boolean;
   cameraOffsetAdjustments?: Record<string, { x: number; y: number; z: number }>;
+  onOrbitEndCapture?: (payload: { slot: string; adjustment: { x: number; y: number; z: number } }) => void;
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
@@ -90,6 +91,37 @@ const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
 const HOUSE_FOCUS_OFFSET = new THREE.Vector3(4.2, 1.6, 3.0);
 const LOCKED_POLAR_ANGLE = 1.1;
 const CLICK_DRAG_THRESHOLD = 5;
+
+const buildFocusTarget = (focus: [number, number, number] | null) =>
+  focus ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2]) : DEFAULT_TARGET.clone();
+
+const getBaseFocusOffset = ({
+  focus,
+  direction,
+  focusSlot
+}: {
+  focus: [number, number, number] | null;
+  direction: [number, number, number] | null;
+  focusSlot?: string | null;
+}) => {
+  let offset = DEFAULT_FOCUS_OFFSET.clone();
+  const isDomFocus = focusSlot === "dom_slot";
+  if (focus && isDomFocus) {
+    offset = HOUSE_FOCUS_OFFSET.clone();
+  }
+  const isSideFrame = focusSlot === "frame_right_slot" || focusSlot === "frame_left_slot";
+  if (focus && isSideFrame) {
+    const sideSign = focus[0] >= 0 ? 1 : -1;
+    offset = new THREE.Vector3(2.8 * sideSign, 1.4, 0.4);
+  } else if (focus && direction && !isDomFocus) {
+    const dir = new THREE.Vector3(direction[0], direction[1], direction[2]);
+    if (dir.lengthSq() > 0.0001) {
+      offset = dir.normalize().multiplyScalar(2.6);
+      offset.y += 1.4;
+    }
+  }
+  return offset;
+};
 const isSelectableSlotName = (name: string) =>
   name.endsWith("_slot") && name !== "dom_slot" && !isGiftSlotName(name);
 
@@ -283,26 +315,8 @@ function SceneCameraRig({
     const currentTarget = controls ? controls.target.clone() : DEFAULT_TARGET.clone();
     const startPos = camera.position.clone();
     const startTarget = currentTarget;
-    const endTarget = focus
-      ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2])
-      : DEFAULT_TARGET.clone();
-    let offset = DEFAULT_FOCUS_OFFSET.clone();
-    const isDomFocus = focusSlot === "dom_slot";
-    if (focus && isDomFocus) {
-      offset = HOUSE_FOCUS_OFFSET.clone();
-    }
-    const isSideFrame =
-      focusSlot === "frame_right_slot" || focusSlot === "frame_left_slot";
-    if (focus && isSideFrame) {
-      const sideSign = focus[0] >= 0 ? 1 : -1;
-      offset = new THREE.Vector3(2.8 * sideSign, 1.4, 0.4);
-    } else if (focus && direction && !isDomFocus) {
-      const dir = new THREE.Vector3(direction[0], direction[1], direction[2]);
-      if (dir.lengthSq() > 0.0001) {
-        offset = dir.normalize().multiplyScalar(2.6);
-        offset.y += 1.4;
-      }
-    }
+    const endTarget = buildFocusTarget(focus);
+    let offset = getBaseFocusOffset({ focus, direction, focusSlot });
     if (offsetAdjustment) {
       offset.add(new THREE.Vector3(offsetAdjustment[0], offsetAdjustment[1], offsetAdjustment[2]));
     }
@@ -900,6 +914,7 @@ export default function MemorialPreview({
   onDetailClick,
   lockHorizontalOrbit = false,
   cameraOffsetAdjustments,
+  onOrbitEndCapture,
   colors,
   backgroundColor = "#eef6ff",
   softEdges = false,
@@ -933,6 +948,33 @@ export default function MemorialPreview({
     }
     return [entry.x, entry.y, entry.z] as [number, number, number];
   }, [cameraOffsetAdjustments, focusSlot]);
+
+  const computeCameraAdjustment = useCallback(
+    (slotOverride?: string | null) => {
+      const slot = slotOverride ?? focusSlot;
+      if (!slot || !focusPosition) {
+        return null;
+      }
+      const controls = controlsRef.current;
+      const camera = controls?.object as THREE.Camera | undefined;
+      if (!camera) {
+        return null;
+      }
+      const baseOffset = getBaseFocusOffset({
+        focus: focusPosition,
+        direction: focusDirection,
+        focusSlot: slot
+      });
+      const target = buildFocusTarget(focusPosition);
+      const currentOffset = camera.position.clone().sub(target);
+      const adjustment = currentOffset.sub(baseOffset);
+      return {
+        slot,
+        adjustment: { x: adjustment.x, y: adjustment.y, z: adjustment.z }
+      };
+    },
+    [focusDirection, focusPosition, focusSlot]
+  );
 
   const houseBaseId = useMemo(() => {
     const parsed = splitHouseVariantId(houseId);
@@ -1139,6 +1181,12 @@ export default function MemorialPreview({
               orbitingRef.current = false;
               orbitMovedRef.current = false;
             }, 200);
+            if (onOrbitEndCapture) {
+              const capture = computeCameraAdjustment();
+              if (capture) {
+                onOrbitEndCapture(capture);
+              }
+            }
           }}
           minPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : 0}
           maxPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : Math.PI / 2}
