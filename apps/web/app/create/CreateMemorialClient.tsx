@@ -599,12 +599,6 @@ export default function CreateMemorialClient() {
     }
   }, [step]);
 
-  useEffect(() => {
-    if (step >= 1) {
-      void preloadAssets();
-    }
-  }, [step, preloadAssets]);
-
   const today = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -948,6 +942,12 @@ export default function CreateMemorialClient() {
       setAssetsReady(true);
     }
   }, [preloadImageUrls]);
+
+  useEffect(() => {
+    if (step >= 1) {
+      void preloadAssets();
+    }
+  }, [step, preloadAssets]);
 
   const renderOptionGrid = (
     category: string,
