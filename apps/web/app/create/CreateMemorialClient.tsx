@@ -35,8 +35,14 @@ import {
 } from "../../lib/markers";
 import MemorialPreview, { MEMORIAL_PRELOAD_URLS } from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
-import { getConfiguredHouseSlots } from "../../lib/memorial-config";
+import { getConfiguredHouseSlots, getTerrainGiftSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
+import {
+  getGiftAvailableTypes,
+  getGiftSlotType,
+  resolveGiftModelUrl
+} from "../../lib/gifts";
+import { giftModelsGenerated } from "../../lib/gifts.generated";
 import {
   environmentOptions,
   houseOptions,
@@ -141,7 +147,7 @@ const SEASON_LABELS: Record<SeasonKey, string> = {
   winter: "Зима"
 };
 
-const STEP3_ICON_CLASS = "h-8 w-8";
+const STEP3_ICON_CLASS = "h-6 w-6";
 
 const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
   switch (id) {
@@ -324,6 +330,8 @@ export default function CreateMemorialClient() {
   const tooltipTimerRef = useRef<number | null>(null);
   const [assetsReady, setAssetsReady] = useState(false);
   const assetsLoadStartedRef = useRef(false);
+  const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -401,6 +409,69 @@ export default function CreateMemorialClient() {
   const houseUrl = resolveHouseModel(housePreviewId);
   const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
   const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? configuredHouseSlots ?? {};
+  const terrainGiftSlots = useMemo(
+    () => detectedGiftSlots ?? getTerrainGiftSlots(environmentPreviewId),
+    [detectedGiftSlots, environmentPreviewId]
+  );
+  const previewGiftCandidates = useMemo(() => Object.keys(giftModelsGenerated), []);
+  const previewGiftByType = useMemo(() => {
+    const map = new Map<string, string>();
+    previewGiftCandidates.forEach((code) => {
+      getGiftAvailableTypes({ code }).forEach((type) => {
+        if (!map.has(type)) {
+          map.set(type, code);
+        }
+      });
+    });
+    return map;
+  }, [previewGiftCandidates]);
+  const previewGifts = useMemo(() => {
+    if (!giftPreviewEnabled) {
+      return [];
+    }
+    if (terrainGiftSlots.length === 0) {
+      return [];
+    }
+    const fallbackCode = previewGiftCandidates[0] ?? null;
+    return terrainGiftSlots
+      .map((slot) => {
+        const slotType = getGiftSlotType(slot);
+        let code: string | null = null;
+        let resolveType: string | null = null;
+        if (slotType === "default") {
+          code = fallbackCode;
+          if (code) {
+            const types = getGiftAvailableTypes({ code });
+            resolveType = types[0] ?? null;
+          }
+        } else if (slotType) {
+          code = previewGiftByType.get(slotType) ?? null;
+          resolveType = slotType;
+        }
+        if (!code || !resolveType) {
+          return null;
+        }
+        const url = resolveGiftModelUrl({
+          gift: { code },
+          slotType: resolveType,
+          fallbackUrl: null
+        });
+        if (!url) {
+          return null;
+        }
+        return { slot, url, name: "Подарок" };
+      })
+      .filter(
+        (gift): gift is { slot: string; url: string; name: string } => Boolean(gift)
+      );
+  }, [giftPreviewEnabled, previewGiftByType, previewGiftCandidates, terrainGiftSlots]);
+  const previewPlaceholderSlots = useMemo(() => {
+    if (!giftPreviewEnabled) {
+      return [];
+    }
+    const filled = new Set(previewGifts.map((gift) => gift.slot));
+    return terrainGiftSlots.filter((slot) => !filled.has(slot));
+  }, [giftPreviewEnabled, previewGifts, terrainGiftSlots]);
   const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
   const step3Tabs = useMemo<Step3Tab[]>(() => {
     const tabs: Step3Tab[] = [
@@ -504,6 +575,10 @@ export default function CreateMemorialClient() {
   useEffect(() => {
     setDetectedHouseSlots(getConfiguredHouseSlots(form.houseId));
   }, [form.houseId]);
+
+  useEffect(() => {
+    setDetectedGiftSlots(null);
+  }, [form.environmentId]);
 
   useEffect(() => {
     if (environmentSeasons.length === 0) {
@@ -986,7 +1061,7 @@ export default function CreateMemorialClient() {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-2">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -1005,7 +1080,7 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex w-full aspect-square items-center justify-center rounded-xl border p-3 transition ${
+            className={`flex w-full aspect-square items-center justify-center rounded-xl border p-2 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
@@ -1492,8 +1567,8 @@ export default function CreateMemorialClient() {
                   isMobile
                     ? undefined
                     : {
-                        gridTemplateColumns: "68% 28%",
-                        columnGap: "2.8%"
+                        gridTemplateColumns: "72% 24%",
+                        columnGap: "4%"
                       }
                 }
               >
@@ -1508,6 +1583,13 @@ export default function CreateMemorialClient() {
                     houseUrl={houseUrl}
                     houseId={housePreviewId}
                     parts={partList}
+                    gifts={giftPreviewEnabled ? previewGifts : undefined}
+                    giftSlots={
+                      giftPreviewEnabled && previewPlaceholderSlots.length > 0
+                        ? previewPlaceholderSlots
+                        : undefined
+                    }
+                    showGiftSlots={giftPreviewEnabled && previewPlaceholderSlots.length > 0}
                     colors={colorOverrides}
                     focusSlot={focusSlot}
                     focusRequestId={focusRequestId}
@@ -1515,6 +1597,7 @@ export default function CreateMemorialClient() {
                     cameraOffsetAdjustments={cameraOffsetAdjustments}
                     cameraAdjustmentKey={activeCameraKey}
                     onHouseSlotsDetected={setDetectedHouseSlots}
+                    onGiftSlotsDetected={setDetectedGiftSlots}
                     onDetailClick={handlePreviewDetailClick}
                     style={
                       isMobile
@@ -1531,7 +1614,7 @@ export default function CreateMemorialClient() {
                       : "min-h-[60vh] max-h-[60vh]"
                   }`}
                 >
-                  <div className="relative z-20 flex w-[72px] flex-col items-center gap-3 self-start overflow-visible">
+                  <div className="relative z-20 flex w-14 flex-col items-center gap-3 self-start overflow-visible">
                       {step3Tabs.map((tab) => {
                         const isActive = activeStep3Tab === tab.id;
                         const isTooltipVisible = tooltipTabId === tab.id;
@@ -1564,7 +1647,7 @@ export default function CreateMemorialClient() {
                                 setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                               }}
                               aria-label={tab.label}
-                              className={`flex h-[72px] w-[72px] items-center justify-center rounded-2xl border text-sm transition ${
+                              className={`flex h-14 w-14 items-center justify-center rounded-2xl border text-sm transition ${
                                 isActive
                                   ? "border-sky-400 bg-sky-50 text-sky-700"
                                   : "border-slate-200 bg-white text-slate-500 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
@@ -1585,11 +1668,22 @@ export default function CreateMemorialClient() {
                   </div>
 
                   <div
-                    className={`relative z-10 min-w-0 flex-1 overflow-y-auto pr-2 ${
+                    className={`flex min-w-0 flex-1 flex-col ${
                       isMobile ? "max-h-[38vh]" : "max-h-[60vh]"
                     }`}
                   >
-                    {renderStep3TabContent()}
+                    <label className="mb-2 flex items-center gap-2 text-xs text-slate-600">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={giftPreviewEnabled}
+                        onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
+                      />
+                      Посмотреть с подарками
+                    </label>
+                    <div className="relative z-10 min-w-0 flex-1 overflow-y-auto pr-2">
+                      {renderStep3TabContent()}
+                    </div>
                   </div>
                 </div>
               </div>

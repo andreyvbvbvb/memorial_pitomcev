@@ -28,6 +28,14 @@ import {
   resolveGiftIconUrl
 } from "../../../lib/gifts";
 
+const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
+const DIRT_MODEL_URLS: Record<(typeof DIRT_SLOTS)[number], string> = {
+  dirt_slot_1: "/models/dirt/dirt_1.glb",
+  dirt_slot_2: "/models/dirt/dirt_2.glb",
+  dirt_slot_3: "/models/dirt/dirt_3.glb",
+  dirt_slot_4: "/models/dirt/dirt_4.glb"
+};
+
 type Pet = {
   id: string;
   ownerId: string;
@@ -44,6 +52,8 @@ type Pet = {
     environmentId: string | null;
     houseId: string | null;
     sceneJson: Record<string, unknown> | null;
+    dustStage?: number | null;
+    dustUpdatedAt?: string | null;
   } | null;
   photos?: { id: string; url: string }[];
   gifts?: {
@@ -72,6 +82,8 @@ type OwnerMemorial = {
     environmentId: string | null;
     houseId: string | null;
     sceneJson: Record<string, unknown> | null;
+    dustStage?: number | null;
+    dustUpdatedAt?: string | null;
   } | null;
 };
 
@@ -116,9 +128,49 @@ export default function PetClient({ id }: Props) {
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
   const [ownerMemorials, setOwnerMemorials] = useState<OwnerMemorial[]>([]);
+  const [dirtLevel, setDirtLevel] = useState(0);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
+  const handleCleanDirt = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
+        method: "PATCH"
+      });
+      if (!response.ok) {
+        throw new Error("Не удалось очистить мемориал");
+      }
+      const data = (await response.json()) as {
+        dustStage?: number | null;
+        dustUpdatedAt?: string | null;
+      };
+      const nextStage = typeof data.dustStage === "number" ? data.dustStage : 0;
+      setDirtLevel(nextStage);
+      setPet((prev) =>
+        prev?.memorial
+          ? {
+              ...prev,
+              memorial: {
+                ...prev.memorial,
+                dustStage: nextStage,
+                dustUpdatedAt: data.dustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null
+              }
+            }
+          : prev
+      );
+    } catch {
+      setDirtLevel(0);
+    }
+  }, [apiUrl, id]);
+
+  const handleMemorialDetailClick = useCallback(
+    (detail: { slot?: string }) => {
+      if (detail.slot && detail.slot.startsWith("dirt_slot")) {
+        handleCleanDirt();
+      }
+    },
+    [handleCleanDirt]
+  );
 
   const loadPet = useCallback(async () => {
     setLoading(true);
@@ -184,6 +236,10 @@ export default function PetClient({ id }: Props) {
   useEffect(() => {
     loadCurrentUser();
   }, [loadCurrentUser]);
+
+  useEffect(() => {
+    setDirtLevel(pet?.memorial?.dustStage ?? 0);
+  }, [pet?.memorial?.dustStage]);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -596,6 +652,18 @@ export default function PetClient({ id }: Props) {
       ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(sceneJson.parts?.bowlWater) }
       : null
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
+  const dirtParts =
+    dirtLevel > 0
+      ? DIRT_SLOTS.slice(0, Math.min(dirtLevel, DIRT_SLOTS.length))
+          .map((slot) => {
+            const url = DIRT_MODEL_URLS[slot];
+            return url ? { slot, url } : null;
+          })
+          .filter(
+            (part): part is { slot: string; url: string } => Boolean(part)
+          )
+      : [];
+  const fullPartList = [...partList, ...dirtParts];
   const colorOverrides = sceneJson.colors ?? undefined;
   const giftInstances = activeGifts.map((gift) => {
     const ownerPets = gift.owner?.pets ?? [];
@@ -854,12 +922,32 @@ export default function PetClient({ id }: Props) {
             </div>
           ) : null}
           <div className={currentUser ? "mt-6" : "mt-4"}>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-xs text-slate-600">
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-slate-800">Чистота мемориала</span>
+                <span className="text-slate-500">
+                  Загрязнение: {dirtLevel}/{DIRT_SLOTS.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCleanDirt}
+                disabled={dirtLevel === 0}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  dirtLevel === 0
+                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                }`}
+              >
+                Почистить мемориал
+              </button>
+            </div>
             <MemorialPreview
               className="h-[660px]"
               terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
               houseUrl={resolveHouseModel(pet.memorial?.houseId)}
               houseId={pet.memorial?.houseId ?? null}
-              parts={partList}
+              parts={fullPartList}
               gifts={previewGifts}
               giftSlots={filteredAvailableSlots}
               selectedSlot={selectedSlot}
@@ -868,6 +956,7 @@ export default function PetClient({ id }: Props) {
               preloadGiftUrl={pendingPreviewUrl}
               onGiftPreloaded={handleGiftPreloaded}
               colors={colorOverrides}
+              onDetailClick={handleMemorialDetailClick}
             />
           </div>
         </div>

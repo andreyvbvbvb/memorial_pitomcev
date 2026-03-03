@@ -63,6 +63,11 @@ export class PetsController {
     return this.petsService.update(id, dto);
   }
 
+  @Patch(":id/memorial/clean")
+  cleanMemorial(@Param("id") id: string) {
+    return this.petsService.cleanMemorial(id);
+  }
+
   @Delete(":id")
   remove(@Param("id") id: string) {
     return this.petsService.remove(id);

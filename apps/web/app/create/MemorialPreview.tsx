@@ -54,6 +54,7 @@ type Props = {
   colors?: Record<string, string>;
   backgroundColor?: string;
   softEdges?: boolean;
+  showGiftSlots?: boolean;
   showControls?: boolean;
   controlsEnabled?: boolean;
   preloadGiftUrl?: string | null;
@@ -695,10 +696,10 @@ function TerrainWithHouse({
       };
       if (cloned.emissive) {
         cloned.emissive = highlightColor.clone();
-        cloned.emissiveIntensity = 0.6;
+        cloned.emissiveIntensity = 0.3;
       }
       if (cloned.color) {
-        cloned.color = cloned.color.clone().lerp(highlightColor, 0.2);
+        cloned.color = cloned.color.clone().lerp(highlightColor, 0.1);
       }
       return cloned;
     };
@@ -921,7 +922,7 @@ function TerrainWithHouse({
     >
       <Primitive object={terrain} />
       <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
-      {giftSlots && giftSlots.length > 0 ? (
+      {giftSlots && giftSlots.length > 0 && onSelectSlot ? (
         <GiftSlotButtons
           terrain={terrain}
           slots={giftSlots}
@@ -1001,6 +1002,7 @@ export default function MemorialPreview({
   colors,
   backgroundColor = "#eef6ff",
   softEdges = false,
+  showGiftSlots,
   showControls = true,
   controlsEnabled = true,
   preloadGiftUrl,
@@ -1011,7 +1013,11 @@ export default function MemorialPreview({
 }: Props) {
   const controlsRef = useRef<any>(null);
   const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
-  const [showGiftSlots, setShowGiftSlots] = useState(showControls && Boolean(onSelectSlot));
+  const [giftSlotsVisible, setGiftSlotsVisible] = useState(
+    typeof showGiftSlots === "boolean"
+      ? showGiftSlots
+      : showControls && Boolean(onSelectSlot)
+  );
   const [hoveredGift, setHoveredGift] = useState<GiftHover | null>(null);
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
@@ -1102,10 +1108,14 @@ export default function MemorialPreview({
   }, [terrainUrl, houseUrl]);
 
   useEffect(() => {
-    if (showControls && onSelectSlot) {
-      setShowGiftSlots(true);
+    if (typeof showGiftSlots === "boolean") {
+      setGiftSlotsVisible(showGiftSlots);
+      return;
     }
-  }, [onSelectSlot, showControls]);
+    if (showControls && onSelectSlot) {
+      setGiftSlotsVisible(true);
+    }
+  }, [onSelectSlot, showControls, showGiftSlots]);
 
   const containerStyle: React.CSSProperties = {
     ...style
@@ -1149,13 +1159,15 @@ export default function MemorialPreview({
           >
             Сбросить вид
           </button>
-          <button
-            type="button"
-            onClick={() => setShowGiftSlots((prev) => !prev)}
-            className="absolute left-3 top-3 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm"
-          >
-            {showGiftSlots ? "Скрыть метки подарков" : "Показать метки подарков"}
-          </button>
+          {typeof showGiftSlots !== "boolean" ? (
+            <button
+              type="button"
+              onClick={() => setGiftSlotsVisible((prev) => !prev)}
+              className="absolute left-3 top-3 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs text-slate-700 shadow-sm"
+            >
+              {giftSlotsVisible ? "Скрыть метки подарков" : "Показать метки подарков"}
+            </button>
+          ) : null}
         </>
       ) : null}
       {!sceneReady ? (
@@ -1197,7 +1209,7 @@ export default function MemorialPreview({
               parts={parts}
               gifts={gifts}
               colors={colors}
-              showGiftSlots={showGiftSlots}
+              showGiftSlots={giftSlotsVisible}
               giftSlots={giftSlots}
               selectedSlot={selectedSlot}
               onSelectSlot={onSelectSlot}

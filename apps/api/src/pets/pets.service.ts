@@ -12,6 +12,8 @@ const MEMORIAL_PLAN_PRICES = new Map<number, number>([
   [5, 500],
   [0, 1500]
 ]);
+const DUST_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
+const MAX_DUST_STAGE = 4;
 
 @Injectable()
 export class PetsService {
@@ -37,6 +39,15 @@ export class PetsService {
         createdAt: new Date()
       }
     });
+  }
+
+  private calculateDustStage(
+    memorial: { dustUpdatedAt?: Date | null; createdAt?: Date | null },
+    now: Date
+  ) {
+    const base = memorial.dustUpdatedAt ?? memorial.createdAt ?? now;
+    const elapsed = Math.max(0, now.getTime() - base.getTime());
+    return Math.min(MAX_DUST_STAGE, Math.floor(elapsed / DUST_INTERVAL_MS));
   }
 
   async create(dto: CreatePetDto) {
@@ -89,6 +100,7 @@ export class PetsService {
               environmentId: dto.environmentId ?? null,
               houseId: dto.houseId ?? null,
               sceneJson,
+              dustUpdatedAt: now,
               createdAt: now
             }
           },
@@ -166,7 +178,37 @@ export class PetsService {
     if (!pet) {
       throw new NotFoundException("Pet not found");
     }
+    if (pet.memorial) {
+      const now = new Date();
+      const nextStage = this.calculateDustStage(pet.memorial, now);
+      if (nextStage !== pet.memorial.dustStage) {
+        await this.prisma.memorial.update({
+          where: { id: pet.memorial.id },
+          data: { dustStage: nextStage }
+        });
+        pet.memorial.dustStage = nextStage;
+      }
+    }
     return pet;
+  }
+
+  async cleanMemorial(id: string) {
+    const pet = await this.prisma.pet.findUnique({
+      where: { id },
+      include: { memorial: true }
+    });
+    if (!pet?.memorial) {
+      throw new NotFoundException("Memorial not found");
+    }
+    const now = new Date();
+    const memorial = await this.prisma.memorial.update({
+      where: { id: pet.memorial.id },
+      data: {
+        dustStage: 0,
+        dustUpdatedAt: now
+      }
+    });
+    return { dustStage: memorial.dustStage, dustUpdatedAt: memorial.dustUpdatedAt };
   }
 
   async update(id: string, dto: UpdatePetDto) {
