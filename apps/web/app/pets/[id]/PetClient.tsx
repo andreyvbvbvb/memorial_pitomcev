@@ -566,6 +566,10 @@ export default function PetClient({ id }: Props) {
     });
   }, []);
   const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
+  const dirtModelUrls = useMemo(
+    () => buildDirtModelUrls(pet?.memorial?.houseId),
+    [pet?.memorial?.houseId]
+  );
 
   useEffect(() => {
     if (
@@ -717,10 +721,6 @@ export default function PetClient({ id }: Props) {
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
-  const dirtModelUrls = useMemo(
-    () => buildDirtModelUrls(pet?.memorial?.houseId),
-    [pet?.memorial?.houseId]
-  );
 
   const panelBaseClass =
     "w-[280px] max-w-[80vw] rounded-2xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur sm:w-[320px]";
