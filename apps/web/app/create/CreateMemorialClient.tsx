@@ -1258,7 +1258,7 @@ export default function CreateMemorialClient() {
 
   return (
     <main
-      className="bg-gradient-to-b from-slate-50 to-slate-200 px-4 pb-8"
+      className="bg-slate-50 px-4 pb-8"
       style={{
         minHeight: "100dvh",
         marginTop: "calc(-1 * var(--app-header-height, 56px))",
