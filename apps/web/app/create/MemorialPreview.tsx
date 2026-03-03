@@ -94,8 +94,8 @@ const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
 const HOUSE_FOCUS_OFFSET = new THREE.Vector3(4.2, 1.6, 3.0);
 const LOCKED_POLAR_ANGLE = 1.1;
 const CLICK_DRAG_THRESHOLD = 5;
-const HOVER_EMISSIVE_INTENSITY = 0.02;
-const HOVER_COLOR_LERP = 0.008;
+const HOVER_EMISSIVE_INTENSITY = 0.03;
+const HOVER_COLOR_LERP = 0.012;
 
 const buildFocusTarget = (focus: [number, number, number] | null) =>
   focus ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2]) : DEFAULT_TARGET.clone();

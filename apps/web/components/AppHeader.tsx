@@ -142,7 +142,7 @@ export default function AppHeader() {
     <>
       <header
         ref={headerRef}
-        className="sticky top-0 z-40 border-b border-[rgba(215,230,242,0.6)] bg-white/60 backdrop-blur-md"
+        className="sticky top-0 z-40 bg-transparent backdrop-blur-md"
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2">
           <Link href="/" className="chip">

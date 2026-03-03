@@ -27,15 +27,20 @@ import {
   resolveGiftModelUrl,
   resolveGiftIconUrl
 } from "../../../lib/gifts";
+import { splitHouseVariantId } from "../../../lib/house-variants";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
 type DirtSlot = (typeof DIRT_SLOTS)[number];
 type DirtPart = { slot: DirtSlot; url: string };
-const DIRT_MODEL_URLS: Record<DirtSlot, string> = {
-  dirt_slot_1: "/models/dirt/dirt_1.glb",
-  dirt_slot_2: "/models/dirt/dirt_2.glb",
-  dirt_slot_3: "/models/dirt/dirt_3.glb",
-  dirt_slot_4: "/models/dirt/dirt_4.glb"
+const buildDirtModelUrls = (houseId?: string | null): Record<DirtSlot, string> => {
+  const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
+  const prefix = baseId ? `/models/dirt/${baseId}` : "/models/dirt";
+  return {
+    dirt_slot_1: `${prefix}/dirt_1.glb`,
+    dirt_slot_2: `${prefix}/dirt_2.glb`,
+    dirt_slot_3: `${prefix}/dirt_3.glb`,
+    dirt_slot_4: `${prefix}/dirt_4.glb`
+  };
 };
 
 type Pet = {
@@ -663,7 +668,7 @@ export default function PetClient({ id }: Props) {
     dirtLevel > 0
       ? DIRT_SLOTS.slice(0, Math.min(dirtLevel, DIRT_SLOTS.length))
           .map((slot) => {
-            const url = DIRT_MODEL_URLS[slot];
+            const url = dirtModelUrls[slot];
             return url ? { slot, url } : null;
           })
           .filter((part): part is DirtPart => Boolean(part))
@@ -712,6 +717,10 @@ export default function PetClient({ id }: Props) {
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
+  const dirtModelUrls = useMemo(
+    () => buildDirtModelUrls(pet?.memorial?.houseId),
+    [pet?.memorial?.houseId]
+  );
 
   const panelBaseClass =
     "w-[280px] max-w-[80vw] rounded-2xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur sm:w-[320px]";
@@ -968,34 +977,36 @@ export default function PetClient({ id }: Props) {
                   Мемориалы хозяина
                 </p>
                 {otherMemorials.length > 0 ? (
-                  <div className="mt-3 grid gap-3">
-                    {otherMemorials.map((item) => {
-                      const photo = item.photos?.[0];
-                      const url = photo
-                        ? photo.url.startsWith("http")
-                          ? photo.url
-                          : `${apiUrl}${photo.url}`
-                        : null;
-                      return (
-                        <a
-                          key={item.id}
-                          href={`/pets/${item.id}`}
-                          className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 transition hover:border-slate-300"
-                        >
-                          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                            {url ? (
-                              <img src={url} alt="" className="h-full w-full object-cover" />
-                            ) : null}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                            <p className="text-xs text-slate-500">
-                              {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
-                            </p>
-                          </div>
-                        </a>
-                      );
-                    })}
+                  <div className="mt-3 max-h-[50vh] overflow-y-auto pr-1">
+                    <div className="grid gap-3">
+                      {otherMemorials.map((item) => {
+                        const photo = item.photos?.[0];
+                        const url = photo
+                          ? photo.url.startsWith("http")
+                            ? photo.url
+                            : `${apiUrl}${photo.url}`
+                          : null;
+                        return (
+                          <a
+                            key={item.id}
+                            href={`/pets/${item.id}`}
+                            className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 transition hover:border-slate-300"
+                          >
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                              {url ? (
+                                <img src={url} alt="" className="h-full w-full object-cover" />
+                              ) : null}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">{item.name}</p>
+                              <p className="text-xs text-slate-500">
+                                {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
+                              </p>
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500">
