@@ -474,7 +474,7 @@ function MemorialCardPreview({
       }`}
     >
       <Canvas
-        camera={{ position: [6, 5.4, 6], fov: 35 }}
+        camera={{ position: [7, 6.8, 8], fov: 35 }}
         style={{ pointerEvents: "none" }}
       >
         <Color attach="background" args={["#f8fafc"]} />
@@ -844,8 +844,12 @@ export default function MapClient() {
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [carouselQueue, setCarouselQueue] = useState(0);
   const carouselQueueRef = useRef(0);
-  const [headerOffset, setHeaderOffset] = useState(56);
   const overlayTop = 24;
+  const mapViewportStyle = {
+    height: "100dvh",
+    marginTop: "calc(-1 * var(--app-header-height, 56px))",
+    paddingTop: "var(--app-header-height, 56px)"
+  } as const;
   const cameraSettings = {
     distanceOffset: 16,
     height: 4.0,
@@ -925,24 +929,6 @@ export default function MapClient() {
     }
     updateVisibleMarkers();
   }, [map, markers]);
-
-  useEffect(() => {
-    const header = document.querySelector("header");
-    const updateOffset = () => {
-      if (!header) {
-        return;
-      }
-      const height = header.getBoundingClientRect().height;
-      if (height) {
-        setHeaderOffset(Math.round(height));
-      }
-    };
-    updateOffset();
-    window.addEventListener("resize", updateOffset);
-    return () => {
-      window.removeEventListener("resize", updateOffset);
-    };
-  }, []);
 
   const filteredMarkers = useMemo(
     () => markers.filter((marker) => matchesFilters(marker, typeFilter, nameFilter)),
@@ -1311,7 +1297,7 @@ export default function MapClient() {
     : null;
 
   const memorialListContent = (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-1 gap-4">
       {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
       {!loading && !error && listMarkers.length === 0 ? (
         <p className="text-sm text-slate-500">
@@ -1330,7 +1316,7 @@ export default function MapClient() {
           onMouseLeave={() => setHoveredMarkerId(null)}
           onFocus={() => setHoveredMarkerId(marker.id)}
           onBlur={() => setHoveredMarkerId(null)}
-          className="group relative overflow-visible rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
+          className="group relative flex flex-col overflow-visible rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
         >
           <div className="overflow-hidden rounded-2xl bg-white/90">
             <MemorialCardPreview
@@ -1366,7 +1352,7 @@ export default function MapClient() {
     return (
       <main
         className="relative w-screen overflow-hidden bg-slate-50"
-        style={{ height: `calc(100vh - ${headerOffset}px)` }}
+        style={mapViewportStyle}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100" />
         <div className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4 pt-4">
@@ -1622,7 +1608,7 @@ export default function MapClient() {
   return (
     <main
       className="relative w-screen overflow-hidden bg-slate-50"
-      style={{ height: `calc(100vh - ${headerOffset}px)` }}
+      style={mapViewportStyle}
     >
       <div className="absolute inset-0">
         {mapMode === "map" ? (

@@ -668,6 +668,21 @@ function TerrainWithHouse({
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
+  const hoveredOutlineRef = useRef<THREE.LineSegments | null>(null);
+
+  const clearHoverOutline = () => {
+    const outline = hoveredOutlineRef.current;
+    if (outline) {
+      outline.parent?.remove(outline);
+      outline.geometry.dispose();
+      if (Array.isArray(outline.material)) {
+        outline.material.forEach((material) => material.dispose());
+      } else {
+        outline.material.dispose();
+      }
+    }
+    hoveredOutlineRef.current = null;
+  };
 
   const clearHoverHighlight = () => {
     const mesh = hoveredMeshRef.current;
@@ -677,6 +692,7 @@ function TerrainWithHouse({
     }
     hoveredMeshRef.current = null;
     hoveredMaterialRef.current = null;
+    clearHoverOutline();
   };
 
   const applyHoverHighlight = (object: THREE.Object3D | null) => {
@@ -712,6 +728,23 @@ function TerrainWithHouse({
       mesh.material = original.map((mat) => applyHighlight(mat));
     } else {
       mesh.material = applyHighlight(original);
+    }
+
+    clearHoverOutline();
+    if (mesh.geometry) {
+      const outline = new THREE.LineSegments(
+        new THREE.EdgesGeometry(mesh.geometry, 25),
+        new THREE.LineBasicMaterial({
+          color: highlightColor,
+          transparent: true,
+          opacity: 0.55
+        })
+      );
+      outline.renderOrder = 3;
+      outline.raycast = () => null;
+      outline.scale.setScalar(1.01);
+      mesh.add(outline);
+      hoveredOutlineRef.current = outline;
     }
   };
 
