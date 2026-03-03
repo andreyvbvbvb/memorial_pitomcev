@@ -29,7 +29,9 @@ import {
 } from "../../../lib/gifts";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
-const DIRT_MODEL_URLS: Record<(typeof DIRT_SLOTS)[number], string> = {
+type DirtSlot = (typeof DIRT_SLOTS)[number];
+type DirtPart = { slot: DirtSlot; url: string };
+const DIRT_MODEL_URLS: Record<DirtSlot, string> = {
   dirt_slot_1: "/models/dirt/dirt_1.glb",
   dirt_slot_2: "/models/dirt/dirt_2.glb",
   dirt_slot_3: "/models/dirt/dirt_3.glb",
@@ -659,9 +661,7 @@ export default function PetClient({ id }: Props) {
             const url = DIRT_MODEL_URLS[slot];
             return url ? { slot, url } : null;
           })
-          .filter(
-            (part): part is { slot: string; url: string } => Boolean(part)
-          )
+          .filter((part): part is DirtPart => Boolean(part))
       : [];
   const fullPartList = [...partList, ...dirtParts];
   const colorOverrides = sceneJson.colors ?? undefined;
