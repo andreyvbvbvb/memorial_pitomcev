@@ -142,7 +142,7 @@ export default function AppHeader() {
     <>
       <header
         ref={headerRef}
-        className="sticky top-0 z-40 bg-transparent backdrop-blur-md"
+        className="sticky top-0 z-40 bg-transparent"
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2">
           <Link href="/" className="chip">
@@ -153,7 +153,7 @@ export default function AppHeader() {
               <>
                 <Link
                   href="/create"
-                  className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-base text-slate-700 transition hover:bg-slate-50"
+                  className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/40 text-base text-slate-700 transition hover:bg-white/60"
                   aria-label="Создать мемориал"
                 >
                   <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-0 transition group-hover:opacity-70 group-hover:animate-ping" />
@@ -162,16 +162,22 @@ export default function AppHeader() {
                     Создать мемориал
                   </span>
                 </Link>
-                <Link className="btn btn-ghost !px-3 !py-2 text-sm" href="/my-pets">
+                <Link
+                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/40 hover:bg-white/60"
+                  href="/my-pets"
+                >
                   Мои питомцы
                 </Link>
-                <Link className="btn btn-ghost !px-3 !py-2 text-sm" href="/map">
+                <Link
+                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/40 hover:bg-white/60"
+                  href="/map"
+                >
                   Карта
                 </Link>
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
-                    className="btn btn-ghost !px-3 !py-2 text-sm"
+                    className="btn btn-ghost !px-3 !py-2 text-sm bg-white/40 hover:bg-white/60"
                     aria-label="Открыть меню"
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >

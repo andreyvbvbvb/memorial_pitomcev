@@ -71,6 +71,7 @@ const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
+const MAP_PREVIEW_ROTATION_Y = THREE.MathUtils.degToRad(15);
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "100%" };
@@ -391,7 +392,7 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
   }, [terrain, house, tone]);
 
   return (
-    <Group>
+    <Group rotation={[0, MAP_PREVIEW_ROTATION_Y, 0]}>
       <Primitive object={terrain} />
       {data.parts.map((part) => (
         <PartInstance key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={data.colors} />
@@ -450,14 +451,30 @@ function MemorialInstance({
   );
 }
 
-function MemorialCardPreview({ data }: { data: MemorialSceneData | null }) {
+function MemorialCardPreview({
+  data,
+  className
+}: {
+  data: MemorialSceneData | null;
+  className?: string;
+}) {
   if (!data) {
-    return <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-200" />;
+    return (
+      <div
+        className={`aspect-square w-full animate-pulse bg-slate-200 ${
+          className ?? "rounded-2xl"
+        }`}
+      />
+    );
   }
   return (
-    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-slate-100">
+    <div
+      className={`aspect-square w-full overflow-hidden bg-slate-100 ${
+        className ?? "rounded-2xl"
+      }`}
+    >
       <Canvas
-        camera={{ position: [6, 4, 6], fov: 35 }}
+        camera={{ position: [6, 5.4, 6], fov: 35 }}
         style={{ pointerEvents: "none" }}
       >
         <Color attach="background" args={["#f8fafc"]} />
@@ -1313,17 +1330,22 @@ export default function MapClient() {
           onMouseLeave={() => setHoveredMarkerId(null)}
           onFocus={() => setHoveredMarkerId(marker.id)}
           onBlur={() => setHoveredMarkerId(null)}
-          className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
+          className="group relative overflow-visible rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
         >
-          <MemorialCardPreview data={buildMemorialSceneData(marker)} />
-          <div className="p-3">
-            <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-            <p className="mt-1 text-xs text-slate-600">
-              {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
-            </p>
+          <div className="overflow-hidden rounded-2xl bg-white/90">
+            <MemorialCardPreview
+              data={buildMemorialSceneData(marker)}
+              className="rounded-t-2xl"
+            />
+            <div className="border-t border-slate-200 bg-white/90 p-3">
+              <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
+              <p className="mt-1 text-xs text-slate-600">
+                {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
+              </p>
+            </div>
           </div>
           {marker.previewPhotoUrl ? (
-            <div className="pointer-events-none absolute right-3 top-3 hidden rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block">
+            <div className="pointer-events-none absolute left-full top-1/2 hidden -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block ml-3">
               <img
                 src={
                   marker.previewPhotoUrl.startsWith("http")

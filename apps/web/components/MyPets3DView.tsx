@@ -61,6 +61,7 @@ const DirectionalLight = "directionalLight" as unknown as React.ComponentType<an
 
 const DEFAULT_CAMERA = new THREE.Vector3(0, 9, 18);
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
+const CLICK_DRAG_THRESHOLD = 6;
 
 function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, string>) {
   if (!colors) {
@@ -170,11 +171,13 @@ function PartAttachment({
 function MemorialInstance({
   item,
   isActive,
-  onSelect
+  onSelect,
+  orbitMovedRef
 }: {
   item: SceneItem;
   isActive: boolean;
   onSelect: () => void;
+  orbitMovedRef?: React.MutableRefObject<boolean>;
 }) {
   const memorial = item.pet.memorial;
   const environmentUrl = resolveEnvironmentModel(memorial?.environmentId);
@@ -234,6 +237,13 @@ function MemorialInstance({
     applyMaterialColors(house, sceneJson.colors);
   }, [terrain, house, sceneJson.colors]);
 
+  const pointerStateRef = useRef<{
+    x: number;
+    y: number;
+    moved: boolean;
+    pointerId: number | null;
+  } | null>(null);
+
   return (
     <Group
       position={item.position}
@@ -241,6 +251,40 @@ function MemorialInstance({
       scale={isActive ? 1.05 : 1}
       onPointerDown={(event: any) => {
         event.stopPropagation();
+        if (orbitMovedRef) {
+          orbitMovedRef.current = false;
+        }
+        pointerStateRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+          moved: false,
+          pointerId: typeof event.pointerId === "number" ? event.pointerId : null
+        };
+      }}
+      onPointerMove={(event: any) => {
+        const state = pointerStateRef.current;
+        if (!state) {
+          return;
+        }
+        if (state.pointerId !== null && event.pointerId !== state.pointerId) {
+          return;
+        }
+        const dx = event.clientX - state.x;
+        const dy = event.clientY - state.y;
+        if (Math.hypot(dx, dy) >= CLICK_DRAG_THRESHOLD) {
+          state.moved = true;
+        }
+      }}
+      onPointerUp={(event: any) => {
+        event.stopPropagation();
+        const state = pointerStateRef.current;
+        pointerStateRef.current = null;
+        if (orbitMovedRef?.current) {
+          return;
+        }
+        if (state?.moved) {
+          return;
+        }
         onSelect();
       }}
       onPointerOver={() => {
@@ -324,7 +368,7 @@ function SceneCameraRig({
 function buildGridPositions(count: number) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count)));
   const rows = Math.ceil(count / columns);
-  const spacing = 9;
+  const spacing = 12;
   const positions: [number, number, number][] = [];
   for (let index = 0; index < count; index += 1) {
     const row = Math.floor(index / columns);
@@ -347,6 +391,9 @@ export default function MyPets3DView({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const controlsRef = useRef<any>(null);
+  const orbitMovedRef = useRef(false);
+  const orbitingRef = useRef(false);
+  const orbitEndTimeoutRef = useRef<number | null>(null);
 
   const items = useMemo<SceneItem[]>(() => {
     const positions = buildGridPositions(pets.length);
@@ -363,6 +410,14 @@ export default function MyPets3DView({
   const containerClassName = fullScreen
     ? "fixed inset-0 z-0 h-screen w-screen overflow-hidden bg-slate-50"
     : "relative h-[calc(100vh-220px)] min-h-[520px] w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm";
+
+  useEffect(() => {
+    return () => {
+      if (orbitEndTimeoutRef.current !== null) {
+        window.clearTimeout(orbitEndTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className={containerClassName}>
@@ -391,6 +446,7 @@ export default function MyPets3DView({
               item={item}
               isActive={selectedId === item.pet.id}
               onSelect={() => setSelectedId(item.pet.id)}
+              orbitMovedRef={orbitMovedRef}
             />
           ))}
         </Suspense>
@@ -401,6 +457,27 @@ export default function MyPets3DView({
           maxPolarAngle={Math.PI / 2}
           minDistance={6}
           maxDistance={40}
+          onStart={() => {
+            if (orbitEndTimeoutRef.current !== null) {
+              window.clearTimeout(orbitEndTimeoutRef.current);
+            }
+            orbitingRef.current = true;
+            orbitMovedRef.current = false;
+          }}
+          onChange={() => {
+            if (orbitingRef.current) {
+              orbitMovedRef.current = true;
+            }
+          }}
+          onEnd={() => {
+            if (orbitEndTimeoutRef.current !== null) {
+              window.clearTimeout(orbitEndTimeoutRef.current);
+            }
+            orbitEndTimeoutRef.current = window.setTimeout(() => {
+              orbitingRef.current = false;
+              orbitMovedRef.current = false;
+            }, 200);
+          }}
         />
         <SceneCameraRig focus={focusPosition} controlsRef={controlsRef} />
       </Canvas>
