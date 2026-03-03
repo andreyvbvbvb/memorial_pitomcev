@@ -723,8 +723,8 @@ export default function PetClient({ id }: Props) {
     }`;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#e9f2fb]">
-      <div className="absolute inset-0 z-0">
+    <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#e9f2fb]">
+      <div className="fixed inset-0 z-0">
         <MemorialPreview
           className="h-full w-full rounded-none border-transparent bg-transparent"
           terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
@@ -745,15 +745,15 @@ export default function PetClient({ id }: Props) {
         />
       </div>
 
-      <div className="relative z-10 min-h-screen pointer-events-none">
-        <div className="pointer-events-none absolute top-4 left-1/2 z-10 -translate-x-1/2 text-center">
+      <div className="fixed inset-0 z-10 pointer-events-none">
+        <div className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]">
           <div className="rounded-full bg-white/60 px-4 py-2 backdrop-blur">
             <div className="text-lg font-semibold text-slate-900">{pet.name}</div>
             <div className="text-xs text-slate-600">{dateRange}</div>
           </div>
         </div>
 
-        <div className="pointer-events-auto absolute bottom-4 left-4">
+        <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4">
           <div className="relative">
             <div className="flex flex-col gap-2">
               <button
@@ -1007,7 +1007,7 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
 
-        <div className="pointer-events-auto absolute bottom-4 right-4">
+        <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4">
           <div className="relative">
             <button
               type="button"
