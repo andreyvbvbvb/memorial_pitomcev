@@ -55,6 +55,7 @@ type Props = {
   backgroundColor?: string;
   softEdges?: boolean;
   showGiftSlots?: boolean;
+  enableHoverHighlight?: boolean;
   showControls?: boolean;
   controlsEnabled?: boolean;
   preloadGiftUrl?: string | null;
@@ -93,6 +94,8 @@ const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
 const HOUSE_FOCUS_OFFSET = new THREE.Vector3(4.2, 1.6, 3.0);
 const LOCKED_POLAR_ANGLE = 1.1;
 const CLICK_DRAG_THRESHOLD = 5;
+const HOVER_EMISSIVE_INTENSITY = 0.09;
+const HOVER_COLOR_LERP = 0.03;
 
 const buildFocusTarget = (focus: [number, number, number] | null) =>
   focus ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2]) : DEFAULT_TARGET.clone();
@@ -623,6 +626,7 @@ function TerrainWithHouse({
   onDetailClick,
   orbitMovedRef,
   orbitLastChangeRef,
+  enableHoverHighlight,
   allowFocus,
   houseBaseId
 }: {
@@ -653,6 +657,7 @@ function TerrainWithHouse({
   onDetailClick?: (detail: DetailClick) => void;
   orbitMovedRef?: React.MutableRefObject<boolean>;
   orbitLastChangeRef?: React.MutableRefObject<number | null>;
+  enableHoverHighlight?: boolean;
   allowFocus?: boolean;
   houseBaseId?: string;
 }) {
@@ -696,10 +701,10 @@ function TerrainWithHouse({
       };
       if (cloned.emissive) {
         cloned.emissive = highlightColor.clone();
-        cloned.emissiveIntensity = 0.3;
+        cloned.emissiveIntensity = HOVER_EMISSIVE_INTENSITY;
       }
       if (cloned.color) {
-        cloned.color = cloned.color.clone().lerp(highlightColor, 0.1);
+        cloned.color = cloned.color.clone().lerp(highlightColor, HOVER_COLOR_LERP);
       }
       return cloned;
     };
@@ -737,6 +742,12 @@ function TerrainWithHouse({
       clearHoverHighlight();
     };
   }, []);
+
+  useEffect(() => {
+    if (!enableHoverHighlight) {
+      clearHoverHighlight();
+    }
+  }, [enableHoverHighlight]);
 
   useEffect(() => {
     if (!focusSlot) {
@@ -883,6 +894,9 @@ function TerrainWithHouse({
         state.moved = true;
       }
     }
+    if (!enableHoverHighlight) {
+      return;
+    }
     const hoverTarget = event?.intersections?.[0]?.object ?? null;
     applyHoverHighlight(hoverTarget);
   };
@@ -1003,6 +1017,7 @@ export default function MemorialPreview({
   backgroundColor = "#eef6ff",
   softEdges = false,
   showGiftSlots,
+  enableHoverHighlight = false,
   showControls = true,
   controlsEnabled = true,
   preloadGiftUrl,
@@ -1224,6 +1239,7 @@ export default function MemorialPreview({
               onDetailClick={onDetailClick}
               orbitMovedRef={orbitMovedRef}
               orbitLastChangeRef={orbitLastChangeRef}
+              enableHoverHighlight={enableHoverHighlight}
               allowFocus={allowFocus}
               houseBaseId={houseBaseId}
             />

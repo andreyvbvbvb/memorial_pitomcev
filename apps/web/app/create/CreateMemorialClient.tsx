@@ -1590,6 +1590,7 @@ export default function CreateMemorialClient() {
                         : undefined
                     }
                     showGiftSlots={giftPreviewEnabled && previewPlaceholderSlots.length > 0}
+                    enableHoverHighlight
                     colors={colorOverrides}
                     focusSlot={focusSlot}
                     focusRequestId={focusRequestId}

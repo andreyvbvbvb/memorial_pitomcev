@@ -126,7 +126,10 @@ export default function PetClient({ id }: Props) {
   const [giftCatalogLoading, setGiftCatalogLoading] = useState(true);
   const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
-  const [giftPanelOpen, setGiftPanelOpen] = useState(true);
+  const [giftPanelOpen, setGiftPanelOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<
+    "info" | "photos" | "gifts" | "memorials" | null
+  >(null);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
   const [ownerMemorials, setOwnerMemorials] = useState<OwnerMemorial[]>([]);
@@ -477,6 +480,8 @@ export default function PetClient({ id }: Props) {
   };
 
   const toggleGiftPanel = () => setGiftPanelOpen((prev) => !prev);
+  const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials") =>
+    setActivePanel((prev) => (prev === panel ? null : panel));
 
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot || !selectedDuration) {
@@ -708,379 +713,487 @@ export default function PetClient({ id }: Props) {
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
+  const panelBaseClass =
+    "w-[280px] max-w-[80vw] rounded-2xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur sm:w-[320px]";
+  const panelButtonClass = (active: boolean) =>
+    `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
+      active
+        ? "border-white/80 bg-white text-slate-900 shadow-lg"
+        : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+    }`;
+
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#eef6ff] px-6 py-16">
-      <div className="mx-auto max-w-5xl space-y-10">
-        <div className="rounded-3xl border border-slate-200 bg-white/80 p-10 text-center shadow-sm">
-          <h1 className="text-4xl font-semibold text-slate-900">{pet.name}</h1>
-          <p className="mt-3 text-sm text-slate-600">{dateRange}</p>
-          <div className="mx-auto mt-4 h-px w-48 bg-slate-400/70" />
-          <p className="mt-4 text-base text-slate-800">{pet.epitaph ?? "Без эпитафии"}</p>
-        </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#e9f2fb]">
+      <div className="absolute inset-0 z-0">
+        <MemorialPreview
+          className="h-full w-full rounded-none border-transparent bg-transparent"
+          terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
+          houseUrl={resolveHouseModel(pet.memorial?.houseId)}
+          houseId={pet.memorial?.houseId ?? null}
+          parts={fullPartList}
+          gifts={previewGifts}
+          giftSlots={giftPanelOpen ? filteredAvailableSlots : undefined}
+          selectedSlot={giftPanelOpen ? selectedSlot : null}
+          onSelectSlot={giftPanelOpen ? handleSelectSlot : undefined}
+          onGiftSlotsDetected={setDetectedSlots}
+          preloadGiftUrl={pendingPreviewUrl}
+          onGiftPreloaded={handleGiftPreloaded}
+          colors={colorOverrides}
+          onDetailClick={handleMemorialDetailClick}
+          showControls={false}
+          showGiftSlots={giftPanelOpen && filteredAvailableSlots.length > 0}
+        />
+      </div>
 
-        {photos.length > 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400 text-center">
-              Фотографии
-            </p>
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-              {photos.map((photo, index) => (
-                <button
-                  key={photo.id}
-                  type="button"
-                  onClick={() => openLightbox(index)}
-                  className="shrink-0 cursor-zoom-in"
-                >
-                  <img
-                    src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
-                    alt="Фото питомца"
-                    className="rounded-xl object-cover"
-                    style={{ width: 324, height: 252 }}
-                    loading="lazy"
-                    onClick={() => openLightbox(index)}
-                  />
-                </button>
-              ))}
-            </div>
+      <div className="relative z-10 min-h-screen pointer-events-none">
+        <div className="pointer-events-none absolute top-4 left-1/2 z-10 -translate-x-1/2 text-center">
+          <div className="rounded-full bg-white/60 px-4 py-2 backdrop-blur">
+            <div className="text-lg font-semibold text-slate-900">{pet.name}</div>
+            <div className="text-xs text-slate-600">{dateRange}</div>
           </div>
-        ) : null}
-
-        <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 text-center shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">История</p>
-          <p className="mt-3 text-sm leading-relaxed text-slate-700">
-            {pet.story ?? "История пока не заполнена."}
-          </p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm">
-          {currentUser ? (
-            <div className="flex items-center justify-between">
+        <div className="pointer-events-auto absolute bottom-4 left-4">
+          <div className="relative">
+            <div className="flex flex-col gap-2">
               <button
                 type="button"
-                onClick={toggleGiftPanel}
-                className="flex items-center text-xs font-semibold text-slate-700"
+                onClick={() => togglePanel("info")}
+                aria-label="Информация"
+                className={panelButtonClass(activePanel === "info")}
               >
-                <span
-                  className={`inline-flex items-center justify-center transition-transform ${
-                    giftPanelOpen ? "rotate-180" : ""
-                  }`}
-                  aria-hidden
-                >
-                  ▾
-                </span>
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 11v5" />
+                  <circle cx="12" cy="8" r="1" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => togglePanel("photos")}
+                aria-label="Фотографии"
+                className={panelButtonClass(activePanel === "photos")}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="9" cy="11" r="2" />
+                  <path d="M21 15l-4-4-4 4-3-3-5 5" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => togglePanel("gifts")}
+                aria-label="Подарки"
+                className={panelButtonClass(activePanel === "gifts")}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => togglePanel("memorials")}
+                aria-label="Другие мемориалы"
+                className={panelButtonClass(activePanel === "memorials")}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="8" cy="9" r="3" />
+                  <circle cx="16" cy="9" r="3" />
+                  <path d="M3 20c0-3 3-5 5-5" />
+                  <path d="M21 20c0-3-3-5-5-5" />
+                </svg>
               </button>
             </div>
-          ) : null}
-          {currentUser ? (
-            <div
-              className={`mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all ${
-                giftPanelOpen ? "opacity-100" : "pointer-events-none max-h-0 overflow-hidden p-0 opacity-0"
-              }`}
-            >
-              <div className="grid gap-3">
-                <div className="grid gap-2 text-sm text-slate-700">
-                  Подарок
-                  <div className="flex max-h-60 flex-wrap gap-3 overflow-y-auto pr-1">
-                    {giftCatalogLoading ? (
-                      Array.from({ length: 8 }).map((_, index) => (
-                        <div
-                          key={`gift-skeleton-${index}`}
-                          className="h-24 w-full animate-pulse rounded-2xl border border-slate-200 bg-white"
-                        >
-                          <div className="m-2 h-16 rounded-xl bg-slate-200" />
-                        </div>
-                      ))
-                    ) : giftsWithSlots.length === 0 ? (
-                      <p className="text-sm text-slate-500">Нет доступных подарков.</p>
-                    ) : (
-                      giftsWithSlots.map((gift) => {
-                      const iconUrl = resolveGiftIconUrl(gift);
-                      const fallbackIcon =
-                        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
-                      return (
-                      <button
-                        key={gift.id}
-                        type="button"
-                        onClick={() => handleSelectGift(gift.id)}
-                        className={`relative flex h-24 w-24 items-center justify-center rounded-xl border ${
-                          selectedGiftId === gift.id
-                            ? "border-sky-400/70 bg-sky-50 text-slate-900"
-                            : "border-slate-200 bg-white text-slate-700"
-                        }`}
-                      >
-                        <span className="relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
-                          {iconUrl ? (
-                            <img
-                              src={iconUrl ?? undefined}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                              onError={(event) => {
-                                event.currentTarget.onerror = null;
-                                event.currentTarget.src = fallbackIcon;
-                              }}
-                            />
-                          ) : null}
-                        </span>
-                        <span className="absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[9px] font-semibold text-white">
-                          {gift.price}
-                        </span>
-                      </button>
-                    );
-                  })
-                    )}
+
+            {activePanel === "info" ? (
+              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+                <div className="grid gap-3 text-sm text-slate-700">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                      Эпитафия
+                    </p>
+                    <p className="mt-2 text-sm text-slate-800">
+                      {pet.epitaph ?? "Без эпитафии"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                      История
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                      {pet.story ?? "История пока не заполнена."}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white/70 p-3">
+                    <div className="flex items-center justify-between text-xs text-slate-600">
+                      <span className="font-semibold text-slate-800">Чистота мемориала</span>
+                      <span>
+                        {dirtLevel}/{DIRT_SLOTS.length}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCleanDirt}
+                      disabled={dirtLevel === 0}
+                      className={`mt-3 w-full rounded-full px-3 py-2 text-xs font-semibold transition ${
+                        dirtLevel === 0
+                          ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                          : "bg-slate-900 text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      Почистить мемориал
+                    </button>
                   </div>
                 </div>
+              </div>
+            ) : null}
 
-                {selectedGiftSupportsSize ? (
-                  <div className="grid gap-2 text-sm text-slate-700">
-                    Размер звезды
-                    <div className="flex flex-wrap gap-2">
-                      {starSizeOptions.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => setSelectedGiftSize(option.id)}
-                          className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${
-                            selectedGiftSize === option.id
-                              ? "border-sky-400 bg-sky-50 text-slate-900"
-                              : "border-slate-200 bg-white text-slate-600"
-                          }`}
-                        >
-                          <span className="text-sm font-semibold">{option.label}</span>
-                          <span className="text-[11px] text-slate-400">{option.helper}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="grid gap-2 text-sm text-slate-700">
-                  Срок подарка
-                  <div className="flex flex-wrap gap-2">
-                    {[1, 2, 3, 6, 12].map((months) => (
+            {activePanel === "photos" ? (
+              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                  Фотографии
+                </p>
+                {photos.length > 0 ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {photos.map((photo, index) => (
                       <button
-                        key={months}
+                        key={photo.id}
                         type="button"
-                        onClick={() => setSelectedDuration(months)}
-                        className={`rounded-2xl border px-4 py-2 text-sm ${
-                          selectedDuration === months
-                            ? "border-rose-500 bg-rose-500 text-white"
-                            : "border-slate-200 bg-white text-slate-700"
-                        }`}
+                        onClick={() => openLightbox(index)}
+                        className="overflow-hidden rounded-xl"
                       >
-                        {months} мес
+                        <img
+                          src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
+                          alt="Фото питомца"
+                          className="h-28 w-full object-cover"
+                          loading="lazy"
+                        />
                       </button>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">Фотографии пока не добавлены.</p>
+                )}
+              </div>
+            ) : null}
 
-                <div className="grid gap-2 text-sm text-slate-700">
-                  Слот
-                  {filteredAvailableSlots.length === 0 ? (
-                    <p className="text-sm text-slate-500">Выберите подарок.</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {filteredAvailableSlots.map((slot, index) => (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => handleSelectSlot(slot)}
-                          className={`h-10 w-10 rounded-full border text-sm ${
-                            selectedSlot === slot
-                              ? "border-slate-900 bg-slate-900 text-white"
-                              : "border-slate-200 bg-white text-slate-700"
-                          }`}
-                          aria-label={`Слот ${index + 1}`}
-                        >
-                          {index + 1}
-                        </button>
-                      ))}
+            {activePanel === "gifts" ? (
+              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                  Подарки
+                </p>
+                <div className="mt-3 max-h-[50vh] overflow-y-auto pr-1">
+                  {activeGifts.length > 0 ? (
+                    <div className="grid gap-2 text-sm text-slate-700">
+                      {activeGifts.map((gift) => {
+                        const ownerPets = gift.owner?.pets ?? [];
+                        const ownerName =
+                          gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
+                        const ownerLabel =
+                          ownerPets.length > 0
+                            ? ownerPets.map((petItem) => petItem.name).join(", ")
+                            : ownerName;
+                        const expiresLabel = gift.expiresAt
+                          ? new Date(gift.expiresAt).toLocaleDateString()
+                          : null;
+                        const iconUrl = resolveGiftIconUrl(gift.gift);
+                        const fallbackIcon =
+                          "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                        return (
+                          <div
+                            key={gift.id}
+                            className="group relative flex gap-3 rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
+                          >
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                              {iconUrl ? (
+                                <img
+                                  src={iconUrl ?? undefined}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                  onError={(event) => {
+                                    event.currentTarget.onerror = null;
+                                    event.currentTarget.src = fallbackIcon;
+                                  }}
+                                />
+                              ) : null}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="font-semibold">{gift.gift.name}</p>
+                              </div>
+                              <p className="mt-1 text-xs text-slate-500">
+                                От хозяина:{" "}
+                                {ownerPets.length > 0 ? (
+                                  <span className="inline-flex flex-wrap gap-1">
+                                    {ownerPets.map((petItem, index) => (
+                                      <span key={petItem.id} className="inline-flex items-center gap-1">
+                                        <a
+                                          href={`/pets/${petItem.id}`}
+                                          className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+                                        >
+                                          {petItem.name}
+                                        </a>
+                                        {index < ownerPets.length - 1 ? "," : null}
+                                      </span>
+                                    ))}
+                                  </span>
+                                ) : (
+                                  ownerName
+                                )}
+                              </p>
+                              {expiresLabel ? (
+                                <p className="text-xs text-slate-500">До: {expiresLabel}</p>
+                              ) : null}
+                            </div>
+                            <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
+                              <p className="font-semibold text-slate-800">{gift.gift.name}</p>
+                              <p className="mt-1">От: {ownerLabel}</p>
+                              {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Пока нет подарков.</p>
                   )}
                 </div>
-
-                <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />
-
-                <button
-                  type="button"
-                  onClick={handlePlaceGift}
-                  className={`rounded-2xl px-4 py-2 text-sm font-semibold ${
-                    selectedGiftId && selectedSlot && selectedDuration && !giftLoading
-                      ? "bg-slate-900 text-white"
-                      : "cursor-not-allowed bg-slate-300 text-slate-500"
-                  }`}
-                  disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
-                >
-                  {giftLoading
-                    ? "Покупка..."
-                    : selectedGift && totalPrice !== null
-                      ? `Подарить (${totalPrice} монет)`
-                      : "Подарить"}
-                </button>
               </div>
-            </div>
-          ) : null}
-          <div className={currentUser ? "mt-6" : "mt-4"}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-xs text-slate-600">
-              <div className="flex items-center gap-3">
-                <span className="font-semibold text-slate-800">Чистота мемориала</span>
-                <span className="text-slate-500">
-                  Загрязнение: {dirtLevel}/{DIRT_SLOTS.length}
-                </span>
+            ) : null}
+
+            {activePanel === "memorials" ? (
+              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                  Мемориалы хозяина
+                </p>
+                {otherMemorials.length > 0 ? (
+                  <div className="mt-3 grid gap-3">
+                    {otherMemorials.map((item) => {
+                      const photo = item.photos?.[0];
+                      const url = photo
+                        ? photo.url.startsWith("http")
+                          ? photo.url
+                          : `${apiUrl}${photo.url}`
+                        : null;
+                      return (
+                        <a
+                          key={item.id}
+                          href={`/pets/${item.id}`}
+                          className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 transition hover:border-slate-300"
+                        >
+                          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                            {url ? (
+                              <img src={url} alt="" className="h-full w-full object-cover" />
+                            ) : null}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{item.name}</p>
+                            <p className="text-xs text-slate-500">
+                              {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
+                            </p>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">
+                    Других мемориалов пока нет.
+                  </p>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={handleCleanDirt}
-                disabled={dirtLevel === 0}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                  dirtLevel === 0
-                    ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                    : "bg-slate-900 text-white hover:bg-slate-800"
-                }`}
-              >
-                Почистить мемориал
-              </button>
-            </div>
-            <MemorialPreview
-              className="h-[660px]"
-              terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
-              houseUrl={resolveHouseModel(pet.memorial?.houseId)}
-              houseId={pet.memorial?.houseId ?? null}
-              parts={fullPartList}
-              gifts={previewGifts}
-              giftSlots={filteredAvailableSlots}
-              selectedSlot={selectedSlot}
-              onSelectSlot={handleSelectSlot}
-              onGiftSlotsDetected={setDetectedSlots}
-              preloadGiftUrl={pendingPreviewUrl}
-              onGiftPreloaded={handleGiftPreloaded}
-              colors={colorOverrides}
-              onDetailClick={handleMemorialDetailClick}
-            />
+            ) : null}
           </div>
         </div>
 
-        {otherMemorials.length > 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400 text-center">
-              Другие мемориалы хозяина
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {otherMemorials.map((item) => {
-                const photo = item.photos?.[0];
-                const url = photo
-                  ? photo.url.startsWith("http")
-                    ? photo.url
-                    : `${apiUrl}${photo.url}`
-                  : null;
-                return (
-                  <a
-                    key={item.id}
-                    href={`/pets/${item.id}`}
-                    className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-slate-300"
+        <div className="pointer-events-auto absolute bottom-4 right-4">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={toggleGiftPanel}
+              aria-label="Подарки"
+              className={`flex h-14 w-14 items-center justify-center rounded-2xl border transition ${
+                giftPanelOpen
+                  ? "border-white/80 bg-white text-slate-900 shadow-lg"
+                  : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="8" width="18" height="12" rx="2" />
+                <path d="M12 8v12" />
+                <path d="M3 12h18" />
+                <path d="M7 8c-1.5 0-2.5-1-2.5-2s1-2 2.5-2c1.5 0 3 2 3 4" />
+                <path d="M17 8c1.5 0 2.5-1 2.5-2s-1-2-2.5-2c-1.5 0-3 2-3 4" />
+              </svg>
+            </button>
+            {giftPanelOpen ? (
+              <div className={`absolute bottom-16 right-0 ${panelBaseClass}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                      Подарки
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900">Сделать подарок</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleGiftPanel}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
                   >
-                    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                      {url ? (
-                        <img src={url} alt="" className="h-full w-full object-cover" />
-                      ) : null}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                      <p className="text-xs text-slate-500">
-                        {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
-                      </p>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Подарки</p>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            {activeGifts.length > 0 ? (
-              <div className="grid gap-2 text-sm text-slate-700">
-                {activeGifts.map((gift) => {
-                  const ownerPets = gift.owner?.pets ?? [];
-                  const ownerName =
-                    gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
-                  const ownerLabel =
-                    ownerPets.length > 0
-                      ? ownerPets.map((petItem) => petItem.name).join(", ")
-                      : ownerName;
-                  const expiresLabel = gift.expiresAt
-                    ? new Date(gift.expiresAt).toLocaleDateString()
-                    : null;
-                  const iconUrl = resolveGiftIconUrl(gift.gift);
-                  const fallbackIcon =
-                    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
-                  return (
-                    <div
-                      key={gift.id}
-                      className="group relative flex gap-3 rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
-                    >
-                      <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                        {iconUrl ? (
-                          <img
-                            src={iconUrl ?? undefined}
-                            alt=""
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                            onError={(event) => {
-                              event.currentTarget.onerror = null;
-                              event.currentTarget.src = fallbackIcon;
-                            }}
-                          />
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold">{gift.gift.name}</p>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          От хозяина:{" "}
-                          {ownerPets.length > 0 ? (
-                            <span className="inline-flex flex-wrap gap-1">
-                              {ownerPets.map((petItem, index) => (
-                                <span key={petItem.id} className="inline-flex items-center gap-1">
-                                  <a
-                                    href={`/pets/${petItem.id}`}
-                                    className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
-                                  >
-                                    {petItem.name}
-                                  </a>
-                                  {index < ownerPets.length - 1 ? "," : null}
+                    Закрыть
+                  </button>
+                </div>
+                {currentUser ? (
+                  <div className="mt-4 grid gap-3">
+                    <div className="grid gap-2 text-sm text-slate-700">
+                      Подарок
+                      <div className="flex max-h-56 flex-wrap gap-3 overflow-y-auto pr-1">
+                        {giftCatalogLoading ? (
+                          Array.from({ length: 8 }).map((_, index) => (
+                            <div
+                              key={`gift-skeleton-${index}`}
+                              className="h-24 w-full animate-pulse rounded-2xl border border-slate-200 bg-white"
+                            >
+                              <div className="m-2 h-16 rounded-xl bg-slate-200" />
+                            </div>
+                          ))
+                        ) : giftsWithSlots.length === 0 ? (
+                          <p className="text-sm text-slate-500">Нет доступных подарков.</p>
+                        ) : (
+                          giftsWithSlots.map((gift) => {
+                            const iconUrl = resolveGiftIconUrl(gift);
+                            const fallbackIcon =
+                              "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                            return (
+                              <button
+                                key={gift.id}
+                                type="button"
+                                onClick={() => handleSelectGift(gift.id)}
+                                className={`relative flex h-24 w-24 items-center justify-center rounded-xl border ${
+                                  selectedGiftId === gift.id
+                                    ? "border-sky-400/70 bg-sky-50 text-slate-900"
+                                    : "border-slate-200 bg-white text-slate-700"
+                                }`}
+                              >
+                                <span className="relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                                  {iconUrl ? (
+                                    <img
+                                      src={iconUrl ?? undefined}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                      onError={(event) => {
+                                        event.currentTarget.onerror = null;
+                                        event.currentTarget.src = fallbackIcon;
+                                      }}
+                                    />
+                                  ) : null}
                                 </span>
-                              ))}
-                            </span>
-                          ) : (
-                            ownerName
-                          )}
-                        </p>
-                        {expiresLabel ? (
-                          <p className="text-xs text-slate-500">До: {expiresLabel}</p>
-                        ) : null}
-                      </div>
-                      <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
-                        <p className="font-semibold text-slate-800">{gift.gift.name}</p>
-                        <p className="mt-1">От: {ownerLabel}</p>
-                        {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
+                                <span className="absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[9px] font-semibold text-white">
+                                  {gift.price}
+                                </span>
+                              </button>
+                            );
+                          })
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+
+                    {selectedGiftSupportsSize ? (
+                      <div className="grid gap-2 text-sm text-slate-700">
+                        Размер звезды
+                        <div className="flex flex-wrap gap-2">
+                          {starSizeOptions.map((option) => (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => setSelectedGiftSize(option.id)}
+                              className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${
+                                selectedGiftSize === option.id
+                                  ? "border-sky-400 bg-sky-50 text-slate-900"
+                                  : "border-slate-200 bg-white text-slate-600"
+                              }`}
+                            >
+                              <span className="text-sm font-semibold">{option.label}</span>
+                              <span className="text-[11px] text-slate-400">{option.helper}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="grid gap-2 text-sm text-slate-700">
+                      Срок подарка
+                      <div className="flex flex-wrap gap-2">
+                        {[1, 2, 3, 6, 12].map((months) => (
+                          <button
+                            key={months}
+                            type="button"
+                            onClick={() => setSelectedDuration(months)}
+                            className={`rounded-2xl border px-4 py-2 text-sm ${
+                              selectedDuration === months
+                                ? "border-rose-500 bg-rose-500 text-white"
+                                : "border-slate-200 bg-white text-slate-700"
+                            }`}
+                          >
+                            {months} мес
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 text-sm text-slate-700">
+                      Слот
+                      {filteredAvailableSlots.length === 0 ? (
+                        <p className="text-sm text-slate-500">Выберите подарок.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {filteredAvailableSlots.map((slot, index) => (
+                            <button
+                              key={slot}
+                              type="button"
+                              onClick={() => handleSelectSlot(slot)}
+                              className={`h-10 w-10 rounded-full border text-sm ${
+                                selectedSlot === slot
+                                  ? "border-slate-900 bg-slate-900 text-white"
+                                  : "border-slate-200 bg-white text-slate-700"
+                              }`}
+                              aria-label={`Слот ${index + 1}`}
+                            >
+                              {index + 1}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />
+
+                    <button
+                      type="button"
+                      onClick={handlePlaceGift}
+                      className={`rounded-2xl px-4 py-2 text-sm font-semibold ${
+                        selectedGiftId && selectedSlot && selectedDuration && !giftLoading
+                          ? "bg-slate-900 text-white"
+                          : "cursor-not-allowed bg-slate-300 text-slate-500"
+                      }`}
+                      disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
+                    >
+                      {giftLoading
+                        ? "Покупка..."
+                        : selectedGift && totalPrice !== null
+                          ? `Подарить (${totalPrice} монет)`
+                          : "Подарить"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-600">
+                    Войдите, чтобы дарить подарки.
+                  </p>
+                )}
               </div>
-            ) : (
-              <p className="text-sm text-slate-500">Пока нет подарков.</p>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
