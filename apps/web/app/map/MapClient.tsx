@@ -844,11 +844,10 @@ export default function MapClient() {
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [carouselQueue, setCarouselQueue] = useState(0);
   const carouselQueueRef = useRef(0);
-  const overlayTop = 24;
+  const overlayTop = "calc(var(--app-header-height, 56px) + 16px)";
   const mapViewportStyle = {
     height: "100dvh",
-    marginTop: "calc(-1 * var(--app-header-height, 56px))",
-    paddingTop: "var(--app-header-height, 56px)"
+    marginTop: "calc(-1 * var(--app-header-height, 56px))"
   } as const;
   const cameraSettings = {
     distanceOffset: 16,
@@ -1355,7 +1354,10 @@ export default function MapClient() {
         style={mapViewportStyle}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100" />
-        <div className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4 pt-4">
+        <div
+          className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4"
+          style={{ paddingTop: "calc(var(--app-header-height, 56px) + 16px)" }}
+        >
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
