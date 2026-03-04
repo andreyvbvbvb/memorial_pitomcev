@@ -8,5 +8,67 @@ export const houseSlotsGenerated = {
     "mat": "mat_slot",
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
+  },
+  "budka_1__brown": {
+    "sign": "sign_slot",
+    "frameLeft": "frame_left_slot",
+    "frameRight": "frame_right_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_1__soso": {
+    "sign": "sign_slot",
+    "frameLeft": "frame_left_slot",
+    "frameRight": "frame_right_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_1__tuntun": {
+    "sign": "sign_slot",
+    "frameLeft": "frame_left_slot",
+    "frameRight": "frame_right_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_1__white": {
+    "sign": "sign_slot",
+    "frameLeft": "frame_left_slot",
+    "frameRight": "frame_right_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_2__base": {
+    "sign": "sign_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_2__brown": {
+    "sign": "sign_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_2__stone": {
+    "sign": "sign_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_2__toy": {
+    "sign": "sign_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "budka_2__white": {
+    "sign": "sign_slot",
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
   }
 } as const;

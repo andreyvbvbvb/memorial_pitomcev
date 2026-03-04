@@ -72,6 +72,7 @@ const DirectionalLight = "directionalLight" as unknown as React.ComponentType<an
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 const MAP_PREVIEW_ROTATION_Y = THREE.MathUtils.degToRad(15);
+const CARD_PREVIEW_ASPECT = "15 / 9";
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "100%" };
@@ -461,20 +462,18 @@ function MemorialCardPreview({
   if (!data) {
     return (
       <div
-        className={`aspect-square w-full animate-pulse bg-slate-200 ${
-          className ?? "rounded-2xl"
-        }`}
+        className={`w-full animate-pulse bg-slate-200 ${className ?? "rounded-2xl"}`}
+        style={{ aspectRatio: CARD_PREVIEW_ASPECT }}
       />
     );
   }
   return (
     <div
-      className={`aspect-square w-full overflow-hidden bg-slate-100 ${
-        className ?? "rounded-2xl"
-      }`}
+      className={`w-full overflow-hidden bg-slate-100 ${className ?? "rounded-2xl"}`}
+      style={{ aspectRatio: CARD_PREVIEW_ASPECT }}
     >
       <Canvas
-        camera={{ position: [7, 6.8, 8], fov: 35 }}
+        camera={{ position: [-7.5, 7.2, 9.5], fov: 35 }}
         style={{ pointerEvents: "none" }}
       >
         <Color attach="background" args={["#f8fafc"]} />

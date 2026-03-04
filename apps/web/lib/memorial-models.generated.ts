@@ -19,7 +19,7 @@ export const houseModelByIdGenerated = {
   "budka_1__white": "/models/houses/DOM_budka_1__white.glb",
   "budka_2__base": "/models/houses/DOM_budka_2__base.glb",
   "budka_2__brown": "/models/houses/DOM_budka_2__brown.glb",
-  "budka_2__normal": "/models/houses/DOM_budka_2__normal.glb",
+  "budka_2__stone": "/models/houses/DOM_budka_2__stone.glb",
   "budka_2__toy": "/models/houses/DOM_budka_2__toy.glb",
   "budka_2__white": "/models/houses/DOM_budka_2__white.glb"
 } as const;
@@ -33,7 +33,17 @@ export const wallModelByIdGenerated = {
 } as const;
 export const signModelByIdGenerated = {
   "sign_1": "/models/parts/sign/sign_1.glb",
-  "sign_2": "/models/parts/sign/sign_2.glb"
+  "sign_2": "/models/parts/sign/sign_2.glb",
+  "sign_3": "/models/parts/sign/sign_3.glb",
+  "sign_4": "/models/parts/sign/sign_4.glb",
+  "sign_5": "/models/parts/sign/sign_5.glb",
+  "sign_6": "/models/parts/sign/sign_6.glb",
+  "sign_7": "/models/parts/sign/sign_7.glb",
+  "sign_8": "/models/parts/sign/sign_8.glb",
+  "sign_9": "/models/parts/sign/sign_9.glb",
+  "sign_10": "/models/parts/sign/sign_10.glb",
+  "sign_11": "/models/parts/sign/sign_11.glb",
+  "sign_12": "/models/parts/sign/sign_12.glb"
 } as const;
 export const frameLeftModelByIdGenerated = {
   "frame_left_1": "/models/parts/frame_left/frame_left_1.glb",

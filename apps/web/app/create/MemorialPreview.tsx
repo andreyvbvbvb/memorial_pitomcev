@@ -292,6 +292,20 @@ function applyPartFitScale(target: THREE.Object3D, maxWidth: number, maxLength: 
   target.scale.setScalar(scale);
 }
 
+function applyPartFitWidthHeight(target: THREE.Object3D, maxWidth: number, maxHeight: number) {
+  if (!maxWidth || !maxHeight || maxWidth <= 0 || maxHeight <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0 || sizeVec.y <= 0) {
+    return;
+  }
+  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
+  target.scale.setScalar(scale);
+}
+
 function SceneCameraRig({
   focus,
   direction,
@@ -583,6 +597,9 @@ function PartAttachment({
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
       applyPartScale(cloned, 0.575, "x");
     }
+    if (slot === "sign_slot") {
+      applyPartFitWidthHeight(cloned, 0.5, 0.2);
+    }
     return cloned;
   }, [scene, slot]);
 
@@ -660,6 +677,7 @@ function TerrainWithHouse({
   enableHoverHighlight?: boolean;
   allowFocus?: boolean;
   houseBaseId?: string;
+  cameraPosition?: [number, number, number];
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -1056,11 +1074,16 @@ export default function MemorialPreview({
   preloadGiftUrl,
   onGiftPreloaded,
   onHouseSlotsDetected,
+  cameraPosition = [4, 3, 4],
   className,
   style
 }: Props) {
   const controlsRef = useRef<any>(null);
-  const baseDistance = Math.sqrt(4 * 4 + 3 * 3 + 4 * 4);
+  const baseDistance = Math.sqrt(
+    cameraPosition[0] * cameraPosition[0] +
+      cameraPosition[1] * cameraPosition[1] +
+      cameraPosition[2] * cameraPosition[2]
+  );
   const [giftSlotsVisible, setGiftSlotsVisible] = useState(
     typeof showGiftSlots === "boolean"
       ? showGiftSlots
@@ -1228,7 +1251,7 @@ export default function MemorialPreview({
         </div>
       ) : null}
       <Canvas
-        camera={{ position: [4, 3, 4], fov: 45 }}
+        camera={{ position: cameraPosition, fov: 45 }}
         style={
           softEdges
             ? {

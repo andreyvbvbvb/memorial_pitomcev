@@ -751,6 +751,7 @@ export default function PetClient({ id }: Props) {
           onDetailClick={handleMemorialDetailClick}
           showControls={false}
           showGiftSlots={giftPanelOpen && filteredAvailableSlots.length > 0}
+          cameraPosition={[8, 6, 8]}
         />
       </div>
 

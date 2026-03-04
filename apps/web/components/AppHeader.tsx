@@ -153,7 +153,7 @@ export default function AppHeader() {
               <>
                 <Link
                   href="/create"
-                  className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/40 text-base text-slate-700 transition hover:bg-white/60"
+                  className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/70 text-base text-slate-700 transition hover:bg-white/90"
                   aria-label="Создать мемориал"
                 >
                   <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-0 transition group-hover:opacity-70 group-hover:animate-ping" />
@@ -163,13 +163,13 @@ export default function AppHeader() {
                   </span>
                 </Link>
                 <Link
-                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/40 hover:bg-white/60"
+                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
                   href="/my-pets"
                 >
                   Мои питомцы
                 </Link>
                 <Link
-                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/40 hover:bg-white/60"
+                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
                   href="/map"
                 >
                   Карта
@@ -177,7 +177,7 @@ export default function AppHeader() {
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
-                    className="btn btn-ghost !px-3 !py-2 text-sm bg-white/40 hover:bg-white/60"
+                    className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
                     aria-label="Открыть меню"
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >

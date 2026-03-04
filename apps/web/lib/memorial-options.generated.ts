@@ -50,7 +50,7 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_2__normal",
+    "id": "budka_2__stone",
     "name": "Будка",
     "description": "Автодобавлено"
   },
@@ -99,6 +99,56 @@ export const signOptionsGenerated = [
     "id": "sign_2",
     "name": "Украшение 2",
     "description": "Вариант 2"
+  },
+  {
+    "id": "sign_3",
+    "name": "Украшение 3",
+    "description": "Вариант 3"
+  },
+  {
+    "id": "sign_4",
+    "name": "Украшение 4",
+    "description": "Вариант 4"
+  },
+  {
+    "id": "sign_5",
+    "name": "Украшение 5",
+    "description": "Вариант 5"
+  },
+  {
+    "id": "sign_6",
+    "name": "Украшение 6",
+    "description": "Вариант 6"
+  },
+  {
+    "id": "sign_7",
+    "name": "Украшение 7",
+    "description": "Вариант 7"
+  },
+  {
+    "id": "sign_8",
+    "name": "Украшение 8",
+    "description": "Вариант 8"
+  },
+  {
+    "id": "sign_9",
+    "name": "Украшение 9",
+    "description": "Вариант 9"
+  },
+  {
+    "id": "sign_10",
+    "name": "Украшение 10",
+    "description": "Вариант 10"
+  },
+  {
+    "id": "sign_11",
+    "name": "Украшение 11",
+    "description": "Вариант 11"
+  },
+  {
+    "id": "sign_12",
+    "name": "Украшение 12",
+    "description": "Вариант 12"
   }
 ] as const;
 export const frameLeftOptionsGenerated = [
