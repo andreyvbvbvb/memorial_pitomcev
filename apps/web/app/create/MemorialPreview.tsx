@@ -61,6 +61,7 @@ type Props = {
   preloadGiftUrl?: string | null;
   onGiftPreloaded?: (url: string) => void;
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
+  cameraPosition?: [number, number, number];
   className?: string;
   style?: React.CSSProperties;
 };
