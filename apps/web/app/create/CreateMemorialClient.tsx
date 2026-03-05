@@ -138,6 +138,12 @@ const SEASON_LABELS: Record<SeasonKey, string> = {
   autumn: "Осень",
   winter: "Зима"
 };
+const SEASON_SWATCHES: Record<SeasonKey, { color: string; label: string }> = {
+  spring: { color: "#F3A4D8", label: SEASON_LABELS.spring },
+  summer: { color: "#6BCB77", label: SEASON_LABELS.summer },
+  autumn: { color: "#F2B84B", label: SEASON_LABELS.autumn },
+  winter: { color: "#A7D8FF", label: SEASON_LABELS.winter }
+};
 
 const STEP3_ICON_CLASS = "h-6 w-6";
 
@@ -319,7 +325,7 @@ export default function CreateMemorialClient() {
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
   const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
   const tooltipTimerRef = useRef<number | null>(null);
-  const [assetsReady, setAssetsReady] = useState(false);
+  const [, setAssetsReady] = useState(false);
   const assetsLoadStartedRef = useRef(false);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
@@ -328,6 +334,7 @@ export default function CreateMemorialClient() {
   >(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -779,19 +786,21 @@ export default function CreateMemorialClient() {
     return value as Step;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const message = validateStep(step);
     if (message) {
       setError(message);
       return;
     }
     setError(null);
+    if (step === 0) {
+      setIsTransitioning(true);
+      await preloadAssets();
+      setIsTransitioning(false);
+      setStep(1);
+      return;
+    }
     setStep((prev) => clampStep(prev + 1));
-  };
-
-  const handleBack = () => {
-    setError(null);
-    setStep((prev) => clampStep(prev - 1));
   };
 
   const handleChange = (field: keyof FormState, value: string | boolean) => {
@@ -998,23 +1007,15 @@ export default function CreateMemorialClient() {
   };
 
   const renderNavButtons = (className?: string) => (
-    <div className={`flex items-center justify-between ${className ?? ""}`}>
-      <button
-        type="button"
-        onClick={handleBack}
-        className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-        disabled={step === 0}
-      >
-        Назад
-      </button>
+    <div className={`flex items-center justify-center ${className ?? ""}`}>
       {step < 1 ? (
         <button
           type="button"
           onClick={handleNext}
           className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
-          disabled={step === 0 && !authReady}
+          disabled={!authReady || isTransitioning}
         >
-          Дальше
+          Продолжить
         </button>
       ) : null}
     </div>
@@ -1080,7 +1081,7 @@ export default function CreateMemorialClient() {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="grid grid-cols-2 place-items-center gap-2">
+    <div className="grid grid-cols-2 place-items-center gap-0.5">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -1099,7 +1100,7 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex w-[75%] aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
+            className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
@@ -1135,19 +1136,21 @@ export default function CreateMemorialClient() {
                 <div className="flex flex-wrap gap-2">
                   {environmentSeasons.map((season) => {
                     const isActive = form.environmentSeason === season;
+                    const swatch = SEASON_SWATCHES[season];
                     return (
                       <button
                         key={season}
                         type="button"
                         onClick={() => handleChange("environmentSeason", season)}
-                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                        aria-label={swatch.label}
+                        title={swatch.label}
+                        className={`h-8 w-8 rounded-lg border transition ${
                           isActive
-                            ? "border-sky-400 bg-sky-50 text-sky-700"
-                            : "border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+                            ? "border-slate-900 ring-2 ring-sky-300"
+                            : "border-slate-200 hover:border-slate-400"
                         }`}
-                      >
-                        {SEASON_LABELS[season]}
-                      </button>
+                        style={{ backgroundColor: swatch.color }}
+                      />
                     );
                   })}
                 </div>
@@ -1327,15 +1330,115 @@ export default function CreateMemorialClient() {
           />
         </label>
       </div>
-      {dateValidationMessage ? (
-        <p className="text-xs text-red-600">{dateValidationMessage}</p>
-      ) : null}
+      <div className="min-h-[16px]">
+        {dateValidationMessage ? (
+          <p className="text-xs text-red-600">{dateValidationMessage}</p>
+        ) : null}
+      </div>
     </div>
   );
 
   const renderMarkerPanel = () => (
-    <div className="grid gap-4">
-      <div className="grid gap-2">
+    <div className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
+      <div className="grid gap-3">
+        <div className="overflow-hidden rounded-2xl border border-slate-200">
+          {!apiKey ? (
+            <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+              Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
+            </div>
+          ) : loadError ? (
+            <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-red-600">
+              Ошибка загрузки карты
+            </div>
+          ) : !isLoaded ? (
+            <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+              Загрузка карты...
+            </div>
+          ) : (
+            <GoogleMap
+              mapContainerStyle={{ width: "100%", height: "220px" }}
+              center={mapCenter}
+              zoom={canShowMarker ? 12 : 3}
+              onClick={(event) => {
+                const latValue = event.latLng?.lat();
+                const lngValue = event.latLng?.lng();
+                if (latValue === undefined || lngValue === undefined) {
+                  return;
+                }
+                setForm((prev) => ({
+                  ...prev,
+                  lat: latValue.toFixed(6),
+                  lng: lngValue.toFixed(6)
+                }));
+              }}
+            >
+              {canShowMarker ? (
+                <Marker
+                  position={{ lat: lat!, lng: lng! }}
+                  icon={{
+                    url: markerIconUrl(markerIconId),
+                    scaledSize: new window.google.maps.Size(
+                      markerPreviewSize.width,
+                      markerPreviewSize.height
+                    ),
+                    anchor: new window.google.maps.Point(
+                      markerPreviewAnchor.x,
+                      markerPreviewAnchor.y
+                    )
+                  }}
+                />
+              ) : null}
+            </GoogleMap>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!navigator.geolocation) {
+                setError("Геолокация не поддерживается в этом браузере");
+                return;
+              }
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    lat: pos.coords.latitude.toFixed(6),
+                    lng: pos.coords.longitude.toFixed(6)
+                  }));
+                },
+                () => setError("Не удалось получить геолокацию")
+              );
+            }}
+            className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+          >
+            Моё местоположение
+          </button>
+          <button
+            type="button"
+            onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
+            className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+          >
+            Очистить
+          </button>
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-slate-700">
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            checked={form.isPublic}
+            onChange={(event) => handleChange("isPublic", event.target.checked)}
+          />
+          Публичный мемориал
+        </label>
+        <p className="text-[11px] text-slate-500">
+          Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
+        </p>
+      </div>
+
+      <div className="grid gap-3">
         <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
         <div className="grid gap-3">
           {markerGroups.primary.length > 0 ? (
@@ -1420,101 +1523,6 @@ export default function CreateMemorialClient() {
           ) : null}
         </div>
       </div>
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            if (!navigator.geolocation) {
-              setError("Геолокация не поддерживается в этом браузере");
-              return;
-            }
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                setForm((prev) => ({
-                  ...prev,
-                  lat: pos.coords.latitude.toFixed(6),
-                  lng: pos.coords.longitude.toFixed(6)
-                }));
-              },
-              () => setError("Не удалось получить геолокацию")
-            );
-          }}
-          className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
-        >
-          Моё местоположение
-        </button>
-        <button
-          type="button"
-          onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-          className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
-        >
-          Очистить
-        </button>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-slate-200">
-        {!apiKey ? (
-          <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
-            Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
-          </div>
-        ) : loadError ? (
-          <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-red-600">
-            Ошибка загрузки карты
-          </div>
-        ) : !isLoaded ? (
-          <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
-            Загрузка карты...
-          </div>
-        ) : (
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "220px" }}
-            center={mapCenter}
-            zoom={canShowMarker ? 12 : 3}
-            onClick={(event) => {
-              const latValue = event.latLng?.lat();
-              const lngValue = event.latLng?.lng();
-              if (latValue === undefined || lngValue === undefined) {
-                return;
-              }
-              setForm((prev) => ({
-                ...prev,
-                lat: latValue.toFixed(6),
-                lng: lngValue.toFixed(6)
-              }));
-            }}
-          >
-            {canShowMarker ? (
-              <Marker
-                position={{ lat: lat!, lng: lng! }}
-                icon={{
-                  url: markerIconUrl(markerIconId),
-                  scaledSize: new window.google.maps.Size(
-                    markerPreviewSize.width,
-                    markerPreviewSize.height
-                  ),
-                  anchor: new window.google.maps.Point(
-                    markerPreviewAnchor.x,
-                    markerPreviewAnchor.y
-                  )
-                }}
-              />
-            ) : null}
-          </GoogleMap>
-        )}
-      </div>
-      <label className="flex items-center gap-2 text-xs text-slate-700">
-        <input
-          type="checkbox"
-          className="h-4 w-4"
-          checked={form.isPublic}
-          onChange={(event) => handleChange("isPublic", event.target.checked)}
-        />
-        Публичный мемориал
-      </label>
-      <p className="text-[11px] text-slate-500">
-        Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
-      </p>
     </div>
   );
 
@@ -1619,7 +1627,7 @@ export default function CreateMemorialClient() {
 
   const isBuilderStep = step === 1;
   const overlayPanelClass =
-    "pointer-events-auto absolute bottom-24 left-24 w-[360px] max-w-[85vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+    "pointer-events-auto absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-6 lg:left-20 w-[520px] max-w-[92vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
   const panelButtonClass = (active: boolean) =>
     `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
       active
@@ -1628,9 +1636,9 @@ export default function CreateMemorialClient() {
     }`;
   const mainStyle: CSSProperties = {
     minHeight: "100dvh",
-    marginTop: "calc(-1 * var(--app-header-height, 56px))",
+    marginTop: isBuilderStep ? 0 : "calc(-1 * var(--app-header-height, 56px))",
     paddingTop: isBuilderStep
-      ? "var(--app-header-height, 56px)"
+      ? 0
       : "calc(var(--app-header-height, 56px) + 24px)"
   };
 
@@ -1652,6 +1660,15 @@ export default function CreateMemorialClient() {
           </section>
 
           <div className="mt-6">{renderNavButtons()}</div>
+
+          {isTransitioning ? (
+            <div className="fixed inset-0 z-40 grid place-items-center bg-white/70">
+              <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                Происходит загрузка страницы...
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <>
@@ -1661,7 +1678,7 @@ export default function CreateMemorialClient() {
               terrainUrl={environmentUrl}
               houseUrl={houseUrl}
               houseId={housePreviewId}
-              cameraPosition={[8, 6, 8]}
+              cameraPosition={[12, 8, 12]}
               parts={partList}
               gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -1675,6 +1692,7 @@ export default function CreateMemorialClient() {
               focusSlot={focusSlot}
               focusRequestId={focusRequestId}
               showControls={false}
+              controlsEnabled={!activeOverlay}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
               cameraAdjustmentKey={activeCameraKey}
               onHouseSlotsDetected={setDetectedHouseSlots}
@@ -1682,19 +1700,13 @@ export default function CreateMemorialClient() {
               onDetailClick={handlePreviewDetailClick}
             />
           </div>
-
-          {!assetsReady ? (
-            <div className="fixed inset-0 z-20 grid place-items-center bg-white/70">
-              <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                Происходит загрузка страницы...
-              </div>
-            </div>
+          {activeOverlay ? (
+            <div className="fixed inset-0 z-5 pointer-events-auto" aria-hidden="true" />
           ) : null}
 
-          <div className="pointer-events-none relative z-10 h-full min-h-[100dvh]">
+          <div className="pointer-events-none fixed inset-0 z-10">
 
-            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[260px] max-w-[24vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[320px] max-w-[85vw] lg:max-w-[32vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900">Редактор мемориала</h3>
               </div>
@@ -1781,7 +1793,7 @@ export default function CreateMemorialClient() {
               </div>
             ) : null}
 
-            <div className="pointer-events-auto absolute bottom-6 left-6">
+            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6">
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
@@ -1793,6 +1805,17 @@ export default function CreateMemorialClient() {
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 11v5" />
                     <circle cx="12" cy="8" r="1" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleOverlay("story")}
+                  aria-label="История"
+                  className={panelButtonClass(activeOverlay === "story")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 5h8a3 3 0 0 1 3 3v11" />
+                    <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                   </svg>
                 </button>
                 <button
@@ -1818,21 +1841,10 @@ export default function CreateMemorialClient() {
                     <path d="M21 15l-4-4-4 4-3-3-5 5" />
                   </svg>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => toggleOverlay("story")}
-                  aria-label="История"
-                  className={panelButtonClass(activeOverlay === "story")}
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 5h8a3 3 0 0 1 3 3v11" />
-                    <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
-                  </svg>
-                </button>
               </div>
             </div>
 
-            <div className="pointer-events-auto absolute bottom-6 right-6">
+            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6">
               <button
                 type="button"
                 onClick={openReview}
