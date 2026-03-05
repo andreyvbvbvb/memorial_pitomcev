@@ -1061,7 +1061,7 @@ export default function CreateMemorialClient() {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="grid grid-cols-2 place-items-center gap-2">
+    <div className="grid grid-cols-2 place-items-center gap-1">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -1080,23 +1080,21 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex w-[70%] aspect-square items-center justify-center rounded-xl border-[0.33px] p-2 transition ${
+            className={`flex w-[70%] aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
             }`}
           >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100">
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={option.name}
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <div className="text-xs text-slate-500">Нет</div>
-              )}
-            </div>
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={option.name}
+                className="h-full w-full rounded-lg object-contain"
+              />
+            ) : (
+              <div className="text-xs text-slate-500">Нет</div>
+            )}
           </button>
         );
       })}
