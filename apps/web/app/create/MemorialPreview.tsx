@@ -599,7 +599,7 @@ function PartAttachment({
       applyPartScale(cloned, 0.575, "x");
     }
     if (slot === "sign_slot") {
-      applyPartFitWidthHeight(cloned, 0.5, 0.2);
+      applyPartFitWidthHeight(cloned, 1, 0.4);
     }
     return cloned;
   }, [scene, slot]);
