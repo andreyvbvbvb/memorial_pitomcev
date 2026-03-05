@@ -1,7 +1,7 @@
 "use client";
 
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
@@ -57,7 +57,7 @@ import {
   bowlWaterOptions
 } from "../../lib/memorial-options";
 
-type Step = 0 | 1 | 2 | 3 | 4;
+type Step = 0 | 1;
 
 type FormState = {
   ownerId: string;
@@ -99,13 +99,7 @@ type PhotoDraft = {
   url: string;
 };
 
-const steps = [
-  "Основные данные",
-  "Маркер и точка",
-  "3D мемориал",
-  "Фото и история",
-  "Проверка"
-];
+const steps = ["Основные данные", "Создание мемориала"];
 const MEMORIAL_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
@@ -114,7 +108,6 @@ const MEMORIAL_PLANS = [
 ] as const;
 type MemorialPlanId = (typeof MEMORIAL_PLANS)[number]["id"];
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
-const mapContainerStyle = { width: "100%", height: "60vh" };
 
 type Step3TabId =
   | "environment"
@@ -320,7 +313,6 @@ export default function CreateMemorialClient() {
   const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
-  const [layoutMode, setLayoutMode] = useState<"desktop" | "mobile">("desktop");
   const photosRef = useRef<PhotoDraft[]>([]);
   const [showOtherMarkers, setShowOtherMarkers] = useState(false);
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
@@ -332,6 +324,9 @@ export default function CreateMemorialClient() {
   const assetsLoadStartedRef = useRef(false);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
+  const [activeOverlay, setActiveOverlay] = useState<"marker" | "photos" | "story" | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewVisible, setReviewVisible] = useState(false);
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -649,7 +644,25 @@ export default function CreateMemorialClient() {
     { coins: 1000, rub: 1000, usd: 10 }
   ];
 
-  const isMobile = layoutMode === "mobile" ? true : false;
+
+  const fetchWalletBalance = useCallback(async () => {
+    if (!form.ownerId) {
+      return;
+    }
+    setWalletLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/wallet/${form.ownerId}`);
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить баланс");
+      }
+      const data = (await response.json()) as { coinBalance: number };
+      setWalletBalance(typeof data.coinBalance === "number" ? data.coinBalance : null);
+    } catch {
+      setWalletBalance(null);
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [apiUrl, form.ownerId]);
 
   useEffect(() => {
     const loadMe = async () => {
@@ -674,23 +687,8 @@ export default function CreateMemorialClient() {
     if (!form.ownerId) {
       return;
     }
-    const loadWallet = async () => {
-      setWalletLoading(true);
-      try {
-        const response = await fetch(`${apiUrl}/wallet/${form.ownerId}`);
-        if (!response.ok) {
-          throw new Error("Не удалось загрузить баланс");
-        }
-        const data = (await response.json()) as { coinBalance: number };
-        setWalletBalance(typeof data.coinBalance === "number" ? data.coinBalance : null);
-      } catch {
-        setWalletBalance(null);
-      } finally {
-        setWalletLoading(false);
-      }
-    };
-    void loadWallet();
-  }, [apiUrl, form.ownerId]);
+    void fetchWalletBalance();
+  }, [fetchWalletBalance, form.ownerId]);
 
   useEffect(() => {
     return () => {
@@ -699,8 +697,16 @@ export default function CreateMemorialClient() {
   }, []);
 
   useEffect(() => {
-    if (step !== 2) {
+    if (step !== 1) {
       setFocusSlot(null);
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (step === 0) {
+      setActiveOverlay(null);
+      setReviewOpen(false);
+      setReviewVisible(false);
     }
   }, [step]);
 
@@ -766,8 +772,8 @@ export default function CreateMemorialClient() {
     if (value <= 0) {
       return 0;
     }
-    if (value >= 4) {
-      return 4;
+    if (value >= 1) {
+      return 1;
     }
     return value as Step;
   };
@@ -969,6 +975,27 @@ export default function CreateMemorialClient() {
     }
   };
 
+  const toggleOverlay = (panel: "marker" | "photos" | "story") => {
+    setActiveOverlay((prev) => (prev === panel ? null : panel));
+  };
+
+  const openReview = () => {
+    const message = validateStep(1);
+    if (message) {
+      setError(message);
+      return;
+    }
+    setError(null);
+    setReviewOpen(true);
+    requestAnimationFrame(() => setReviewVisible(true));
+    void fetchWalletBalance();
+  };
+
+  const closeReview = () => {
+    setReviewVisible(false);
+    setTimeout(() => setReviewOpen(false), 180);
+  };
+
   const renderNavButtons = (className?: string) => (
     <div className={`flex items-center justify-between ${className ?? ""}`}>
       <button
@@ -979,7 +1006,7 @@ export default function CreateMemorialClient() {
       >
         Назад
       </button>
-      {step < 4 ? (
+      {step < 1 ? (
         <button
           type="button"
           onClick={handleNext}
@@ -988,16 +1015,7 @@ export default function CreateMemorialClient() {
         >
           Дальше
         </button>
-      ) : (
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
-          disabled={loading}
-        >
-          {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
-        </button>
-      )}
+      ) : null}
     </div>
   );
 
@@ -1061,7 +1079,7 @@ export default function CreateMemorialClient() {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="grid grid-cols-2 place-items-center gap-1">
+    <div className="grid grid-cols-2 gap-[2px]">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -1080,7 +1098,7 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex w-[70%] aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
+            className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
@@ -1254,615 +1272,690 @@ export default function CreateMemorialClient() {
     }
   };
 
-  return (
-    <main
-      className="bg-slate-50 px-4 pb-8"
-      style={{
-        minHeight: "100dvh",
-        marginTop: "calc(-1 * var(--app-header-height, 56px))",
-        paddingTop: "calc(var(--app-header-height, 56px) + 24px)"
-      }}
-    >
-      <div className="mx-auto w-full max-w-none lg:w-[90vw]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {steps.map((label, index) => {
-              const isActive = index === step;
-              const isClickable = index <= step;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    if (isClickable) {
-                      setError(null);
-                      setStep(index as Step);
-                    }
-                  }}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                    isActive
-                      ? "bg-slate-900 text-white"
-                      : isClickable
-                        ? "bg-white text-slate-700 hover:border-slate-300"
-                        : "bg-slate-100 text-slate-400"
-                  }`}
-                  disabled={!isClickable}
-                >
-                  {index + 1}. {label}
-                </button>
-              );
-            })}
-          </div>
-          {step === 2 ? (
-            <button
-              type="button"
-              onClick={() =>
-                setLayoutMode((prev) => (prev === "mobile" ? "desktop" : "mobile"))
-              }
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
-            >
-              {isMobile ? "Переключить на десктоп" : "Переключить на мобильную"}
-            </button>
-          ) : null}
-        </div>
-
-        <section className="mt-6 rounded-2xl bg-transparent p-5">
-          {step === 0 ? (
-            <div className="grid gap-4">
-              <label className="grid gap-1 text-sm text-slate-700">
-                Имя питомца
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.name}
-                  onChange={(event) => handleChange("name", event.target.value)}
-                  placeholder="Барсик"
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-slate-700">
-                Вид питомца
-                <select
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.species}
-                  onChange={(event) => handleSpeciesChange(event.target.value)}
-                >
-                  <option value="dog">Собака</option>
-                  <option value="cat">Кошка</option>
-                  <option value="bird">Птица</option>
-                  <option value="rat">Крыса</option>
-                  <option value="gryzun">Грызун</option>
-                  <option value="fish">Рыбка</option>
-                  <option value="other">Другое</option>
-                </select>
-              </label>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Дата рождения
-                  <input
-                    type="date"
-                    className={`rounded-2xl border px-4 py-2 ${
-                      dateValidationMessage ? "border-red-400" : "border-slate-200"
-                    }`}
-                    value={form.birthDate}
-                    onChange={(event) => handleChange("birthDate", event.target.value)}
-                    max={form.deathDate || todayInputValue}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Дата ухода
-                  <input
-                    type="date"
-                    className={`rounded-2xl border px-4 py-2 ${
-                      dateValidationMessage ? "border-red-400" : "border-slate-200"
-                    }`}
-                    value={form.deathDate}
-                    onChange={(event) => handleChange("deathDate", event.target.value)}
-                    min={form.birthDate || undefined}
-                    max={todayInputValue}
-                  />
-                </label>
+  const renderMarkerPanel = () => (
+    <div className="grid gap-4">
+      <div className="grid gap-2">
+        <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
+        <div className="grid gap-3">
+          {markerGroups.primary.length > 0 ? (
+            <div className="grid gap-2">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                Маркеры выбранного вида
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {markerGroups.primary.map((marker) => {
+                  const markerName = markerStyleById(marker.baseId).name;
+                  return (
+                    <button
+                      key={marker.id}
+                      type="button"
+                      onClick={() => handleChange("markerStyle", marker.id)}
+                      className={`flex items-center justify-center rounded-lg border p-0.5 ${
+                        form.markerStyle === marker.id
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-700"
+                      }`}
+                    >
+                      <span
+                        className="overflow-hidden rounded-lg bg-slate-100"
+                        style={{ width: 56, height: 56 }}
+                      >
+                        <img
+                          src={marker.iconUrl}
+                          alt={markerName}
+                          className="h-full w-full object-contain"
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              {dateValidationMessage ? (
-                <p className="text-xs text-red-600">{dateValidationMessage}</p>
-              ) : null}
             </div>
           ) : null}
 
-          {step === 1 ? (
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
-                <div className="grid gap-3">
-                  {markerGroups.primary.length > 0 ? (
-                    <div className="grid gap-2">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                        Маркеры выбранного вида
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {markerGroups.primary.map((marker) => {
-                          const markerName = markerStyleById(marker.baseId).name;
-                          return (
-                            <button
-                              key={marker.id}
-                              type="button"
-                              onClick={() => handleChange("markerStyle", marker.id)}
-                              className={`flex items-center justify-center rounded-lg border p-0.5 ${
-                                form.markerStyle === marker.id
-                                  ? "border-slate-900 bg-slate-900 text-white"
-                                  : "border-slate-200 bg-white text-slate-700"
-                              }`}
-                            >
-                              <span
-                                className="overflow-hidden rounded-lg bg-slate-100"
-                                style={{ width: 72, height: 72 }}
-                              >
-                                <img
-                                  src={marker.iconUrl}
-                                  alt={markerName}
-                                  className="h-full w-full object-contain"
-                                />
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {markerGroups.secondary.length > 0 ? (
-                    <div className="grid gap-2">
+          {markerGroups.secondary.length > 0 ? (
+            <div className="grid gap-2">
+              <button
+                type="button"
+                onClick={() => setShowOtherMarkers((prev) => !prev)}
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-[10px] uppercase tracking-[0.2em] text-slate-500"
+              >
+                Остальные маркеры
+                <span className="text-base leading-none text-slate-400">
+                  {showOtherMarkers ? "−" : "+"}
+                </span>
+              </button>
+              {showOtherMarkers ? (
+                <div className="flex flex-wrap gap-1">
+                  {markerGroups.secondary.map((marker) => {
+                    const markerName = markerStyleById(marker.baseId).name;
+                    return (
                       <button
+                        key={marker.id}
                         type="button"
-                        onClick={() => setShowOtherMarkers((prev) => !prev)}
-                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-xs uppercase tracking-[0.2em] text-slate-500"
+                        onClick={() => handleChange("markerStyle", marker.id)}
+                        className={`flex items-center justify-center rounded-lg border p-0.5 ${
+                          form.markerStyle === marker.id
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-700"
+                        }`}
                       >
-                        Остальные маркеры
-                        <span className="text-base leading-none text-slate-400">
-                          {showOtherMarkers ? "−" : "+"}
+                        <span
+                          className="overflow-hidden rounded-lg bg-slate-100"
+                          style={{ width: 56, height: 56 }}
+                        >
+                          <img
+                            src={marker.iconUrl}
+                            alt={markerName}
+                            className="h-full w-full object-contain"
+                          />
                         </span>
                       </button>
-                      {showOtherMarkers ? (
-                        <div className="flex flex-wrap gap-1">
-                          {markerGroups.secondary.map((marker) => {
-                            const markerName = markerStyleById(marker.baseId).name;
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (!navigator.geolocation) {
+              setError("Геолокация не поддерживается в этом браузере");
+              return;
+            }
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                setForm((prev) => ({
+                  ...prev,
+                  lat: pos.coords.latitude.toFixed(6),
+                  lng: pos.coords.longitude.toFixed(6)
+                }));
+              },
+              () => setError("Не удалось получить геолокацию")
+            );
+          }}
+          className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+        >
+          Моё местоположение
+        </button>
+        <button
+          type="button"
+          onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
+          className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+        >
+          Очистить
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200">
+        {!apiKey ? (
+          <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+            Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
+          </div>
+        ) : loadError ? (
+          <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-red-600">
+            Ошибка загрузки карты
+          </div>
+        ) : !isLoaded ? (
+          <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+            Загрузка карты...
+          </div>
+        ) : (
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "220px" }}
+            center={mapCenter}
+            zoom={canShowMarker ? 12 : 3}
+            onClick={(event) => {
+              const latValue = event.latLng?.lat();
+              const lngValue = event.latLng?.lng();
+              if (latValue === undefined || lngValue === undefined) {
+                return;
+              }
+              setForm((prev) => ({
+                ...prev,
+                lat: latValue.toFixed(6),
+                lng: lngValue.toFixed(6)
+              }));
+            }}
+          >
+            {canShowMarker ? (
+              <Marker
+                position={{ lat: lat!, lng: lng! }}
+                icon={{
+                  url: markerIconUrl(markerIconId),
+                  scaledSize: new window.google.maps.Size(
+                    markerPreviewSize.width,
+                    markerPreviewSize.height
+                  ),
+                  anchor: new window.google.maps.Point(
+                    markerPreviewAnchor.x,
+                    markerPreviewAnchor.y
+                  )
+                }}
+              />
+            ) : null}
+          </GoogleMap>
+        )}
+      </div>
+      <label className="flex items-center gap-2 text-xs text-slate-700">
+        <input
+          type="checkbox"
+          className="h-4 w-4"
+          checked={form.isPublic}
+          onChange={(event) => handleChange("isPublic", event.target.checked)}
+        />
+        Публичный мемориал
+      </label>
+      <p className="text-[11px] text-slate-500">
+        Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
+      </p>
+    </div>
+  );
+
+  const renderStoryPanel = () => (
+    <div className="grid gap-4">
+      <label className="grid gap-1 text-sm text-slate-700">
+        Эпитафия (до 200 символов)
+        <input
+          className="rounded-2xl border border-slate-200 px-4 py-2"
+          value={form.epitaph}
+          maxLength={200}
+          onChange={(event) => handleChange("epitaph", event.target.value)}
+          placeholder="Самый лучший друг"
+        />
+      </label>
+      <label className="grid gap-1 text-sm text-slate-700">
+        История питомца
+        <textarea
+          className="min-h-[160px] rounded-2xl border border-slate-200 px-4 py-2"
+          value={form.story}
+          maxLength={2000}
+          onChange={(event) => handleChange("story", event.target.value)}
+          placeholder="Короткая история о жизни питомца"
+        />
+      </label>
+    </div>
+  );
+
+  const renderPhotosPanel = () => (
+    <div className="grid gap-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 5)</h3>
+        <span className="text-xs text-slate-500">{photos.length}/5</span>
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(event) => {
+          handlePhotosSelected(event.target.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      <p className="text-xs text-slate-500">Максимум 5 фото, до 10 МБ каждое.</p>
+      {photos.length > 0 ? (
+        <div
+          className="grid gap-2"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+            gap: "6px"
+          }}
+        >
+          {photos.map((photo) => (
+            <div
+              key={photo.id}
+              className="relative rounded-2xl border border-slate-200 bg-white p-2"
+            >
+              <button
+                type="button"
+                onClick={() => removePhoto(photo.id)}
+                className="absolute right-2 top-2 h-6 w-6 rounded-full bg-black/70 text-xs text-white"
+                aria-label="Удалить фото"
+                title="Удалить фото"
+              >
+                ×
+              </button>
+              <img
+                src={photo.url}
+                alt="Фото питомца"
+                className="h-24 w-full rounded-lg bg-slate-100 object-contain"
+              />
+              <div className="mt-2 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => setPreviewPhotoId(photo.id)}
+                  className={`rounded-full px-3 py-1 text-xs ${
+                    previewPhotoId === photo.id
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  {previewPhotoId === photo.id ? "На обложке" : "На обложку"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500">
+          Добавь фотографии и выбери одну для мини‑окна на карте.
+        </p>
+      )}
+    </div>
+  );
+
+  const isBuilderStep = step === 1;
+  const overlayPanelClass =
+    "pointer-events-auto absolute bottom-24 right-6 w-[360px] max-w-[85vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+  const mainStyle: CSSProperties = {
+    minHeight: "100dvh",
+    marginTop: "calc(-1 * var(--app-header-height, 56px))",
+    paddingTop: isBuilderStep
+      ? "var(--app-header-height, 56px)"
+      : "calc(var(--app-header-height, 56px) + 24px)"
+  };
+  const stepChips = (
+    <div className="flex flex-wrap gap-2">
+      {steps.map((label, index) => {
+        const isActive = index === step;
+        const isClickable = index <= step;
+        return (
+          <button
+            key={label}
+            type="button"
+            onClick={() => {
+              if (isClickable) {
+                setError(null);
+                setStep(index as Step);
+              }
+            }}
+            className={`rounded-full px-4 py-2 text-xs font-semibold ${
+              isActive
+                ? "bg-slate-900 text-white"
+                : isClickable
+                  ? "bg-white text-slate-700 hover:border-slate-300"
+                  : "bg-slate-100 text-slate-400"
+            }`}
+            disabled={!isClickable}
+          >
+            {index + 1}. {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <main
+      className={`relative bg-slate-50 ${isBuilderStep ? "overflow-hidden" : "px-4 pb-8"}`}
+      style={mainStyle}
+    >
+      {!isBuilderStep ? (
+        <div className="mx-auto w-full max-w-none lg:w-[90vw]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {stepChips}
+          </div>
+
+          <section className="mt-6 rounded-2xl bg-transparent p-5">
+            {step === 0 ? (
+              <div className="grid gap-4">
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Имя питомца
+                  <input
+                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    value={form.name}
+                    onChange={(event) => handleChange("name", event.target.value)}
+                    placeholder="Барсик"
+                  />
+                </label>
+                <label className="grid gap-1 text-sm text-slate-700">
+                  Вид питомца
+                  <select
+                    className="rounded-2xl border border-slate-200 px-4 py-2"
+                    value={form.species}
+                    onChange={(event) => handleSpeciesChange(event.target.value)}
+                  >
+                    <option value="dog">Собака</option>
+                    <option value="cat">Кошка</option>
+                    <option value="bird">Птица</option>
+                    <option value="rat">Крыса</option>
+                    <option value="gryzun">Грызун</option>
+                    <option value="fish">Рыбка</option>
+                    <option value="other">Другое</option>
+                  </select>
+                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Дата рождения
+                    <input
+                      type="date"
+                      className={`rounded-2xl border px-4 py-2 ${
+                        dateValidationMessage ? "border-red-400" : "border-slate-200"
+                      }`}
+                      value={form.birthDate}
+                      onChange={(event) => handleChange("birthDate", event.target.value)}
+                      max={form.deathDate || todayInputValue}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm text-slate-700">
+                    Дата ухода
+                    <input
+                      type="date"
+                      className={`rounded-2xl border px-4 py-2 ${
+                        dateValidationMessage ? "border-red-400" : "border-slate-200"
+                      }`}
+                      value={form.deathDate}
+                      onChange={(event) => handleChange("deathDate", event.target.value)}
+                      min={form.birthDate || undefined}
+                      max={todayInputValue}
+                    />
+                  </label>
+                </div>
+                {dateValidationMessage ? (
+                  <p className="text-xs text-red-600">{dateValidationMessage}</p>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
+
+          <div className="mt-6">{renderNavButtons()}</div>
+        </div>
+      ) : (
+        <>
+          <div className="fixed inset-0 z-0">
+            <MemorialPreview
+              className="h-full w-full rounded-none border-transparent bg-transparent"
+              terrainUrl={environmentUrl}
+              houseUrl={houseUrl}
+              houseId={housePreviewId}
+              parts={partList}
+              gifts={giftPreviewEnabled ? previewGifts : undefined}
+              giftSlots={
+                giftPreviewEnabled && previewPlaceholderSlots.length > 0
+                  ? previewPlaceholderSlots
+                  : undefined
+              }
+              showGiftSlots={giftPreviewEnabled && previewPlaceholderSlots.length > 0}
+              enableHoverHighlight
+              colors={colorOverrides}
+              focusSlot={focusSlot}
+              focusRequestId={focusRequestId}
+              cameraOffsetAdjustments={cameraOffsetAdjustments}
+              cameraAdjustmentKey={activeCameraKey}
+              onHouseSlotsDetected={setDetectedHouseSlots}
+              onGiftSlotsDetected={setDetectedGiftSlots}
+              onDetailClick={handlePreviewDetailClick}
+            />
+          </div>
+
+          {!assetsReady ? (
+            <div className="fixed inset-0 z-20 grid place-items-center bg-white/70">
+              <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                Происходит загрузка страницы...
+              </div>
+            </div>
+          ) : null}
+
+          <div className="relative z-10 min-h-[100dvh]">
+            <div className="pointer-events-none absolute left-6 top-[calc(var(--app-header-height,56px)+16px)]">
+              <div className="pointer-events-auto">{stepChips}</div>
+            </div>
+
+            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[300px] max-w-[26vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">Редактор мемориала</h3>
+              </div>
+              <div className="mt-3 flex h-full gap-2 overflow-hidden">
+                <div className="flex w-12 flex-col items-center gap-2 overflow-visible">
+                  {step3Tabs.map((tab) => {
+                    const isActive = activeStep3Tab === tab.id;
+                    const isTooltipVisible = tooltipTabId === tab.id;
+                    const description = STEP3_TAB_DESCRIPTIONS[tab.id];
+                    return (
+                      <div key={tab.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => handleStep3TabSelect(tab)}
+                          onMouseEnter={() => {
+                            clearStep3TooltipTimer();
+                            setTooltipTabId(null);
+                            tooltipTimerRef.current = window.setTimeout(() => {
+                              setTooltipTabId(tab.id);
+                            }, 500);
+                          }}
+                          onMouseLeave={() => {
+                            clearStep3TooltipTimer();
+                            setTooltipTabId((prev) => (prev === tab.id ? null : prev));
+                          }}
+                          onFocus={() => {
+                            clearStep3TooltipTimer();
+                            setTooltipTabId(null);
+                            tooltipTimerRef.current = window.setTimeout(() => {
+                              setTooltipTabId(tab.id);
+                            }, 500);
+                          }}
+                          onBlur={() => {
+                            clearStep3TooltipTimer();
+                            setTooltipTabId((prev) => (prev === tab.id ? null : prev));
+                          }}
+                          aria-label={tab.label}
+                          className={`flex h-12 w-12 items-center justify-center rounded-2xl border text-sm transition ${
+                            isActive
+                              ? "border-sky-400 bg-sky-50 text-sky-700"
+                              : "border-slate-200 bg-white text-slate-500 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
+                          }`}
+                        >
+                          <Step3TabIcon id={tab.id} />
+                          <span className="sr-only">{tab.label}</span>
+                        </button>
+                        {isTooltipVisible ? (
+                          <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
+                            <div className="font-semibold text-slate-900">{tab.label}</div>
+                            <div className="mt-1 text-slate-500">{description}</div>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <label className="mb-2 flex items-center gap-2 text-xs text-slate-600">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={giftPreviewEnabled}
+                      onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
+                    />
+                    Посмотреть с подарками
+                  </label>
+                  <div className="relative z-10 min-w-0 flex-1 overflow-y-auto pr-1">
+                    {renderStep3TabContent()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {activeOverlay ? (
+              <div className={overlayPanelClass}>
+                {activeOverlay === "marker"
+                  ? renderMarkerPanel()
+                  : activeOverlay === "photos"
+                    ? renderPhotosPanel()
+                    : renderStoryPanel()}
+              </div>
+            ) : null}
+
+            <div className="pointer-events-auto absolute bottom-6 left-6">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="rounded-2xl border border-white/70 bg-white/80 px-4 py-2 text-sm text-slate-700 shadow-sm"
+              >
+                Назад
+              </button>
+            </div>
+
+            <div className="pointer-events-auto absolute bottom-6 right-6 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => toggleOverlay("marker")}
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
+                  activeOverlay === "marker"
+                    ? "border-sky-400 bg-sky-50 text-sky-700"
+                    : "border-white/70 bg-white/80 text-slate-700 hover:bg-white"
+                }`}
+              >
+                Маркер
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleOverlay("photos")}
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
+                  activeOverlay === "photos"
+                    ? "border-sky-400 bg-sky-50 text-sky-700"
+                    : "border-white/70 bg-white/80 text-slate-700 hover:bg-white"
+                }`}
+              >
+                Фото
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleOverlay("story")}
+                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
+                  activeOverlay === "story"
+                    ? "border-sky-400 bg-sky-50 text-sky-700"
+                    : "border-white/70 bg-white/80 text-slate-700 hover:bg-white"
+                }`}
+              >
+                История
+              </button>
+              <button
+                type="button"
+                onClick={openReview}
+                className="rounded-2xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+              >
+                Завершить
+              </button>
+            </div>
+          </div>
+
+          {reviewOpen ? (
+            <div
+              className={`fixed inset-0 z-[950] flex items-center justify-center px-4 transition-opacity duration-200 ${
+                reviewVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <button
+                type="button"
+                aria-label="Закрыть"
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={closeReview}
+              />
+              <div
+                className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+                  reviewVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-900">Проверка мемориала</h3>
+                  <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeReview}>
+                    Закрыть
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-6">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div className="grid gap-2 text-sm text-slate-700">
+                      <p>Имя: {form.name || "—"}</p>
+                      <p>Дата рождения: {form.birthDate || "—"}</p>
+                      <p>Дата ухода: {form.deathDate || "—"}</p>
+                      <p className="break-words">
+                        Эпитафия: <span className="break-all">{form.epitaph || "—"}</span>
+                      </p>
+                      <p className="break-words">
+                        История: <span className="whitespace-pre-wrap break-all">{form.story || "—"}</span>
+                      </p>
+                    </div>
+                    {photos.length > 0 ? (
+                      <div className="mt-4">
+                        <div className="flex gap-3 overflow-x-auto pb-2">
+                          {photos.map((photo) => (
+                            <img
+                              key={photo.id}
+                              src={photo.url}
+                              alt="Фото питомца"
+                              className="rounded-xl object-cover"
+                              style={{ width: 260, height: 200 }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-3">
+                    <MemorialPreview
+                      terrainUrl={environmentUrl}
+                      houseUrl={houseUrl}
+                      houseId={form.houseId}
+                      parts={partList}
+                      colors={colorOverrides}
+                      softEdges
+                      className="h-[420px]"
+                    />
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                      <div className="grid gap-3 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-900">Оплата мемориала</p>
+                        <p className="text-xs text-slate-500">
+                          Баланс: {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
+                        </p>
+                        <div className="grid gap-2">
+                          {MEMORIAL_PLANS.map((plan) => {
+                            const isSelected = plan.id === memorialPlanId;
                             return (
                               <button
-                                key={marker.id}
+                                key={plan.id}
                                 type="button"
-                                onClick={() => handleChange("markerStyle", marker.id)}
-                                className={`flex items-center justify-center rounded-lg border p-0.5 ${
-                                  form.markerStyle === marker.id
-                                    ? "border-slate-900 bg-slate-900 text-white"
-                                    : "border-slate-200 bg-white text-slate-700"
+                                onClick={() => setMemorialPlanId(plan.id)}
+                                className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                                  isSelected
+                                    ? "border-sky-400 bg-sky-50 text-slate-900"
+                                    : "border-slate-200 text-slate-700 hover:border-slate-300"
                                 }`}
                               >
-                                <span
-                                  className="overflow-hidden rounded-lg bg-slate-100"
-                                  style={{ width: 72, height: 72 }}
-                                >
-                                  <img
-                                    src={marker.iconUrl}
-                                    alt={markerName}
-                                    className="h-full w-full object-contain"
-                                  />
-                                </span>
+                                <span className="font-semibold">{plan.label}</span>
+                                <span className="text-slate-500">{plan.price} монет</span>
                               </button>
                             );
                           })}
                         </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!navigator.geolocation) {
-                      setError("Геолокация не поддерживается в этом браузере");
-                      return;
-                    }
-                    navigator.geolocation.getCurrentPosition(
-                      (pos) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          lat: pos.coords.latitude.toFixed(6),
-                          lng: pos.coords.longitude.toFixed(6)
-                        }));
-                      },
-                      () => setError("Не удалось получить геолокацию")
-                    );
-                  }}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-                >
-                  Использовать моё местоположение
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-                >
-                  Очистить координаты
-                </button>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-slate-200">
-                {!apiKey ? (
-                  <div className="flex min-h-[300px] items-center justify-center bg-slate-50 text-sm text-slate-500">
-                    Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
-                  </div>
-                ) : loadError ? (
-                  <div className="flex min-h-[300px] items-center justify-center bg-slate-50 text-sm text-red-600">
-                    Ошибка загрузки карты
-                  </div>
-                ) : !isLoaded ? (
-                  <div className="flex min-h-[300px] items-center justify-center bg-slate-50 text-sm text-slate-500">
-                    Загрузка карты...
-                  </div>
-                ) : (
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={canShowMarker ? 12 : 3}
-                    onClick={(event) => {
-                      const latValue = event.latLng?.lat();
-                      const lngValue = event.latLng?.lng();
-                      if (latValue === undefined || lngValue === undefined) {
-                        return;
-                      }
-                      setForm((prev) => ({
-                        ...prev,
-                        lat: latValue.toFixed(6),
-                        lng: lngValue.toFixed(6)
-                      }));
-                    }}
-                  >
-                    {canShowMarker ? (
-                      <Marker
-                        position={{ lat: lat!, lng: lng! }}
-                        icon={{
-                          url: markerIconUrl(markerIconId),
-                          scaledSize: new window.google.maps.Size(
-                            markerPreviewSize.width,
-                            markerPreviewSize.height
-                          ),
-                          anchor: new window.google.maps.Point(
-                            markerPreviewAnchor.x,
-                            markerPreviewAnchor.y
-                          )
-                        }}
-                      />
-                    ) : null}
-                  </GoogleMap>
-                )}
-              </div>
-              <label className="flex items-center gap-3 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4"
-                  checked={form.isPublic}
-                  onChange={(event) => handleChange("isPublic", event.target.checked)}
-                />
-                Публичный мемориал
-              </label>
-              <p className="text-xs text-slate-500">
-                Кликни на карте, чтобы выбрать точку для мемориала. Приватные мемориалы остаются скрытыми на
-                глобальной карте.
-              </p>
-            </div>
-          ) : null}
-
-          {step === 2 ? (
-            <div className="relative grid gap-3">
-              {!assetsReady ? (
-                <div className="absolute inset-0 z-30 grid place-items-center rounded-2xl bg-white/80">
-                  <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                    Происходит загрузка страницы...
-                  </div>
-                </div>
-              ) : null}
-              <div
-                className={isMobile ? "flex flex-col gap-4" : "grid gap-4"}
-                style={
-                  isMobile
-                    ? undefined
-                    : {
-                        gridTemplateColumns: "72% 24%",
-                        columnGap: "4%"
-                      }
-                }
-              >
-                {isMobile ? (
-                  <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 py-3 backdrop-blur">
-                    {renderNavButtons("px-4")}
-                  </div>
-                ) : null}
-                <div className={`grid gap-3 ${isMobile ? "px-4" : "sticky top-24 self-start"}`}>
-                  <MemorialPreview
-                    terrainUrl={environmentUrl}
-                    houseUrl={houseUrl}
-                    houseId={housePreviewId}
-                    parts={partList}
-                    gifts={giftPreviewEnabled ? previewGifts : undefined}
-                    giftSlots={
-                      giftPreviewEnabled && previewPlaceholderSlots.length > 0
-                        ? previewPlaceholderSlots
-                        : undefined
-                    }
-                    showGiftSlots={giftPreviewEnabled && previewPlaceholderSlots.length > 0}
-                    enableHoverHighlight
-                    colors={colorOverrides}
-                    focusSlot={focusSlot}
-                    focusRequestId={focusRequestId}
-                    softEdges
-                    cameraOffsetAdjustments={cameraOffsetAdjustments}
-                    cameraAdjustmentKey={activeCameraKey}
-                    onHouseSlotsDetected={setDetectedHouseSlots}
-                    onGiftSlotsDetected={setDetectedGiftSlots}
-                    onDetailClick={handlePreviewDetailClick}
-                    style={
-                      isMobile
-                        ? { height: "34vh", minHeight: "240px" }
-                        : { height: "calc(100vh - 320px)", minHeight: "440px" }
-                    }
-                  />
-                </div>
-
-                <div
-                  className={`flex gap-4 overflow-visible ${
-                    isMobile
-                      ? "min-h-[38vh] max-h-[38vh] px-4 pb-6"
-                      : "min-h-[60vh] max-h-[60vh]"
-                  }`}
-                >
-                  <div className="relative z-20 flex w-14 flex-col items-center gap-3 self-start overflow-visible">
-                      {step3Tabs.map((tab) => {
-                        const isActive = activeStep3Tab === tab.id;
-                        const isTooltipVisible = tooltipTabId === tab.id;
-                        const description = STEP3_TAB_DESCRIPTIONS[tab.id];
-                        return (
-                          <div key={tab.id} className="relative">
-                            <button
-                              type="button"
-                              onClick={() => handleStep3TabSelect(tab)}
-                              onMouseEnter={() => {
-                                clearStep3TooltipTimer();
-                                setTooltipTabId(null);
-                                tooltipTimerRef.current = window.setTimeout(() => {
-                                  setTooltipTabId(tab.id);
-                                }, 500);
-                              }}
-                              onMouseLeave={() => {
-                                clearStep3TooltipTimer();
-                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
-                              }}
-                              onFocus={() => {
-                                clearStep3TooltipTimer();
-                                setTooltipTabId(null);
-                                tooltipTimerRef.current = window.setTimeout(() => {
-                                  setTooltipTabId(tab.id);
-                                }, 500);
-                              }}
-                              onBlur={() => {
-                                clearStep3TooltipTimer();
-                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
-                              }}
-                              aria-label={tab.label}
-                              className={`flex h-14 w-14 items-center justify-center rounded-2xl border text-sm transition ${
-                                isActive
-                                  ? "border-sky-400 bg-sky-50 text-sky-700"
-                                  : "border-slate-200 bg-white text-slate-500 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
-                              }`}
-                            >
-                              <Step3TabIcon id={tab.id} />
-                              <span className="sr-only">{tab.label}</span>
-                            </button>
-                            {isTooltipVisible ? (
-                              <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
-                                <div className="font-semibold text-slate-900">{tab.label}</div>
-                                <div className="mt-1 text-slate-500">{description}</div>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                  </div>
-
-                  <div
-                    className={`flex min-w-0 flex-1 flex-col ${
-                      isMobile ? "max-h-[38vh]" : "max-h-[60vh]"
-                    }`}
-                  >
-                    <label className="mb-2 flex items-center gap-2 text-xs text-slate-600">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        checked={giftPreviewEnabled}
-                        onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
-                      />
-                      Посмотреть с подарками
-                    </label>
-                    <div className="relative z-10 min-w-0 flex-1 overflow-y-auto pr-2">
-                      {renderStep3TabContent()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {step === 3 ? (
-            <div className="grid gap-4">
-              <label className="grid gap-1 text-sm text-slate-700">
-                Эпитафия (до 200 символов)
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.epitaph}
-                  maxLength={200}
-                  onChange={(event) => handleChange("epitaph", event.target.value)}
-                  placeholder="Самый лучший друг"
-                />
-              </label>
-              <label className="grid gap-1 text-sm text-slate-700">
-                Здесь вы можете поделиться историей питомца и дополнительной информацией
-                <textarea
-                  className="min-h-[160px] rounded-2xl border border-slate-200 px-4 py-2"
-                  value={form.story}
-                  maxLength={2000}
-                  onChange={(event) => handleChange("story", event.target.value)}
-                  placeholder="Короткая история о жизни питомца"
-                />
-              </label>
-
-              <div className="mt-4 grid gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 5)</h3>
-                  <span className="text-xs text-slate-500">{photos.length}/5</span>
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(event) => {
-                    handlePhotosSelected(event.target.files);
-                    event.currentTarget.value = "";
-                  }}
-                />
-                <p className="text-xs text-slate-500">Максимум 5 фото, до 10 МБ каждое.</p>
-                {photos.length > 0 ? (
-                  <div
-                    className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-                      gap: "8px"
-                    }}
-                  >
-                    {photos.map((photo) => (
-                      <div
-                        key={photo.id}
-                        className="relative rounded-2xl border border-slate-200 bg-white p-2"
-                        style={{ maxWidth: "220px" }}
-                      >
                         <button
                           type="button"
-                          onClick={() => removePhoto(photo.id)}
-                          className="absolute right-2 top-2 h-6 w-6 rounded-full bg-black/70 text-xs text-white"
-                          aria-label="Удалить фото"
-                          title="Удалить фото"
+                          onClick={handleSubmit}
+                          className="mt-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
+                          disabled={loading}
                         >
-                          ×
+                          {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
                         </button>
-                        <img
-                          src={photo.url}
-                          alt="Фото питомца"
-                          className="w-full rounded-lg bg-slate-100 object-contain"
-                          style={{ height: "120px", width: "100%", objectFit: "contain" }}
-                        />
-                        <div className="mt-3 flex items-center justify-center">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewPhotoId(photo.id)}
-                            className={`rounded-full px-3 py-1 text-xs ${
-                              previewPhotoId === photo.id
-                                ? "bg-slate-900 text-white"
-                                : "border border-slate-200 text-slate-600"
-                            }`}
-                          >
-                            {previewPhotoId === photo.id ? "На обложке" : "На обложку"}
-                          </button>
-                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500">
-                    Добавь фотографии питомца и выбери одну для мини‑окна на карте.
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : null}
-
-          {step === 4 ? (
-            <div className="grid gap-6">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <div className="grid gap-2 text-sm text-slate-700">
-                  <p>Имя: {form.name || "—"}</p>
-                  <p>Дата рождения: {form.birthDate || "—"}</p>
-                  <p>Дата ухода: {form.deathDate || "—"}</p>
-                  <p className="break-words">
-                    Эпитафия: <span className="break-all">{form.epitaph || "—"}</span>
-                  </p>
-                  <p className="break-words">
-                    История:{" "}
-                    <span className="whitespace-pre-wrap break-all">{form.story || "—"}</span>
-                  </p>
-                </div>
-                {photos.length > 0 ? (
-                  <div className="mt-4">
-                    <div className="flex gap-3 overflow-x-auto pb-2">
-                      {photos.map((photo) => (
-                        <img
-                          key={photo.id}
-                          src={photo.url}
-                          alt="Фото питомца"
-                          className="rounded-xl object-cover"
-                          style={{ width: 324, height: 252 }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-              <div className="grid gap-3">
-                <MemorialPreview
-                  terrainUrl={environmentUrl}
-                  houseUrl={houseUrl}
-                  houseId={form.houseId}
-                  parts={partList}
-                  colors={colorOverrides}
-                  softEdges
-                  className="h-[648px]"
-                />
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <div className="grid gap-3 text-sm text-slate-700">
-                    <p className="font-semibold text-slate-900">Оплата мемориала</p>
-                    <div className="grid gap-2">
-                      {MEMORIAL_PLANS.map((plan) => {
-                        const isSelected = plan.id === memorialPlanId;
-                        return (
-                          <button
-                            key={plan.id}
-                            type="button"
-                            onClick={() => setMemorialPlanId(plan.id)}
-                            className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
-                              isSelected
-                                ? "border-sky-400 bg-sky-50 text-slate-900"
-                                : "border-slate-200 text-slate-700 hover:border-slate-300"
-                            }`}
-                          >
-                            <span className="font-semibold">{plan.label}</span>
-                            <span className="text-slate-500">{plan.price} монет</span>
-                          </button>
-                        );
-                      })}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           ) : null}
-        </section>
+        </>
+      )}
 
-        <ErrorToast message={error} onClose={() => setError(null)} />
-
-        <div className={`mt-6 ${step === 2 && isMobile ? "hidden" : ""}`}>
-          {renderNavButtons()}
-        </div>
-      </div>
+      <ErrorToast message={error} onClose={() => setError(null)} />
 
       {topUpOpen ? (
         <div
