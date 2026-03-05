@@ -1080,7 +1080,7 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex w-[70%] aspect-square items-center justify-center rounded-xl border p-2 transition ${
+            className={`flex w-[70%] aspect-square items-center justify-center rounded-xl border-[0.33px] p-2 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
