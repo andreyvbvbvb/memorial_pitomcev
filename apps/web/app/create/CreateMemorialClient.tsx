@@ -99,7 +99,6 @@ type PhotoDraft = {
   url: string;
 };
 
-const steps = ["Основные данные", "Создание мемориала"];
 const MEMORIAL_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
@@ -324,7 +323,9 @@ export default function CreateMemorialClient() {
   const assetsLoadStartedRef = useRef(false);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
-  const [activeOverlay, setActiveOverlay] = useState<"marker" | "photos" | "story" | null>(null);
+  const [activeOverlay, setActiveOverlay] = useState<
+    "marker" | "photos" | "story" | "base" | null
+  >(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
@@ -975,7 +976,7 @@ export default function CreateMemorialClient() {
     }
   };
 
-  const toggleOverlay = (panel: "marker" | "photos" | "story") => {
+  const toggleOverlay = (panel: "marker" | "photos" | "story" | "base") => {
     setActiveOverlay((prev) => (prev === panel ? null : panel));
   };
 
@@ -1079,7 +1080,7 @@ export default function CreateMemorialClient() {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="grid grid-cols-2 gap-[2px]">
+    <div className="grid grid-cols-2 place-items-center gap-2">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -1098,7 +1099,7 @@ export default function CreateMemorialClient() {
             }
             aria-label={option.name}
             title={option.name}
-            className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
+            className={`flex w-[75%] aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-sky-400 bg-sky-50"
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
@@ -1271,6 +1272,66 @@ export default function CreateMemorialClient() {
         return null;
     }
   };
+
+  const renderBaseInfoForm = () => (
+    <div className="grid gap-4">
+      <label className="grid gap-1 text-sm text-slate-700">
+        Имя питомца
+        <input
+          className="rounded-2xl border border-slate-200 px-4 py-2"
+          value={form.name}
+          onChange={(event) => handleChange("name", event.target.value)}
+          placeholder="Барсик"
+        />
+      </label>
+      <label className="grid gap-1 text-sm text-slate-700">
+        Вид питомца
+        <select
+          className="rounded-2xl border border-slate-200 px-4 py-2"
+          value={form.species}
+          onChange={(event) => handleSpeciesChange(event.target.value)}
+        >
+          <option value="dog">Собака</option>
+          <option value="cat">Кошка</option>
+          <option value="bird">Птица</option>
+          <option value="rat">Крыса</option>
+          <option value="gryzun">Грызун</option>
+          <option value="fish">Рыбка</option>
+          <option value="other">Другое</option>
+        </select>
+      </label>
+      <div className="grid gap-4">
+        <label className="grid gap-1 text-sm text-slate-700">
+          Дата рождения
+          <input
+            type="date"
+            className={`rounded-2xl border px-4 py-2 ${
+              dateValidationMessage ? "border-red-400" : "border-slate-200"
+            }`}
+            value={form.birthDate}
+            onChange={(event) => handleChange("birthDate", event.target.value)}
+            max={form.deathDate || todayInputValue}
+          />
+        </label>
+        <label className="grid gap-1 text-sm text-slate-700">
+          Дата ухода
+          <input
+            type="date"
+            className={`rounded-2xl border px-4 py-2 ${
+              dateValidationMessage ? "border-red-400" : "border-slate-200"
+            }`}
+            value={form.deathDate}
+            onChange={(event) => handleChange("deathDate", event.target.value)}
+            min={form.birthDate || undefined}
+            max={todayInputValue}
+          />
+        </label>
+      </div>
+      {dateValidationMessage ? (
+        <p className="text-xs text-red-600">{dateValidationMessage}</p>
+      ) : null}
+    </div>
+  );
 
   const renderMarkerPanel = () => (
     <div className="grid gap-4">
@@ -1550,9 +1611,21 @@ export default function CreateMemorialClient() {
     </div>
   );
 
+  const renderBaseInfoPanel = () => (
+    <div className="grid gap-4">
+      {renderBaseInfoForm()}
+    </div>
+  );
+
   const isBuilderStep = step === 1;
   const overlayPanelClass =
-    "pointer-events-auto absolute bottom-24 right-6 w-[360px] max-w-[85vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+    "pointer-events-auto absolute bottom-24 left-24 w-[360px] max-w-[85vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+  const panelButtonClass = (active: boolean) =>
+    `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
+      active
+        ? "border-white/80 bg-white text-slate-900 shadow-lg"
+        : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+    }`;
   const mainStyle: CSSProperties = {
     minHeight: "100dvh",
     marginTop: "calc(-1 * var(--app-header-height, 56px))",
@@ -1560,106 +1633,20 @@ export default function CreateMemorialClient() {
       ? "var(--app-header-height, 56px)"
       : "calc(var(--app-header-height, 56px) + 24px)"
   };
-  const stepChips = (
-    <div className="flex flex-wrap gap-2">
-      {steps.map((label, index) => {
-        const isActive = index === step;
-        const isClickable = index <= step;
-        return (
-          <button
-            key={label}
-            type="button"
-            onClick={() => {
-              if (isClickable) {
-                setError(null);
-                setStep(index as Step);
-              }
-            }}
-            className={`rounded-full px-4 py-2 text-xs font-semibold ${
-              isActive
-                ? "bg-slate-900 text-white"
-                : isClickable
-                  ? "bg-white text-slate-700 hover:border-slate-300"
-                  : "bg-slate-100 text-slate-400"
-            }`}
-            disabled={!isClickable}
-          >
-            {index + 1}. {label}
-          </button>
-        );
-      })}
-    </div>
-  );
 
   return (
     <main
-      className={`relative bg-slate-50 ${isBuilderStep ? "overflow-hidden" : "px-4 pb-8"}`}
+      className={`relative bg-slate-50 ${
+        isBuilderStep ? "h-[100dvh] overflow-hidden" : "px-4 pb-8"
+      }`}
       style={mainStyle}
     >
       {!isBuilderStep ? (
         <div className="mx-auto w-full max-w-none lg:w-[90vw]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {stepChips}
-          </div>
-
           <section className="mt-6 rounded-2xl bg-transparent p-5">
             {step === 0 ? (
-              <div className="grid gap-4">
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Имя питомца
-                  <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={form.name}
-                    onChange={(event) => handleChange("name", event.target.value)}
-                    placeholder="Барсик"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Вид питомца
-                  <select
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={form.species}
-                    onChange={(event) => handleSpeciesChange(event.target.value)}
-                  >
-                    <option value="dog">Собака</option>
-                    <option value="cat">Кошка</option>
-                    <option value="bird">Птица</option>
-                    <option value="rat">Крыса</option>
-                    <option value="gryzun">Грызун</option>
-                    <option value="fish">Рыбка</option>
-                    <option value="other">Другое</option>
-                  </select>
-                </label>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="grid gap-1 text-sm text-slate-700">
-                    Дата рождения
-                    <input
-                      type="date"
-                      className={`rounded-2xl border px-4 py-2 ${
-                        dateValidationMessage ? "border-red-400" : "border-slate-200"
-                      }`}
-                      value={form.birthDate}
-                      onChange={(event) => handleChange("birthDate", event.target.value)}
-                      max={form.deathDate || todayInputValue}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm text-slate-700">
-                    Дата ухода
-                    <input
-                      type="date"
-                      className={`rounded-2xl border px-4 py-2 ${
-                        dateValidationMessage ? "border-red-400" : "border-slate-200"
-                      }`}
-                      value={form.deathDate}
-                      onChange={(event) => handleChange("deathDate", event.target.value)}
-                      min={form.birthDate || undefined}
-                      max={todayInputValue}
-                    />
-                  </label>
-                </div>
-                {dateValidationMessage ? (
-                  <p className="text-xs text-red-600">{dateValidationMessage}</p>
-                ) : null}
+              <div className="mx-auto w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
+                {renderBaseInfoForm()}
               </div>
             ) : null}
           </section>
@@ -1674,6 +1661,7 @@ export default function CreateMemorialClient() {
               terrainUrl={environmentUrl}
               houseUrl={houseUrl}
               houseId={housePreviewId}
+              cameraPosition={[8, 6, 8]}
               parts={partList}
               gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -1686,6 +1674,7 @@ export default function CreateMemorialClient() {
               colors={colorOverrides}
               focusSlot={focusSlot}
               focusRequestId={focusRequestId}
+              showControls={false}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
               cameraAdjustmentKey={activeCameraKey}
               onHouseSlotsDetected={setDetectedHouseSlots}
@@ -1703,12 +1692,9 @@ export default function CreateMemorialClient() {
             </div>
           ) : null}
 
-          <div className="relative z-10 min-h-[100dvh]">
-            <div className="pointer-events-none absolute left-6 top-[calc(var(--app-header-height,56px)+16px)]">
-              <div className="pointer-events-auto">{stepChips}</div>
-            </div>
+          <div className="pointer-events-none relative z-10 h-full min-h-[100dvh]">
 
-            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[300px] max-w-[26vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[260px] max-w-[24vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900">Редактор мемориала</h3>
               </div>
@@ -1785,58 +1771,68 @@ export default function CreateMemorialClient() {
 
             {activeOverlay ? (
               <div className={overlayPanelClass}>
-                {activeOverlay === "marker"
-                  ? renderMarkerPanel()
-                  : activeOverlay === "photos"
-                    ? renderPhotosPanel()
-                    : renderStoryPanel()}
+                {activeOverlay === "base"
+                  ? renderBaseInfoPanel()
+                  : activeOverlay === "marker"
+                    ? renderMarkerPanel()
+                    : activeOverlay === "photos"
+                      ? renderPhotosPanel()
+                      : renderStoryPanel()}
               </div>
             ) : null}
 
             <div className="pointer-events-auto absolute bottom-6 left-6">
-              <button
-                type="button"
-                onClick={handleBack}
-                className="rounded-2xl border border-white/70 bg-white/80 px-4 py-2 text-sm text-slate-700 shadow-sm"
-              >
-                Назад
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleOverlay("base")}
+                  aria-label="Основные данные"
+                  className={panelButtonClass(activeOverlay === "base")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 11v5" />
+                    <circle cx="12" cy="8" r="1" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleOverlay("marker")}
+                  aria-label="Маркер"
+                  className={panelButtonClass(activeOverlay === "marker")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleOverlay("photos")}
+                  aria-label="Фотографии"
+                  className={panelButtonClass(activeOverlay === "photos")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <circle cx="9" cy="11" r="2" />
+                    <path d="M21 15l-4-4-4 4-3-3-5 5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleOverlay("story")}
+                  aria-label="История"
+                  className={panelButtonClass(activeOverlay === "story")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 5h8a3 3 0 0 1 3 3v11" />
+                    <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div className="pointer-events-auto absolute bottom-6 right-6 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => toggleOverlay("marker")}
-                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                  activeOverlay === "marker"
-                    ? "border-sky-400 bg-sky-50 text-sky-700"
-                    : "border-white/70 bg-white/80 text-slate-700 hover:bg-white"
-                }`}
-              >
-                Маркер
-              </button>
-              <button
-                type="button"
-                onClick={() => toggleOverlay("photos")}
-                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                  activeOverlay === "photos"
-                    ? "border-sky-400 bg-sky-50 text-sky-700"
-                    : "border-white/70 bg-white/80 text-slate-700 hover:bg-white"
-                }`}
-              >
-                Фото
-              </button>
-              <button
-                type="button"
-                onClick={() => toggleOverlay("story")}
-                className={`rounded-2xl border px-3 py-2 text-xs font-semibold transition ${
-                  activeOverlay === "story"
-                    ? "border-sky-400 bg-sky-50 text-sky-700"
-                    : "border-white/70 bg-white/80 text-slate-700 hover:bg-white"
-                }`}
-              >
-                История
-              </button>
+            <div className="pointer-events-auto absolute bottom-6 right-6">
               <button
                 type="button"
                 onClick={openReview}
