@@ -1086,7 +1086,7 @@ export default function CreateMemorialClient() {
                 : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
             }`}
           >
-            <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+            <div className="flex h-[70%] w-[70%] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
               {imageUrl ? (
                 <img
                   src={imageUrl}
