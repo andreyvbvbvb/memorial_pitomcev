@@ -215,7 +215,7 @@ export default function AuthClient() {
 
             <button
               type="submit"
-              className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+              className="w-full rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
               disabled={loading}
             >
               {loading
@@ -229,15 +229,17 @@ export default function AuthClient() {
             <ErrorToast message={error} onClose={() => setError(null)} />
           </div>
 
-          <div className="mt-6 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setForgotPopupOpen(true)}
-              className="text-sm text-slate-600 underline-offset-4 hover:underline"
-            >
-              Забыли пароль?
-            </button>
-          </div>
+          {mode === "login" ? (
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setForgotPopupOpen(true)}
+                className="text-sm text-slate-600 underline-offset-4 hover:underline"
+              >
+                Забыли пароль?
+              </button>
+            </div>
+          ) : null}
         </form>
       </div>
       {forgotPopupOpen ? (
