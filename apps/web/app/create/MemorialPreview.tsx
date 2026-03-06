@@ -599,7 +599,8 @@ function PartAttachment({
       applyPartScale(cloned, 0.575, "x");
     }
     if (slot === "sign_slot") {
-      applyPartFitWidthHeight(cloned, 1, 0.4);
+      const scale = houseBaseId === "budka_1" ? 0.85 : 1;
+      applyPartFitWidthHeight(cloned, 1 * scale, 0.4 * scale);
     }
     return cloned;
   }, [scene, slot]);

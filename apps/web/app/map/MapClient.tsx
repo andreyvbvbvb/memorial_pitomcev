@@ -496,7 +496,8 @@ function RowCarouselStage({
   targetIndex,
   onArrive,
   onAnimationEnd,
-  cameraSettings
+  cameraSettings,
+  enableHoverHighlight = true
 }: {
   items: { data: MemorialSceneData | null; id: string }[];
   activeIndex: number;
@@ -504,6 +505,7 @@ function RowCarouselStage({
   onArrive: (index: number) => void;
   onAnimationEnd: () => void;
   cameraSettings: { distanceOffset: number; height: number; tiltDeg: number };
+  enableHoverHighlight?: boolean;
 }) {
   const { camera } = useThree();
   const instanceRefs = useRef<(THREE.Group | null)[]>([]);
@@ -730,16 +732,20 @@ function RowCarouselStage({
       activeLightRef.current.visible = true;
     }
 
-    const hoveredIndex = hoveredRef.current;
-    if (hoverLightRef.current && hoveredIndex !== null) {
-      const hoveredNode = instanceRefs.current[hoveredIndex];
-      if (hoveredNode) {
-        const pos = new THREE.Vector3();
-        hoveredNode.getWorldPosition(pos);
-        hoverLightRef.current.position.set(pos.x, pos.y + 7, pos.z);
-        hoverLightRef.current.intensity = 2.5;
-        hoverLightRef.current.visible = true;
-      } else {
+    if (enableHoverHighlight) {
+      const hoveredIndex = hoveredRef.current;
+      if (hoverLightRef.current && hoveredIndex !== null) {
+        const hoveredNode = instanceRefs.current[hoveredIndex];
+        if (hoveredNode) {
+          const pos = new THREE.Vector3();
+          hoveredNode.getWorldPosition(pos);
+          hoverLightRef.current.position.set(pos.x, pos.y + 7, pos.z);
+          hoverLightRef.current.intensity = 2.5;
+          hoverLightRef.current.visible = true;
+        } else {
+          hoverLightRef.current.visible = false;
+        }
+      } else if (hoverLightRef.current) {
         hoverLightRef.current.visible = false;
       }
     } else if (hoverLightRef.current) {
@@ -754,7 +760,9 @@ function RowCarouselStage({
       <DirectionalLight intensity={1.1} position={[6, 8, 4]} />
       <DirectionalLight intensity={0.6} position={[-6, 6, -4]} />
       <PointLight ref={activeLightRef} color="#93c5fd" distance={34} decay={1.5} />
-      <PointLight ref={hoverLightRef} color="#bae6fd" distance={40} decay={1.5} />
+      {enableHoverHighlight ? (
+        <PointLight ref={hoverLightRef} color="#bae6fd" distance={40} decay={1.5} />
+      ) : null}
       <OcclusionPlane size={Math.max(220, radiusRef.current * 16)} />
       {items.map((item, idx) => {
         return (
@@ -765,14 +773,22 @@ function RowCarouselStage({
             innerRef={(node) => {
               instanceRefs.current[idx] = node;
             }}
-            onHover={() => {
-              hoveredRef.current = idx;
-            }}
-            onLeave={() => {
-              if (hoveredRef.current === idx) {
-                hoveredRef.current = null;
-              }
-            }}
+            onHover={
+              enableHoverHighlight
+                ? () => {
+                    hoveredRef.current = idx;
+                  }
+                : undefined
+            }
+            onLeave={
+              enableHoverHighlight
+                ? () => {
+                    if (hoveredRef.current === idx) {
+                      hoveredRef.current = null;
+                    }
+                  }
+                : undefined
+            }
             onSelect={undefined}
           />
         );
@@ -787,7 +803,8 @@ function CarouselScene({
   targetIndex,
   onArrive,
   onAnimationEnd,
-  cameraSettings
+  cameraSettings,
+  enableHoverHighlight = true
 }: {
   items: { data: MemorialSceneData | null; id: string }[];
   activeIndex: number;
@@ -795,9 +812,23 @@ function CarouselScene({
   onArrive: (index: number) => void;
   onAnimationEnd: () => void;
   cameraSettings: { distanceOffset: number; height: number; tiltDeg: number };
+  enableHoverHighlight?: boolean;
 }) {
+  const initialCameraPosition = useMemo(() => {
+    const count = Math.max(1, items.length);
+    const desiredSpacing = 20;
+    const minRadius = 30;
+    const radius = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
+    const cameraRadius = radius + cameraSettings.distanceOffset;
+    return [cameraRadius, cameraSettings.height, 0] as [number, number, number];
+  }, [items.length, cameraSettings]);
   return (
-    <Canvas camera={{ position: [0, 5, 16], fov: 45 }}>
+    <Canvas
+      camera={{ position: initialCameraPosition, fov: 45 }}
+      onCreated={({ camera }) => {
+        camera.lookAt(0, 0, 0);
+      }}
+    >
       <RowCarouselStage
         items={items}
         activeIndex={activeIndex}
@@ -805,6 +836,7 @@ function CarouselScene({
         onArrive={onArrive}
         onAnimationEnd={onAnimationEnd}
         cameraSettings={cameraSettings}
+        enableHoverHighlight={enableHoverHighlight}
       />
     </Canvas>
   );
@@ -1488,20 +1520,29 @@ export default function MapClient() {
                   onArrive={handleCarouselArrive}
                   onAnimationEnd={handleCarouselAnimationEnd}
                   cameraSettings={cameraSettings}
+                  enableHoverHighlight={false}
                 />
                 <div className="pointer-events-none absolute inset-0">
                   <button
                     type="button"
                     aria-label="Предыдущий мемориал"
                     onClick={handleCarouselNext}
-                    className="pointer-events-auto absolute left-0 top-0 h-full w-[20%] bg-transparent"
-                  />
+                    className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
+                  >
+                    <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 opacity-0 transition group-hover:opacity-100">
+                      <span className="block h-0 w-0 border-y-[18px] border-y-transparent border-r-[26px] border-r-white/60 drop-shadow" />
+                    </span>
+                  </button>
                   <button
                     type="button"
                     aria-label="Следующий мемориал"
                     onClick={handleCarouselPrev}
-                    className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
-                  />
+                    className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
+                  >
+                    <span className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 opacity-0 transition group-hover:opacity-100">
+                      <span className="block h-0 w-0 border-y-[18px] border-y-transparent border-l-[26px] border-l-white/60 drop-shadow" />
+                    </span>
+                  </button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
@@ -1529,7 +1570,7 @@ export default function MapClient() {
                       </p>
                     ) : null}
                     <a
-                      className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
+                      className="mt-auto inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
                       href={`/pets/${activeCarouselMarker.petId}`}
                     >
                       Открыть мемориал

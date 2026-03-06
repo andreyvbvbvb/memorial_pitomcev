@@ -16,9 +16,7 @@ export default function AuthClient() {
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [forgotMode, setForgotMode] = useState(false);
-  const [forgotIdentifier, setForgotIdentifier] = useState("");
-  const [forgotNotice, setForgotNotice] = useState<string | null>(null);
+  const [forgotPopupOpen, setForgotPopupOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
@@ -109,31 +107,6 @@ export default function AuthClient() {
     handleSubmit();
   };
 
-  const handleForgot = async () => {
-    setError(null);
-    setForgotNotice(null);
-    if (!forgotIdentifier.trim()) {
-      setError("Укажите email или логин");
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/auth/forgot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: forgotIdentifier.trim() })
-      });
-      const text = await response.text();
-      if (!response.ok) {
-        throw new Error(text || "Не удалось сбросить пароль");
-      }
-      setForgotNotice("Если аккаунт существует, на почту отправлено письмо.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка сброса пароля");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="flex min-h-[calc(100vh-120px)] items-center justify-center px-6 py-12">
@@ -259,35 +232,42 @@ export default function AuthClient() {
           <div className="mt-6 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={() => setForgotMode((prev) => !prev)}
+              onClick={() => setForgotPopupOpen(true)}
               className="text-sm text-slate-600 underline-offset-4 hover:underline"
             >
               Забыли пароль?
             </button>
-            {forgotMode ? (
-              <div className="mt-3 grid gap-2">
-                <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm"
-                  placeholder="Email или логин"
-                  value={forgotIdentifier}
-                  onChange={(event) => setForgotIdentifier(event.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={handleForgot}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-                  disabled={loading}
-                >
-                  Отправить новый пароль
-                </button>
-                {forgotNotice ? (
-                  <p className="text-xs text-emerald-600">{forgotNotice}</p>
-                ) : null}
-              </div>
-            ) : null}
           </div>
         </form>
       </div>
+      {forgotPopupOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-slate-900">Восстановление пароля</h3>
+              <button
+                type="button"
+                onClick={() => setForgotPopupOpen(false)}
+                className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
+                aria-label="Закрыть"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              Напишите на почту memorial@gamil.com письмо с адресом почты, на который был
+              зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
+            </p>
+            <button
+              type="button"
+              onClick={() => setForgotPopupOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Понятно
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

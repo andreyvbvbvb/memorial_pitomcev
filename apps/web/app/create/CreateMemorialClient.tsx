@@ -319,7 +319,7 @@ export default function CreateMemorialClient() {
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
   const photosRef = useRef<PhotoDraft[]>([]);
-  const [showOtherMarkers, setShowOtherMarkers] = useState(false);
+  const [markerCategory, setMarkerCategory] = useState(form.species);
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
   const [focusRequestId, setFocusRequestId] = useState(0);
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
@@ -360,9 +360,12 @@ export default function CreateMemorialClient() {
   const markerIconId = form.markerStyle === "other" ? "other" : form.markerStyle;
   const markerPreviewSize = markerSize(form.markerStyle, 43);
   const markerPreviewAnchor = markerAnchor(form.markerStyle, 43);
+  useEffect(() => {
+    setMarkerCategory(form.species);
+  }, [form.species]);
   const markerGroups = useMemo(
-    () => markerVariantsForSpecies(form.species),
-    [form.species]
+    () => markerVariantsForSpecies(markerCategory),
+    [markerCategory]
   );
   const memorialPlan = useMemo(
     () => MEMORIAL_PLANS.find((plan) => plan.id === memorialPlanId) ?? MEMORIAL_PLANS[0],
@@ -808,7 +811,6 @@ export default function CreateMemorialClient() {
   };
 
   const handleSpeciesChange = (value: string) => {
-    setShowOtherMarkers(false);
     setForm((prev) => {
       const nextMarker = firstMarkerVariantId(value) ?? prev.markerStyle;
       return { ...prev, species: value, markerStyle: nextMarker };
@@ -819,8 +821,15 @@ export default function CreateMemorialClient() {
     if (!files) {
       return;
     }
-    const available = Math.max(0, 5 - photos.length);
-    const selected = Array.from(files).slice(0, available);
+    const maxPhotos = 10;
+    const maxSize = 6 * 1024 * 1024;
+    const available = Math.max(0, maxPhotos - photos.length);
+    const picked = Array.from(files);
+    const oversized = picked.some((file) => file.size > maxSize);
+    if (oversized) {
+      setError("Максимальный размер фото — 6 МБ");
+    }
+    const selected = picked.filter((file) => file.size <= maxSize).slice(0, available);
     if (selected.length === 0) {
       return;
     }
@@ -1338,8 +1347,12 @@ export default function CreateMemorialClient() {
     </div>
   );
 
-  const renderMarkerPanel = () => (
-    <div className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
+  const renderMarkerPanel = () => {
+    const markerDisplay = markerGroups.primary.length > 0
+      ? markerGroups.primary
+      : markerGroups.all;
+    return (
+      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
       <div className="grid gap-3">
         <div className="overflow-hidden rounded-2xl border border-slate-200">
           {!apiKey ? (
@@ -1354,14 +1367,14 @@ export default function CreateMemorialClient() {
             <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
               Загрузка карты...
             </div>
-          ) : (
-            <GoogleMap
-              mapContainerStyle={{ width: "100%", height: "220px" }}
-              center={mapCenter}
-              zoom={canShowMarker ? 12 : 3}
-              onClick={(event) => {
-                const latValue = event.latLng?.lat();
-                const lngValue = event.latLng?.lng();
+        ) : (
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "440px" }}
+            center={mapCenter}
+            zoom={canShowMarker ? 12 : 3}
+            onClick={(event) => {
+              const latValue = event.latLng?.lat();
+              const lngValue = event.latLng?.lng();
                 if (latValue === undefined || lngValue === undefined) {
                   return;
                 }
@@ -1392,7 +1405,7 @@ export default function CreateMemorialClient() {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           <button
             type="button"
             onClick={() => {
@@ -1411,20 +1424,20 @@ export default function CreateMemorialClient() {
                 () => setError("Не удалось получить геолокацию")
               );
             }}
-            className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+            className="rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] text-slate-700"
           >
             Моё местоположение
           </button>
           <button
             type="button"
             onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-            className="rounded-2xl border border-slate-200 px-3 py-2 text-xs text-slate-700"
+            className="rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] text-slate-700"
           >
             Очистить
           </button>
         </div>
 
-        <label className="flex items-center gap-2 text-xs text-slate-700">
+        <label className="group relative flex items-center gap-2 text-xs text-slate-700">
           <input
             type="checkbox"
             className="h-4 w-4"
@@ -1432,6 +1445,9 @@ export default function CreateMemorialClient() {
             onChange={(event) => handleChange("isPublic", event.target.checked)}
           />
           Публичный мемориал
+          <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+            Публичный мемориал виден на карте всем пользователям. Приватные доступны только по ссылке.
+          </span>
         </label>
         <p className="text-[11px] text-slate-500">
           Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
@@ -1440,91 +1456,74 @@ export default function CreateMemorialClient() {
 
       <div className="grid gap-3">
         <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
-        <div className="grid gap-3">
-          {markerGroups.primary.length > 0 ? (
-            <div className="grid gap-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                Маркеры выбранного вида
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {markerGroups.primary.map((marker) => {
-                  const markerName = markerStyleById(marker.baseId).name;
-                  return (
-                    <button
-                      key={marker.id}
-                      type="button"
-                      onClick={() => handleChange("markerStyle", marker.id)}
-                      className={`flex items-center justify-center rounded-lg border p-0.5 ${
-                        form.markerStyle === marker.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      <span
-                        className="overflow-hidden rounded-lg bg-slate-100"
-                        style={{ width: 56, height: 56 }}
-                      >
-                        <img
-                          src={marker.iconUrl}
-                          alt={markerName}
-                          className="h-full w-full object-contain"
-                        />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          {markerGroups.secondary.length > 0 ? (
-            <div className="grid gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {markerStyles.map((style) => {
+            const isActive = markerCategory === style.id;
+            return (
               <button
+                key={style.id}
                 type="button"
-                onClick={() => setShowOtherMarkers((prev) => !prev)}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-[10px] uppercase tracking-[0.2em] text-slate-500"
+                onClick={() => {
+                  setMarkerCategory(style.id);
+                  if (markerStyleById(form.markerStyle).id !== style.id) {
+                    handleChange("markerStyle", firstMarkerVariantId(style.id));
+                  }
+                }}
+                className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2 text-[10px] transition ${
+                  isActive
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                }`}
               >
-                Остальные маркеры
-                <span className="text-base leading-none text-slate-400">
-                  {showOtherMarkers ? "−" : "+"}
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/80">
+                  <img
+                    src={markerIconUrl(style.id)}
+                    alt={style.name}
+                    className="h-6 w-6 object-contain"
+                  />
                 </span>
+                <span className="whitespace-nowrap">{style.name}</span>
               </button>
-              {showOtherMarkers ? (
-                <div className="flex flex-wrap gap-1">
-                  {markerGroups.secondary.map((marker) => {
-                    const markerName = markerStyleById(marker.baseId).name;
-                    return (
-                      <button
-                        key={marker.id}
-                        type="button"
-                        onClick={() => handleChange("markerStyle", marker.id)}
-                        className={`flex items-center justify-center rounded-lg border p-0.5 ${
-                          form.markerStyle === marker.id
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-white text-slate-700"
-                        }`}
-                      >
-                        <span
-                          className="overflow-hidden rounded-lg bg-slate-100"
-                          style={{ width: 56, height: 56 }}
-                        >
-                          <img
-                            src={marker.iconUrl}
-                            alt={markerName}
-                            className="h-full w-full object-contain"
-                          />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+            );
+          })}
+        </div>
+        <div className="grid gap-2">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
+            Маркеры выбранного вида
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {markerDisplay.map((marker) => {
+              const markerName = markerStyleById(marker.baseId).name;
+              return (
+                <button
+                  key={marker.id}
+                  type="button"
+                  onClick={() => handleChange("markerStyle", marker.id)}
+                  className={`flex items-center justify-center rounded-lg border p-0.5 ${
+                    form.markerStyle === marker.id
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  <span
+                    className="overflow-hidden rounded-lg bg-slate-100"
+                    style={{ width: 56, height: 56 }}
+                  >
+                    <img
+                      src={marker.iconUrl}
+                      alt={markerName}
+                      className="h-full w-full object-contain"
+                    />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderStoryPanel = () => (
     <div className="grid gap-4">
@@ -1554,8 +1553,8 @@ export default function CreateMemorialClient() {
   const renderPhotosPanel = () => (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 5)</h3>
-        <span className="text-xs text-slate-500">{photos.length}/5</span>
+        <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 10)</h3>
+        <span className="text-xs text-slate-500">{photos.length}/10</span>
       </div>
       <input
         type="file"
@@ -1566,7 +1565,7 @@ export default function CreateMemorialClient() {
           event.currentTarget.value = "";
         }}
       />
-      <p className="text-xs text-slate-500">Максимум 5 фото, до 10 МБ каждое.</p>
+      <p className="text-xs text-slate-500">Максимум 10 фото, до 6 МБ каждое.</p>
       {photos.length > 0 ? (
         <div
           className="grid gap-2"
@@ -1662,7 +1661,7 @@ export default function CreateMemorialClient() {
           <div className="mt-6">{renderNavButtons()}</div>
 
           {isTransitioning ? (
-            <div className="fixed inset-0 z-40 grid place-items-center bg-white/70">
+            <div className="fixed inset-0 z-40 grid place-items-center bg-white">
               <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
                 Происходит загрузка страницы...
@@ -1701,7 +1700,12 @@ export default function CreateMemorialClient() {
             />
           </div>
           {activeOverlay ? (
-            <div className="fixed inset-0 z-5 pointer-events-auto" aria-hidden="true" />
+            <button
+              type="button"
+              aria-label="Закрыть окно"
+              className="fixed inset-0 z-5 pointer-events-auto"
+              onClick={() => setActiveOverlay(null)}
+            />
           ) : null}
 
           <div className="pointer-events-none fixed inset-0 z-10">
@@ -1765,7 +1769,7 @@ export default function CreateMemorialClient() {
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <label className="mb-2 flex items-center gap-2 text-xs text-slate-600">
+                  <label className="group relative mb-2 flex items-center gap-2 text-xs text-slate-600">
                     <input
                       type="checkbox"
                       className="h-4 w-4"
@@ -1773,6 +1777,9 @@ export default function CreateMemorialClient() {
                       onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
                     />
                     Посмотреть с подарками
+                    <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                      При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
+                    </span>
                   </label>
                   <div className="relative z-10 min-w-0 flex-1 overflow-y-auto pr-1">
                     {renderStep3TabContent()}
