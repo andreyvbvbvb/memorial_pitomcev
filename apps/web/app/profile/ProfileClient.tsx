@@ -147,21 +147,6 @@ export default function ProfileClient() {
     <div className="mx-auto max-w-5xl px-6 py-12">
       <div className="flex flex-col gap-2" />
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/my-pets"
-          className="rounded-2xl border border-slate-200 px-5 py-2 text-sm text-slate-700"
-        >
-          Мои питомцы
-        </Link>
-        <Link
-          href="/create"
-          className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white"
-        >
-          Создать мемориал
-        </Link>
-      </div>
-
       <section className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="grid gap-4">

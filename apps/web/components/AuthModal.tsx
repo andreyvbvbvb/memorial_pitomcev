@@ -33,8 +33,6 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
   const [emailError, setEmailError] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
-  const [forgotIdentifier, setForgotIdentifier] = useState("");
-  const [forgotNotice, setForgotNotice] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
@@ -53,8 +51,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
       setEmailError(null);
       setLoginError(null);
       setNotice(null);
-      setForgotNotice(null);
-      setForgotIdentifier("");
+      setForgotMode(false);
     }
   }, [open]);
 
@@ -157,32 +154,6 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
       router.push("/profile");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка авторизации");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgot = async () => {
-    setError(null);
-    setForgotNotice(null);
-    if (!forgotIdentifier.trim()) {
-      setError("Укажите email или логин");
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/auth/forgot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: forgotIdentifier.trim() })
-      });
-      const text = await response.text();
-      if (!response.ok) {
-        throw new Error(text || "Не удалось сбросить пароль");
-      }
-      setForgotNotice("Если аккаунт существует, на почту отправлено письмо.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка сброса пароля");
     } finally {
       setLoading(false);
     }
@@ -335,18 +306,10 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
             )
           ) : (
             <>
-              <label className="grid gap-1 text-sm text-slate-700">
-                Email или логин
-                <input
-                  className="input"
-                  value={forgotIdentifier}
-                  onChange={(event) => setForgotIdentifier(event.target.value)}
-                  placeholder="user@example.com"
-                />
-              </label>
-              <button type="button" onClick={handleForgot} className="btn btn-primary" disabled={loading}>
-                {loading ? "Подождите..." : "Отправить новый пароль"}
-              </button>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                Напишите на почту memorial@gamil.com письмо с адресом почты, на который был
+                зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
+              </div>
               <button
                 type="button"
                 onClick={() => setForgotMode(false)}
@@ -359,9 +322,6 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
 
           <ErrorToast message={error} onClose={() => setError(null)} />
           {notice ? <div className="rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-700">{notice}</div> : null}
-          {forgotNotice ? (
-            <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-700">{forgotNotice}</div>
-          ) : null}
         </div>
       </div>
     </div>
