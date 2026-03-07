@@ -94,7 +94,6 @@ export default function AdminSqlPage() {
           router.replace("/auth");
           return;
         }
-        await response.json();
         if (!isMounted) {
           return;
         }
