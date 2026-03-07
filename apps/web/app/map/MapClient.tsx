@@ -453,16 +453,16 @@ function MemorialInstance({
 }
 
 function MemorialCardPreview({
-  data,
+  previewSrc,
   className
 }: {
-  data: MemorialSceneData | null;
+  previewSrc?: string | null;
   className?: string;
 }) {
-  if (!data) {
+  if (!previewSrc) {
     return (
       <div
-        className={`w-full animate-pulse bg-slate-200 ${className ?? "rounded-2xl"}`}
+        className={`w-full bg-slate-100 ${className ?? "rounded-2xl"}`}
         style={{ aspectRatio: CARD_PREVIEW_ASPECT }}
       />
     );
@@ -472,20 +472,12 @@ function MemorialCardPreview({
       className={`w-full overflow-hidden bg-slate-100 ${className ?? "rounded-2xl"}`}
       style={{ aspectRatio: CARD_PREVIEW_ASPECT }}
     >
-      <Canvas
-        camera={{ position: [-7.5, 7.2, 9.5], fov: 35 }}
-        style={{ pointerEvents: "none" }}
-      >
-        <Color attach="background" args={["#f8fafc"]} />
-        <AmbientLight intensity={0.9} />
-        <DirectionalLight intensity={1} position={[6, 8, 4]} />
-        <DirectionalLight intensity={0.5} position={[-6, 5, -4]} />
-        <Suspense fallback={null}>
-          <Group>
-            <TerrainWithHouseScene data={data} tone={0.1} />
-          </Group>
-        </Suspense>
-      </Canvas>
+      <img
+        src={previewSrc}
+        alt="Фото питомца"
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
     </div>
   );
 }
@@ -890,6 +882,15 @@ export default function MapClient() {
 
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+  const resolvePreviewSrc = useCallback(
+    (url?: string | null) => {
+      if (!url) {
+        return null;
+      }
+      return url.startsWith("http") ? url : `${apiUrl}${url}`;
+    },
+    [apiUrl]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1319,12 +1320,7 @@ export default function MapClient() {
   }, [carouselTargetIndex, carouselQueue, carouselIndex, carouselOrder.length]);
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
-  const activePreviewUrl = activeCarouselMarker?.previewPhotoUrl;
-  const activePreviewSrc = activePreviewUrl
-    ? activePreviewUrl.startsWith("http")
-      ? activePreviewUrl
-      : `${apiUrl}${activePreviewUrl}`
-    : null;
+  const activePreviewSrc = resolvePreviewSrc(activeCarouselMarker?.previewPhotoUrl);
 
   const memorialListContent = (
     <div className="grid grid-cols-1 gap-4">
@@ -1338,44 +1334,40 @@ export default function MapClient() {
               : "Пока нет публичных мемориалов."}
         </p>
       ) : null}
-      {listMarkers.map((marker) => (
-        <a
-          key={marker.id}
-          href={`/pets/${marker.petId}`}
-          onMouseEnter={() => setHoveredMarkerId(marker.id)}
-          onMouseLeave={() => setHoveredMarkerId(null)}
-          onFocus={() => setHoveredMarkerId(marker.id)}
-          onBlur={() => setHoveredMarkerId(null)}
-          className="group relative flex flex-col overflow-visible rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
-        >
-          <div className="overflow-hidden rounded-2xl bg-white/90">
-            <MemorialCardPreview
-              data={buildMemorialSceneData(marker)}
-              className="rounded-t-2xl"
-            />
-            <div className="border-t border-slate-200 bg-white/90 p-3">
-              <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-              <p className="mt-1 text-xs text-slate-600">
-                {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
-              </p>
+      {listMarkers.map((marker) => {
+        const previewSrc = resolvePreviewSrc(marker.previewPhotoUrl);
+        return (
+          <a
+            key={marker.id}
+            href={`/pets/${marker.petId}`}
+            onMouseEnter={() => setHoveredMarkerId(marker.id)}
+            onMouseLeave={() => setHoveredMarkerId(null)}
+            onFocus={() => setHoveredMarkerId(marker.id)}
+            onBlur={() => setHoveredMarkerId(null)}
+            className="group relative flex flex-col overflow-visible rounded-2xl border border-slate-200 bg-white/90 transition hover:border-slate-300"
+          >
+            <div className="overflow-hidden rounded-2xl bg-white/90">
+              <MemorialCardPreview previewSrc={previewSrc} className="rounded-t-2xl" />
+              <div className="border-t border-slate-200 bg-white/90 p-3">
+                <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
+                <p className="mt-1 text-xs text-slate-600">
+                  {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
+                </p>
+              </div>
             </div>
-          </div>
-          {marker.previewPhotoUrl ? (
-            <div className="pointer-events-none absolute left-full top-1/2 hidden -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block ml-3">
-              <img
-                src={
-                  marker.previewPhotoUrl.startsWith("http")
-                    ? marker.previewPhotoUrl
-                    : `${apiUrl}${marker.previewPhotoUrl}`
-                }
-                alt="Обложка мемориала"
-                className="h-40 w-56 rounded-lg object-contain"
-                loading="lazy"
-              />
-            </div>
-          ) : null}
-        </a>
-      ))}
+            {previewSrc ? (
+              <div className="pointer-events-none absolute left-full top-1/2 hidden -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block ml-3">
+                <img
+                  src={previewSrc}
+                  alt="Обложка мемориала"
+                  className="h-40 w-56 rounded-lg object-contain"
+                  loading="lazy"
+                />
+              </div>
+            ) : null}
+          </a>
+        );
+      })}
     </div>
   );
   if (isMobile) {
@@ -1478,13 +1470,9 @@ export default function MapClient() {
                         options={{ maxWidth: 260 }}
                       >
                         <div className="max-w-[240px] text-sm">
-                          {active.previewPhotoUrl ? (
+                          {resolvePreviewSrc(active.previewPhotoUrl) ? (
                             <img
-                              src={
-                                active.previewPhotoUrl.startsWith("http")
-                                  ? active.previewPhotoUrl
-                                  : `${apiUrl}${active.previewPhotoUrl}`
-                              }
+                              src={resolvePreviewSrc(active.previewPhotoUrl)!}
                               alt="Фото питомца"
                               className="mb-2 w-full rounded-md object-contain"
                               style={{ maxHeight: 160 }}
@@ -1728,13 +1716,9 @@ export default function MapClient() {
                   options={{ maxWidth: 260 }}
                 >
                   <div className="max-w-[240px] text-sm">
-                    {active.previewPhotoUrl ? (
+                    {resolvePreviewSrc(active.previewPhotoUrl) ? (
                       <img
-                        src={
-                          active.previewPhotoUrl.startsWith("http")
-                            ? active.previewPhotoUrl
-                            : `${apiUrl}${active.previewPhotoUrl}`
-                        }
+                        src={resolvePreviewSrc(active.previewPhotoUrl)!}
                         alt="Фото питомца"
                         className="mb-2 w-full rounded-md object-contain"
                         style={{ maxHeight: 160 }}

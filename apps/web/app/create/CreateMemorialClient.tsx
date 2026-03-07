@@ -1625,6 +1625,7 @@ export default function CreateMemorialClient() {
   );
 
   const isBuilderStep = step === 1;
+  const isInitialStep = step === 0;
   const overlayPanelClass =
     "pointer-events-auto absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-6 lg:left-20 w-[520px] max-w-[92vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
   const panelButtonClass = (active: boolean) =>
@@ -1635,24 +1636,29 @@ export default function CreateMemorialClient() {
     }`;
   const mainStyle: CSSProperties = {
     minHeight: "100dvh",
-    marginTop: isBuilderStep ? 0 : "calc(-1 * var(--app-header-height, 56px))",
+    marginTop:
+      isBuilderStep || isInitialStep
+        ? 0
+        : "calc(-1 * var(--app-header-height, 56px))",
     paddingTop: isBuilderStep
       ? 0
-      : "calc(var(--app-header-height, 56px) + 24px)"
+      : isInitialStep
+        ? "var(--app-header-height, 56px)"
+        : "calc(var(--app-header-height, 56px) + 24px)"
   };
 
   return (
     <main
       className={`relative bg-slate-50 ${
-        isBuilderStep ? "h-[100dvh] overflow-hidden" : "px-4 pb-8"
+        isBuilderStep || isInitialStep ? "h-[100dvh] overflow-hidden" : "px-4 pb-8"
       }`}
       style={mainStyle}
     >
       {!isBuilderStep ? (
         <div className="mx-auto w-full max-w-none lg:w-[90vw]">
-          <section className="mt-6 rounded-2xl bg-transparent p-5">
+          <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="flex min-h-[calc(100dvh-var(--app-header-height,56px))] flex-col items-center justify-center gap-6 text-center">
+              <div className="flex h-[calc(100dvh-var(--app-header-height,56px))] flex-col items-center justify-center gap-6 text-center">
                 <div className="w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
                   {renderBaseInfoForm(true)}
                 </div>

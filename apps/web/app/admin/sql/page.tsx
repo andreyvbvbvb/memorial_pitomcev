@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
 import ErrorToast from "../../../components/ErrorToast";
 
+const ADMIN_EMAIL = "andreyvbvbvb@gmail.com";
+
 const QUICK_QUERIES = [
   {
     label: "Пользователи (10)",
@@ -100,10 +102,12 @@ export default function AdminSqlPage() {
           router.replace("/auth");
           return;
         }
+        const data = (await response.json()) as { email?: string };
         if (!isMounted) {
           return;
         }
-        setIsAdmin(true);
+        const email = data.email?.toLowerCase() ?? "";
+        setIsAdmin(email === ADMIN_EMAIL);
       } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : "Ошибка авторизации");
@@ -300,7 +304,7 @@ export default function AdminSqlPage() {
   } else if (!isAdmin) {
     content = (
       <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-        Нужна авторизация.
+        Доступ запрещён.
       </div>
     );
   } else {
