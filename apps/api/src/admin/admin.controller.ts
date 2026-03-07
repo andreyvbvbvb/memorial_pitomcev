@@ -13,8 +13,6 @@ import { AuthService } from "../auth/auth.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
 
-const ADMIN_EMAILS = new Set(["andreyvbvbvb@gmail.com"]);
-
 const toSafeJson = (value: unknown): unknown => {
   if (typeof value === "bigint") {
     return value.toString();
@@ -56,10 +54,6 @@ export class AdminController {
     const token = req.cookies?.access_token;
     const user = await this.authService.getUserFromToken(token);
     if (!user || !user.email) {
-      throw new ForbiddenException("Доступ запрещён");
-    }
-    const email = user.email.toLowerCase();
-    if (!ADMIN_EMAILS.has(email)) {
       throw new ForbiddenException("Доступ запрещён");
     }
     return user;
