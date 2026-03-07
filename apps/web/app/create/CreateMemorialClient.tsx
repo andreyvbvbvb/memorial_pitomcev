@@ -1285,21 +1285,21 @@ export default function CreateMemorialClient() {
     }
   };
 
-  const renderBaseInfoForm = () => (
-    <div className="grid gap-4">
-      <label className="grid gap-1 text-sm text-slate-700">
+  const renderBaseInfoForm = (centered = false) => (
+    <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
+      <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
         Имя питомца
         <input
-          className="rounded-2xl border border-slate-200 px-4 py-2"
+          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "text-center" : ""}`}
           value={form.name}
           onChange={(event) => handleChange("name", event.target.value)}
           placeholder="Барсик"
         />
       </label>
-      <label className="grid gap-1 text-sm text-slate-700">
+      <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
         Вид питомца
         <select
-          className="rounded-2xl border border-slate-200 px-4 py-2"
+          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "text-center" : ""}`}
           value={form.species}
           onChange={(event) => handleSpeciesChange(event.target.value)}
         >
@@ -1312,12 +1312,12 @@ export default function CreateMemorialClient() {
           <option value="other">Другое</option>
         </select>
       </label>
-      <div className="grid gap-4">
-        <label className="grid gap-1 text-sm text-slate-700">
+      <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
+        <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "text-center" : ""}`}>
           Дата рождения
           <input
             type="date"
-            className={`rounded-2xl border px-4 py-2 ${
+            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center" : ""} ${
               dateValidationMessage ? "border-red-400" : "border-slate-200"
             }`}
             value={form.birthDate}
@@ -1325,11 +1325,11 @@ export default function CreateMemorialClient() {
             max={form.deathDate || todayInputValue}
           />
         </label>
-        <label className="grid gap-1 text-sm text-slate-700">
+        <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "text-center" : ""}`}>
           Дата ухода
           <input
             type="date"
-            className={`rounded-2xl border px-4 py-2 ${
+            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center" : ""} ${
               dateValidationMessage ? "border-red-400" : "border-slate-200"
             }`}
             value={form.deathDate}
@@ -1652,13 +1652,14 @@ export default function CreateMemorialClient() {
         <div className="mx-auto w-full max-w-none lg:w-[90vw]">
           <section className="mt-6 rounded-2xl bg-transparent p-5">
             {step === 0 ? (
-              <div className="mx-auto w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
-                {renderBaseInfoForm()}
+              <div className="flex min-h-[calc(100dvh-var(--app-header-height,56px))] flex-col items-center justify-center gap-6 text-center">
+                <div className="w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
+                  {renderBaseInfoForm(true)}
+                </div>
+                {renderNavButtons()}
               </div>
             ) : null}
           </section>
-
-          <div className="mt-6">{renderNavButtons()}</div>
 
           {isTransitioning ? (
             <div className="fixed inset-0 z-40 grid place-items-center bg-white">

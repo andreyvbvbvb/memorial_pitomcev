@@ -9,8 +9,10 @@ import {
   Req
 } from "@nestjs/common";
 import { Request } from "express";
+import * as bcrypt from "bcryptjs";
 import { AuthService } from "../auth/auth.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
 
 const toSafeJson = (value: unknown): unknown => {
@@ -139,5 +141,28 @@ export class AdminController {
       a.name.localeCompare(b.name)
     );
     return { tables };
+  }
+
+  @Post("reset-password")
+  async resetPassword(@Req() req: Request, @Body() dto: AdminResetPasswordDto) {
+    await this.ensureAdmin(req);
+    const email = dto.email.trim().toLowerCase();
+    if (!email) {
+      throw new BadRequestException("Email обязателен");
+    }
+    const nextPassword = dto.newPassword.trim();
+    if (nextPassword.length < 6) {
+      throw new BadRequestException("Пароль должен быть минимум 6 символов");
+    }
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException("Пользователь не найден");
+    }
+    const passwordHash = await bcrypt.hash(nextPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash }
+    });
+    return { ok: true };
   }
 }

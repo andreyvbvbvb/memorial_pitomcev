@@ -66,6 +66,7 @@ const buildSelectQuery = (tableName: string, limit = 50) =>
 
 const buildCountQuery = (tableName: string) =>
   `SELECT count(*) FROM "${tableName}";`;
+const escapeSqlLiteral = (value: string) => value.replace(/'/g, "''");
 
 export default function AdminSqlPage() {
   const apiUrl = useMemo(() => API_BASE, []);
@@ -81,6 +82,11 @@ export default function AdminSqlPage() {
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [schemaFilter, setSchemaFilter] = useState("");
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({});
+  const [passwordEmail, setPasswordEmail] = useState("");
+  const [passwordValue, setPasswordValue] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [petId, setPetId] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -180,11 +186,12 @@ export default function AdminSqlPage() {
     setError(null);
   };
 
-  const runQuery = async () => {
-    if (!query.trim()) {
+  const runQueryWith = async (nextQuery: string) => {
+    if (!nextQuery.trim()) {
       setError("Введите SQL запрос");
       return;
     }
+    setQuery(nextQuery);
     setRunning(true);
     setError(null);
     setResult(null);
@@ -193,7 +200,7 @@ export default function AdminSqlPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query: nextQuery })
       });
       if (!response.ok) {
         const text = await response.text();
@@ -206,6 +213,65 @@ export default function AdminSqlPage() {
     } finally {
       setRunning(false);
     }
+  };
+
+  const runQuery = async () => runQueryWith(query);
+
+  const handleResetPassword = async () => {
+    const email = passwordEmail.trim().toLowerCase();
+    const nextPassword = passwordValue.trim();
+    if (!email || !nextPassword) {
+      setError("Введите email и новый пароль");
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, newPassword: nextPassword })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось изменить пароль");
+      }
+      setPasswordNotice("Пароль обновлён");
+      setPasswordValue("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка изменения пароля");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handlePetAction = async (action: "disable" | "delete" | "memorial" | "photos") => {
+    const rawId = petId.trim();
+    if (!rawId) {
+      setError("Укажите ID питомца");
+      return;
+    }
+    const safeId = escapeSqlLiteral(rawId);
+    let nextQuery = "";
+    switch (action) {
+      case "disable":
+        nextQuery = `UPDATE "Pet" SET "isPublic" = false WHERE id = '${safeId}';`;
+        break;
+      case "delete":
+        nextQuery = `DELETE FROM "Pet" WHERE id = '${safeId}';`;
+        break;
+      case "memorial":
+        nextQuery = `DELETE FROM "Memorial" WHERE "petId" = '${safeId}';`;
+        break;
+      case "photos":
+        nextQuery = `DELETE FROM "PetPhoto" WHERE "petId" = '${safeId}';`;
+        break;
+      default:
+        return;
+    }
+    await runQueryWith(nextQuery);
   };
 
   const toggleTable = (name: string) => {
@@ -241,6 +307,85 @@ export default function AdminSqlPage() {
     content = (
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <div className="grid gap-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Смена пароля
+            </div>
+            <div className="mt-3 grid gap-2">
+              <input
+                value={passwordEmail}
+                onChange={(event) => setPasswordEmail(event.target.value)}
+                placeholder="Email пользователя"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <input
+                type="password"
+                value={passwordValue}
+                onChange={(event) => setPasswordValue(event.target.value)}
+                placeholder="Новый пароль"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={passwordLoading}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {passwordLoading ? "Сохраняем..." : "Сменить пароль"}
+              </button>
+              {passwordNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {passwordNotice}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Питомец по ID
+            </div>
+            <input
+              value={petId}
+              onChange={(event) => setPetId(event.target.value)}
+              placeholder="ID питомца"
+              className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+            />
+            <div className="mt-3 grid gap-2">
+              <button
+                type="button"
+                onClick={() => handlePetAction("disable")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300"
+              >
+                Отключить питомца (сделать приватным)
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePetAction("memorial")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300"
+              >
+                Удалить мемориал
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePetAction("photos")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300"
+              >
+                Удалить фото питомца
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePetAction("delete")}
+                className="rounded-lg border border-red-200 bg-white px-3 py-2 text-left text-xs font-semibold text-red-700 hover:border-red-300"
+              >
+                Удалить питомца полностью
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Удаление питомца также удалит маркер, мемориал и фото по каскаду.
+            </p>
+          </div>
+
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="text-xs font-semibold uppercase text-slate-500">
               Быстрые запросы
