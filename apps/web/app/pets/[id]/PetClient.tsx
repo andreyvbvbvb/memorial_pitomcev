@@ -30,17 +30,10 @@ import {
 import { splitHouseVariantId } from "../../../lib/house-variants";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
-type DirtSlot = (typeof DIRT_SLOTS)[number];
-type DirtPart = { slot: DirtSlot; url: string };
-const buildDirtModelUrls = (houseId?: string | null): Record<DirtSlot, string> => {
+const buildDirtModelUrl = (houseId?: string | null): string | null => {
   const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
   const prefix = baseId ? `/models/dirt/${baseId}` : "/models/dirt";
-  return {
-    dirt_slot_1: `${prefix}/dirt_1.glb`,
-    dirt_slot_2: `${prefix}/dirt_2.glb`,
-    dirt_slot_3: `${prefix}/dirt_3.glb`,
-    dirt_slot_4: `${prefix}/dirt_4.glb`
-  };
+  return `${prefix}/dirt.glb`;
 };
 
 type Pet = {
@@ -566,8 +559,8 @@ export default function PetClient({ id }: Props) {
     });
   }, []);
   const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
-  const dirtModelUrls = useMemo(
-    () => buildDirtModelUrls(pet?.memorial?.houseId),
+  const dirtModelUrl = useMemo(
+    () => buildDirtModelUrl(pet?.memorial?.houseId),
     [pet?.memorial?.houseId]
   );
 
@@ -668,16 +661,7 @@ export default function PetClient({ id }: Props) {
       ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(sceneJson.parts?.bowlWater) }
       : null
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
-  const dirtParts =
-    dirtLevel > 0
-      ? DIRT_SLOTS.slice(0, Math.min(dirtLevel, DIRT_SLOTS.length))
-          .map((slot) => {
-            const url = dirtModelUrls[slot];
-            return url ? { slot, url } : null;
-          })
-          .filter((part): part is DirtPart => Boolean(part))
-      : [];
-  const fullPartList = [...partList, ...dirtParts];
+  const fullPartList = partList;
   const colorOverrides = sceneJson.colors ?? undefined;
   const giftInstances = activeGifts.map((gift) => {
     const ownerPets = gift.owner?.pets ?? [];
@@ -740,6 +724,8 @@ export default function PetClient({ id }: Props) {
           houseUrl={resolveHouseModel(pet.memorial?.houseId)}
           houseId={pet.memorial?.houseId ?? null}
           parts={fullPartList}
+          dirtUrl={dirtModelUrl}
+          dirtLevel={dirtLevel}
           gifts={previewGifts}
           giftSlots={giftPanelOpen ? filteredAvailableSlots : undefined}
           selectedSlot={giftPanelOpen ? selectedSlot : null}

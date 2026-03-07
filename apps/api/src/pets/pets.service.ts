@@ -240,8 +240,8 @@ export class PetsService {
   async addPhoto(petId: string, file: { originalname: string; buffer: Buffer }) {
     await this.findOne(petId);
     const count = await this.prisma.petPhoto.count({ where: { petId } });
-    if (count >= 5) {
-      throw new BadRequestException("Можно добавить максимум 5 фото");
+    if (count >= 10) {
+      throw new BadRequestException("Можно добавить максимум 10 фото");
     }
 
     const ext = extname(file.originalname) || ".jpg";

@@ -329,6 +329,7 @@ export default function CreateMemorialClient() {
   const assetsLoadStartedRef = useRef(false);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<
     "marker" | "photos" | "story" | "base" | null
   >(null);
@@ -858,6 +859,16 @@ export default function CreateMemorialClient() {
     });
   };
 
+  const capturePreviewImage = useCallback(async () => {
+    const canvas = previewCanvasRef.current;
+    if (!canvas) {
+      return null;
+    }
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    });
+  }, []);
+
   const handleSubmit = async () => {
     const step0Message = validateStep(0);
     const step1Message = validateStep(1);
@@ -980,6 +991,24 @@ export default function CreateMemorialClient() {
               const text = await previewResponse.text();
               throw new Error(text || "Ошибка выбора превью");
             }
+          }
+        }
+      } else {
+        const snapshot = await capturePreviewImage();
+        if (snapshot) {
+          const formData = new FormData();
+          formData.append("file", snapshot, "preview.png");
+          const uploadResponse = await fetch(`${apiUrl}/pets/${created.id}/photos`, {
+            method: "POST",
+            body: formData
+          });
+          if (uploadResponse.ok) {
+            const saved = (await uploadResponse.json()) as { id: string };
+            await fetch(`${apiUrl}/pets/${created.id}/preview-photo`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ photoId: saved.id })
+            });
           }
         }
       }
@@ -1640,16 +1669,12 @@ export default function CreateMemorialClient() {
       isBuilderStep || isInitialStep
         ? 0
         : "calc(-1 * var(--app-header-height, 56px))",
-    paddingTop: isBuilderStep
-      ? 0
-      : isInitialStep
-        ? "var(--app-header-height, 56px)"
-        : "calc(var(--app-header-height, 56px) + 24px)"
+    paddingTop: isBuilderStep || isInitialStep ? 0 : "calc(var(--app-header-height, 56px) + 24px)"
   };
 
   return (
     <main
-      className={`relative bg-slate-50 ${
+      className={`relative bg-[var(--bg)] ${
         isBuilderStep || isInitialStep ? "h-[100dvh] overflow-hidden" : "px-4 pb-8"
       }`}
       style={mainStyle}
@@ -1658,7 +1683,7 @@ export default function CreateMemorialClient() {
         <div className="mx-auto w-full max-w-none lg:w-[90vw]">
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="flex h-[calc(100dvh-var(--app-header-height,56px))] flex-col items-center justify-center gap-6 text-center">
+              <div className="flex h-[100dvh] flex-col items-center justify-center gap-6 pt-[var(--app-header-height,56px)] text-center">
                 <div className="w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
                   {renderBaseInfoForm(true)}
                 </div>
@@ -1699,6 +1724,10 @@ export default function CreateMemorialClient() {
               focusRequestId={focusRequestId}
               showControls={false}
               controlsEnabled={!activeOverlay}
+              preserveDrawingBuffer
+              onCanvasReady={(canvas) => {
+                previewCanvasRef.current = canvas;
+              }}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
               cameraAdjustmentKey={activeCameraKey}
               onHouseSlotsDetected={setDetectedHouseSlots}

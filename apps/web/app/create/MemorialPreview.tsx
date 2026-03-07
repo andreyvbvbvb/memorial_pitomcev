@@ -32,6 +32,8 @@ type Props = {
   houseUrl?: string | null;
   houseId?: string | null;
   parts?: { slot: string; url: string }[];
+  dirtUrl?: string | null;
+  dirtLevel?: number;
   gifts?: {
     slot: string;
     url: string;
@@ -61,6 +63,8 @@ type Props = {
   preloadGiftUrl?: string | null;
   onGiftPreloaded?: (url: string) => void;
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
+  onCanvasReady?: (canvas: HTMLCanvasElement) => void;
+  preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
   className?: string;
   style?: React.CSSProperties;
@@ -624,10 +628,48 @@ function PartAttachment({
   return null;
 }
 
+function DirtAttachment({
+  house,
+  url,
+  level
+}: {
+  house: THREE.Object3D;
+  url: string;
+  level: number;
+}) {
+  const { scene } = useGLTF(url);
+  const dirt = useMemo(() => scene.clone(true), [scene]);
+
+  useEffect(() => {
+    const maxLevel = Math.max(0, Math.min(4, level));
+    dirt.traverse((child) => {
+      if (!(child instanceof THREE.Object3D)) {
+        return;
+      }
+      const name = child.name?.toLowerCase?.() ?? "";
+      if (name.startsWith("dirt_")) {
+        const index = Number(name.replace(/\D+/g, ""));
+        child.visible = Number.isFinite(index) && index > 0 && index <= maxLevel;
+      }
+    });
+  }, [dirt, level]);
+
+  useEffect(() => {
+    house.add(dirt);
+    return () => {
+      house.remove(dirt);
+    };
+  }, [house, dirt]);
+
+  return null;
+}
+
 function TerrainWithHouse({
   terrainUrl,
   houseUrl,
   parts,
+  dirtUrl,
+  dirtLevel = 0,
   gifts,
   colors,
   showGiftSlots,
@@ -652,6 +694,8 @@ function TerrainWithHouse({
   terrainUrl: string;
   houseUrl: string;
   parts?: { slot: string; url: string }[];
+  dirtUrl?: string | null;
+  dirtLevel?: number;
   gifts?: {
     slot: string;
     url: string;
@@ -679,7 +723,6 @@ function TerrainWithHouse({
   enableHoverHighlight?: boolean;
   allowFocus?: boolean;
   houseBaseId?: string;
-  cameraPosition?: [number, number, number];
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -1022,6 +1065,9 @@ function TerrainWithHouse({
           houseBaseId={houseBaseId}
         />
       ))}
+      {dirtUrl && dirtLevel > 0 ? (
+        <DirtAttachment house={house} url={dirtUrl} level={dirtLevel} />
+      ) : null}
     </Group>
   );
 }
@@ -1054,6 +1100,8 @@ export default function MemorialPreview({
   houseUrl,
   houseId,
   parts,
+  dirtUrl,
+  dirtLevel = 0,
   gifts,
   giftSlots,
   selectedSlot,
@@ -1076,6 +1124,8 @@ export default function MemorialPreview({
   preloadGiftUrl,
   onGiftPreloaded,
   onHouseSlotsDetected,
+  onCanvasReady,
+  preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
   className,
   style
@@ -1254,6 +1304,10 @@ export default function MemorialPreview({
       ) : null}
       <Canvas
         camera={{ position: cameraPosition, fov: 45 }}
+        gl={preserveDrawingBuffer ? { preserveDrawingBuffer: true } : undefined}
+        onCreated={({ gl }) => {
+          onCanvasReady?.(gl.domElement);
+        }}
         style={
           softEdges
             ? {
@@ -1280,6 +1334,8 @@ export default function MemorialPreview({
               terrainUrl={terrainUrl}
               houseUrl={houseUrl}
               parts={parts}
+              dirtUrl={dirtUrl}
+              dirtLevel={dirtLevel}
               gifts={gifts}
               colors={colors}
               showGiftSlots={giftSlotsVisible}
