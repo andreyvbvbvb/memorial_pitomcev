@@ -336,6 +336,8 @@ export default function CreateMemorialClient() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const loadingProgressRef = useRef<number | null>(null);
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -790,6 +792,40 @@ export default function CreateMemorialClient() {
     return value as Step;
   };
 
+  const startLoadingProgress = useCallback(() => {
+    if (loadingProgressRef.current) {
+      window.clearInterval(loadingProgressRef.current);
+    }
+    setLoadingProgress(0);
+    loadingProgressRef.current = window.setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 90) {
+          return prev;
+        }
+        const increment = Math.max(2, Math.round((90 - prev) * 0.1));
+        return Math.min(90, prev + increment);
+      });
+    }, 180);
+  }, []);
+
+  const stopLoadingProgress = useCallback(() => {
+    if (loadingProgressRef.current) {
+      window.clearInterval(loadingProgressRef.current);
+      loadingProgressRef.current = null;
+    }
+    setLoadingProgress(100);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (loadingProgressRef.current) {
+        window.clearInterval(loadingProgressRef.current);
+        loadingProgressRef.current = null;
+      }
+    },
+    []
+  );
+
   const handleNext = async () => {
     const message = validateStep(step);
     if (message) {
@@ -799,7 +835,10 @@ export default function CreateMemorialClient() {
     setError(null);
     if (step === 0) {
       setIsTransitioning(true);
+      startLoadingProgress();
       await preloadAssets();
+      stopLoadingProgress();
+      await new Promise((resolve) => setTimeout(resolve, 160));
       setIsTransitioning(false);
       setStep(1);
       return;
@@ -868,6 +907,22 @@ export default function CreateMemorialClient() {
       canvas.toBlob((blob) => resolve(blob), "image/png");
     });
   }, []);
+
+  const uploadMapPreview = useCallback(
+    async (petId: string) => {
+      const snapshot = await capturePreviewImage();
+      if (!snapshot) {
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", snapshot, "map-preview.png");
+      await fetch(`${apiUrl}/pets/${petId}/map-preview`, {
+        method: "POST",
+        body: formData
+      });
+    },
+    [apiUrl, capturePreviewImage]
+  );
 
   const handleSubmit = async () => {
     const step0Message = validateStep(0);
@@ -993,24 +1048,11 @@ export default function CreateMemorialClient() {
             }
           }
         }
-      } else {
-        const snapshot = await capturePreviewImage();
-        if (snapshot) {
-          const formData = new FormData();
-          formData.append("file", snapshot, "preview.png");
-          const uploadResponse = await fetch(`${apiUrl}/pets/${created.id}/photos`, {
-            method: "POST",
-            body: formData
-          });
-          if (uploadResponse.ok) {
-            const saved = (await uploadResponse.json()) as { id: string };
-            await fetch(`${apiUrl}/pets/${created.id}/preview-photo`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ photoId: saved.id })
-            });
-          }
-        }
+      }
+      try {
+        await uploadMapPreview(created.id);
+      } catch (err) {
+        console.warn("Не удалось сохранить превью для карты", err);
       }
       setWalletBalance((prev) =>
         typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev
@@ -1381,176 +1423,206 @@ export default function CreateMemorialClient() {
       ? markerGroups.primary
       : markerGroups.all;
     return (
-      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-      <div className="grid gap-3">
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          {!apiKey ? (
-            <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
-              Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
-            </div>
-          ) : loadError ? (
-            <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-red-600">
-              Ошибка загрузки карты
-            </div>
-          ) : !isLoaded ? (
-            <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
-              Загрузка карты...
-            </div>
-        ) : (
-          <GoogleMap
-            mapContainerStyle={{ width: "100%", height: "440px" }}
-            center={mapCenter}
-            zoom={canShowMarker ? 12 : 3}
-            onClick={(event) => {
-              const latValue = event.latLng?.lat();
-              const lngValue = event.latLng?.lng();
-                if (latValue === undefined || lngValue === undefined) {
-                  return;
-                }
-                setForm((prev) => ({
-                  ...prev,
-                  lat: latValue.toFixed(6),
-                  lng: lngValue.toFixed(6)
-                }));
-              }}
-            >
-              {canShowMarker ? (
-                <Marker
-                  position={{ lat: lat!, lng: lng! }}
-                  icon={{
-                    url: markerIconUrl(markerIconId),
-                    scaledSize: new window.google.maps.Size(
-                      markerPreviewSize.width,
-                      markerPreviewSize.height
-                    ),
-                    anchor: new window.google.maps.Point(
-                      markerPreviewAnchor.x,
-                      markerPreviewAnchor.y
-                    )
-                  }}
-                />
-              ) : null}
-            </GoogleMap>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              if (!navigator.geolocation) {
-                setError("Геолокация не поддерживается в этом браузере");
-                return;
-              }
-              navigator.geolocation.getCurrentPosition(
-                (pos) => {
+      <div className="grid gap-4 lg:grid-cols-[2fr_1.1fr]">
+        <div className="grid gap-3">
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
+            {!apiKey ? (
+              <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+                Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
+              </div>
+            ) : loadError ? (
+              <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-red-600">
+                Ошибка загрузки карты
+              </div>
+            ) : !isLoaded ? (
+              <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+                Загрузка карты...
+              </div>
+            ) : (
+              <GoogleMap
+                mapContainerStyle={{ width: "100%", height: "360px" }}
+                center={mapCenter}
+                zoom={canShowMarker ? 12 : 3}
+                onClick={(event) => {
+                  const latValue = event.latLng?.lat();
+                  const lngValue = event.latLng?.lng();
+                  if (latValue === undefined || lngValue === undefined) {
+                    return;
+                  }
                   setForm((prev) => ({
                     ...prev,
-                    lat: pos.coords.latitude.toFixed(6),
-                    lng: pos.coords.longitude.toFixed(6)
+                    lat: latValue.toFixed(6),
+                    lng: lngValue.toFixed(6)
                   }));
-                },
-                () => setError("Не удалось получить геолокацию")
-              );
-            }}
-            className="rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] text-slate-700"
-          >
-            Моё местоположение
-          </button>
-          <button
-            type="button"
-            onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-            className="rounded-2xl border border-slate-200 px-2.5 py-1 text-[11px] text-slate-700"
-          >
-            Очистить
-          </button>
-        </div>
+                }}
+              >
+                {canShowMarker ? (
+                  <Marker
+                    position={{ lat: lat!, lng: lng! }}
+                    icon={{
+                      url: markerIconUrl(markerIconId),
+                      scaledSize: new window.google.maps.Size(
+                        markerPreviewSize.width,
+                        markerPreviewSize.height
+                      ),
+                      anchor: new window.google.maps.Point(
+                        markerPreviewAnchor.x,
+                        markerPreviewAnchor.y
+                      )
+                    }}
+                  />
+                ) : null}
+              </GoogleMap>
+            )}
+          </div>
 
-        <label className="group relative flex items-center gap-2 text-xs text-slate-700">
-          <input
-            type="checkbox"
-            className="h-4 w-4"
-            checked={form.isPublic}
-            onChange={(event) => handleChange("isPublic", event.target.checked)}
-          />
-          Публичный мемориал
-          <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-            Публичный мемориал виден на карте всем пользователям. Приватные доступны только по ссылке.
-          </span>
-        </label>
-        <p className="text-[11px] text-slate-500">
-          Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
-        </p>
-      </div>
-
-      <div className="grid gap-3">
-        <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {markerStyles.map((style) => {
-            const isActive = markerCategory === style.id;
-            return (
+          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="grid gap-1 text-[11px] text-slate-600">
+                Широта
+                <input
+                  inputMode="decimal"
+                  className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+                  placeholder="55.755826"
+                  value={form.lat}
+                  onChange={(event) => handleChange("lat", event.target.value)}
+                />
+              </label>
+              <label className="grid gap-1 text-[11px] text-slate-600">
+                Долгота
+                <input
+                  inputMode="decimal"
+                  className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+                  placeholder="37.617299"
+                  value={form.lng}
+                  onChange={(event) => handleChange("lng", event.target.value)}
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-1">
               <button
-                key={style.id}
                 type="button"
                 onClick={() => {
-                  setMarkerCategory(style.id);
-                  if (markerStyleById(form.markerStyle).id !== style.id) {
-                    handleChange("markerStyle", firstMarkerVariantId(style.id));
+                  if (!navigator.geolocation) {
+                    setError("Геолокация не поддерживается в этом браузере");
+                    return;
                   }
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        lat: pos.coords.latitude.toFixed(6),
+                        lng: pos.coords.longitude.toFixed(6)
+                      }));
+                    },
+                    () => setError("Не удалось получить геолокацию")
+                  );
                 }}
-                className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2 text-[10px] transition ${
-                  isActive
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
-                }`}
+                className="rounded-xl border border-slate-200 px-2 py-1 text-[10px] text-slate-700"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/80">
-                  <img
-                    src={markerIconUrl(style.id)}
-                    alt={style.name}
-                    className="h-6 w-6 object-contain"
-                  />
-                </span>
-                <span className="whitespace-nowrap">{style.name}</span>
+                Моё местоположение
               </button>
-            );
-          })}
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
+                className="rounded-xl border border-slate-200 px-2 py-1 text-[10px] text-slate-700"
+              >
+                Очистить
+              </button>
+            </div>
+
+            <label className="group relative flex items-center gap-2 text-xs text-slate-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={form.isPublic}
+                onChange={(event) => handleChange("isPublic", event.target.checked)}
+              />
+              Публичный мемориал
+              <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                Публичный мемориал виден на карте всем пользователям. Приватные доступны только по ссылке.
+              </span>
+            </label>
+            <p className="text-[11px] text-slate-500">
+              Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
+            </p>
+          </div>
         </div>
-        <div className="grid gap-2">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
-            Маркеры выбранного вида
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {markerDisplay.map((marker) => {
-              const markerName = markerStyleById(marker.baseId).name;
-              return (
-                <button
-                  key={marker.id}
-                  type="button"
-                  onClick={() => handleChange("markerStyle", marker.id)}
-                  className={`flex items-center justify-center rounded-lg border p-0.5 ${
-                    form.markerStyle === marker.id
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-700"
-                  }`}
-                >
-                  <span
-                    className="overflow-hidden rounded-lg bg-slate-100"
-                    style={{ width: 56, height: 56 }}
-                  >
-                    <img
-                      src={marker.iconUrl}
-                      alt={markerName}
-                      className="h-full w-full object-contain"
-                    />
-                  </span>
-                </button>
-              );
-            })}
+
+        <div className="grid gap-3">
+          <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
+          <div className="flex gap-3">
+            <div className="flex w-12 flex-col items-center gap-2">
+              {markerStyles.map((style) => {
+                const isActive = markerCategory === style.id;
+                return (
+                  <div key={style.id} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMarkerCategory(style.id);
+                        if (markerStyleById(form.markerStyle).id !== style.id) {
+                          handleChange("markerStyle", firstMarkerVariantId(style.id));
+                        }
+                      }}
+                      className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                        isActive
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                      }`}
+                      aria-label={style.name}
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/80">
+                        <img
+                          src={markerIconUrl(style.id)}
+                          alt={style.name}
+                          className="h-5 w-5 object-contain"
+                        />
+                      </span>
+                    </button>
+                    <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
+                      {style.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                Маркеры выбранного вида
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {markerDisplay.map((marker) => {
+                  const markerName = markerStyleById(marker.baseId).name;
+                  return (
+                    <button
+                      key={marker.id}
+                      type="button"
+                      onClick={() => handleChange("markerStyle", marker.id)}
+                      className={`flex items-center justify-center rounded-lg border p-0.5 ${
+                        form.markerStyle === marker.id
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-700"
+                      }`}
+                    >
+                      <span
+                        className="overflow-hidden rounded-lg bg-slate-100"
+                        style={{ width: 56, height: 56 }}
+                      >
+                        <img
+                          src={marker.iconUrl}
+                          alt={markerName}
+                          className="h-full w-full object-contain"
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     );
   };
 
@@ -1655,8 +1727,14 @@ export default function CreateMemorialClient() {
 
   const isBuilderStep = step === 1;
   const isInitialStep = step === 0;
-  const overlayPanelClass =
-    "pointer-events-auto absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-6 lg:left-20 w-[520px] max-w-[92vw] max-h-[70vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+  const overlayPanelBase =
+    "pointer-events-auto absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-6 lg:left-20 overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+  const overlayPanelClass = (variant?: "marker") =>
+    `${overlayPanelBase} ${
+      variant === "marker"
+        ? "w-[94vw] max-w-[94vw] lg:w-[1040px] max-h-[56vh]"
+        : "w-[520px] max-w-[92vw] max-h-[70vh]"
+    }`;
   const panelButtonClass = (active: boolean) =>
     `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
       active
@@ -1664,18 +1742,20 @@ export default function CreateMemorialClient() {
         : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
     }`;
   const mainStyle: CSSProperties = {
-    minHeight: "100dvh",
-    marginTop:
-      isBuilderStep || isInitialStep
-        ? 0
-        : "calc(-1 * var(--app-header-height, 56px))",
-    paddingTop: isBuilderStep || isInitialStep ? 0 : "calc(var(--app-header-height, 56px) + 24px)"
+    minHeight: isInitialStep
+      ? "calc(100dvh - var(--app-header-height, 56px))"
+      : "100dvh",
+    marginTop: isBuilderStep ? "calc(-1 * var(--app-header-height, 56px))" : 0,
+    paddingTop:
+      !isBuilderStep && !isInitialStep
+        ? "calc(var(--app-header-height, 56px) + 24px)"
+        : 0
   };
 
   return (
     <main
       className={`relative bg-[var(--bg)] ${
-        isBuilderStep || isInitialStep ? "h-[100dvh] overflow-hidden" : "px-4 pb-8"
+        isBuilderStep ? "h-[100dvh] overflow-hidden" : isInitialStep ? "overflow-hidden" : "px-4 pb-8"
       }`}
       style={mainStyle}
     >
@@ -1683,7 +1763,7 @@ export default function CreateMemorialClient() {
         <div className="mx-auto w-full max-w-none lg:w-[90vw]">
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="flex h-[100dvh] flex-col items-center justify-center gap-6 pt-[var(--app-header-height,56px)] text-center">
+              <div className="flex min-h-[calc(100dvh-var(--app-header-height,56px))] flex-col items-center justify-center gap-6 text-center">
                 <div className="w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
                   {renderBaseInfoForm(true)}
                 </div>
@@ -1693,10 +1773,16 @@ export default function CreateMemorialClient() {
           </section>
 
           {isTransitioning ? (
-            <div className="fixed inset-0 z-40 grid place-items-center bg-white">
+            <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--bg)]">
               <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
                 Происходит загрузка страницы...
+                <div className="h-2 w-48 overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className="h-full bg-slate-600 transition-[width] duration-200"
+                    style={{ width: `${loadingProgress}%` }}
+                  />
+                </div>
               </div>
             </div>
           ) : null}
@@ -1825,7 +1911,7 @@ export default function CreateMemorialClient() {
             </div>
 
             {activeOverlay ? (
-              <div className={overlayPanelClass}>
+              <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : undefined)}>
                 {activeOverlay === "base"
                   ? renderBaseInfoPanel()
                   : activeOverlay === "marker"

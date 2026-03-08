@@ -259,6 +259,34 @@ export class PetsService {
     });
   }
 
+  async setMapPreview(petId: string, file: { originalname: string; buffer: Buffer }) {
+    await this.findOne(petId);
+    const memorial = await this.prisma.memorial.findUnique({ where: { petId } });
+    if (!memorial) {
+      throw new BadRequestException("Мемориал не найден");
+    }
+    const ext = extname(file.originalname).toLowerCase() || ".png";
+    const safeExt = ext.length <= 8 ? ext : ".png";
+    const contentType = safeExt === ".png" ? "image/png" : "image/jpeg";
+    const key = `pets/${petId}/map-preview${safeExt}`;
+    const url = await this.s3.uploadPublic(key, file.buffer, contentType);
+    const baseSceneJson =
+      memorial.sceneJson &&
+      typeof memorial.sceneJson === "object" &&
+      !Array.isArray(memorial.sceneJson)
+        ? (memorial.sceneJson as Record<string, unknown>)
+        : {};
+    const nextSceneJson: Prisma.InputJsonValue = {
+      ...baseSceneJson,
+      previewImageUrl: url
+    };
+    await this.prisma.memorial.update({
+      where: { petId },
+      data: { sceneJson: nextSceneJson }
+    });
+    return { url };
+  }
+
   async setPreviewPhoto(petId: string, photoId: string) {
     const photo = await this.prisma.petPhoto.findUnique({ where: { id: photoId } });
     if (!photo || photo.petId !== petId) {

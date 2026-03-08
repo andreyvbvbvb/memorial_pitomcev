@@ -39,6 +39,7 @@ type MarkerDto = {
   lng: number;
   markerStyle?: string | null;
   previewPhotoUrl?: string | null;
+  previewImageUrl?: string | null;
 };
 
 type PetDetail = {
@@ -1335,7 +1336,9 @@ export default function MapClient() {
         </p>
       ) : null}
       {listMarkers.map((marker) => {
-        const previewSrc = resolvePreviewSrc(marker.previewPhotoUrl);
+        const previewSrc = resolvePreviewSrc(
+          marker.previewImageUrl ?? marker.previewPhotoUrl
+        );
         return (
           <a
             key={marker.id}

@@ -53,6 +53,22 @@ export class PetsController {
     return this.petsService.addPhoto(id, file);
   }
 
+  @Post(":id/map-preview")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 10 * 1024 * 1024 }
+    })
+  )
+  setMapPreview(
+    @Param("id") id: string,
+    @UploadedFile() file?: { originalname: string; buffer: Buffer }
+  ) {
+    if (!file) {
+      throw new BadRequestException("Файл не найден");
+    }
+    return this.petsService.setMapPreview(id, file);
+  }
+
   @Patch(":id/preview-photo")
   setPreviewPhoto(@Param("id") id: string, @Body() dto: SetPreviewPhotoDto) {
     return this.petsService.setPreviewPhoto(id, dto.photoId);

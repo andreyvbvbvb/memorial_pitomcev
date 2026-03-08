@@ -7,6 +7,7 @@ type MarkerWithPet = Prisma.MapMarkerGetPayload<{
     pet: {
       include: {
         photos: true;
+        memorial: true;
       };
     };
   };
@@ -27,7 +28,8 @@ export class MapController {
       include: {
         pet: {
           include: {
-            photos: true
+            photos: true,
+            memorial: true
           }
         }
       }
@@ -37,6 +39,11 @@ export class MapController {
       const previewPhoto = marker.previewPhotoId
         ? marker.pet.photos.find((photo) => photo.id === marker.previewPhotoId)
         : marker.pet.photos[0];
+      const sceneJson = marker.pet.memorial?.sceneJson;
+      const previewImageUrl =
+        sceneJson && typeof sceneJson === "object" && !Array.isArray(sceneJson)
+          ? (sceneJson as Record<string, unknown>).previewImageUrl
+          : null;
 
       return {
         id: marker.id,
@@ -48,7 +55,8 @@ export class MapController {
         lat: marker.lat,
         lng: marker.lng,
         markerStyle: marker.markerStyle ?? null,
-        previewPhotoUrl: previewPhoto?.url ?? null
+        previewPhotoUrl: previewPhoto?.url ?? null,
+        previewImageUrl: typeof previewImageUrl === "string" ? previewImageUrl : null
       };
     });
   }
