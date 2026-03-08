@@ -4,6 +4,7 @@ import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useRouter } from "next/navigation";
+import * as THREE from "three";
 import { API_BASE } from "../../lib/config";
 import {
   getEnvironmentSeasons,
@@ -330,6 +331,7 @@ export default function CreateMemorialClient() {
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const previewControlsRef = useRef<any>(null);
   const [activeOverlay, setActiveOverlay] = useState<
     "marker" | "photos" | "story" | "base" | null
   >(null);
@@ -903,8 +905,49 @@ export default function CreateMemorialClient() {
     if (!canvas) {
       return null;
     }
+    const controls = previewControlsRef.current;
+    const camera = controls?.object as THREE.PerspectiveCamera | undefined;
+    const target = controls?.target as THREE.Vector3 | undefined;
+    let restore: (() => void) | null = null;
+    if (camera && target) {
+      const prevPos = camera.position.clone();
+      const prevTarget = target.clone();
+      const offset = prevPos.clone().sub(prevTarget);
+      const rotatedOffset = offset.clone().applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        THREE.MathUtils.degToRad(30)
+      );
+      rotatedOffset.y -= 1;
+      const nextPos = prevTarget.clone().add(rotatedOffset);
+      const distance = nextPos.distanceTo(prevTarget);
+      const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
+      const nextTarget = prevTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
+      camera.position.copy(nextPos);
+      controls.target.copy(nextTarget);
+      controls.update();
+      restore = () => {
+        camera.position.copy(prevPos);
+        controls.target.copy(prevTarget);
+        controls.update();
+      };
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    }
+
+    const scale = 0.5;
+    const targetCanvas = document.createElement("canvas");
+    targetCanvas.width = Math.max(1, Math.round(canvas.width * scale));
+    targetCanvas.height = Math.max(1, Math.round(canvas.height * scale));
+    const ctx = targetCanvas.getContext("2d");
+    if (!ctx) {
+      restore?.();
+      return null;
+    }
+    ctx.drawImage(canvas, 0, 0, targetCanvas.width, targetCanvas.height);
+    restore?.();
     return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/png");
+      targetCanvas.toBlob((blob) => resolve(blob), "image/png");
     });
   }, []);
 
@@ -1086,13 +1129,13 @@ export default function CreateMemorialClient() {
     setTimeout(() => setReviewOpen(false), 180);
   };
 
-  const renderNavButtons = (className?: string) => (
+  const renderNavButtons = (className?: string, buttonClassName?: string) => (
     <div className={`flex items-center justify-center ${className ?? ""}`}>
       {step < 1 ? (
         <button
           type="button"
           onClick={handleNext}
-          className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
+          className={`rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white ${buttonClassName ?? ""}`}
           disabled={!authReady || isTransitioning}
         >
           Продолжить
@@ -1763,11 +1806,34 @@ export default function CreateMemorialClient() {
         <div className="mx-auto w-full max-w-none lg:w-[90vw]">
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="flex min-h-[calc(100dvh-var(--app-header-height,56px))] flex-col items-center justify-center gap-6 text-center">
-                <div className="w-[90vw] max-w-[420px] min-w-[280px] sm:w-[70vw] md:w-[45vw] lg:w-[25vw]">
-                  {renderBaseInfoForm(true)}
+              <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center overflow-hidden">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(120% 100% at 50% 0%, #f7f2f1 0%, #eee5e2 52%, #e4d8d4 100%)"
+                  }}
+                />
+                <div
+                  className="absolute inset-0 opacity-40"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 20% 10%, rgba(255,255,255,0.6) 0, rgba(255,255,255,0) 45%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0) 40%)"
+                  }}
+                />
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="rounded-[40px] bg-[#efe6e2] p-4 shadow-[0_26px_55px_rgba(89,71,65,0.25)]">
+                    <div className="rounded-[32px] bg-[#f7f1ee] px-6 py-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]">
+                      <div className="mb-4 text-center text-[12px] tracking-[0.35em] text-[#8c7f7a]">
+                        MEMORIAL
+                      </div>
+                      <div className="grid gap-3 text-center [&_label]:!text-[11px] [&_label]:!text-[#8a7c77] [&_input]:!rounded-2xl [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[#6f6360] [&_select]:!rounded-2xl [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[#6f6360]">
+                        {renderBaseInfoForm(true)}
+                      </div>
+                      {renderNavButtons("mt-4", "rounded-full bg-[#7f846f] px-8 py-3 text-[13px] font-semibold text-[#f6f3ee] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-[#70765f]")}
+                    </div>
+                  </div>
                 </div>
-                {renderNavButtons()}
               </div>
             ) : null}
           </section>
@@ -1813,6 +1879,9 @@ export default function CreateMemorialClient() {
               preserveDrawingBuffer
               onCanvasReady={(canvas) => {
                 previewCanvasRef.current = canvas;
+              }}
+              onControlsReady={(controls) => {
+                previewControlsRef.current = controls;
               }}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
               cameraAdjustmentKey={activeCameraKey}

@@ -64,6 +64,7 @@ type Props = {
   onGiftPreloaded?: (url: string) => void;
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
+  onControlsReady?: (controls: any) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
   className?: string;
@@ -1125,6 +1126,7 @@ export default function MemorialPreview({
   onGiftPreloaded,
   onHouseSlotsDetected,
   onCanvasReady,
+  onControlsReady,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
   className,
@@ -1221,6 +1223,21 @@ export default function MemorialPreview({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!onControlsReady || typeof window === "undefined") {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      if (controlsRef.current) {
+        onControlsReady(controlsRef.current);
+        window.clearInterval(interval);
+      }
+    }, 60);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [onControlsReady]);
 
   useEffect(() => {
     controlsRef.current?.saveState?.();

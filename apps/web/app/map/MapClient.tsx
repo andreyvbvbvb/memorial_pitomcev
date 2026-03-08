@@ -1339,6 +1339,9 @@ export default function MapClient() {
         const previewSrc = resolvePreviewSrc(
           marker.previewImageUrl ?? marker.previewPhotoUrl
         );
+        const hoverPreviewSrc = resolvePreviewSrc(
+          marker.previewPhotoUrl ?? marker.previewImageUrl
+        );
         return (
           <a
             key={marker.id}
@@ -1358,10 +1361,10 @@ export default function MapClient() {
                 </p>
               </div>
             </div>
-            {previewSrc ? (
+            {hoverPreviewSrc ? (
               <div className="pointer-events-none absolute left-full top-1/2 hidden -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 p-2 shadow-lg backdrop-blur-sm group-hover:block ml-3">
                 <img
-                  src={previewSrc}
+                  src={hoverPreviewSrc}
                   alt="Обложка мемориала"
                   className="h-40 w-56 rounded-lg object-contain"
                   loading="lazy"
