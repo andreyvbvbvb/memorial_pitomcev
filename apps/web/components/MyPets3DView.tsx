@@ -434,6 +434,7 @@ export default function MyPets3DView({
 
       <Canvas
         className="h-full w-full"
+        dpr={1}
         camera={{ position: [DEFAULT_CAMERA.x, DEFAULT_CAMERA.y, DEFAULT_CAMERA.z], fov: 45 }}
       >
         <Color attach="background" args={["#f3f0ee"]} />

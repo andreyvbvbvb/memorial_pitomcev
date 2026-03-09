@@ -48,7 +48,7 @@ export default function HomeHeroBackground() {
     <Canvas
       className="h-full w-full"
       camera={{ position: [0, 2.6, 8.5], fov: 38 }}
-      dpr={[1, 1.5]}
+      dpr={1}
       gl={{ antialias: true }}
     >
       <Color attach="background" args={["#fbf7f5"]} />

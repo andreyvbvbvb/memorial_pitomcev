@@ -330,8 +330,12 @@ export default function CreateMemorialClient() {
   const assetsLoadStartedRef = useRef(false);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
-  const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const previewControlsRef = useRef<any>(null);
+  const previewRenderRef = useRef<{
+    gl: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.Camera;
+  } | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<
     "marker" | "photos" | "story" | "base" | null
   >(null);
@@ -901,12 +905,14 @@ export default function CreateMemorialClient() {
   };
 
   const capturePreviewImage = useCallback(async () => {
-    const canvas = previewCanvasRef.current;
-    if (!canvas) {
+    const renderContext = previewRenderRef.current;
+    if (!renderContext) {
       return null;
     }
     const controls = previewControlsRef.current;
-    const camera = controls?.object as THREE.PerspectiveCamera | undefined;
+    const camera =
+      (controls?.object as THREE.PerspectiveCamera | undefined) ??
+      (renderContext.camera as THREE.PerspectiveCamera | undefined);
     const target = controls?.target as THREE.Vector3 | undefined;
     let restore: (() => void) | null = null;
     if (camera && target) {
@@ -934,20 +940,50 @@ export default function CreateMemorialClient() {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
     }
+    if (!camera) {
+      restore?.();
+      return null;
+    }
 
-    const scale = 0.5;
-    const targetCanvas = document.createElement("canvas");
-    targetCanvas.width = Math.max(1, Math.round(canvas.width * scale));
-    targetCanvas.height = Math.max(1, Math.round(canvas.height * scale));
-    const ctx = targetCanvas.getContext("2d");
+    const { gl, scene } = renderContext;
+    const size = new THREE.Vector2();
+    gl.getDrawingBufferSize(size);
+    const width = Math.max(1, Math.round(size.x * 0.5));
+    const height = Math.max(1, Math.round(size.y * 0.5));
+    const renderTarget = new THREE.WebGLRenderTarget(width, height, {
+      depthBuffer: true,
+      stencilBuffer: false
+    });
+    const prevTarget = gl.getRenderTarget();
+    const prevAutoClear = gl.autoClear;
+    gl.autoClear = true;
+    gl.setRenderTarget(renderTarget);
+    gl.clear();
+    gl.render(scene, camera);
+    const buffer = new Uint8Array(width * height * 4);
+    gl.readRenderTargetPixels(renderTarget, 0, 0, width, height, buffer);
+    gl.setRenderTarget(prevTarget);
+    gl.autoClear = prevAutoClear;
+    renderTarget.dispose();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
     if (!ctx) {
       restore?.();
       return null;
     }
-    ctx.drawImage(canvas, 0, 0, targetCanvas.width, targetCanvas.height);
+    const imageData = ctx.createImageData(width, height);
+    for (let y = 0; y < height; y += 1) {
+      const srcStart = (height - y - 1) * width * 4;
+      const destStart = y * width * 4;
+      imageData.data.set(buffer.subarray(srcStart, srcStart + width * 4), destStart);
+    }
+    ctx.putImageData(imageData, 0, 0);
     restore?.();
     return new Promise<Blob | null>((resolve) => {
-      targetCanvas.toBlob((blob) => resolve(blob), "image/png");
+      canvas.toBlob((blob) => resolve(blob), "image/png");
     });
   }, []);
 
@@ -1913,12 +1949,12 @@ export default function CreateMemorialClient() {
               focusRequestId={focusRequestId}
               showControls={false}
               controlsEnabled={!activeOverlay}
-              preserveDrawingBuffer
-              onCanvasReady={(canvas) => {
-                previewCanvasRef.current = canvas;
-              }}
+              preserveDrawingBuffer={false}
               onControlsReady={(controls) => {
                 previewControlsRef.current = controls;
+              }}
+              onRenderContextReady={(context) => {
+                previewRenderRef.current = context;
               }}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
               cameraAdjustmentKey={activeCameraKey}

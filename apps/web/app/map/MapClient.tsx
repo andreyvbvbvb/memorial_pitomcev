@@ -817,6 +817,7 @@ function CarouselScene({
   }, [items.length, cameraSettings]);
   return (
     <Canvas
+      dpr={1}
       camera={{ position: initialCameraPosition, fov: 45 }}
       onCreated={({ camera }) => {
         camera.lookAt(0, 0, 0);

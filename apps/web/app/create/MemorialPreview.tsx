@@ -65,6 +65,11 @@ type Props = {
   onHouseSlotsDetected?: (slots: HouseSlots) => void;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
   onControlsReady?: (controls: any) => void;
+  onRenderContextReady?: (context: {
+    gl: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.Camera;
+  }) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
   className?: string;
@@ -1096,6 +1101,29 @@ function SceneReady({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+function RenderContextReporter({
+  onReady
+}: {
+  onReady?: (context: {
+    gl: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.Camera;
+  }) => void;
+}) {
+  const { gl, scene, camera } = useThree();
+  const reportedRef = useRef(false);
+
+  useEffect(() => {
+    if (!onReady || reportedRef.current) {
+      return;
+    }
+    reportedRef.current = true;
+    onReady({ gl, scene, camera });
+  }, [camera, gl, onReady, scene]);
+
+  return null;
+}
+
 export default function MemorialPreview({
   terrainUrl,
   houseUrl,
@@ -1127,6 +1155,7 @@ export default function MemorialPreview({
   onHouseSlotsDetected,
   onCanvasReady,
   onControlsReady,
+  onRenderContextReady,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
   className,
@@ -1320,6 +1349,7 @@ export default function MemorialPreview({
         </div>
       ) : null}
       <Canvas
+        dpr={1}
         camera={{ position: cameraPosition, fov: 45 }}
         gl={preserveDrawingBuffer ? { preserveDrawingBuffer: true } : undefined}
         onCreated={({ gl }) => {
@@ -1345,6 +1375,7 @@ export default function MemorialPreview({
         <HemisphereLight intensity={0.6} color={"#ffffff"} groundColor={"#d5dbe5"} />
         <DirectionalLight intensity={1} position={[6, 8, 4]} />
         <DirectionalLight intensity={0.65} position={[-6, 5, -4]} />
+        <RenderContextReporter onReady={onRenderContextReady} />
         <Suspense fallback={null}>
           {terrainUrl && houseUrl ? (
             <TerrainWithHouse
