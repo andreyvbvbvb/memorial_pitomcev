@@ -1174,7 +1174,33 @@ export default function CreateMemorialClient() {
       return;
     }
     assetsLoadStartedRef.current = true;
-    MEMORIAL_PRELOAD_URLS.forEach((url) => useGLTF.preload(url));
+    const modelUrls = new Set<string>();
+    const addModel = (url?: string | null) => {
+      if (!url) {
+        return;
+      }
+      modelUrls.add(url);
+    };
+    environmentOptions.forEach((option) => {
+      const seasons = getEnvironmentSeasons(option.id);
+      if (seasons.length > 0) {
+        seasons.forEach((season) =>
+          addModel(resolveEnvironmentModel(option.id, season))
+        );
+      } else {
+        addModel(resolveEnvironmentModel(option.id));
+      }
+    });
+    addModel(resolveHouseModel(form.houseId));
+    addModel(resolveRoofModel(form.roofId));
+    addModel(resolveWallModel(form.wallId));
+    addModel(resolveSignModel(form.signId));
+    addModel(resolveFrameLeftModel(form.frameLeftId));
+    addModel(resolveFrameRightModel(form.frameRightId));
+    addModel(resolveMatModel(form.matId));
+    addModel(resolveBowlFoodModel(form.bowlFoodId));
+    addModel(resolveBowlWaterModel(form.bowlWaterId));
+    modelUrls.forEach((url) => useGLTF.preload(url));
     const imagePromises = preloadImageUrls.map(
       (url) =>
         new Promise<void>((resolve) => {
@@ -1189,7 +1215,18 @@ export default function CreateMemorialClient() {
     } finally {
       setAssetsReady(true);
     }
-  }, [preloadImageUrls]);
+  }, [
+    form.bowlFoodId,
+    form.bowlWaterId,
+    form.frameLeftId,
+    form.frameRightId,
+    form.houseId,
+    form.matId,
+    form.roofId,
+    form.signId,
+    form.wallId,
+    preloadImageUrls
+  ]);
 
   useEffect(() => {
     if (step >= 1) {
@@ -1901,11 +1938,11 @@ export default function CreateMemorialClient() {
 
           <div className="pointer-events-none fixed inset-0 z-10">
 
-            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[320px] max-w-[85vw] lg:max-w-[32vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[320px] max-w-[85vw] lg:max-w-[32vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur overflow-hidden">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900">Редактор мемориала</h3>
               </div>
-              <div className="mt-3 flex h-full gap-2 overflow-hidden">
+              <div className="mt-3 flex h-full min-h-0 gap-2 overflow-hidden">
                 <div className="flex w-12 flex-col items-center gap-2 overflow-visible">
                   {step3Tabs.map((tab) => {
                     const isActive = activeStep3Tab === tab.id;
@@ -1959,7 +1996,7 @@ export default function CreateMemorialClient() {
                   })}
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col min-h-0">
                   <label className="group relative mb-2 flex items-center gap-2 text-xs text-slate-600">
                     <input
                       type="checkbox"
@@ -1972,7 +2009,7 @@ export default function CreateMemorialClient() {
                       При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
                     </span>
                   </label>
-                  <div className="relative z-10 min-w-0 flex-1 overflow-y-auto pr-1">
+                  <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto pr-1">
                     {renderStep3TabContent()}
                   </div>
                 </div>

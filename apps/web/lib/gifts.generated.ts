@@ -96,5 +96,11 @@ export const giftModelsGenerated = {
   },
   "star_8": {
     "star": "/models/gifts/star/star_8.glb"
+  },
+  "toy_1": {
+    "toy": "/models/gifts/toy/toy_1.glb"
+  },
+  "toy_2": {
+    "toy": "/models/gifts/toy/toy_2.glb"
   }
 } as const;

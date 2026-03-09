@@ -192,5 +192,17 @@ export const generatedGifts = [
     "name": "Звезда 8",
     "price": 20,
     "modelUrl": "/models/gifts/star/star_8.glb"
+  },
+  {
+    "code": "toy_1",
+    "name": "Игрушка 1",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_1.glb"
+  },
+  {
+    "code": "toy_2",
+    "name": "Игрушка 2",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_2.glb"
   }
 ] as const;
