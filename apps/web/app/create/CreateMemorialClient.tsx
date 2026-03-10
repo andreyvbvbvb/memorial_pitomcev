@@ -1185,38 +1185,95 @@ export default function CreateMemorialClient() {
 
   const preloadImageUrls = useMemo(() => {
     const urls = new Set<string>();
-    const add = (category: string, id: string) => {
+    const add = (category: string, id?: string | null) => {
       if (!id || id === "none") {
         return;
       }
       urls.add(optionImage(category, id));
     };
-    environmentOptions.forEach((option) => add("environment", option.id));
-    houseVariantGroup.baseOptions.forEach((option) => add("house", option.id));
-    houseOptions.forEach((option) => add("house-texture", option.id));
-    roofOptions.forEach((option) => add("roof", option.id));
-    wallOptions.forEach((option) => add("wall", option.id));
-    signOptions.forEach((option) => add("sign", option.id));
-    frameLeftOptions.forEach((option) => add("frame-left", option.id));
-    frameRightOptions.forEach((option) => add("frame-right", option.id));
-    matOptions.forEach((option) => add("mat", option.id));
-    bowlFoodOptions.forEach((option) => add("bowl-food", option.id));
-    bowlWaterOptions.forEach((option) => add("bowl-water", option.id));
-    return Array.from(urls.values());
-  }, [houseVariantGroup.baseOptions]);
 
-  const scheduleIdle = useCallback((callback: () => void, timeout = 300) => {
-    if (typeof window === "undefined") {
-      return;
+    add("environment", form.environmentId);
+    add("house", selectedHouseBaseId);
+    add("house-texture", form.houseId);
+    add("roof", form.roofId);
+    add("wall", form.wallId);
+    add("sign", form.signId);
+    add("frame-left", form.frameLeftId);
+    add("frame-right", form.frameRightId);
+    add("mat", form.matId);
+    add("bowl-food", form.bowlFoodId);
+    add("bowl-water", form.bowlWaterId);
+
+    return Array.from(urls.values());
+  }, [
+    form.bowlFoodId,
+    form.bowlWaterId,
+    form.environmentId,
+    form.frameLeftId,
+    form.frameRightId,
+    form.houseId,
+    form.matId,
+    form.roofId,
+    form.signId,
+    form.wallId,
+    selectedHouseBaseId
+  ]);
+
+  const warmAsset = useCallback(async (url: string) => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => {
+        controller.abort();
+      }, 12000);
+      try {
+        const response = await fetch(url, {
+          cache: "force-cache",
+          signal: controller.signal
+        });
+        if (response.ok) {
+          await response.arrayBuffer();
+          return true;
+        }
+      } catch {
+        // Retry on flaky HTTP/3/QUIC network failures.
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 180 * (attempt + 1));
+      });
     }
-    const win = window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
-    };
-    if (win.requestIdleCallback) {
-      win.requestIdleCallback(callback, { timeout });
-      return;
+    return false;
+  }, []);
+
+  const warmAssetsWithLimit = useCallback(
+    async (urls: string[], concurrency: number) => {
+      const queue = Array.from(new Set(urls));
+      const workerCount = Math.max(1, Math.min(concurrency, queue.length));
+      let cursor = 0;
+
+      const runWorker = async () => {
+        while (cursor < queue.length) {
+          const current = queue[cursor];
+          cursor += 1;
+          if (!current) {
+            continue;
+          }
+          await warmAsset(current);
+        }
+      };
+
+      await Promise.all(Array.from({ length: workerCount }, runWorker));
+    },
+    [warmAsset]
+  );
+
+  const preloadConcurrency = useMemo(() => {
+    if (typeof navigator === "undefined") {
+      return 2;
     }
-    setTimeout(callback, timeout);
+    const cores = navigator.hardwareConcurrency ?? 4;
+    return cores <= 4 ? 1 : 2;
   }, []);
 
   const preloadAssets = useCallback(async () => {
@@ -1231,9 +1288,7 @@ export default function CreateMemorialClient() {
       }
       modelUrls.add(url);
     };
-    const activeSeason = form.environmentSeasonAuto
-      ? getSeasonForDate()
-      : form.environmentSeason;
+    const activeSeason = form.environmentSeasonAuto ? getSeasonForDate() : form.environmentSeason;
     addModel(resolveEnvironmentModel(form.environmentId, activeSeason));
     addModel(resolveHouseModel(form.houseId));
     addModel(resolveRoofModel(form.roofId));
@@ -1244,49 +1299,11 @@ export default function CreateMemorialClient() {
     addModel(resolveMatModel(form.matId));
     addModel(resolveBowlFoodModel(form.bowlFoodId));
     addModel(resolveBowlWaterModel(form.bowlWaterId));
-    modelUrls.forEach((url) => useGLTF.preload(url));
 
-    const secondaryUrls: string[] = [];
-    const seasons = getEnvironmentSeasons(form.environmentId);
-    seasons.forEach((season) => {
-      if (season !== activeSeason) {
-        const url = resolveEnvironmentModel(form.environmentId, season);
-        if (url) secondaryUrls.push(url);
-      }
-    });
-    const houseTextureOptions =
-      houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
-    houseTextureOptions.forEach((option) => {
-      const url = resolveHouseModel(option.id);
-      if (url && url !== resolveHouseModel(form.houseId)) {
-        secondaryUrls.push(url);
-      }
-    });
-    if (secondaryUrls.length > 0) {
-      const queue = Array.from(new Set(secondaryUrls));
-      const batchSize = 3;
-      let index = 0;
-      const preloadBatch = () => {
-        const slice = queue.slice(index, index + batchSize);
-        slice.forEach((url) => useGLTF.preload(url));
-        index += batchSize;
-        if (index < queue.length) {
-          scheduleIdle(preloadBatch, 350);
-        }
-      };
-      scheduleIdle(preloadBatch, 500);
-    }
-    const imagePromises = preloadImageUrls.map(
-      (url) =>
-        new Promise<void>((resolve) => {
-          const img = new Image();
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = url;
-        })
-    );
     try {
-      await Promise.all(imagePromises);
+      const criticalAssets = [...modelUrls.values(), ...preloadImageUrls];
+      await warmAssetsWithLimit(criticalAssets, preloadConcurrency);
+      modelUrls.forEach((url) => useGLTF.preload(url));
     } finally {
       setAssetsReady(true);
     }
@@ -1303,10 +1320,9 @@ export default function CreateMemorialClient() {
     form.roofId,
     form.signId,
     form.wallId,
-    houseVariantGroup.textureOptionsByBase,
-    selectedHouseBaseId,
+    preloadConcurrency,
     preloadImageUrls,
-    scheduleIdle
+    warmAssetsWithLimit
   ]);
 
   useEffect(() => {
@@ -1351,6 +1367,8 @@ export default function CreateMemorialClient() {
               <img
                 src={imageUrl}
                 alt={option.name}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full rounded-lg object-contain"
               />
             ) : (
