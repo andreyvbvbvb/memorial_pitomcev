@@ -5,19 +5,6 @@ import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  environmentModelByIdGenerated,
-  environmentSeasonModelsByIdGenerated,
-  houseModelByIdGenerated,
-  roofModelByIdGenerated,
-  wallModelByIdGenerated,
-  signModelByIdGenerated,
-  frameLeftModelByIdGenerated,
-  frameRightModelByIdGenerated,
-  matModelByIdGenerated,
-  bowlFoodModelByIdGenerated,
-  bowlWaterModelByIdGenerated
-} from "../../lib/memorial-models.generated";
-import {
   getGiftCodeFromUrl,
   isGiftSlotName,
   parseGiftSlot,
@@ -1482,25 +1469,4 @@ export default function MemorialPreview({
   );
 }
 
-const preloadUrls = [
-  ...Object.values(environmentModelByIdGenerated),
-  ...Object.values(environmentSeasonModelsByIdGenerated).flatMap((entry) =>
-    Object.values(entry)
-  ),
-  ...Object.values(houseModelByIdGenerated),
-  ...Object.values(roofModelByIdGenerated),
-  ...Object.values(wallModelByIdGenerated),
-  ...Object.values(signModelByIdGenerated),
-  ...Object.values(frameLeftModelByIdGenerated),
-  ...Object.values(frameRightModelByIdGenerated),
-  ...Object.values(matModelByIdGenerated),
-  ...Object.values(bowlFoodModelByIdGenerated),
-  ...Object.values(bowlWaterModelByIdGenerated)
-];
-
-export const MEMORIAL_PRELOAD_URLS = preloadUrls;
-
-preloadUrls.forEach((url) => {
-  useGLTF.preload(url);
-});
 useGLTF.preload("/models/gifts/slot_placeholder.glb");

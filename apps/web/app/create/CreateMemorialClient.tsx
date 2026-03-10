@@ -34,7 +34,7 @@ import {
   markerStyles,
   markerVariantsForSpecies
 } from "../../lib/markers";
-import MemorialPreview, { MEMORIAL_PRELOAD_URLS } from "./MemorialPreview";
+import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
 import { getConfiguredHouseSlots, getTerrainGiftSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
@@ -1205,6 +1205,19 @@ export default function CreateMemorialClient() {
     return Array.from(urls.values());
   }, [houseVariantGroup.baseOptions]);
 
+  const scheduleIdle = useCallback((callback: () => void, timeout = 300) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if ("requestIdleCallback" in window) {
+      (window as Window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+      }).requestIdleCallback?.(callback, { timeout });
+      return;
+    }
+    window.setTimeout(callback, timeout);
+  }, []);
+
   const preloadAssets = useCallback(async () => {
     if (assetsLoadStartedRef.current) {
       return;
@@ -1217,16 +1230,10 @@ export default function CreateMemorialClient() {
       }
       modelUrls.add(url);
     };
-    environmentOptions.forEach((option) => {
-      const seasons = getEnvironmentSeasons(option.id);
-      if (seasons.length > 0) {
-        seasons.forEach((season) =>
-          addModel(resolveEnvironmentModel(option.id, season))
-        );
-      } else {
-        addModel(resolveEnvironmentModel(option.id));
-      }
-    });
+    const activeSeason = form.environmentSeasonAuto
+      ? getSeasonForDate()
+      : form.environmentSeason;
+    addModel(resolveEnvironmentModel(form.environmentId, activeSeason));
     addModel(resolveHouseModel(form.houseId));
     addModel(resolveRoofModel(form.roofId));
     addModel(resolveWallModel(form.wallId));
@@ -1237,6 +1244,37 @@ export default function CreateMemorialClient() {
     addModel(resolveBowlFoodModel(form.bowlFoodId));
     addModel(resolveBowlWaterModel(form.bowlWaterId));
     modelUrls.forEach((url) => useGLTF.preload(url));
+
+    const secondaryUrls: string[] = [];
+    const seasons = getEnvironmentSeasons(form.environmentId);
+    seasons.forEach((season) => {
+      if (season !== activeSeason) {
+        const url = resolveEnvironmentModel(form.environmentId, season);
+        if (url) secondaryUrls.push(url);
+      }
+    });
+    const houseTextureOptions =
+      houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
+    houseTextureOptions.forEach((option) => {
+      const url = resolveHouseModel(option.id);
+      if (url && url !== resolveHouseModel(form.houseId)) {
+        secondaryUrls.push(url);
+      }
+    });
+    if (secondaryUrls.length > 0) {
+      const queue = Array.from(new Set(secondaryUrls));
+      const batchSize = 3;
+      let index = 0;
+      const preloadBatch = () => {
+        const slice = queue.slice(index, index + batchSize);
+        slice.forEach((url) => useGLTF.preload(url));
+        index += batchSize;
+        if (index < queue.length) {
+          scheduleIdle(preloadBatch, 350);
+        }
+      };
+      scheduleIdle(preloadBatch, 500);
+    }
     const imagePromises = preloadImageUrls.map(
       (url) =>
         new Promise<void>((resolve) => {
@@ -1254,6 +1292,9 @@ export default function CreateMemorialClient() {
   }, [
     form.bowlFoodId,
     form.bowlWaterId,
+    form.environmentId,
+    form.environmentSeason,
+    form.environmentSeasonAuto,
     form.frameLeftId,
     form.frameRightId,
     form.houseId,
@@ -1261,7 +1302,10 @@ export default function CreateMemorialClient() {
     form.roofId,
     form.signId,
     form.wallId,
-    preloadImageUrls
+    houseVariantGroup.textureOptionsByBase,
+    selectedHouseBaseId,
+    preloadImageUrls,
+    scheduleIdle
   ]);
 
   useEffect(() => {
