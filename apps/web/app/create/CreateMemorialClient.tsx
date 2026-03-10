@@ -1209,13 +1209,14 @@ export default function CreateMemorialClient() {
     if (typeof window === "undefined") {
       return;
     }
-    if ("requestIdleCallback" in window) {
-      (window as Window & {
-        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
-      }).requestIdleCallback?.(callback, { timeout });
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+    };
+    if (win.requestIdleCallback) {
+      win.requestIdleCallback(callback, { timeout });
       return;
     }
-    window.setTimeout(callback, timeout);
+    setTimeout(callback, timeout);
   }, []);
 
   const preloadAssets = useCallback(async () => {
