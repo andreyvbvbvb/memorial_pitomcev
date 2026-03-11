@@ -59,6 +59,7 @@ type Props = {
   }) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
+  suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -1145,6 +1146,7 @@ export default function MemorialPreview({
   onRenderContextReady,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
+  suppressLoadingOverlay = false,
   className,
   style
 }: Props) {
@@ -1260,8 +1262,11 @@ export default function MemorialPreview({
   }, []);
 
   useEffect(() => {
+    if (suppressLoadingOverlay) {
+      return;
+    }
     setSceneReady(false);
-  }, [terrainUrl, houseUrl]);
+  }, [terrainUrl, houseUrl, suppressLoadingOverlay]);
 
   useEffect(() => {
     if (typeof showGiftSlots === "boolean") {
@@ -1326,7 +1331,7 @@ export default function MemorialPreview({
           ) : null}
         </>
       ) : null}
-      {!sceneReady ? (
+      {!sceneReady && !suppressLoadingOverlay ? (
         <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl bg-white/70">
           <div className="w-3/4 max-w-md animate-pulse space-y-4">
             <div className="h-4 w-1/2 rounded-full bg-slate-200" />

@@ -21,7 +21,12 @@ export const houseModelByIdGenerated = {
   "budka_2__brown": "/models/houses/DOM_budka_2__brown.glb",
   "budka_2__stone": "/models/houses/DOM_budka_2__stone.glb",
   "budka_2__toy": "/models/houses/DOM_budka_2__toy.glb",
-  "budka_2__white": "/models/houses/DOM_budka_2__white.glb"
+  "budka_2__white": "/models/houses/DOM_budka_2__white.glb",
+  "kotik_1__base": "/models/houses/DOM_kotik_1__base.glb",
+  "kotik_2__base": "/models/houses/DOM_kotik_2__base.glb",
+  "kotik_3__base": "/models/houses/DOM_kotik_3__base.glb",
+  "kotik_4__base": "/models/houses/DOM_kotik_4__base.glb",
+  "kotik_5__base": "/models/houses/DOM_kotik_5__base.glb"
 } as const;
 export const roofModelByIdGenerated = {
   "roof_1": "/models/parts/roof/roof_1.glb",

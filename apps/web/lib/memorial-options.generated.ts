@@ -63,6 +63,31 @@ export const houseOptionsGenerated = [
     "id": "budka_2__white",
     "name": "Будка",
     "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_1__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_2__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_3__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_4__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_5__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
   }
 ] as const;
 export const roofOptionsGenerated = [

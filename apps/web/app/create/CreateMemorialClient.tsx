@@ -324,6 +324,7 @@ export default function CreateMemorialClient() {
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
   const [focusRequestId, setFocusRequestId] = useState(0);
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
+  const hoverIntentRef = useRef<{ category: string; id: string } | null>(null);
   const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
   const tooltipTimerRef = useRef<number | null>(null);
   const [, setAssetsReady] = useState(false);
@@ -417,6 +418,85 @@ export default function CreateMemorialClient() {
   const matPreviewId = hoveredId("mat") ?? form.matId;
   const bowlFoodPreviewId = hoveredId("bowl-food") ?? form.bowlFoodId;
   const bowlWaterPreviewId = hoveredId("bowl-water") ?? form.bowlWaterId;
+  const resolveHoverModelUrl = useCallback(
+    (category: string, id: string) => {
+      if (!id || id === "none") {
+        return null;
+      }
+      switch (category) {
+        case "environment":
+          return resolveEnvironmentModel(id, environmentPreviewSeason);
+        case "house-base": {
+          const variant = houseVariantGroup.defaultVariantByBase[id] ?? id;
+          return resolveHouseModel(variant);
+        }
+        case "house-texture":
+          return resolveHouseModel(id);
+        case "roof":
+          return resolveRoofModel(id);
+        case "wall":
+          return resolveWallModel(id);
+        case "sign":
+          return resolveSignModel(id);
+        case "frame-left":
+          return resolveFrameLeftModel(id);
+        case "frame-right":
+          return resolveFrameRightModel(id);
+        case "mat":
+          return resolveMatModel(id);
+        case "bowl-food":
+          return resolveBowlFoodModel(id);
+        case "bowl-water":
+          return resolveBowlWaterModel(id);
+        default:
+          return null;
+      }
+    },
+    [environmentPreviewSeason, houseVariantGroup.defaultVariantByBase]
+  );
+  const selectedIdForCategory = useCallback(
+    (category: string) => {
+      switch (category) {
+        case "environment":
+          return form.environmentId;
+        case "house-base":
+          return selectedHouseBaseId;
+        case "house-texture":
+          return form.houseId;
+        case "roof":
+          return form.roofId;
+        case "wall":
+          return form.wallId;
+        case "sign":
+          return form.signId;
+        case "frame-left":
+          return form.frameLeftId;
+        case "frame-right":
+          return form.frameRightId;
+        case "mat":
+          return form.matId;
+        case "bowl-food":
+          return form.bowlFoodId;
+        case "bowl-water":
+          return form.bowlWaterId;
+        default:
+          return null;
+      }
+    },
+    [
+      form.bowlFoodId,
+      form.bowlWaterId,
+      form.environmentId,
+      form.frameLeftId,
+      form.frameRightId,
+      form.houseId,
+      form.matId,
+      form.roofId,
+      form.signId,
+      form.wallId,
+      selectedHouseBaseId
+    ]
+  );
   const environmentUrl = resolveEnvironmentModel(
     environmentPreviewId,
     environmentPreviewSeason
@@ -571,6 +651,7 @@ export default function CreateMemorialClient() {
   }, [photos]);
 
   useEffect(() => {
+    hoverIntentRef.current = null;
     setHoveredOption(null);
   }, [step]);
 
@@ -1191,33 +1272,19 @@ export default function CreateMemorialClient() {
       }
       urls.add(optionImage(category, id));
     };
-
-    add("environment", form.environmentId);
-    add("house", selectedHouseBaseId);
-    add("house-texture", form.houseId);
-    add("roof", form.roofId);
-    add("wall", form.wallId);
-    add("sign", form.signId);
-    add("frame-left", form.frameLeftId);
-    add("frame-right", form.frameRightId);
-    add("mat", form.matId);
-    add("bowl-food", form.bowlFoodId);
-    add("bowl-water", form.bowlWaterId);
-
+    environmentOptions.forEach((option) => add("environment", option.id));
+    houseVariantGroup.baseOptions.forEach((option) => add("house", option.id));
+    houseOptions.forEach((option) => add("house-texture", option.id));
+    roofOptions.forEach((option) => add("roof", option.id));
+    wallOptions.forEach((option) => add("wall", option.id));
+    signOptions.forEach((option) => add("sign", option.id));
+    frameLeftOptions.forEach((option) => add("frame-left", option.id));
+    frameRightOptions.forEach((option) => add("frame-right", option.id));
+    matOptions.forEach((option) => add("mat", option.id));
+    bowlFoodOptions.forEach((option) => add("bowl-food", option.id));
+    bowlWaterOptions.forEach((option) => add("bowl-water", option.id));
     return Array.from(urls.values());
-  }, [
-    form.bowlFoodId,
-    form.bowlWaterId,
-    form.environmentId,
-    form.frameLeftId,
-    form.frameRightId,
-    form.houseId,
-    form.matId,
-    form.roofId,
-    form.signId,
-    form.wallId,
-    selectedHouseBaseId
-  ]);
+  }, [houseVariantGroup.baseOptions]);
 
   const warmAsset = useCallback(async (url: string) => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -1331,6 +1398,34 @@ export default function CreateMemorialClient() {
     }
   }, [step, preloadAssets]);
 
+  const handleOptionHover = useCallback(
+    async (category: string, id: string) => {
+      hoverIntentRef.current = { category, id };
+      if (category !== "house-base" && id === selectedIdForCategory(category)) {
+        setHoveredOption({ category, id });
+        return;
+      }
+      const url = resolveHoverModelUrl(category, id);
+      if (!url) {
+        setHoveredOption({ category, id });
+        return;
+      }
+      await warmAsset(url);
+      useGLTF.preload(url);
+      if (hoverIntentRef.current?.category === category && hoverIntentRef.current?.id === id) {
+        setHoveredOption({ category, id });
+      }
+    },
+    [resolveHoverModelUrl, selectedIdForCategory, warmAsset]
+  );
+
+  const handleOptionLeave = useCallback((category: string) => {
+    if (hoverIntentRef.current?.category === category) {
+      hoverIntentRef.current = null;
+    }
+    setHoveredOption((prev) => (prev?.category === category ? null : prev));
+  }, []);
+
   const renderOptionGrid = (
     category: string,
     options: typeof environmentOptions,
@@ -1347,14 +1442,14 @@ export default function CreateMemorialClient() {
             key={option.id}
             type="button"
             onClick={() => onSelect(option.id)}
-            onMouseEnter={() => setHoveredOption({ category, id: option.id })}
-            onMouseLeave={() =>
-              setHoveredOption((prev) => (prev?.category === category ? null : prev))
-            }
-            onFocus={() => setHoveredOption({ category, id: option.id })}
-            onBlur={() =>
-              setHoveredOption((prev) => (prev?.category === category ? null : prev))
-            }
+            onMouseEnter={() => {
+              void handleOptionHover(category, option.id);
+            }}
+            onMouseLeave={() => handleOptionLeave(category)}
+            onFocus={() => {
+              void handleOptionHover(category, option.id);
+            }}
+            onBlur={() => handleOptionLeave(category)}
             aria-label={option.name}
             title={option.name}
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
@@ -1992,14 +2087,15 @@ export default function CreateMemorialClient() {
       ) : (
         <>
           <div className="fixed inset-0 z-0">
-            <MemorialPreview
-              className="h-full w-full rounded-none border-transparent bg-transparent"
-              terrainUrl={environmentUrl}
-              houseUrl={houseUrl}
-              houseId={housePreviewId}
-              cameraPosition={[12, 8, 12]}
-              parts={partList}
-              gifts={giftPreviewEnabled ? previewGifts : undefined}
+              <MemorialPreview
+                className="h-full w-full rounded-none border-transparent bg-transparent"
+                terrainUrl={environmentUrl}
+                houseUrl={houseUrl}
+                houseId={housePreviewId}
+                suppressLoadingOverlay={Boolean(hoveredOption)}
+                cameraPosition={[12, 8, 12]}
+                parts={partList}
+                gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
                 giftPreviewEnabled && previewPlaceholderSlots.length > 0
                   ? previewPlaceholderSlots
