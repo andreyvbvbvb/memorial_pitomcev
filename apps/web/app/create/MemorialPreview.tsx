@@ -1165,6 +1165,8 @@ export default function MemorialPreview({
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
+  const [canvasKey, setCanvasKey] = useState(0);
+  const canvasCleanupRef = useRef<(() => void) | null>(null);
   const lastFocusRequestRef = useRef<number | null>(null);
   const orbitingRef = useRef(false);
   const orbitMovedRef = useRef(false);
@@ -1238,6 +1240,10 @@ export default function MemorialPreview({
     return () => {
       if (orbitEndTimeoutRef.current !== null) {
         window.clearTimeout(orbitEndTimeoutRef.current);
+      }
+      if (canvasCleanupRef.current) {
+        canvasCleanupRef.current();
+        canvasCleanupRef.current = null;
       }
     };
   }, []);
@@ -1341,11 +1347,30 @@ export default function MemorialPreview({
         </div>
       ) : null}
       <Canvas
+        key={canvasKey}
         dpr={1}
         camera={{ position: cameraPosition, fov: 45 }}
         gl={preserveDrawingBuffer ? { preserveDrawingBuffer: true } : undefined}
         onCreated={({ gl }) => {
-          onCanvasReady?.(gl.domElement);
+          const canvas = gl.domElement;
+          if (canvasCleanupRef.current) {
+            canvasCleanupRef.current();
+            canvasCleanupRef.current = null;
+          }
+          const handleLost = (event: Event) => {
+            event.preventDefault();
+            setCanvasKey((prev) => prev + 1);
+          };
+          const handleRestored = () => {
+            setCanvasKey((prev) => prev + 1);
+          };
+          canvas.addEventListener("webglcontextlost", handleLost, false);
+          canvas.addEventListener("webglcontextrestored", handleRestored, false);
+          canvasCleanupRef.current = () => {
+            canvas.removeEventListener("webglcontextlost", handleLost);
+            canvas.removeEventListener("webglcontextrestored", handleRestored);
+          };
+          onCanvasReady?.(canvas);
         }}
         style={
           softEdges

@@ -1398,6 +1398,18 @@ export default function CreateMemorialClient() {
     }
   }, [step, preloadAssets]);
 
+  const preloadOptionModel = useCallback(
+    async (category: string, id: string) => {
+      const url = resolveHoverModelUrl(category, id);
+      if (!url) {
+        return;
+      }
+      await warmAsset(url);
+      useGLTF.preload(url);
+    },
+    [resolveHoverModelUrl, warmAsset]
+  );
+
   const handleOptionHover = useCallback(
     async (category: string, id: string) => {
       hoverIntentRef.current = { category, id };
@@ -1405,18 +1417,12 @@ export default function CreateMemorialClient() {
         setHoveredOption({ category, id });
         return;
       }
-      const url = resolveHoverModelUrl(category, id);
-      if (!url) {
-        setHoveredOption({ category, id });
-        return;
-      }
-      await warmAsset(url);
-      useGLTF.preload(url);
+      await preloadOptionModel(category, id);
       if (hoverIntentRef.current?.category === category && hoverIntentRef.current?.id === id) {
         setHoveredOption({ category, id });
       }
     },
-    [resolveHoverModelUrl, selectedIdForCategory, warmAsset]
+    [preloadOptionModel, selectedIdForCategory]
   );
 
   const handleOptionLeave = useCallback((category: string) => {
@@ -1425,6 +1431,26 @@ export default function CreateMemorialClient() {
     }
     setHoveredOption((prev) => (prev?.category === category ? null : prev));
   }, []);
+
+  const handleOptionSelect = useCallback(
+    async (category: string, id: string, apply: () => void) => {
+      await preloadOptionModel(category, id);
+      apply();
+    },
+    [preloadOptionModel]
+  );
+
+  const preloadEnvironmentSeason = useCallback(
+    async (season: SeasonKey) => {
+      const url = resolveEnvironmentModel(form.environmentId, season);
+      if (!url) {
+        return;
+      }
+      await warmAsset(url);
+      useGLTF.preload(url);
+    },
+    [form.environmentId, warmAsset]
+  );
 
   const renderOptionGrid = (
     category: string,
@@ -1438,13 +1464,15 @@ export default function CreateMemorialClient() {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
         return (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => onSelect(option.id)}
-            onMouseEnter={() => {
-              void handleOptionHover(category, option.id);
-            }}
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => {
+                void handleOptionSelect(category, option.id, () => onSelect(option.id));
+              }}
+              onMouseEnter={() => {
+                void handleOptionHover(category, option.id);
+              }}
             onMouseLeave={() => handleOptionLeave(category)}
             onFocus={() => {
               void handleOptionHover(category, option.id);
@@ -1495,7 +1523,11 @@ export default function CreateMemorialClient() {
                       <button
                         key={season}
                         type="button"
-                        onClick={() => handleChange("environmentSeason", season)}
+                        onClick={() => {
+                          void preloadEnvironmentSeason(season).then(() =>
+                            handleChange("environmentSeason", season)
+                          );
+                        }}
                         aria-label={swatch.label}
                         title={swatch.label}
                         className={`h-8 w-8 rounded-lg border transition ${
@@ -2092,7 +2124,7 @@ export default function CreateMemorialClient() {
                 terrainUrl={environmentUrl}
                 houseUrl={houseUrl}
                 houseId={housePreviewId}
-                suppressLoadingOverlay={Boolean(hoveredOption)}
+                suppressLoadingOverlay
                 cameraPosition={[12, 8, 12]}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
