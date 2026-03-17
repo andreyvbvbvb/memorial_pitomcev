@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties }
 import { useGLTF } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { API_BASE } from "../../lib/config";
 import {
   getEnvironmentSeasons,
