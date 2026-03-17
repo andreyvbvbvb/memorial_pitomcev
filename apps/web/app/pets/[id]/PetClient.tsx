@@ -30,10 +30,10 @@ import {
 import { splitHouseVariantId } from "../../../lib/house-variants";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
-const buildDirtModelUrl = (houseId?: string | null): string | null => {
+const buildDirtModelUrls = (houseId?: string | null): string[] => {
   const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
   const prefix = baseId ? `/models/dirt/${baseId}` : "/models/dirt";
-  return `${prefix}/dirt.glb`;
+  return [1, 2, 3, 4].map((index) => `${prefix}/dirt_${index}.glb`);
 };
 
 type Pet = {
@@ -559,8 +559,8 @@ export default function PetClient({ id }: Props) {
     });
   }, []);
   const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
-  const dirtModelUrl = useMemo(
-    () => buildDirtModelUrl(pet?.memorial?.houseId),
+  const dirtModelUrls = useMemo(
+    () => buildDirtModelUrls(pet?.memorial?.houseId),
     [pet?.memorial?.houseId]
   );
 
@@ -724,7 +724,7 @@ export default function PetClient({ id }: Props) {
           houseUrl={resolveHouseModel(pet.memorial?.houseId)}
           houseId={pet.memorial?.houseId ?? null}
           parts={fullPartList}
-          dirtUrl={dirtModelUrl}
+          dirtUrls={dirtModelUrls}
           dirtLevel={dirtLevel}
           gifts={previewGifts}
           giftSlots={giftPanelOpen ? filteredAvailableSlots : undefined}

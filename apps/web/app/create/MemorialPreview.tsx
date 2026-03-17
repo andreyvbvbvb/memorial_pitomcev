@@ -20,6 +20,7 @@ type Props = {
   houseId?: string | null;
   parts?: { slot: string; url: string }[];
   dirtUrl?: string | null;
+  dirtUrls?: string[] | null;
   dirtLevel?: number;
   gifts?: {
     slot: string;
@@ -75,6 +76,50 @@ type GiftHover = {
 type DetailClick = {
   slot?: string;
   area?: "environment" | "house";
+};
+
+type SceneAssets = {
+  terrainUrl?: string | null;
+  houseUrl?: string | null;
+  houseId?: string | null;
+  parts?: { slot: string; url: string }[];
+  dirtUrl?: string | null;
+  dirtUrls?: string[] | null;
+  dirtLevel?: number;
+  gifts?: {
+    slot: string;
+    url: string;
+    name?: string;
+    owner?: string;
+    expiresAt?: string | null;
+    size?: string | null;
+  }[];
+  colors?: Record<string, string>;
+};
+
+const buildSceneSignature = (assets: SceneAssets) => {
+  const parts = assets.parts ?? [];
+  const gifts = assets.gifts ?? [];
+  const dirtUrls = assets.dirtUrls ?? [];
+  const colors = assets.colors ?? {};
+  const partsKey = parts.map((part) => `${part.slot}:${part.url}`).join("|");
+  const giftsKey = gifts.map((gift) => `${gift.slot}:${gift.url}:${gift.size ?? ""}`).join("|");
+  const dirtKey = dirtUrls.join("|");
+  const colorsKey = Object.entries(colors)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}:${value}`)
+    .join("|");
+  return [
+    assets.terrainUrl ?? "",
+    assets.houseUrl ?? "",
+    assets.houseId ?? "",
+    partsKey,
+    assets.dirtUrl ?? "",
+    dirtKey,
+    String(assets.dirtLevel ?? ""),
+    giftsKey,
+    colorsKey
+  ].join("::");
 };
 
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
@@ -658,11 +703,59 @@ function DirtAttachment({
   return null;
 }
 
+function DirtChunkAttachment({
+  house,
+  url,
+  visible
+}: {
+  house: THREE.Object3D;
+  url: string;
+  visible: boolean;
+}) {
+  const { scene } = useGLTF(url);
+  const chunk = useMemo(() => scene.clone(true), [scene]);
+
+  useEffect(() => {
+    house.add(chunk);
+    return () => {
+      house.remove(chunk);
+    };
+  }, [house, chunk]);
+
+  useEffect(() => {
+    chunk.visible = visible;
+  }, [chunk, visible]);
+
+  return null;
+}
+
+function DirtStackAttachment({
+  house,
+  urls,
+  level
+}: {
+  house: THREE.Object3D;
+  urls: string[];
+  level: number;
+}) {
+  if (!urls || urls.length === 0) {
+    return null;
+  }
+  return (
+    <>
+      {urls.map((url, index) => (
+        <DirtChunkAttachment key={url} house={house} url={url} visible={level >= index + 1} />
+      ))}
+    </>
+  );
+}
+
 function TerrainWithHouse({
   terrainUrl,
   houseUrl,
   parts,
   dirtUrl,
+  dirtUrls,
   dirtLevel = 0,
   gifts,
   colors,
@@ -683,12 +776,15 @@ function TerrainWithHouse({
   orbitLastChangeRef,
   enableHoverHighlight,
   allowFocus,
-  houseBaseId
+  houseBaseId,
+  onReady,
+  visible = true
 }: {
   terrainUrl: string;
   houseUrl: string;
   parts?: { slot: string; url: string }[];
   dirtUrl?: string | null;
+  dirtUrls?: string[] | null;
   dirtLevel?: number;
   gifts?: {
     slot: string;
@@ -717,6 +813,8 @@ function TerrainWithHouse({
   enableHoverHighlight?: boolean;
   allowFocus?: boolean;
   houseBaseId?: string;
+  onReady?: () => void;
+  visible?: boolean;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
@@ -817,6 +915,10 @@ function TerrainWithHouse({
       domSlot.remove(house);
     };
   }, [terrain, house]);
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady, terrain, house]);
 
   useEffect(() => {
     applyMaterialColors(terrain, colors);
@@ -1019,6 +1121,7 @@ function TerrainWithHouse({
 
   return (
     <Group
+      visible={visible}
       onPointerDown={onDetailClick ? handlePointerDown : undefined}
       onPointerMove={onDetailClick ? handlePointerMove : undefined}
       onPointerUp={onDetailClick ? handlePointerUp : undefined}
@@ -1059,7 +1162,9 @@ function TerrainWithHouse({
           houseBaseId={houseBaseId}
         />
       ))}
-      {dirtUrl && dirtLevel > 0 ? (
+      {dirtUrls && dirtUrls.length > 0 ? (
+        <DirtStackAttachment house={house} urls={dirtUrls} level={dirtLevel} />
+      ) : dirtUrl && dirtLevel > 0 ? (
         <DirtAttachment house={house} url={dirtUrl} level={dirtLevel} />
       ) : null}
     </Group>
@@ -1118,6 +1223,7 @@ export default function MemorialPreview({
   houseId,
   parts,
   dirtUrl,
+  dirtUrls,
   dirtLevel = 0,
   gifts,
   giftSlots,
@@ -1167,11 +1273,67 @@ export default function MemorialPreview({
   const [sceneReady, setSceneReady] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const canvasCleanupRef = useRef<(() => void) | null>(null);
+  const currentAssets = useMemo<SceneAssets>(
+    () => ({
+      terrainUrl,
+      houseUrl,
+      houseId,
+      parts,
+      dirtUrl,
+      dirtUrls,
+      dirtLevel,
+      gifts,
+      colors
+    }),
+    [colors, dirtLevel, dirtUrl, dirtUrls, gifts, houseId, houseUrl, parts, terrainUrl]
+  );
+  const currentSignature = useMemo(
+    () => buildSceneSignature(currentAssets),
+    [currentAssets]
+  );
+  const [activeAssets, setActiveAssets] = useState<SceneAssets>(currentAssets);
+  const [activeSignature, setActiveSignature] = useState(currentSignature);
+  const [pendingAssets, setPendingAssets] = useState<SceneAssets | null>(null);
+  const pendingRef = useRef<{ signature: string; assets: SceneAssets } | null>(null);
+  const pendingSignature = useMemo(
+    () => (pendingAssets ? buildSceneSignature(pendingAssets) : null),
+    [pendingAssets]
+  );
   const lastFocusRequestRef = useRef<number | null>(null);
   const orbitingRef = useRef(false);
   const orbitMovedRef = useRef(false);
   const orbitLastChangeRef = useRef<number | null>(null);
   const orbitEndTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (currentSignature === activeSignature) {
+      if (pendingRef.current) {
+        pendingRef.current = null;
+        setPendingAssets(null);
+      }
+      return;
+    }
+    if (pendingRef.current?.signature === currentSignature) {
+      return;
+    }
+    pendingRef.current = { signature: currentSignature, assets: currentAssets };
+    setPendingAssets(currentAssets);
+  }, [activeSignature, currentAssets, currentSignature]);
+
+  const handlePendingReady = useCallback(
+    (signature: string) => {
+      if (pendingRef.current?.signature !== signature) {
+        return;
+      }
+      const nextAssets = pendingRef.current.assets;
+      pendingRef.current = null;
+      setPendingAssets(null);
+      setActiveAssets(nextAssets);
+      setActiveSignature(signature);
+      setSceneReady(true);
+    },
+    []
+  );
 
   const offsetAdjustment = useMemo(() => {
     const key = cameraAdjustmentKey ?? focusSlot;
@@ -1213,9 +1375,10 @@ export default function MemorialPreview({
   );
 
   const houseBaseId = useMemo(() => {
-    const parsed = splitHouseVariantId(houseId);
-    return parsed.baseId || houseId || "";
-  }, [houseId]);
+    const resolvedHouseId = activeAssets.houseId ?? houseId ?? "";
+    const parsed = splitHouseVariantId(resolvedHouseId);
+    return parsed.baseId || resolvedHouseId || "";
+  }, [activeAssets.houseId, houseId]);
 
   const allowFocus = useMemo(() => {
     if (typeof focusRequestId !== "number") {
@@ -1272,7 +1435,7 @@ export default function MemorialPreview({
       return;
     }
     setSceneReady(false);
-  }, [terrainUrl, houseUrl, suppressLoadingOverlay]);
+  }, [activeSignature, suppressLoadingOverlay]);
 
   useEffect(() => {
     if (typeof showGiftSlots === "boolean") {
@@ -1394,15 +1557,16 @@ export default function MemorialPreview({
         <DirectionalLight intensity={0.65} position={[-6, 5, -4]} />
         <RenderContextReporter onReady={onRenderContextReady} />
         <Suspense fallback={null}>
-          {terrainUrl && houseUrl ? (
+          {activeAssets.terrainUrl && activeAssets.houseUrl ? (
             <TerrainWithHouse
-              terrainUrl={terrainUrl}
-              houseUrl={houseUrl}
-              parts={parts}
-              dirtUrl={dirtUrl}
-              dirtLevel={dirtLevel}
-              gifts={gifts}
-              colors={colors}
+              terrainUrl={activeAssets.terrainUrl}
+              houseUrl={activeAssets.houseUrl}
+              parts={activeAssets.parts}
+              dirtUrl={activeAssets.dirtUrl}
+              dirtUrls={activeAssets.dirtUrls}
+              dirtLevel={activeAssets.dirtLevel ?? 0}
+              gifts={activeAssets.gifts}
+              colors={activeAssets.colors}
               showGiftSlots={giftSlotsVisible}
               giftSlots={giftSlots}
               selectedSlot={selectedSlot}
@@ -1421,12 +1585,15 @@ export default function MemorialPreview({
               enableHoverHighlight={enableHoverHighlight}
               allowFocus={allowFocus}
               houseBaseId={houseBaseId}
+              onReady={() => setSceneReady(true)}
             />
           ) : null}
-          {!terrainUrl && houseUrl ? (
-            <Model url={houseUrl} position={[0, 0, 0]} />
+          {!activeAssets.terrainUrl && activeAssets.houseUrl ? (
+            <>
+              <Model url={activeAssets.houseUrl} position={[0, 0, 0]} />
+              <SceneReady onReady={() => setSceneReady(true)} />
+            </>
           ) : null}
-          <SceneReady onReady={() => setSceneReady(true)} />
           {hoveredGift ? (
             <Html position={hoveredGift.position} center distanceFactor={8} className="pointer-events-none">
               <div className="inline-block min-w-[180px] max-w-[280px] break-words rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-[6px] leading-snug text-slate-700 shadow-lg">
@@ -1443,6 +1610,48 @@ export default function MemorialPreview({
             </Html>
           ) : null}
         </Suspense>
+        {pendingAssets && pendingSignature ? (
+          <Suspense fallback={null}>
+            <Group visible={false}>
+              {pendingAssets.terrainUrl && pendingAssets.houseUrl ? (
+                <TerrainWithHouse
+                  terrainUrl={pendingAssets.terrainUrl}
+                  houseUrl={pendingAssets.houseUrl}
+                  parts={pendingAssets.parts}
+                  dirtUrl={pendingAssets.dirtUrl}
+                  dirtUrls={pendingAssets.dirtUrls}
+                  dirtLevel={pendingAssets.dirtLevel ?? 0}
+                  gifts={pendingAssets.gifts}
+                  colors={pendingAssets.colors}
+                  showGiftSlots={false}
+                  giftSlots={undefined}
+                  selectedSlot={undefined}
+                  onSelectSlot={undefined}
+                  onSlotsDetected={undefined}
+                  onGiftHover={undefined}
+                  onGiftLeave={undefined}
+                  focusSlot={null}
+                  focusRequestId={undefined}
+                  onFocusPosition={undefined}
+                  onFocusDirection={undefined}
+                  onHouseSlotsDetected={undefined}
+                  onDetailClick={undefined}
+                  orbitMovedRef={orbitMovedRef}
+                  orbitLastChangeRef={orbitLastChangeRef}
+                  enableHoverHighlight={false}
+                  allowFocus={false}
+                  houseBaseId={houseBaseId}
+                  onReady={() => handlePendingReady(pendingSignature)}
+                />
+              ) : pendingAssets.houseUrl ? (
+                <>
+                  <Model url={pendingAssets.houseUrl} position={[0, 0, 0]} />
+                  <SceneReady onReady={() => handlePendingReady(pendingSignature)} />
+                </>
+              ) : null}
+            </Group>
+          </Suspense>
+        ) : null}
         <Suspense fallback={null}>
           {preloadGiftUrl ? (
             <GiftModelPreloader url={preloadGiftUrl} onReady={onGiftPreloaded} />
@@ -1484,7 +1693,7 @@ export default function MemorialPreview({
           }}
           minPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : 0}
           maxPolarAngle={lockHorizontalOrbit ? LOCKED_POLAR_ANGLE : Math.PI / 2}
-          minDistance={baseDistance / 2}
+          minDistance={Math.max(1.2, baseDistance / 6)}
           maxDistance={baseDistance * 2.6}
         />
         <SceneCameraRig

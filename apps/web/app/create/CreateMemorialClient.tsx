@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties }
 import { useGLTF } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { API_BASE } from "../../lib/config";
 import {
   getEnvironmentSeasons,
@@ -31,6 +32,7 @@ import {
   markerIconUrl,
   markerSize,
   markerStyleById,
+  markerVariants,
   markerStyles,
   markerVariantsForSpecies
 } from "../../lib/markers";
@@ -329,6 +331,9 @@ export default function CreateMemorialClient() {
   const tooltipTimerRef = useRef<number | null>(null);
   const [, setAssetsReady] = useState(false);
   const assetsLoadStartedRef = useRef(false);
+  const gltfLoaderRef = useRef<GLTFLoader | null>(null);
+  const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
+  const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
@@ -1313,6 +1318,39 @@ export default function CreateMemorialClient() {
     return false;
   }, []);
 
+  const ensureGltfReady = useCallback(
+    async (url: string) => {
+      const cache = gltfLoadCacheRef.current;
+      const cached = cache.get(url);
+      if (cached) {
+        return cached;
+      }
+      const task = (async () => {
+        await warmAsset(url);
+        if (!gltfLoaderRef.current) {
+          gltfLoaderRef.current = new GLTFLoader();
+        }
+        await gltfLoaderRef.current.loadAsync(url);
+        useGLTF.preload(url);
+      })().catch((error) => {
+        cache.delete(url);
+        throw error;
+      });
+      cache.set(url, task);
+      return task;
+    },
+    [warmAsset]
+  );
+
+  const queueGltfLoad = useCallback(
+    async (url: string) => {
+      const task = gltfQueueRef.current.then(() => ensureGltfReady(url));
+      gltfQueueRef.current = task.catch(() => {});
+      return task;
+    },
+    [ensureGltfReady]
+  );
+
   const warmAssetsWithLimit = useCallback(
     async (urls: string[], concurrency: number) => {
       const queue = Array.from(new Set(urls));
@@ -1404,10 +1442,9 @@ export default function CreateMemorialClient() {
       if (!url) {
         return;
       }
-      await warmAsset(url);
-      useGLTF.preload(url);
+      await queueGltfLoad(url);
     },
-    [resolveHoverModelUrl, warmAsset]
+    [queueGltfLoad, resolveHoverModelUrl]
   );
 
   const handleOptionHover = useCallback(
@@ -1446,10 +1483,9 @@ export default function CreateMemorialClient() {
       if (!url) {
         return;
       }
-      await warmAsset(url);
-      useGLTF.preload(url);
+      await queueGltfLoad(url);
     },
-    [form.environmentId, warmAsset]
+    [form.environmentId, queueGltfLoad]
   );
 
   const renderOptionGrid = (
@@ -1729,7 +1765,7 @@ export default function CreateMemorialClient() {
       ? markerGroups.primary
       : markerGroups.all;
     return (
-      <div className="grid gap-4 lg:grid-cols-[2fr_1.1fr]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
         <div className="grid gap-3">
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             {!apiKey ? (
@@ -1855,12 +1891,15 @@ export default function CreateMemorialClient() {
           </div>
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-2 min-w-0">
           <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-[48px_minmax(0,1fr)] gap-2">
             <div className="flex w-12 flex-col items-center gap-2">
               {markerStyles.map((style) => {
                 const isActive = markerCategory === style.id;
+                const categoryIconUrl =
+                  markerVariants.find((variant) => variant.id === style.id)?.iconUrl ??
+                  markerIconUrl(style.id);
                 return (
                   <div key={style.id} className="group relative">
                     <button
@@ -1880,7 +1919,7 @@ export default function CreateMemorialClient() {
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/80">
                         <img
-                          src={markerIconUrl(style.id)}
+                          src={categoryIconUrl}
                           alt={style.name}
                           className="h-5 w-5 object-contain"
                         />
@@ -1897,7 +1936,7 @@ export default function CreateMemorialClient() {
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
                 Маркеры выбранного вида
               </p>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex w-full flex-wrap gap-1">
                 {markerDisplay.map((marker) => {
                   const markerName = markerStyleById(marker.baseId).name;
                   return (
@@ -2033,6 +2072,7 @@ export default function CreateMemorialClient() {
 
   const isBuilderStep = step === 1;
   const isInitialStep = step === 0;
+  const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
     "pointer-events-auto absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-6 lg:left-20 overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
   const overlayPanelClass = (variant?: "marker") =>
@@ -2048,45 +2088,32 @@ export default function CreateMemorialClient() {
         : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
     }`;
   const mainStyle: CSSProperties = {
-    minHeight: isInitialStep
-      ? "calc(100dvh - var(--app-header-height, 56px))"
-      : "100dvh",
-    marginTop: isBuilderStep ? "calc(-1 * var(--app-header-height, 56px))" : 0,
-    paddingTop:
-      !isBuilderStep && !isInitialStep
-        ? "calc(var(--app-header-height, 56px) + 24px)"
-        : 0
+    minHeight: "100dvh",
+    marginTop: isBuilderStep || isInitialStep ? `calc(-1 * ${headerOffset})` : 0,
+    paddingTop: isBuilderStep
+      ? 0
+      : isInitialStep
+        ? headerOffset
+        : `calc(${headerOffset} + 24px)`
   };
 
   return (
     <main
       className={`relative bg-[var(--bg)] ${
-        isBuilderStep ? "h-[100dvh] overflow-hidden" : isInitialStep ? "overflow-hidden" : "px-4 pb-8"
+        isBuilderStep || isInitialStep
+          ? "h-[100dvh] overflow-hidden"
+          : "px-4 pb-8"
       }`}
       style={mainStyle}
     >
       {!isBuilderStep ? (
-        <div className="mx-auto w-full max-w-none lg:w-[90vw]">
+        <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center overflow-hidden">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(120% 100% at 50% 0%, #f7f2f1 0%, #eee5e2 52%, #e4d8d4 100%)"
-                  }}
-                />
-                <div
-                  className="absolute inset-0 opacity-40"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 20% 10%, rgba(255,255,255,0.6) 0, rgba(255,255,255,0) 45%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.5) 0, rgba(255,255,255,0) 40%)"
-                  }}
-                />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="rounded-[40px] bg-[#efe6e2] p-4 shadow-[0_26px_55px_rgba(89,71,65,0.25)]">
-                    <div className="rounded-[32px] bg-[#f7f1ee] px-6 py-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]">
+              <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center bg-[var(--bg)]">
+                <div className="relative z-10 flex w-[520px] max-w-[94vw] flex-col items-center">
+                  <div className="w-full rounded-[40px] bg-[#efe6e2] p-4 shadow-[0_26px_55px_rgba(89,71,65,0.25)]">
+                    <div className="min-h-[460px] rounded-[32px] bg-[#f7f1ee] px-6 py-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]">
                       <div className="mb-4 text-center text-[12px] tracking-[0.35em] text-[#8c7f7a]">
                         MEMORIAL
                       </div>
@@ -2124,8 +2151,8 @@ export default function CreateMemorialClient() {
                 terrainUrl={environmentUrl}
                 houseUrl={houseUrl}
                 houseId={housePreviewId}
-                suppressLoadingOverlay
-                cameraPosition={[12, 8, 12]}
+              suppressLoadingOverlay
+                cameraPosition={[8, 5, 8]}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
