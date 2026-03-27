@@ -228,6 +228,9 @@ export default function AppHeader() {
                         <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/about">
                           О проекте
                         </Link>
+                        <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/charity">
+                          Благотворительность
+                        </Link>
                         <button
                           type="button"
                           className="mt-2 rounded-xl border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
