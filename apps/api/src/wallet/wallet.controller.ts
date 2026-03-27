@@ -34,12 +34,20 @@ export class WalletController {
   @Post("top-up")
   async topUp(@Body() dto: TopUpDto) {
     await this.ensureOwner(dto.ownerId);
-    const updated = await this.prisma.user.update({
-      where: { id: dto.ownerId },
-      data: {
-        coinBalance: { increment: dto.amount }
-      }
-    });
+    const charityAmount = Math.floor(dto.amount * 0.2);
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: dto.ownerId },
+        data: {
+          coinBalance: { increment: dto.amount }
+        }
+      }),
+      this.prisma.charityTotals.upsert({
+        where: { id: "global" },
+        create: { id: "global", totalAccrued: charityAmount },
+        update: { totalAccrued: { increment: charityAmount } }
+      })
+    ]);
     return { ok: true, coinBalance: updated.coinBalance };
   }
 }
