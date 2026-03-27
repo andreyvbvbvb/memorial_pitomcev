@@ -162,6 +162,7 @@ export class GiftsService {
       throw new BadRequestException("Недостаточно монет");
     }
 
+    const charityAmount = Math.floor(totalPrice * 0.2);
     const expiresAt = durationMonths ? this.addMonths(new Date(), durationMonths) : null;
     const [updatedUser, placement] = await this.prisma.$transaction([
       this.prisma.user.update({
@@ -181,6 +182,11 @@ export class GiftsService {
           gift: true,
           owner: true
         }
+      }),
+      this.prisma.charityTotals.upsert({
+        where: { id: "global" },
+        create: { id: "global", totalAccrued: charityAmount },
+        update: { totalAccrued: { increment: charityAmount } }
       })
     ]);
 

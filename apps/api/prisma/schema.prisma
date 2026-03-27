@@ -118,3 +118,19 @@ model GiftPlacement {
 
   @@index([petId, slotName])
 }
+
+model CharityTotals {
+  id           String   @id @default("global")
+  totalAccrued Int      @default(0)
+  totalPaid    Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model CharityReport {
+  id        String   @id @default(cuid())
+  title     String
+  amount    Int
+  body      String
+  photos    String[] @default([])
+  createdAt DateTime @default(now())
+}

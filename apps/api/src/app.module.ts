@@ -9,6 +9,7 @@ import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
 import { StorageModule } from "./storage/storage.module";
 import { AdminModule } from "./admin/admin.module";
+import { CharityModule } from "./charity/charity.module";
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { AdminModule } from "./admin/admin.module";
     UsersModule,
     AuthModule,
     StorageModule,
-    AdminModule
+    AdminModule,
+    CharityModule
   ],
   controllers: [HealthController]
 })

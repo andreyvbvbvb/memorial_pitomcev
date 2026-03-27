@@ -63,6 +63,7 @@ export class PetsService {
     }
     const hasCoords = typeof dto.lat === "number" && typeof dto.lng === "number";
     const now = new Date();
+    const charityAmount = Math.floor(planPrice * 0.2);
     const paidUntil = planYears === 0 ? null : this.addYears(now, planYears);
     const baseSceneJson =
       dto.sceneJson && typeof dto.sceneJson === "object" && !Array.isArray(dto.sceneJson)
@@ -115,6 +116,11 @@ export class PetsService {
               }
             : undefined
         }
+      }),
+      this.prisma.charityTotals.upsert({
+        where: { id: "global" },
+        create: { id: "global", totalAccrued: charityAmount },
+        update: { totalAccrued: { increment: charityAmount } }
       })
     ]);
 
