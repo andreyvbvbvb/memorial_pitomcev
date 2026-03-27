@@ -31,4 +31,4 @@ COPY apps/api/prisma.config.ts /app/apps/api/prisma.config.ts
 COPY apps/api/package.json apps/api/
 WORKDIR /app/apps/api
 EXPOSE 3001
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "pnpm prisma:migrate:deploy && node dist/main.js"]
