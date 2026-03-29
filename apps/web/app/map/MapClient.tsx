@@ -26,6 +26,12 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../../lib/memorial-models";
+import {
+  getGiftSlotType,
+  resolveGiftModelUrl,
+  resolveGiftSizeMultiplier,
+  resolveGiftTargetWidth
+} from "../../lib/gifts";
 import { getHouseSlots } from "../../lib/memorial-config";
 
 type MarkerDto = {
@@ -53,6 +59,14 @@ type PetDetail = {
     houseId: string | null;
     sceneJson: Record<string, unknown> | null;
   } | null;
+  gifts?: {
+    id: string;
+    slotName: string;
+    placedAt: string;
+    expiresAt: string | null;
+    size?: string | null;
+    gift: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
+  }[];
 };
 
 type MemorialSceneData = {
@@ -60,6 +74,7 @@ type MemorialSceneData = {
   houseUrl: string;
   parts: { slot: string; url: string }[];
   colors?: Record<string, string>;
+  gifts?: { slot: string; url: string; size?: string | null }[];
 };
 
 const Group = "group" as unknown as React.ComponentType<any>;
@@ -298,6 +313,20 @@ const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") =
   target.scale.setScalar(scale);
 };
 
+const applyGiftScale = (target: THREE.Object3D, width: number) => {
+  if (!width || width <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0) {
+    return;
+  }
+  const scale = width / sizeVec.x;
+  target.scale.setScalar(scale);
+};
+
 const applyPartFitScale = (target: THREE.Object3D, maxWidth: number, maxLength: number) => {
   if (!maxWidth || !maxLength || maxWidth <= 0 || maxLength <= 0) {
     return;
@@ -354,6 +383,50 @@ function PartInstance({
   return null;
 }
 
+function GiftInstance({
+  terrain,
+  slot,
+  url,
+  size
+}: {
+  terrain: THREE.Object3D;
+  slot: string;
+  url: string;
+  size?: string | null;
+}) {
+  const { scene } = useGLTF(url);
+  const gift = useMemo(() => {
+    const cloned = scene.clone(true);
+    cloneMeshMaterials(cloned);
+    const targetWidth = resolveGiftTargetWidth({ modelUrl: url });
+    if (targetWidth) {
+      applyGiftScale(cloned, targetWidth);
+    }
+    const sizeMultiplier = resolveGiftSizeMultiplier({ gift: { modelUrl: url }, size });
+    if (sizeMultiplier && sizeMultiplier !== 1) {
+      cloned.scale.multiplyScalar(sizeMultiplier);
+    }
+    return cloned;
+  }, [scene, url, size]);
+
+  useEffect(() => {
+    const anchor = terrain.getObjectByName(slot);
+    if (!anchor) {
+      return;
+    }
+    const position = new THREE.Vector3();
+    anchor.getWorldPosition(position);
+    terrain.worldToLocal(position);
+    gift.position.copy(position);
+    terrain.add(gift);
+    return () => {
+      terrain.remove(gift);
+    };
+  }, [terrain, slot, gift]);
+
+  return null;
+}
+
 function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?: number }) {
   const { scene: terrainScene } = useGLTF(data.terrainUrl);
   const { scene: houseScene } = useGLTF(data.houseUrl);
@@ -398,6 +471,9 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
       <Primitive object={terrain} />
       {data.parts.map((part) => (
         <PartInstance key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={data.colors} />
+      ))}
+      {data.gifts?.map((gift) => (
+        <GiftInstance key={`${gift.slot}-${gift.url}`} terrain={terrain} slot={gift.slot} url={gift.url} size={gift.size} />
       ))}
     </Group>
   );
@@ -1223,11 +1299,27 @@ export default function MapClient() {
         : null
     ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
 
+    const now = new Date();
+    const activeGifts =
+      pet?.gifts?.filter((gift) => !gift.expiresAt || new Date(gift.expiresAt) > now) ?? [];
+    const gifts = activeGifts.map((gift) => {
+      const slotType = getGiftSlotType(gift.slotName);
+      const resolvedUrl =
+        resolveGiftModelUrl({ gift: gift.gift, slotType, fallbackUrl: gift.gift.modelUrl }) ??
+        gift.gift.modelUrl;
+      return {
+        slot: gift.slotName,
+        url: resolvedUrl,
+        size: gift.size ?? null
+      };
+    });
+
     return {
       terrainUrl: environmentUrl,
       houseUrl,
       parts,
-      colors: sceneJson.colors ?? undefined
+      colors: sceneJson.colors ?? undefined,
+      gifts: gifts.length > 0 ? gifts : undefined
     };
   }, [petCache]);
 
