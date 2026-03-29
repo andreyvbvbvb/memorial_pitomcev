@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import {
@@ -58,10 +58,47 @@ const Group = "group" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
+const Mesh = "mesh" as unknown as React.ComponentType<any>;
+const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
+const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 
 const DEFAULT_CAMERA = new THREE.Vector3(0, 9, 18);
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
 const CLICK_DRAG_THRESHOLD = 6;
+
+function SkyBackground() {
+  const texture = useTexture("/nebo.png");
+  const sphereRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    if (!texture?.image) {
+      return;
+    }
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+  }, [texture]);
+
+  useFrame(({ camera }) => {
+    if (!sphereRef.current) {
+      return;
+    }
+    sphereRef.current.position.copy(camera.position);
+  });
+
+  if (!texture?.image) {
+    return <Color attach="background" args={["#f3f0ee"]} />;
+  }
+
+  return (
+    <>
+      <Color attach="background" args={["#f3f0ee"]} />
+      <Mesh ref={sphereRef} renderOrder={-20} raycast={() => null}>
+        <SphereGeometry args={[120, 64, 64]} />
+        <MeshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
+      </Mesh>
+    </>
+  );
+}
 
 function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, string>) {
   if (!colors) {
@@ -437,7 +474,7 @@ export default function MyPets3DView({
         dpr={1}
         camera={{ position: [DEFAULT_CAMERA.x, DEFAULT_CAMERA.y, DEFAULT_CAMERA.z], fov: 45 }}
       >
-        <Color attach="background" args={["#f3f0ee"]} />
+        <SkyBackground />
         <AmbientLight intensity={0.8} />
         <DirectionalLight intensity={1.15} position={[7, 10, 6]} />
         <Suspense fallback={null}>
