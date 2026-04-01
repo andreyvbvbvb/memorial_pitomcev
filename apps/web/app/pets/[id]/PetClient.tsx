@@ -1076,10 +1076,10 @@ export default function PetClient({ id }: Props) {
                           Array.from({ length: 8 }).map((_, index) => (
                             <div
                               key={`gift-skeleton-${index}`}
-                              className="flex h-28 w-full animate-pulse flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-2"
+                              className="relative h-28 w-full animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white"
                             >
-                              <div className="h-16 w-16 rounded-xl bg-slate-200" />
-                              <div className="h-4 w-12 rounded-full bg-slate-200" />
+                              <div className="absolute inset-0 bg-slate-100" />
+                              <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-slate-200" />
                             </div>
                           ))
                         ) : giftsWithSlots.length === 0 ? (
@@ -1094,28 +1094,29 @@ export default function PetClient({ id }: Props) {
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
-                                className={`flex h-28 w-full flex-col items-center justify-between rounded-2xl border p-2 transition ${
+                                className={`relative flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border transition ${
                                   selectedGiftId === gift.id
                                     ? "border-sky-400/70 bg-sky-50 text-slate-900 shadow-sm"
                                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                                 }`}
                               >
-                                <span className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                  {iconUrl ? (
-                                    <img
-                                      src={iconUrl ?? undefined}
-                                      alt=""
-                                      className="h-full w-full object-contain"
-                                      loading="lazy"
-                                      onError={(event) => {
-                                        event.currentTarget.onerror = null;
-                                        event.currentTarget.src = fallbackIcon;
-                                      }}
-                                    />
-                                  ) : null}
+                                {iconUrl ? (
+                                  <img
+                                    src={iconUrl ?? undefined}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                    onError={(event) => {
+                                      event.currentTarget.onerror = null;
+                                      event.currentTarget.src = fallbackIcon;
+                                    }}
+                                  />
+                                ) : null}
+                                <span className="pointer-events-none absolute bottom-2 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[9px] font-semibold text-white shadow-md">
+                                  {gift.price}
                                 </span>
-                                <span className="text-[11px] font-semibold text-slate-700">
-                                  {gift.price} монет
+                                <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-slate-700 opacity-0">
+                                  0
                                 </span>
                               </button>
                             );
