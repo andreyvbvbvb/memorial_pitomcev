@@ -1050,7 +1050,7 @@ export default function PetClient({ id }: Props) {
             </button>
             {giftPanelOpen ? (
               <div
-                className={`absolute bottom-16 right-0 ${panelBaseClass} flex h-[calc(100vh-var(--app-header-height,0px)-6rem)] max-h-[calc(100vh-var(--app-header-height,0px)-6rem)] w-[320px] max-w-[85vw] flex-col sm:w-[380px]`}
+                className={`absolute right-0 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col sm:w-[380px]`}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -1071,12 +1071,12 @@ export default function PetClient({ id }: Props) {
                   <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
                     <div className="grid gap-2 text-sm text-slate-700">
                       Подарок
-                      <div className="flex min-h-0 flex-1 flex-wrap gap-3 overflow-y-auto pr-1">
+                      <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1">
                         {giftCatalogLoading ? (
                           Array.from({ length: 8 }).map((_, index) => (
                             <div
                               key={`gift-skeleton-${index}`}
-                              className="flex h-28 w-24 animate-pulse flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-2"
+                              className="flex h-28 w-full animate-pulse flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-2"
                             >
                               <div className="h-16 w-16 rounded-xl bg-slate-200" />
                               <div className="h-4 w-12 rounded-full bg-slate-200" />
@@ -1094,7 +1094,7 @@ export default function PetClient({ id }: Props) {
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
-                                className={`flex h-28 w-24 flex-col items-center justify-between rounded-2xl border p-2 transition ${
+                                className={`flex h-28 w-full flex-col items-center justify-between rounded-2xl border p-2 transition ${
                                   selectedGiftId === gift.id
                                     ? "border-sky-400/70 bg-sky-50 text-slate-900 shadow-sm"
                                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
