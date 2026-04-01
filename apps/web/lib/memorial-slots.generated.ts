@@ -70,5 +70,9 @@ export const houseSlotsGenerated = {
     "mat": "mat_slot",
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
+  },
+  "kotik_1__base": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
   }
 } as const;

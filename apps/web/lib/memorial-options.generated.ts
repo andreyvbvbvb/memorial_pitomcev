@@ -8,6 +8,11 @@ export type GeneratedOptionItem = {
 
 export const environmentOptionsGenerated = [
   {
+    "id": "1",
+    "name": "Поверхность 1",
+    "description": "Автодобавлено"
+  },
+  {
     "id": "2",
     "name": "Поверхность 2",
     "description": "Автодобавлено"
@@ -91,6 +96,26 @@ export const houseOptionsGenerated = [
   },
   {
     "id": "kotik_5__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "mat_1__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "mat_1__fourth",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "mat_1__second",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "mat_1__third",
     "name": "Будка",
     "description": "Автодобавлено"
   }

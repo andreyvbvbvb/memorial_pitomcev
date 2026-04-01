@@ -1098,6 +1098,26 @@ export default function PetClient({ id }: Props) {
                       </div>
                     </div>
 
+                    <div className="grid gap-2 text-sm text-slate-700">
+                      Доступные места
+                      {availableSlots.length === 0 ? (
+                        <p className="text-sm text-slate-500">Свободных мест нет.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {availableSlots.map((slot, index) => (
+                            <div
+                              key={slot}
+                              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-xs text-slate-600"
+                              aria-label={`Свободный слот ${index + 1}`}
+                              title={`Свободный слот ${index + 1}`}
+                            >
+                              {index + 1}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {selectedGiftSupportsSize ? (
                       <div className="grid gap-2 text-sm text-slate-700">
                         Размер звезды
