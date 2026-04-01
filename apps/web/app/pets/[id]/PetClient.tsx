@@ -1050,7 +1050,7 @@ export default function PetClient({ id }: Props) {
             </button>
             {giftPanelOpen ? (
               <div
-                className={`absolute right-0 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col sm:w-[380px]`}
+                className={`fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col sm:w-[380px]`}
               >
                 <div className="flex items-center justify-between">
                   <div>
