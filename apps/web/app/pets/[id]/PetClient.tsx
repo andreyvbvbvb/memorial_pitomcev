@@ -125,6 +125,7 @@ export default function PetClient({ id }: Props) {
   const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
+  const [giftSlotsVisible, setGiftSlotsVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<
     "info" | "photos" | "gifts" | "memorials" | null
   >(null);
@@ -416,6 +417,7 @@ export default function PetClient({ id }: Props) {
         return selectedGiftTypes.includes(slotType);
       })
     : [];
+  const highlightSlots = selectedGift ? filteredAvailableSlots : availableSlots;
 
   useEffect(() => {
     if (giftsWithSlots.length === 0) {
@@ -458,6 +460,12 @@ export default function PetClient({ id }: Props) {
       setSelectedSlot(filteredAvailableSlots[0] ?? null);
     }
   }, [filteredAvailableSlots, selectedSlot, slotManuallyCleared]);
+
+  useEffect(() => {
+    if (!giftPanelOpen) {
+      setGiftSlotsVisible(false);
+    }
+  }, [giftPanelOpen]);
 
   const handleSelectSlot = (slot: string) => {
     if (selectedSlot === slot) {
@@ -727,7 +735,7 @@ export default function PetClient({ id }: Props) {
           dirtUrls={dirtModelUrls}
           dirtLevel={dirtLevel}
           gifts={previewGifts}
-          giftSlots={giftPanelOpen ? filteredAvailableSlots : undefined}
+          giftSlots={giftPanelOpen ? highlightSlots : undefined}
           selectedSlot={giftPanelOpen ? selectedSlot : null}
           onSelectSlot={giftPanelOpen ? handleSelectSlot : undefined}
           onGiftSlotsDetected={setDetectedSlots}
@@ -736,7 +744,7 @@ export default function PetClient({ id }: Props) {
           colors={colorOverrides}
           onDetailClick={handleMemorialDetailClick}
           showControls={false}
-          showGiftSlots={giftPanelOpen && filteredAvailableSlots.length > 0}
+          showGiftSlots={giftPanelOpen && giftSlotsVisible && highlightSlots.length > 0}
           cameraPosition={[8, 6, 8]}
         />
       </div>
@@ -1099,23 +1107,19 @@ export default function PetClient({ id }: Props) {
                     </div>
 
                     <div className="grid gap-2 text-sm text-slate-700">
-                      Доступные места
-                      {availableSlots.length === 0 ? (
+                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={giftSlotsVisible}
+                          onChange={(event) => setGiftSlotsVisible(event.target.checked)}
+                          disabled={highlightSlots.length === 0}
+                        />
+                        Подсвечивать места для подарков
+                      </label>
+                      {highlightSlots.length === 0 ? (
                         <p className="text-sm text-slate-500">Свободных мест нет.</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {availableSlots.map((slot, index) => (
-                            <div
-                              key={slot}
-                              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-xs text-slate-600"
-                              aria-label={`Свободный слот ${index + 1}`}
-                              title={`Свободный слот ${index + 1}`}
-                            >
-                              {index + 1}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      ) : null}
                     </div>
 
                     {selectedGiftSupportsSize ? (
