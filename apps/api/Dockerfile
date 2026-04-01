@@ -17,7 +17,13 @@ ARG DATABASE_URL=postgresql://user:pass@localhost:5432/db?schema=public
 ENV DATABASE_URL=$DATABASE_URL
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/api apps/api
+COPY apps/web/scripts apps/web/scripts
+COPY apps/web/public apps/web/public
+COPY apps/web/lib apps/web/lib
 COPY packages packages
+WORKDIR /app/apps/web
+RUN node scripts/generate-models.mjs
+WORKDIR /app
 RUN pnpm --filter @memorial/api... prisma:generate
 RUN pnpm --filter @memorial/api... build
 
