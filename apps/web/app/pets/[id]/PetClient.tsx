@@ -30,6 +30,7 @@ import {
 import { splitHouseVariantId } from "../../../lib/house-variants";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
+const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
 const buildDirtModelUrls = (houseId?: string | null): string[] => {
   const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
   const prefix = baseId ? `/models/dirt/${baseId}` : "/models/dirt";
@@ -418,6 +419,8 @@ export default function PetClient({ id }: Props) {
       })
     : [];
   const highlightSlots = selectedGift ? filteredAvailableSlots : availableSlots;
+  const shouldShowGiftSlots =
+    giftPanelOpen && highlightSlots.length > 0 && (giftSlotsVisible || Boolean(selectedGift));
 
   useEffect(() => {
     if (giftsWithSlots.length === 0) {
@@ -445,6 +448,12 @@ export default function PetClient({ id }: Props) {
       setSelectedDuration(null);
     }
   }, [selectedGiftId]);
+
+  useEffect(() => {
+    if (selectedGiftId && selectedDuration === null) {
+      setSelectedDuration(DURATION_OPTIONS[0]);
+    }
+  }, [selectedGiftId, selectedDuration]);
 
   useEffect(() => {
     if (filteredAvailableSlots.length === 0) {
@@ -552,6 +561,12 @@ export default function PetClient({ id }: Props) {
     { id: "m", label: "M", helper: "Средняя" },
     { id: "l", label: "L", helper: "Большая" }
   ];
+  const durationIndex = Math.max(
+    0,
+    DURATION_OPTIONS.indexOf(
+      (selectedDuration ?? DURATION_OPTIONS[0]) as (typeof DURATION_OPTIONS)[number]
+    )
+  );
 
   const selectedSlotType = selectedSlot ? getGiftSlotType(selectedSlot) : null;
   const previewGiftUrl =
@@ -744,7 +759,7 @@ export default function PetClient({ id }: Props) {
           colors={colorOverrides}
           onDetailClick={handleMemorialDetailClick}
           showControls={false}
-          showGiftSlots={giftPanelOpen && giftSlotsVisible && highlightSlots.length > 0}
+          showGiftSlots={shouldShowGiftSlots}
           cameraPosition={[8, 6, 8]}
         />
       </div>
@@ -1034,7 +1049,9 @@ export default function PetClient({ id }: Props) {
               </svg>
             </button>
             {giftPanelOpen ? (
-              <div className={`absolute bottom-16 right-0 ${panelBaseClass}`}>
+              <div
+                className={`absolute bottom-16 right-0 ${panelBaseClass} flex h-[calc(100vh-var(--app-header-height,0px)-6rem)] max-h-[calc(100vh-var(--app-header-height,0px)-6rem)] w-[320px] max-w-[85vw] flex-col sm:w-[380px]`}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
@@ -1051,17 +1068,18 @@ export default function PetClient({ id }: Props) {
                   </button>
                 </div>
                 {currentUser ? (
-                  <div className="mt-4 grid gap-3">
+                  <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
                     <div className="grid gap-2 text-sm text-slate-700">
                       Подарок
-                      <div className="flex max-h-56 flex-wrap gap-3 overflow-y-auto pr-1">
+                      <div className="flex min-h-0 flex-1 flex-wrap gap-3 overflow-y-auto pr-1">
                         {giftCatalogLoading ? (
                           Array.from({ length: 8 }).map((_, index) => (
                             <div
                               key={`gift-skeleton-${index}`}
-                              className="h-24 w-full animate-pulse rounded-2xl border border-slate-200 bg-white"
+                              className="flex h-28 w-24 animate-pulse flex-col items-center justify-between rounded-2xl border border-slate-200 bg-white p-2"
                             >
-                              <div className="m-2 h-16 rounded-xl bg-slate-200" />
+                              <div className="h-16 w-16 rounded-xl bg-slate-200" />
+                              <div className="h-4 w-12 rounded-full bg-slate-200" />
                             </div>
                           ))
                         ) : giftsWithSlots.length === 0 ? (
@@ -1076,18 +1094,18 @@ export default function PetClient({ id }: Props) {
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
-                                className={`relative flex h-24 w-24 items-center justify-center rounded-xl border ${
+                                className={`flex h-28 w-24 flex-col items-center justify-between rounded-2xl border p-2 transition ${
                                   selectedGiftId === gift.id
-                                    ? "border-sky-400/70 bg-sky-50 text-slate-900"
-                                    : "border-slate-200 bg-white text-slate-700"
+                                    ? "border-sky-400/70 bg-sky-50 text-slate-900 shadow-sm"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                                 }`}
                               >
-                                <span className="relative flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                                <span className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
                                   {iconUrl ? (
                                     <img
                                       src={iconUrl ?? undefined}
                                       alt=""
-                                      className="h-full w-full object-cover"
+                                      className="h-full w-full object-contain"
                                       loading="lazy"
                                       onError={(event) => {
                                         event.currentTarget.onerror = null;
@@ -1096,8 +1114,8 @@ export default function PetClient({ id }: Props) {
                                     />
                                   ) : null}
                                 </span>
-                                <span className="absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[9px] font-semibold text-white">
-                                  {gift.price}
+                                <span className="text-[11px] font-semibold text-slate-700">
+                                  {gift.price} монет
                                 </span>
                               </button>
                             );
@@ -1147,21 +1165,27 @@ export default function PetClient({ id }: Props) {
 
                     <div className="grid gap-2 text-sm text-slate-700">
                       Срок подарка
-                      <div className="flex flex-wrap gap-2">
-                        {[1, 2, 3, 6, 12].map((months) => (
-                          <button
-                            key={months}
-                            type="button"
-                            onClick={() => setSelectedDuration(months)}
-                            className={`rounded-2xl border px-4 py-2 text-sm ${
-                              selectedDuration === months
-                                ? "border-rose-500 bg-rose-500 text-white"
-                                : "border-slate-200 bg-white text-slate-700"
-                            }`}
-                          >
-                            {months} мес
-                          </button>
-                        ))}
+                      <div className="grid gap-2">
+                        <div className="text-sm font-semibold text-slate-900">
+                          {selectedDuration ? `${selectedDuration} мес` : "Выберите срок"}
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={DURATION_OPTIONS.length - 1}
+                          step={1}
+                          value={durationIndex}
+                          onChange={(event) => {
+                            const index = Number(event.target.value);
+                            setSelectedDuration(DURATION_OPTIONS[index] ?? DURATION_OPTIONS[0]);
+                          }}
+                          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200"
+                        />
+                        <div className="flex justify-between text-[11px] text-slate-400">
+                          {DURATION_OPTIONS.map((value) => (
+                            <span key={value}>{value}м</span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
