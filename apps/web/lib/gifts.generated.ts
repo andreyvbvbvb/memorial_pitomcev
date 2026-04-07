@@ -82,8 +82,47 @@ export const giftModelsGenerated = {
   "meal_1": {
     "meal": "/models/gifts/meal/meal_1.glb"
   },
+  "meal_10": {
+    "meal": "/models/gifts/meal/meal_10.glb"
+  },
+  "meal_11": {
+    "meal": "/models/gifts/meal/meal_11.glb"
+  },
+  "meal_12": {
+    "meal": "/models/gifts/meal/meal_12.glb"
+  },
+  "meal_13": {
+    "meal": "/models/gifts/meal/meal_13.glb"
+  },
+  "meal_14": {
+    "meal": "/models/gifts/meal/meal_14.glb"
+  },
+  "meal_15": {
+    "meal": "/models/gifts/meal/meal_15.glb"
+  },
   "meal_2": {
     "meal": "/models/gifts/meal/meal_2.glb"
+  },
+  "meal_3": {
+    "meal": "/models/gifts/meal/meal_3.glb"
+  },
+  "meal_4": {
+    "meal": "/models/gifts/meal/meal_4.glb"
+  },
+  "meal_5": {
+    "meal": "/models/gifts/meal/meal_5.glb"
+  },
+  "meal_6": {
+    "meal": "/models/gifts/meal/meal_6.glb"
+  },
+  "meal_7": {
+    "meal": "/models/gifts/meal/meal_7.glb"
+  },
+  "meal_8": {
+    "meal": "/models/gifts/meal/meal_8.glb"
+  },
+  "meal_9": {
+    "meal": "/models/gifts/meal/meal_9.glb"
   },
   "star_1": {
     "star": "/models/gifts/star/star_1.glb"
@@ -112,7 +151,73 @@ export const giftModelsGenerated = {
   "toy_1": {
     "toy": "/models/gifts/toy/toy_1.glb"
   },
+  "toy_10": {
+    "toy": "/models/gifts/toy/toy_10.glb"
+  },
+  "toy_11": {
+    "toy": "/models/gifts/toy/toy_11.glb"
+  },
+  "toy_12": {
+    "toy": "/models/gifts/toy/toy_12.glb"
+  },
+  "toy_13": {
+    "toy": "/models/gifts/toy/toy_13.glb"
+  },
+  "toy_14": {
+    "toy": "/models/gifts/toy/toy_14.glb"
+  },
+  "toy_15": {
+    "toy": "/models/gifts/toy/toy_15.glb"
+  },
+  "toy_16": {
+    "toy": "/models/gifts/toy/toy_16.glb"
+  },
+  "toy_17": {
+    "toy": "/models/gifts/toy/toy_17.glb"
+  },
+  "toy_18": {
+    "toy": "/models/gifts/toy/toy_18.glb"
+  },
+  "toy_19": {
+    "toy": "/models/gifts/toy/toy_19.glb"
+  },
   "toy_2": {
     "toy": "/models/gifts/toy/toy_2.glb"
+  },
+  "toy_20": {
+    "toy": "/models/gifts/toy/toy_20.glb"
+  },
+  "toy_21": {
+    "toy": "/models/gifts/toy/toy_21.glb"
+  },
+  "toy_22": {
+    "toy": "/models/gifts/toy/toy_22.glb"
+  },
+  "toy_23": {
+    "toy": "/models/gifts/toy/toy_23.glb"
+  },
+  "toy_24": {
+    "toy": "/models/gifts/toy/toy_24.glb"
+  },
+  "toy_3": {
+    "toy": "/models/gifts/toy/toy_3.glb"
+  },
+  "toy_4": {
+    "toy": "/models/gifts/toy/toy_4.glb"
+  },
+  "toy_5": {
+    "toy": "/models/gifts/toy/toy_5.glb"
+  },
+  "toy_6": {
+    "toy": "/models/gifts/toy/toy_6.glb"
+  },
+  "toy_7": {
+    "toy": "/models/gifts/toy/toy_7.glb"
+  },
+  "toy_8": {
+    "toy": "/models/gifts/toy/toy_8.glb"
+  },
+  "toy_9": {
+    "toy": "/models/gifts/toy/toy_9.glb"
   }
 } as const;

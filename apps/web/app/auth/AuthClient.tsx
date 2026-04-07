@@ -18,6 +18,12 @@ export default function AuthClient() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [forgotPopupOpen, setForgotPopupOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptOffer, setAcceptOffer] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [consentTerms, setConsentTerms] = useState(false);
+  const [consentOffer, setConsentOffer] = useState(false);
+  const [consentLoading, setConsentLoading] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -58,6 +64,10 @@ export default function AuthClient() {
       setError("Пароли не совпадают");
       return;
     }
+    if (mode === "register" && (!acceptTerms || !acceptOffer)) {
+      setError("Нужно принять пользовательское соглашение и публичную оферту");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -68,7 +78,13 @@ export default function AuthClient() {
           credentials: "include",
           body: JSON.stringify(
             mode === "register"
-              ? { login: login.trim().toLowerCase(), email: email.trim(), password: password.trim() }
+              ? {
+                  login: login.trim().toLowerCase(),
+                  email: email.trim(),
+                  password: password.trim(),
+                  acceptTerms,
+                  acceptOffer
+                }
               : { email: identifier.trim(), password: password.trim() }
           )
         }
@@ -93,12 +109,54 @@ export default function AuthClient() {
         }
         return;
       }
+      const data = (await response.json()) as {
+        termsAccepted?: boolean;
+        offerAccepted?: boolean;
+      };
+      if (
+        mode === "login" &&
+        (!data?.termsAccepted || !data?.offerAccepted)
+      ) {
+        setConsentOpen(true);
+        setConsentTerms(false);
+        setConsentOffer(false);
+        setNotice(null);
+        return;
+      }
       setNotice("Готово! Перенаправляем...");
       router.push("/profile");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка авторизации");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAcceptTerms = async () => {
+    if (!consentTerms || !consentOffer) {
+      setError("Нужно принять пользовательское соглашение и публичную оферту");
+      return;
+    }
+    setConsentLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/auth/accept-terms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ acceptTerms: true, acceptOffer: true })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось подтвердить согласие");
+      }
+      setConsentOpen(false);
+      setNotice("Готово! Перенаправляем...");
+      router.push("/profile");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка подтверждения");
+    } finally {
+      setConsentLoading(false);
     }
   };
 
@@ -210,6 +268,36 @@ export default function AuthClient() {
                     placeholder="••••••"
                   />
                 </label>
+                <div className="grid gap-2 text-sm text-slate-700">
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4"
+                      checked={acceptTerms}
+                      onChange={(event) => setAcceptTerms(event.target.checked)}
+                    />
+                    <span>
+                      Я принимаю{" "}
+                      <a href="/about#agreement" className="text-slate-900 underline">
+                        пользовательское соглашение
+                      </a>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4"
+                      checked={acceptOffer}
+                      onChange={(event) => setAcceptOffer(event.target.checked)}
+                    />
+                    <span>
+                      Я принимаю{" "}
+                      <a href="/about#offer" className="text-slate-900 underline">
+                        публичную оферту
+                      </a>
+                    </span>
+                  </label>
+                </div>
               </>
             )}
 
@@ -266,6 +354,60 @@ export default function AuthClient() {
               className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
             >
               Понятно
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {consentOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+            <h3 className="text-base font-semibold text-slate-900">
+              Подтвердите согласие с условиями
+            </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Чтобы продолжить, примите пользовательское соглашение и публичную оферту.
+            </p>
+            <div className="mt-4 grid gap-3 text-sm text-slate-700">
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4"
+                  checked={consentTerms}
+                  onChange={(event) => setConsentTerms(event.target.checked)}
+                />
+                <span>
+                  Я принимаю{" "}
+                  <a href="/about#agreement" className="text-slate-900 underline">
+                    пользовательское соглашение
+                  </a>
+                </span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4"
+                  checked={consentOffer}
+                  onChange={(event) => setConsentOffer(event.target.checked)}
+                />
+                <span>
+                  Я принимаю{" "}
+                  <a href="/about#offer" className="text-slate-900 underline">
+                    публичную оферту
+                  </a>
+                </span>
+              </label>
+            </div>
+            <button
+              type="button"
+              onClick={handleAcceptTerms}
+              disabled={consentLoading || !consentTerms || !consentOffer}
+              className={`mt-5 w-full rounded-2xl px-4 py-2 text-sm font-semibold ${
+                consentLoading || !consentTerms || !consentOffer
+                  ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                  : "bg-slate-900 text-white"
+              }`}
+            >
+              {consentLoading ? "Подождите..." : "Согласен"}
             </button>
           </div>
         </div>

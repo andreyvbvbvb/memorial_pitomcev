@@ -1,27 +1,46 @@
 export default function AboutPage() {
   return (
-    <main className="mx-auto max-w-5xl px-6 py-16">
-      <div className="grid gap-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">О проекте</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Memorial для питомцев</h1>
-        <p className="text-slate-600">
-          Мы создаём бережное пространство, где можно сохранить память о любимых питомцах,
-          разместить мемориал на карте и принять тёплые знаки внимания от других людей.
+    <main className="min-h-[calc(100vh-var(--app-header-height,0px))] bg-[#f4f6fb] px-6 py-10">
+      <div className="mx-auto w-full max-w-3xl">
+        <h1 className="text-2xl font-semibold text-slate-900">Документы</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Ниже представлены примеры пользовательского соглашения и публичной оферты.
         </p>
-      </div>
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-slate-900">Личная история</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Добавляйте фотографии, эпитафию и историю жизни питомца — всё сохраняется в одном месте.
-          </p>
-        </div>
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-slate-900">Сообщество</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Делитесь мемориалами публично или оставляйте их приватными — вы решаете.
-          </p>
-        </div>
+
+        <section id="agreement" className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Пользовательское соглашение</h2>
+          <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-700">
+            <p>
+              Настоящее соглашение регулирует порядок использования сервиса Memorial и
+              устанавливает правила взаимодействия Пользователя и Администрации.
+            </p>
+            <p>
+              Регистрируясь, Пользователь подтверждает, что предоставляет достоверные данные,
+              соблюдает нормы закона и принимает правила сервиса.
+            </p>
+            <p>
+              Администрация предоставляет доступ к функционалу сервиса «как есть» и вправе
+              обновлять условия, уведомляя Пользователя через сайт.
+            </p>
+          </div>
+        </section>
+
+        <section id="offer" className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Публичная оферта</h2>
+          <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-700">
+            <p>
+              Настоящая оферта определяет условия оказания платных услуг сервиса Memorial.
+            </p>
+            <p>
+              Оплачивая услуги, Пользователь соглашается с описанием тарифов, сроками и
+              порядком предоставления доступа.
+            </p>
+            <p>
+              Возврат средств и изменение условий предоставления услуг регулируются
+              законодательством и дополнительными правилами сервиса.
+            </p>
+          </div>
+        </section>
       </div>
     </main>
   );

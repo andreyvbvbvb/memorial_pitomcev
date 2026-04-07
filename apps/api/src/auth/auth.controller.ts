@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import { AcceptTermsDto } from "./dto/accept-terms.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
@@ -42,7 +43,9 @@ export class AuthController {
       id: user.id,
       login: user.login,
       email: user.email,
-      coinBalance: user.coinBalance
+      coinBalance: user.coinBalance,
+      termsAccepted: user.termsAccepted,
+      offerAccepted: user.offerAccepted
     };
   }
 
@@ -55,7 +58,33 @@ export class AuthController {
       id: user.id,
       login: user.login,
       email: user.email,
-      coinBalance: user.coinBalance
+      coinBalance: user.coinBalance,
+      termsAccepted: user.termsAccepted,
+      offerAccepted: user.offerAccepted
+    };
+  }
+
+  @Post("accept-terms")
+  async acceptTerms(
+    @Body() dto: AcceptTermsDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const token = req.cookies?.access_token;
+    const user = await this.authService.getUserFromToken(token);
+    if (!user) {
+      throw new UnauthorizedException("Не авторизован");
+    }
+    const updated = await this.authService.acceptTerms(user.id, dto);
+    const nextToken = this.authService.signToken({ id: updated.id, email: updated.email });
+    this.setAuthCookie(res, nextToken);
+    return {
+      id: updated.id,
+      login: updated.login,
+      email: updated.email,
+      coinBalance: updated.coinBalance,
+      termsAccepted: updated.termsAccepted,
+      offerAccepted: updated.offerAccepted
     };
   }
 
@@ -81,7 +110,9 @@ export class AuthController {
       id: user.id,
       login: user.login,
       email: user.email,
-      coinBalance: user.coinBalance
+      coinBalance: user.coinBalance,
+      termsAccepted: user.termsAccepted,
+      offerAccepted: user.offerAccepted
     };
   }
 }

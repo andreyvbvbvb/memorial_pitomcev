@@ -164,10 +164,88 @@ export const generatedGifts = [
     "modelUrl": "/models/gifts/meal/meal_1.glb"
   },
   {
+    "code": "meal_10",
+    "name": "Еда 10",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_10.glb"
+  },
+  {
+    "code": "meal_11",
+    "name": "Еда 11",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_11.glb"
+  },
+  {
+    "code": "meal_12",
+    "name": "Еда 12",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_12.glb"
+  },
+  {
+    "code": "meal_13",
+    "name": "Еда 13",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_13.glb"
+  },
+  {
+    "code": "meal_14",
+    "name": "Еда 14",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_14.glb"
+  },
+  {
+    "code": "meal_15",
+    "name": "Еда 15",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_15.glb"
+  },
+  {
     "code": "meal_2",
     "name": "Еда 2",
     "price": 20,
     "modelUrl": "/models/gifts/meal/meal_2.glb"
+  },
+  {
+    "code": "meal_3",
+    "name": "Еда 3",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_3.glb"
+  },
+  {
+    "code": "meal_4",
+    "name": "Еда 4",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_4.glb"
+  },
+  {
+    "code": "meal_5",
+    "name": "Еда 5",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_5.glb"
+  },
+  {
+    "code": "meal_6",
+    "name": "Еда 6",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_6.glb"
+  },
+  {
+    "code": "meal_7",
+    "name": "Еда 7",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_7.glb"
+  },
+  {
+    "code": "meal_8",
+    "name": "Еда 8",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_8.glb"
+  },
+  {
+    "code": "meal_9",
+    "name": "Еда 9",
+    "price": 20,
+    "modelUrl": "/models/gifts/meal/meal_9.glb"
   },
   {
     "code": "star_1",
@@ -224,9 +302,141 @@ export const generatedGifts = [
     "modelUrl": "/models/gifts/toy/toy_1.glb"
   },
   {
+    "code": "toy_10",
+    "name": "Игрушка 10",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_10.glb"
+  },
+  {
+    "code": "toy_11",
+    "name": "Игрушка 11",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_11.glb"
+  },
+  {
+    "code": "toy_12",
+    "name": "Игрушка 12",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_12.glb"
+  },
+  {
+    "code": "toy_13",
+    "name": "Игрушка 13",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_13.glb"
+  },
+  {
+    "code": "toy_14",
+    "name": "Игрушка 14",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_14.glb"
+  },
+  {
+    "code": "toy_15",
+    "name": "Игрушка 15",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_15.glb"
+  },
+  {
+    "code": "toy_16",
+    "name": "Игрушка 16",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_16.glb"
+  },
+  {
+    "code": "toy_17",
+    "name": "Игрушка 17",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_17.glb"
+  },
+  {
+    "code": "toy_18",
+    "name": "Игрушка 18",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_18.glb"
+  },
+  {
+    "code": "toy_19",
+    "name": "Игрушка 19",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_19.glb"
+  },
+  {
     "code": "toy_2",
     "name": "Игрушка 2",
     "price": 20,
     "modelUrl": "/models/gifts/toy/toy_2.glb"
+  },
+  {
+    "code": "toy_20",
+    "name": "Игрушка 20",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_20.glb"
+  },
+  {
+    "code": "toy_21",
+    "name": "Игрушка 21",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_21.glb"
+  },
+  {
+    "code": "toy_22",
+    "name": "Игрушка 22",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_22.glb"
+  },
+  {
+    "code": "toy_23",
+    "name": "Игрушка 23",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_23.glb"
+  },
+  {
+    "code": "toy_24",
+    "name": "Игрушка 24",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_24.glb"
+  },
+  {
+    "code": "toy_3",
+    "name": "Игрушка 3",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_3.glb"
+  },
+  {
+    "code": "toy_4",
+    "name": "Игрушка 4",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_4.glb"
+  },
+  {
+    "code": "toy_5",
+    "name": "Игрушка 5",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_5.glb"
+  },
+  {
+    "code": "toy_6",
+    "name": "Игрушка 6",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_6.glb"
+  },
+  {
+    "code": "toy_7",
+    "name": "Игрушка 7",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_7.glb"
+  },
+  {
+    "code": "toy_8",
+    "name": "Игрушка 8",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_8.glb"
+  },
+  {
+    "code": "toy_9",
+    "name": "Игрушка 9",
+    "price": 20,
+    "modelUrl": "/models/gifts/toy/toy_9.glb"
   }
 ] as const;

@@ -5,6 +5,7 @@ import { MailService } from "../mail/mail.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { AcceptTermsDto } from "./dto/accept-terms.dto";
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,9 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const email = dto.email.trim().toLowerCase();
     const login = dto.login.trim().toLowerCase();
+    if (!dto.acceptTerms || !dto.acceptOffer) {
+      throw new BadRequestException("Нужно принять условия соглашения и оферты");
+    }
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new BadRequestException("Пользователь с таким email уже существует");
@@ -26,12 +30,17 @@ export class AuthService {
       throw new BadRequestException("Логин уже занят");
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const now = new Date();
     const user = await this.prisma.user.create({
       data: {
         email,
         passwordHash,
         login,
-        createdAt: new Date()
+        createdAt: now,
+        termsAccepted: true,
+        offerAccepted: true,
+        termsAcceptedAt: now,
+        offerAcceptedAt: now
       }
     });
     return user;
@@ -48,6 +57,22 @@ export class AuthService {
       throw new UnauthorizedException("Неверный email или пароль");
     }
     return user;
+  }
+
+  async acceptTerms(userId: string, dto: AcceptTermsDto) {
+    if (!dto.acceptTerms || !dto.acceptOffer) {
+      throw new BadRequestException("Нужно принять условия соглашения и оферты");
+    }
+    const now = new Date();
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        termsAccepted: true,
+        offerAccepted: true,
+        termsAcceptedAt: now,
+        offerAcceptedAt: now
+      }
+    });
   }
 
   async forgotPassword(identifier: string) {

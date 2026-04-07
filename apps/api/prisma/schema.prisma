@@ -20,6 +20,10 @@ model User {
   name         String?
   role         Role     @default(USER)
   coinBalance  Int      @default(0)
+  termsAccepted Boolean @default(false)
+  offerAccepted Boolean @default(false)
+  termsAcceptedAt DateTime?
+  offerAcceptedAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
