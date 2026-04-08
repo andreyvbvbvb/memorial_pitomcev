@@ -306,6 +306,21 @@ function applyGiftScale(target: THREE.Object3D, width: number) {
   target.scale.setScalar(scale);
 }
 
+const HOUSE_MAX_WIDTH = 2.5;
+const HOUSE_MAX_HEIGHT = 4;
+
+function applyHouseScale(target: THREE.Object3D) {
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0 || sizeVec.y <= 0) {
+    return;
+  }
+  const scale = Math.min(1, HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  if (scale !== 1) {
+    target.scale.setScalar(scale);
+  }
+}
 
 function applyPartScale(target: THREE.Object3D, size: number, axis: "x" | "z") {
   if (!size || size <= 0) {
@@ -819,7 +834,11 @@ function TerrainWithHouse({
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
-  const house = useMemo(() => houseScene.clone(true), [houseScene]);
+  const house = useMemo(() => {
+    const cloned = houseScene.clone(true);
+    applyHouseScale(cloned);
+    return cloned;
+  }, [houseScene]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);

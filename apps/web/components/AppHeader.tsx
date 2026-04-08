@@ -243,10 +243,24 @@ export default function AppHeader() {
                   ) : null}
                 </div>
               </>
-            ) : pathname === "/auth" ? null : (
-              <button type="button" className="btn btn-outline !px-4 !py-2 text-sm" onClick={openAuth}>
-                Войти
-              </button>
+            ) : (
+              <>
+                <Link
+                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
+                  href="/about"
+                >
+                  О проекте
+                </Link>
+                {pathname === "/auth" ? null : (
+                  <button
+                    type="button"
+                    className="btn btn-outline !px-4 !py-2 text-sm"
+                    onClick={openAuth}
+                  >
+                    Войти
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

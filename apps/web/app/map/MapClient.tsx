@@ -313,6 +313,22 @@ const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") =
   target.scale.setScalar(scale);
 };
 
+const HOUSE_MAX_WIDTH = 2.5;
+const HOUSE_MAX_HEIGHT = 4;
+
+const applyHouseScale = (target: THREE.Object3D) => {
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0 || sizeVec.y <= 0) {
+    return;
+  }
+  const scale = Math.min(1, HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  if (scale !== 1) {
+    target.scale.setScalar(scale);
+  }
+};
+
 const applyGiftScale = (target: THREE.Object3D, width: number) => {
   if (!width || width <= 0) {
     return;
@@ -438,6 +454,7 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
     cloneMeshMaterials(cloned);
+    applyHouseScale(cloned);
     return cloned;
   }, [houseScene]);
 

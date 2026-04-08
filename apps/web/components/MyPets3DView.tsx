@@ -65,6 +65,21 @@ const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<
 const DEFAULT_CAMERA = new THREE.Vector3(0, 9, 18);
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
 const CLICK_DRAG_THRESHOLD = 6;
+const HOUSE_MAX_WIDTH = 2.5;
+const HOUSE_MAX_HEIGHT = 4;
+
+function applyHouseScale(target: THREE.Object3D) {
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0 || sizeVec.y <= 0) {
+    return;
+  }
+  const scale = Math.min(1, HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  if (scale !== 1) {
+    target.scale.setScalar(scale);
+  }
+}
 
 function SkyBackground() {
   const texture = useTexture("/nebo.png");
@@ -255,7 +270,11 @@ function MemorialInstance({
   const terrainScene = terrainGltf.scene;
   const houseScene = houseGltf.scene;
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
-  const house = useMemo(() => houseScene.clone(true), [houseScene]);
+  const house = useMemo(() => {
+    const cloned = houseScene.clone(true);
+    applyHouseScale(cloned);
+    return cloned;
+  }, [houseScene]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
