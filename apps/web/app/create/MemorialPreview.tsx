@@ -316,8 +316,8 @@ function applyHouseScale(target: THREE.Object3D) {
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(1, HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
-  if (scale !== 1) {
+  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
 }
