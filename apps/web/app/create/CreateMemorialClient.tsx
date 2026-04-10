@@ -345,6 +345,12 @@ export default function CreateMemorialClient() {
   const [activeOverlay, setActiveOverlay] = useState<
     "marker" | "photos" | "story" | "base" | null
   >(null);
+  const [visitedOverlays, setVisitedOverlays] = useState({
+    marker: false,
+    photos: false,
+    story: false,
+    base: false
+  });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -1231,6 +1237,7 @@ export default function CreateMemorialClient() {
   };
 
   const toggleOverlay = (panel: "marker" | "photos" | "story" | "base") => {
+    setVisitedOverlays((prev) => ({ ...prev, [panel]: true }));
     setActiveOverlay((prev) => (prev === panel ? null : panel));
   };
 
@@ -2081,11 +2088,15 @@ export default function CreateMemorialClient() {
         ? "w-[94vw] max-w-[94vw] lg:w-[1040px] max-h-[56vh]"
         : "w-[520px] max-w-[92vw] max-h-[70vh]"
     }`;
-  const panelButtonClass = (active: boolean) =>
+  const panelButtonClass = (active: boolean, highlight: boolean) =>
     `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
       active
         ? "border-white/80 bg-white text-slate-900 shadow-lg"
         : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+    } ${
+      highlight
+        ? "ring-2 ring-amber-300/80 shadow-[0_0_0_4px_rgba(251,191,36,0.25)]"
+        : ""
     }`;
   const mainStyle: CSSProperties = {
     minHeight: "100dvh",
@@ -2288,7 +2299,10 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("base")}
                   aria-label="Основные данные"
-                  className={panelButtonClass(activeOverlay === "base")}
+                  className={panelButtonClass(
+                    activeOverlay === "base",
+                    isBuilderStep && !visitedOverlays.base
+                  )}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="9" />
@@ -2300,7 +2314,10 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("story")}
                   aria-label="История"
-                  className={panelButtonClass(activeOverlay === "story")}
+                  className={panelButtonClass(
+                    activeOverlay === "story",
+                    isBuilderStep && !visitedOverlays.story
+                  )}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 5h8a3 3 0 0 1 3 3v11" />
@@ -2311,7 +2328,10 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("marker")}
                   aria-label="Маркер"
-                  className={panelButtonClass(activeOverlay === "marker")}
+                  className={panelButtonClass(
+                    activeOverlay === "marker",
+                    isBuilderStep && !visitedOverlays.marker
+                  )}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
@@ -2322,7 +2342,10 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("photos")}
                   aria-label="Фотографии"
-                  className={panelButtonClass(activeOverlay === "photos")}
+                  className={panelButtonClass(
+                    activeOverlay === "photos",
+                    isBuilderStep && !visitedOverlays.photos
+                  )}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="2" />

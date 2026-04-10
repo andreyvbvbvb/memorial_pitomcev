@@ -308,15 +308,18 @@ function applyGiftScale(target: THREE.Object3D, width: number) {
 
 const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
+const KOTIK_MAX_HEIGHT = 2.5;
 
-function applyHouseScale(target: THREE.Object3D) {
+function applyHouseScale(target: THREE.Object3D, houseId?: string | null) {
+  const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, maxHeight / sizeVec.y);
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -836,9 +839,9 @@ function TerrainWithHouse({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned);
+    applyHouseScale(cloned, houseId);
     return cloned;
-  }, [houseScene]);
+  }, [houseScene, houseId]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);

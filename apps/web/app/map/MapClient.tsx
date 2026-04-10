@@ -33,6 +33,7 @@ import {
   resolveGiftTargetWidth
 } from "../../lib/gifts";
 import { getHouseSlots } from "../../lib/memorial-config";
+import { splitHouseVariantId } from "../../lib/house-variants";
 
 type MarkerDto = {
   id: string;
@@ -72,6 +73,7 @@ type PetDetail = {
 type MemorialSceneData = {
   terrainUrl: string;
   houseUrl: string;
+  houseId?: string | null;
   parts: { slot: string; url: string }[];
   colors?: Record<string, string>;
   gifts?: { slot: string; url: string; size?: string | null }[];
@@ -315,15 +317,18 @@ const applyPartScale = (target: THREE.Object3D, size: number, axis: "x" | "z") =
 
 const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
+const KOTIK_MAX_HEIGHT = 2.5;
 
-const applyHouseScale = (target: THREE.Object3D) => {
+const applyHouseScale = (target: THREE.Object3D, houseId?: string | null) => {
+  const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, maxHeight / sizeVec.y);
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -454,9 +459,9 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
     cloneMeshMaterials(cloned);
-    applyHouseScale(cloned);
+    applyHouseScale(cloned, data.houseId);
     return cloned;
-  }, [houseScene]);
+  }, [houseScene, data.houseId]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
@@ -1334,6 +1339,7 @@ export default function MapClient() {
     return {
       terrainUrl: environmentUrl,
       houseUrl,
+      houseId: memorial?.houseId ?? null,
       parts,
       colors: sceneJson.colors ?? undefined,
       gifts: gifts.length > 0 ? gifts : undefined

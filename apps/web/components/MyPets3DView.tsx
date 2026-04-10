@@ -18,6 +18,7 @@ import {
   resolveBowlWaterModel
 } from "../lib/memorial-models";
 import { getHouseSlots } from "../lib/memorial-config";
+import { splitHouseVariantId } from "../lib/house-variants";
 
 type SceneParts = {
   roof?: string;
@@ -67,15 +68,18 @@ const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
 const CLICK_DRAG_THRESHOLD = 6;
 const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
+const KOTIK_MAX_HEIGHT = 2.5;
 
-function applyHouseScale(target: THREE.Object3D) {
+function applyHouseScale(target: THREE.Object3D, houseId?: string | null) {
+  const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, HOUSE_MAX_HEIGHT / sizeVec.y);
+  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, maxHeight / sizeVec.y);
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -272,9 +276,9 @@ function MemorialInstance({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned);
+    applyHouseScale(cloned, memorial?.houseId ?? null);
     return cloned;
-  }, [houseScene]);
+  }, [houseScene, memorial?.houseId]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
