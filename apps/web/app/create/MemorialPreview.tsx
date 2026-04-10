@@ -839,9 +839,9 @@ function TerrainWithHouse({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, houseId);
+    applyHouseScale(cloned, houseBaseId);
     return cloned;
-  }, [houseScene, houseId]);
+  }, [houseScene, houseBaseId]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
