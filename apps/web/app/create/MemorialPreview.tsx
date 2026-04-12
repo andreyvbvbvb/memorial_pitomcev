@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ensureDracoLoader } from "../../lib/draco";
 import {
   getGiftCodeFromUrl,
   isGiftSlotName,
@@ -13,6 +14,8 @@ import {
 } from "../../lib/gifts";
 import type { HouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
+
+ensureDracoLoader();
 
 type Props = {
   terrainUrl?: string | null;

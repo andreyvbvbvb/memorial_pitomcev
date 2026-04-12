@@ -5,6 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { ensureDracoLoader } from "../lib/draco";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -17,6 +18,8 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../lib/memorial-models";
+
+ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
 

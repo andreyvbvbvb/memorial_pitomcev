@@ -6,6 +6,7 @@ import { useGLTF } from "@react-three/drei";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import {
   getAllMemorialModelUrls,
@@ -60,6 +61,8 @@ import {
   bowlFoodOptions,
   bowlWaterOptions
 } from "../../lib/memorial-options";
+
+ensureDracoLoader();
 
 type Step = 0 | 1;
 
@@ -1411,6 +1414,10 @@ export default function CreateMemorialClient() {
         await warmAsset(url);
         if (!gltfLoaderRef.current) {
           gltfLoaderRef.current = new GLTFLoader();
+          const draco = ensureDracoLoader();
+          if (draco) {
+            gltfLoaderRef.current.setDRACOLoader(draco);
+          }
         }
         await gltfLoaderRef.current.loadAsync(url);
         useGLTF.preload(url);

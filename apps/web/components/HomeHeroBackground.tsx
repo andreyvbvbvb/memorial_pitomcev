@@ -4,8 +4,11 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { ensureDracoLoader } from "../lib/draco";
 
 const MODEL_URL = "/models/main_page.glb";
+
+ensureDracoLoader();
 const Primitive = "primitive" as unknown as React.ComponentType<any>;
 const Group = "group" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
