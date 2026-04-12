@@ -2185,7 +2185,7 @@ export default function CreateMemorialClient() {
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
-    "pointer-events-auto absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-6 lg:left-20 overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+    "pointer-events-auto absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-[calc(1.5rem+6rem)] lg:left-[calc(5rem+6rem)] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
@@ -2199,7 +2199,7 @@ export default function CreateMemorialClient() {
         : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
     } ${
       highlight
-        ? "ring-2 ring-red-400/80 shadow-[0_0_0_4px_rgba(248,113,113,0.25)]"
+        ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.25)]"
         : ""
       }`;
   const loadingMessage =
@@ -2410,13 +2410,13 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.base
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 11v5" />
                     <circle cx="12" cy="8" r="1" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.base ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2430,12 +2430,12 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.story
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 5h8a3 3 0 0 1 3 3v11" />
                     <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.story ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2449,12 +2449,12 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.marker
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.marker ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2468,13 +2468,13 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.photos
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="2" />
                     <circle cx="9" cy="11" r="2" />
                     <path d="M21 15l-4-4-4 4-3-3-5 5" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.photos ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
