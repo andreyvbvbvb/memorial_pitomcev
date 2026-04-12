@@ -138,3 +138,11 @@ model CharityReport {
   photos    String[] @default([])
   createdAt DateTime @default(now())
 }
+
+model LoadingTip {
+  id        String   @id @default(cuid())
+  text      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

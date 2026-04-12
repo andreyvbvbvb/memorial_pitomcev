@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { API_BASE } from "../../lib/config";
 import {
+  getAllMemorialModelUrls,
   getEnvironmentSeasons,
   getSeasonForDate,
   resolveEnvironmentModel,
@@ -61,6 +62,14 @@ import {
 } from "../../lib/memorial-options";
 
 type Step = 0 | 1;
+
+const DEFAULT_LOADING_TIPS = [
+  "Создавайте памятные мемориалы — мы бережно сохраняем каждую историю.",
+  "Подарки в мемориале помогают показать заботу и любовь.",
+  "Вы можете менять оформление мемориала в любое время.",
+  "Фотографии питомца можно добавить позже в личном кабинете.",
+  "Мы храним данные безопасно и используем резервное копирование."
+];
 
 type FormState = {
   ownerId: string;
@@ -356,6 +365,9 @@ export default function CreateMemorialClient() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingProgressRef = useRef<number | null>(null);
+  const [loadingTips, setLoadingTips] = useState<string[]>(DEFAULT_LOADING_TIPS);
+  const [loadingTipIndex, setLoadingTipIndex] = useState(0);
+  const loadingTipTimerRef = useRef<number | null>(null);
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -366,6 +378,56 @@ export default function CreateMemorialClient() {
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: apiKey });
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadTips = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/content/loading-tips`, {
+          credentials: "include"
+        });
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as { tips?: { text?: string }[] };
+        const nextTips = Array.isArray(data.tips)
+          ? data.tips
+              .map((tip) => (typeof tip.text === "string" ? tip.text.trim() : ""))
+              .filter(Boolean)
+          : [];
+        if (isMounted && nextTips.length > 0) {
+          setLoadingTips(nextTips);
+          setLoadingTipIndex(0);
+        }
+      } catch {
+        // Keep fallback tips.
+      }
+    };
+    void loadTips();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl]);
+
+  useEffect(() => {
+    if (!isTransitioning || loadingTips.length <= 1) {
+      if (loadingTipTimerRef.current) {
+        window.clearInterval(loadingTipTimerRef.current);
+        loadingTipTimerRef.current = null;
+      }
+      return;
+    }
+    setLoadingTipIndex(0);
+    loadingTipTimerRef.current = window.setInterval(() => {
+      setLoadingTipIndex((prev) => (prev + 1) % loadingTips.length);
+    }, 10000);
+    return () => {
+      if (loadingTipTimerRef.current) {
+        window.clearInterval(loadingTipTimerRef.current);
+        loadingTipTimerRef.current = null;
+      }
+    };
+  }, [isTransitioning, loadingTips.length]);
 
   const hasCoords = form.lat.trim() !== "" && form.lng.trim() !== "";
   const lat = hasCoords ? Number(form.lat) : undefined;
@@ -1276,6 +1338,8 @@ export default function CreateMemorialClient() {
   const optionImage = (category: string, id: string) =>
     `/memorial/options/${category}/${id}.png`;
 
+  const allModelUrls = useMemo(() => getAllMemorialModelUrls(), []);
+
   const preloadImageUrls = useMemo(() => {
     const urls = new Set<string>();
     const add = (category: string, id?: string | null) => {
@@ -1380,6 +1444,28 @@ export default function CreateMemorialClient() {
     [warmAsset]
   );
 
+  const loadGltfsWithLimit = useCallback(
+    async (urls: string[], concurrency: number) => {
+      const queue = Array.from(new Set(urls));
+      const workerCount = Math.max(1, Math.min(concurrency, queue.length));
+      let cursor = 0;
+
+      const runWorker = async () => {
+        while (cursor < queue.length) {
+          const current = queue[cursor];
+          cursor += 1;
+          if (!current) {
+            continue;
+          }
+          await ensureGltfReady(current);
+        }
+      };
+
+      await Promise.all(Array.from({ length: workerCount }, runWorker));
+    },
+    [ensureGltfReady]
+  );
+
   const preloadConcurrency = useMemo(() => {
     if (typeof navigator === "undefined") {
       return 2;
@@ -1393,33 +1479,35 @@ export default function CreateMemorialClient() {
       return;
     }
     assetsLoadStartedRef.current = true;
-    const modelUrls = new Set<string>();
-    const addModel = (url?: string | null) => {
-      if (!url) {
-        return;
-      }
-      modelUrls.add(url);
-    };
+    const modelUrls = new Set<string>(allModelUrls);
     const activeSeason = form.environmentSeasonAuto ? getSeasonForDate() : form.environmentSeason;
-    addModel(resolveEnvironmentModel(form.environmentId, activeSeason));
-    addModel(resolveHouseModel(form.houseId));
-    addModel(resolveRoofModel(form.roofId));
-    addModel(resolveWallModel(form.wallId));
-    addModel(resolveSignModel(form.signId));
-    addModel(resolveFrameLeftModel(form.frameLeftId));
-    addModel(resolveFrameRightModel(form.frameRightId));
-    addModel(resolveMatModel(form.matId));
-    addModel(resolveBowlFoodModel(form.bowlFoodId));
-    addModel(resolveBowlWaterModel(form.bowlWaterId));
+    [
+      resolveEnvironmentModel(form.environmentId, activeSeason),
+      resolveHouseModel(form.houseId),
+      resolveRoofModel(form.roofId),
+      resolveWallModel(form.wallId),
+      resolveSignModel(form.signId),
+      resolveFrameLeftModel(form.frameLeftId),
+      resolveFrameRightModel(form.frameRightId),
+      resolveMatModel(form.matId),
+      resolveBowlFoodModel(form.bowlFoodId),
+      resolveBowlWaterModel(form.bowlWaterId)
+    ].forEach((url) => {
+      if (url) {
+        modelUrls.add(url);
+      }
+    });
 
     try {
-      const criticalAssets = [...modelUrls.values(), ...preloadImageUrls];
-      await warmAssetsWithLimit(criticalAssets, preloadConcurrency);
-      modelUrls.forEach((url) => useGLTF.preload(url));
+      await Promise.all([
+        warmAssetsWithLimit(preloadImageUrls, preloadConcurrency),
+        loadGltfsWithLimit([...modelUrls.values()], preloadConcurrency)
+      ]);
     } finally {
       setAssetsReady(true);
     }
   }, [
+    allModelUrls,
     form.bowlFoodId,
     form.bowlWaterId,
     form.environmentId,
@@ -1432,6 +1520,7 @@ export default function CreateMemorialClient() {
     form.roofId,
     form.signId,
     form.wallId,
+    loadGltfsWithLimit,
     preloadConcurrency,
     preloadImageUrls,
     warmAssetsWithLimit
@@ -2089,7 +2178,7 @@ export default function CreateMemorialClient() {
         : "w-[520px] max-w-[92vw] max-h-[70vh]"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
-    `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
+    `relative flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
       active
         ? "border-white/80 bg-white text-slate-900 shadow-lg"
         : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
@@ -2097,7 +2186,9 @@ export default function CreateMemorialClient() {
       highlight
         ? "ring-2 ring-amber-300/80 shadow-[0_0_0_4px_rgba(251,191,36,0.25)]"
         : ""
-    }`;
+      }`;
+  const loadingMessage =
+    loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
   const mainStyle: CSSProperties = {
     minHeight: "100dvh",
     marginTop: isBuilderStep || isInitialStep ? `calc(-1 * ${headerOffset})` : 0,
@@ -2143,7 +2234,7 @@ export default function CreateMemorialClient() {
             <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--bg)]">
               <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                Происходит загрузка страницы...
+                {loadingMessage}
                 <div className="h-2 w-48 overflow-hidden rounded-full bg-slate-200">
                   <div
                     className="h-full bg-slate-600 transition-[width] duration-200"
@@ -2309,6 +2400,11 @@ export default function CreateMemorialClient() {
                     <path d="M12 11v5" />
                     <circle cx="12" cy="8" r="1" />
                   </svg>
+                  {isBuilderStep && !visitedOverlays.base ? (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white shadow">
+                      !
+                    </span>
+                  ) : null}
                 </button>
                 <button
                   type="button"
@@ -2323,6 +2419,11 @@ export default function CreateMemorialClient() {
                     <path d="M4 5h8a3 3 0 0 1 3 3v11" />
                     <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                   </svg>
+                  {isBuilderStep && !visitedOverlays.story ? (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white shadow">
+                      !
+                    </span>
+                  ) : null}
                 </button>
                 <button
                   type="button"
@@ -2337,6 +2438,11 @@ export default function CreateMemorialClient() {
                     <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
+                  {isBuilderStep && !visitedOverlays.marker ? (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white shadow">
+                      !
+                    </span>
+                  ) : null}
                 </button>
                 <button
                   type="button"
@@ -2352,6 +2458,11 @@ export default function CreateMemorialClient() {
                     <circle cx="9" cy="11" r="2" />
                     <path d="M21 15l-4-4-4 4-3-3-5 5" />
                   </svg>
+                  {isBuilderStep && !visitedOverlays.photos ? (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white shadow">
+                      !
+                    </span>
+                  ) : null}
                 </button>
               </div>
             </div>

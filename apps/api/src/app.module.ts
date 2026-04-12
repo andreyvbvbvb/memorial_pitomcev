@@ -10,6 +10,7 @@ import { AuthModule } from "./auth/auth.module";
 import { StorageModule } from "./storage/storage.module";
 import { AdminModule } from "./admin/admin.module";
 import { CharityModule } from "./charity/charity.module";
+import { ContentModule } from "./content/content.module";
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { CharityModule } from "./charity/charity.module";
     AuthModule,
     StorageModule,
     AdminModule,
-    CharityModule
+    CharityModule,
+    ContentModule
   ],
   controllers: [HealthController]
 })

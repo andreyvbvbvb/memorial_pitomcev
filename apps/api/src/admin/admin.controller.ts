@@ -2,9 +2,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Inject,
+  Param,
+  Patch,
   Post,
   Req
 } from "@nestjs/common";
@@ -13,7 +16,12 @@ import * as bcrypt from "bcryptjs";
 import { AuthService } from "../auth/auth.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
+import {
+  AdminLoadingTipCreateDto,
+  AdminLoadingTipUpdateDto
+} from "./dto/admin-loading-tip.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
+import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
 
 const ADMIN_EMAILS = new Set(["andreyvbvbvb@gmail.com"]);
 
@@ -65,6 +73,16 @@ export class AdminController {
       throw new ForbiddenException("Доступ запрещён");
     }
     return user;
+  }
+
+  private async ensureLoadingTipsSeeded() {
+    const count = await this.prisma.loadingTip.count();
+    if (count > 0) {
+      return;
+    }
+    await this.prisma.loadingTip.createMany({
+      data: DEFAULT_LOADING_TIPS.map((text) => ({ text }))
+    });
   }
 
   @Post("sql")
@@ -169,6 +187,71 @@ export class AdminController {
       where: { id: user.id },
       data: { passwordHash }
     });
+    return { ok: true };
+  }
+
+  @Get("loading-tips")
+  async listLoadingTips(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    await this.ensureLoadingTipsSeeded();
+    const tips = await this.prisma.loadingTip.findMany({
+      orderBy: { createdAt: "asc" }
+    });
+    return {
+      tips: tips.map((tip) => ({
+        id: tip.id,
+        text: tip.text,
+        isActive: tip.isActive,
+        createdAt: tip.createdAt
+      }))
+    };
+  }
+
+  @Post("loading-tips")
+  async createLoadingTip(@Req() req: Request, @Body() dto: AdminLoadingTipCreateDto) {
+    await this.ensureAdmin(req);
+    const text = (dto.text ?? "").trim();
+    if (!text) {
+      throw new BadRequestException("Текст подсказки обязателен");
+    }
+    const tip = await this.prisma.loadingTip.create({
+      data: {
+        text,
+        isActive: dto.isActive ?? true
+      }
+    });
+    return { id: tip.id };
+  }
+
+  @Patch("loading-tips/:id")
+  async updateLoadingTip(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() dto: AdminLoadingTipUpdateDto
+  ) {
+    await this.ensureAdmin(req);
+    const data: { text?: string; isActive?: boolean } = {};
+    if (dto.text !== undefined) {
+      const text = dto.text.trim();
+      if (!text) {
+        throw new BadRequestException("Текст подсказки обязателен");
+      }
+      data.text = text;
+    }
+    if (dto.isActive !== undefined) {
+      data.isActive = dto.isActive;
+    }
+    await this.prisma.loadingTip.update({
+      where: { id },
+      data
+    });
+    return { ok: true };
+  }
+
+  @Delete("loading-tips/:id")
+  async deleteLoadingTip(@Req() req: Request, @Param("id") id: string) {
+    await this.ensureAdmin(req);
+    await this.prisma.loadingTip.delete({ where: { id } });
     return { ok: true };
   }
 }

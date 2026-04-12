@@ -63,6 +63,13 @@ type SchemaTable = {
   columns: SchemaColumn[];
 };
 
+type LoadingTip = {
+  id: string;
+  text: string;
+  isActive: boolean;
+  createdAt?: string;
+};
+
 const buildSelectQuery = (tableName: string, limit = 50) =>
   `SELECT * FROM "${tableName}" LIMIT ${limit};`;
 
@@ -89,6 +96,13 @@ export default function AdminSqlPage() {
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [petId, setPetId] = useState("");
+  const [loadingTips, setLoadingTips] = useState<LoadingTip[]>([]);
+  const [loadingTipsLoading, setLoadingTipsLoading] = useState(false);
+  const [loadingTipsError, setLoadingTipsError] = useState<string | null>(null);
+  const [newTipText, setNewTipText] = useState("");
+  const [savingTipId, setSavingTipId] = useState<string | null>(null);
+  const [deletingTipId, setDeletingTipId] = useState<string | null>(null);
+  const [creatingTip, setCreatingTip] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -156,6 +170,45 @@ export default function AdminSqlPage() {
       }
     };
     void loadSchema();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl, authChecked, isAdmin]);
+
+  useEffect(() => {
+    if (!authChecked || !isAdmin) {
+      return;
+    }
+    let isMounted = true;
+    const loadTips = async () => {
+      setLoadingTipsLoading(true);
+      setLoadingTipsError(null);
+      try {
+        const response = await fetch(`${apiUrl}/admin/loading-tips`, {
+          credentials: "include"
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось загрузить подсказки");
+        }
+        const data = (await response.json()) as { tips?: LoadingTip[] };
+        if (!isMounted) {
+          return;
+        }
+        setLoadingTips(Array.isArray(data.tips) ? data.tips : []);
+      } catch (err) {
+        if (isMounted) {
+          setLoadingTipsError(
+            err instanceof Error ? err.message : "Ошибка загрузки подсказок"
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingTipsLoading(false);
+        }
+      }
+    };
+    void loadTips();
     return () => {
       isMounted = false;
     };
@@ -248,6 +301,93 @@ export default function AdminSqlPage() {
       setError(err instanceof Error ? err.message : "Ошибка изменения пароля");
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const updateLoadingTip = (id: string, patch: Partial<LoadingTip>) => {
+    setLoadingTips((prev) =>
+      prev.map((tip) => (tip.id === id ? { ...tip, ...patch } : tip))
+    );
+  };
+
+  const saveLoadingTip = async (tip: LoadingTip) => {
+    setSavingTipId(tip.id);
+    setLoadingTipsError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/loading-tips/${tip.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text: tip.text, isActive: tip.isActive })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить подсказку");
+      }
+    } catch (err) {
+      setLoadingTipsError(
+        err instanceof Error ? err.message : "Ошибка сохранения подсказки"
+      );
+    } finally {
+      setSavingTipId(null);
+    }
+  };
+
+  const createLoadingTip = async () => {
+    const text = newTipText.trim();
+    if (!text) {
+      setLoadingTipsError("Введите текст подсказки");
+      return;
+    }
+    setCreatingTip(true);
+    setLoadingTipsError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/loading-tips`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text })
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Не удалось добавить подсказку");
+      }
+      setNewTipText("");
+      const listResponse = await fetch(`${apiUrl}/admin/loading-tips`, {
+        credentials: "include"
+      });
+      if (listResponse.ok) {
+        const data = (await listResponse.json()) as { tips?: LoadingTip[] };
+        setLoadingTips(Array.isArray(data.tips) ? data.tips : []);
+      }
+    } catch (err) {
+      setLoadingTipsError(
+        err instanceof Error ? err.message : "Ошибка добавления подсказки"
+      );
+    } finally {
+      setCreatingTip(false);
+    }
+  };
+
+  const deleteLoadingTip = async (id: string) => {
+    setDeletingTipId(id);
+    setLoadingTipsError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/loading-tips/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Не удалось удалить подсказку");
+      }
+      setLoadingTips((prev) => prev.filter((tip) => tip.id !== id));
+    } catch (err) {
+      setLoadingTipsError(
+        err instanceof Error ? err.message : "Ошибка удаления подсказки"
+      );
+    } finally {
+      setDeletingTipId(null);
     }
   };
 
@@ -388,6 +528,87 @@ export default function AdminSqlPage() {
             <p className="mt-2 text-[11px] text-slate-500">
               Удаление питомца также удалит маркер, мемориал и фото по каскаду.
             </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Подсказки загрузки
+            </div>
+            <div className="mt-3 grid gap-2">
+              <div className="flex flex-col gap-2">
+                <input
+                  value={newTipText}
+                  onChange={(event) => setNewTipText(event.target.value)}
+                  placeholder="Новая подсказка"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+                />
+                <button
+                  type="button"
+                  onClick={createLoadingTip}
+                  disabled={creatingTip}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                >
+                  {creatingTip ? "Добавляем..." : "Добавить подсказку"}
+                </button>
+              </div>
+              {loadingTipsError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                  {loadingTipsError}
+                </div>
+              ) : null}
+              <div className="max-h-[260px] space-y-2 overflow-auto pr-1">
+                {loadingTipsLoading && loadingTips.length === 0 ? (
+                  <div className="text-xs text-slate-500">Загрузка...</div>
+                ) : null}
+                {!loadingTipsLoading && loadingTips.length === 0 ? (
+                  <div className="text-xs text-slate-500">Пока нет подсказок</div>
+                ) : null}
+                {loadingTips.map((tip) => (
+                  <div
+                    key={tip.id}
+                    className="rounded-lg border border-slate-200 bg-white p-2"
+                  >
+                    <textarea
+                      value={tip.text}
+                      onChange={(event) =>
+                        updateLoadingTip(tip.id, { text: event.target.value })
+                      }
+                      className="min-h-[60px] w-full rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-700"
+                    />
+                    <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-slate-600">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={tip.isActive}
+                          onChange={(event) =>
+                            updateLoadingTip(tip.id, { isActive: event.target.checked })
+                          }
+                        />
+                        Активна
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => saveLoadingTip(tip)}
+                          className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900"
+                          disabled={savingTipId === tip.id}
+                        >
+                          {savingTipId === tip.id ? "Сохраняем..." : "Сохранить"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteLoadingTip(tip.id)}
+                          className="rounded-md border border-red-200 px-2 py-1 text-[11px] font-semibold text-red-600 hover:text-red-700"
+                          disabled={deletingTipId === tip.id}
+                        >
+                          {deletingTipId === tip.id ? "Удаляем..." : "Удалить"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">

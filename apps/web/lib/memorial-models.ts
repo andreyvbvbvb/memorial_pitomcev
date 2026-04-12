@@ -37,6 +37,29 @@ const matModelById: Record<string, string> = matModelByIdGenerated;
 const bowlFoodModelById: Record<string, string> = bowlFoodModelByIdGenerated;
 const bowlWaterModelById: Record<string, string> = bowlWaterModelByIdGenerated;
 
+export const getAllMemorialModelUrls = () => {
+  const urls = new Set<string>();
+  const add = (value?: string | null) => {
+    if (value) {
+      urls.add(value);
+    }
+  };
+  Object.values(environmentModelById).forEach(add);
+  Object.values(environmentSeasonModelsById).forEach((seasons) => {
+    Object.values(seasons ?? {}).forEach(add);
+  });
+  Object.values(houseModelById).forEach(add);
+  Object.values(roofModelById).forEach(add);
+  Object.values(wallModelById).forEach(add);
+  Object.values(signModelById).forEach(add);
+  Object.values(frameLeftModelById).forEach(add);
+  Object.values(frameRightModelById).forEach(add);
+  Object.values(matModelById).forEach(add);
+  Object.values(bowlFoodModelById).forEach(add);
+  Object.values(bowlWaterModelById).forEach(add);
+  return Array.from(urls.values());
+};
+
 const resolveOptionalModel = (map: Record<string, string>, id?: string | null) => {
   if (!id || id === "none") {
     return null;
