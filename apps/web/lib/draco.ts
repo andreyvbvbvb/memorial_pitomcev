@@ -11,6 +11,9 @@ export const ensureDracoLoader = () => {
     dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath("/draco/");
   }
-  useGLTF.setDRACOLoader(dracoLoader);
+  const gltf = useGLTF as unknown as {
+    setDRACOLoader?: (loader: DRACOLoader) => void;
+  };
+  gltf.setDRACOLoader?.(dracoLoader);
   return dracoLoader;
 };
