@@ -9,7 +9,7 @@ export const ensureDracoLoader = () => {
   }
   if (!dracoLoader) {
     dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
+    dracoLoader.setDecoderPath("/draco/");
   }
   useGLTF.setDRACOLoader(dracoLoader);
   return dracoLoader;
