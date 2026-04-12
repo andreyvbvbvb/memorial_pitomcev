@@ -81,7 +81,7 @@ export class AdminController {
       return;
     }
     await this.prisma.loadingTip.createMany({
-      data: DEFAULT_LOADING_TIPS.map((text) => ({ text }))
+      data: DEFAULT_LOADING_TIPS.map((text: string) => ({ text }))
     });
   }
 
@@ -198,12 +198,14 @@ export class AdminController {
       orderBy: { createdAt: "asc" }
     });
     return {
-      tips: tips.map((tip) => ({
-        id: tip.id,
-        text: tip.text,
-        isActive: tip.isActive,
-        createdAt: tip.createdAt
-      }))
+      tips: tips.map(
+        (tip: { id: string; text: string; isActive: boolean; createdAt: Date }) => ({
+          id: tip.id,
+          text: tip.text,
+          isActive: tip.isActive,
+          createdAt: tip.createdAt
+        })
+      )
     };
   }
 
