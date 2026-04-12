@@ -1342,7 +1342,19 @@ export default function CreateMemorialClient() {
 
   const preloadImageUrls = useMemo(() => {
     const urls = new Set<string>();
+    const preloadCategories = new Set([
+      "environment",
+      "house",
+      "house-texture",
+      "sign",
+      "mat",
+      "bowl-food",
+      "bowl-water"
+    ]);
     const add = (category: string, id?: string | null) => {
+      if (!preloadCategories.has(category)) {
+        return;
+      }
       if (!id || id === "none") {
         return;
       }
@@ -1351,11 +1363,7 @@ export default function CreateMemorialClient() {
     environmentOptions.forEach((option) => add("environment", option.id));
     houseVariantGroup.baseOptions.forEach((option) => add("house", option.id));
     houseOptions.forEach((option) => add("house-texture", option.id));
-    roofOptions.forEach((option) => add("roof", option.id));
-    wallOptions.forEach((option) => add("wall", option.id));
     signOptions.forEach((option) => add("sign", option.id));
-    frameLeftOptions.forEach((option) => add("frame-left", option.id));
-    frameRightOptions.forEach((option) => add("frame-right", option.id));
     matOptions.forEach((option) => add("mat", option.id));
     bowlFoodOptions.forEach((option) => add("bowl-food", option.id));
     bowlWaterOptions.forEach((option) => add("bowl-water", option.id));
@@ -1376,6 +1384,9 @@ export default function CreateMemorialClient() {
         if (response.ok) {
           await response.arrayBuffer();
           return true;
+        }
+        if (response.status === 404) {
+          return false;
         }
       } catch {
         // Retry on flaky HTTP/3/QUIC network failures.
@@ -1457,7 +1468,11 @@ export default function CreateMemorialClient() {
           if (!current) {
             continue;
           }
-          await ensureGltfReady(current);
+          try {
+            await ensureGltfReady(current);
+          } catch {
+            // Ignore preload failures; keep loading the rest.
+          }
         }
       };
 
