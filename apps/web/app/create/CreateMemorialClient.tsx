@@ -1776,8 +1776,8 @@ export default function CreateMemorialClient() {
                 </label>
                 <input
                   type="range"
-                  min={-2}
-                  max={2}
+                  min={-6}
+                  max={6}
                   step={0.05}
                   value={activeHousePlacement.x}
                   onChange={(event) =>
@@ -1794,8 +1794,8 @@ export default function CreateMemorialClient() {
                 </label>
                 <input
                   type="range"
-                  min={-2}
-                  max={2}
+                  min={-6}
+                  max={6}
                   step={0.05}
                   value={activeHousePlacement.z}
                   onChange={(event) =>
