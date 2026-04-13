@@ -814,6 +814,9 @@ function TerrainWithHouse({
   houseOffsetX,
   houseOffsetZ,
   houseRotationY,
+  houseScaleMaxWidth,
+  houseScaleMaxHeight,
+  houseScaleMultiplier,
   onReady,
   visible = true
 }: {
@@ -853,6 +856,9 @@ function TerrainWithHouse({
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
+  houseScaleMaxWidth?: number;
+  houseScaleMaxHeight?: number;
+  houseScaleMultiplier?: number;
   onReady?: () => void;
   visible?: boolean;
 }) {
