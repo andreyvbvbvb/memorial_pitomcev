@@ -30,52 +30,17 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_1__brown",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "budka_1__soso",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "budka_1__tuntun",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "budka_1__white",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "budka_10__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
     "id": "budka_2__base",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_2__brown",
+    "id": "budka_2__second",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_2__stone",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "budka_2__toy",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "budka_2__white",
+    "id": "budka_3__base",
     "name": "Будка",
     "description": "Автодобавлено"
   },
@@ -90,12 +55,12 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_6__base",
+    "id": "budka_5__second",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_6__second",
+    "id": "budka_6__base",
     "name": "Будка",
     "description": "Автодобавлено"
   },
@@ -105,12 +70,47 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_9__base",
+    "id": "budka_7__brown",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_9__second",
+    "id": "budka_7__soso",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_7__tuntun",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_7__white",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_8__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_8__brown",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_8__stone",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_8__toy",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "budka_8__white",
     "name": "Будка",
     "description": "Автодобавлено"
   },
@@ -120,52 +120,52 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "kotik_10__base",
+    "id": "kotik_1__second",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
-    "id": "kotik_11__base",
+    "id": "kotik_2__base",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
-    "id": "kotik_11__second",
+    "id": "kotik_2__second",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_3__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_4__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_4__second",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_4__third",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_5__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_5__second",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
     "id": "kotik_6__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_6__second",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_7__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_7__second",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_8__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_8__second",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_8__third",
     "name": "Будка",
     "description": "Автодобавлено"
   },
