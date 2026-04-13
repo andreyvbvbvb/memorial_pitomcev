@@ -63,6 +63,9 @@ type Props = {
   }) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
+  houseOffsetX?: number;
+  houseOffsetZ?: number;
+  houseRotationY?: number;
   suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -798,6 +801,9 @@ function TerrainWithHouse({
   enableHoverHighlight,
   allowFocus,
   houseBaseId,
+  houseOffsetX,
+  houseOffsetZ,
+  houseRotationY,
   onReady,
   visible = true
 }: {
@@ -834,6 +840,9 @@ function TerrainWithHouse({
   enableHoverHighlight?: boolean;
   allowFocus?: boolean;
   houseBaseId?: string;
+  houseOffsetX?: number;
+  houseOffsetZ?: number;
+  houseRotationY?: number;
   onReady?: () => void;
   visible?: boolean;
 }) {
@@ -845,6 +854,14 @@ function TerrainWithHouse({
     applyHouseScale(cloned, houseBaseId);
     return cloned;
   }, [houseScene, houseBaseId]);
+  const offsetX = houseOffsetX ?? 0;
+  const offsetZ = houseOffsetZ ?? 0;
+  const rotationY = houseRotationY ?? 0;
+
+  useEffect(() => {
+    house.position.set(offsetX, house.position.y, offsetZ);
+    house.rotation.y = THREE.MathUtils.degToRad(rotationY);
+  }, [house, offsetX, offsetZ, rotationY]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
@@ -1277,6 +1294,9 @@ export default function MemorialPreview({
   onRenderContextReady,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
+  houseOffsetX = 0,
+  houseOffsetZ = 0,
+  houseRotationY = 0,
   suppressLoadingOverlay = false,
   className,
   style
@@ -1610,6 +1630,9 @@ export default function MemorialPreview({
               enableHoverHighlight={enableHoverHighlight}
               allowFocus={allowFocus}
               houseBaseId={houseBaseId}
+              houseOffsetX={houseOffsetX}
+              houseOffsetZ={houseOffsetZ}
+              houseRotationY={houseRotationY}
               onReady={() => setSceneReady(true)}
             />
           ) : null}
@@ -1666,6 +1689,9 @@ export default function MemorialPreview({
                   enableHoverHighlight={false}
                   allowFocus={false}
                   houseBaseId={houseBaseId}
+                  houseOffsetX={houseOffsetX}
+                  houseOffsetZ={houseOffsetZ}
+                  houseRotationY={houseRotationY}
                   onReady={() => handlePendingReady(pendingSignature)}
                 />
               ) : pendingAssets.houseUrl ? (

@@ -371,6 +371,9 @@ export default function CreateMemorialClient() {
   const [loadingTips, setLoadingTips] = useState<string[]>(DEFAULT_LOADING_TIPS);
   const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const loadingTipTimerRef = useRef<number | null>(null);
+  const [housePlacementOverrides, setHousePlacementOverrides] = useState<
+    Record<string, { x: number; z: number; rotY: number }>
+  >({});
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -472,6 +475,26 @@ export default function CreateMemorialClient() {
   const houseBaseOptions = houseVariantGroup.baseOptions;
   const houseTextureOptions =
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
+  const activeHousePlacement =
+    housePlacementOverrides[selectedHouseBaseId] ?? { x: 0, z: 0, rotY: 0 };
+  const updateHousePlacement = useCallback(
+    (patch: Partial<{ x: number; z: number; rotY: number }>) => {
+      if (!selectedHouseBaseId) {
+        return;
+      }
+      setHousePlacementOverrides((prev) => ({
+        ...prev,
+        [selectedHouseBaseId]: {
+          x: 0,
+          z: 0,
+          rotY: 0,
+          ...(prev[selectedHouseBaseId] ?? {}),
+          ...patch
+        }
+      }));
+    },
+    [selectedHouseBaseId]
+  );
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
   const environmentPreviewId = hoveredId("environment") ?? form.environmentId;
@@ -1737,6 +1760,68 @@ export default function CreateMemorialClient() {
                 )}
               </div>
             ) : null}
+            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-xs text-slate-600">
+              <div className="text-xs font-semibold text-slate-800">
+                Временная настройка положения домика
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Домик: <span className="font-semibold text-slate-700">{selectedHouseBaseId}</span>
+              </div>
+              <div className="grid gap-2">
+                <label className="flex items-center justify-between">
+                  <span>Сдвиг X</span>
+                  <span className="font-semibold text-slate-700">
+                    {activeHousePlacement.x.toFixed(2)}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={-2}
+                  max={2}
+                  step={0.05}
+                  value={activeHousePlacement.x}
+                  onChange={(event) =>
+                    updateHousePlacement({ x: Number(event.target.value) })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="flex items-center justify-between">
+                  <span>Сдвиг Z</span>
+                  <span className="font-semibold text-slate-700">
+                    {activeHousePlacement.z.toFixed(2)}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={-2}
+                  max={2}
+                  step={0.05}
+                  value={activeHousePlacement.z}
+                  onChange={(event) =>
+                    updateHousePlacement({ z: Number(event.target.value) })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="flex items-center justify-between">
+                  <span>Поворот Y</span>
+                  <span className="font-semibold text-slate-700">
+                    {activeHousePlacement.rotY.toFixed(0)}°
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={activeHousePlacement.rotY}
+                  onChange={(event) =>
+                    updateHousePlacement({ rotY: Number(event.target.value) })
+                  }
+                />
+              </div>
+            </div>
           </div>
         );
       case "roof":
@@ -2275,8 +2360,11 @@ export default function CreateMemorialClient() {
                 terrainUrl={environmentUrl}
                 houseUrl={houseUrl}
                 houseId={housePreviewId}
-              suppressLoadingOverlay
+                suppressLoadingOverlay
                 cameraPosition={[8, 5, 8]}
+                houseOffsetX={activeHousePlacement.x}
+                houseOffsetZ={activeHousePlacement.z}
+                houseRotationY={activeHousePlacement.rotY}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -2559,6 +2647,9 @@ export default function CreateMemorialClient() {
                       terrainUrl={environmentUrl}
                       houseUrl={houseUrl}
                       houseId={form.houseId}
+                      houseOffsetX={activeHousePlacement.x}
+                      houseOffsetZ={activeHousePlacement.z}
+                      houseRotationY={activeHousePlacement.rotY}
                       parts={partList}
                       colors={colorOverrides}
                       softEdges
