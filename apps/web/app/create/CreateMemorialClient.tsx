@@ -374,9 +374,6 @@ export default function CreateMemorialClient() {
   const [housePlacementOverrides, setHousePlacementOverrides] = useState<
     Record<string, { x: number; z: number; rotY: number }>
   >({});
-  const [houseScaleOverrides, setHouseScaleOverrides] = useState<
-    Record<string, { maxWidth: number; maxHeight: number; scale: number }>
-  >({});
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -480,15 +477,6 @@ export default function CreateMemorialClient() {
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
   const activeHousePlacement =
     housePlacementOverrides[selectedHouseBaseId] ?? { x: 0, z: 0, rotY: 0 };
-  const defaultHouseScale = useMemo(
-    () => ({
-      maxWidth: 2.5,
-      maxHeight: selectedHouseBaseId.startsWith("kotik") ? 2.5 : 4,
-      scale: 1
-    }),
-    [selectedHouseBaseId]
-  );
-  const activeHouseScale = houseScaleOverrides[selectedHouseBaseId] ?? defaultHouseScale;
   const updateHousePlacement = useCallback(
     (patch: Partial<{ x: number; z: number; rotY: number }>) => {
       if (!selectedHouseBaseId) {
@@ -506,22 +494,6 @@ export default function CreateMemorialClient() {
       }));
     },
     [selectedHouseBaseId]
-  );
-  const updateHouseScale = useCallback(
-    (patch: Partial<{ maxWidth: number; maxHeight: number; scale: number }>) => {
-      if (!selectedHouseBaseId) {
-        return;
-      }
-      setHouseScaleOverrides((prev) => ({
-        ...prev,
-        [selectedHouseBaseId]: {
-          ...defaultHouseScale,
-          ...(prev[selectedHouseBaseId] ?? {}),
-          ...patch
-        }
-      }));
-    },
-    [defaultHouseScale, selectedHouseBaseId]
   );
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
@@ -1849,65 +1821,6 @@ export default function CreateMemorialClient() {
                   }
                 />
               </div>
-              <div className="mt-2 border-t border-slate-200 pt-3">
-                <div className="text-xs font-semibold text-slate-800">
-                  Временная настройка масштаба
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Макс ширина</span>
-                  <span className="font-semibold text-slate-700">
-                    {activeHouseScale.maxWidth.toFixed(2)}
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={6}
-                  step={0.05}
-                  value={activeHouseScale.maxWidth}
-                  onChange={(event) =>
-                    updateHouseScale({ maxWidth: Number(event.target.value) })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Макс высота</span>
-                  <span className="font-semibold text-slate-700">
-                    {activeHouseScale.maxHeight.toFixed(2)}
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={6}
-                  step={0.05}
-                  value={activeHouseScale.maxHeight}
-                  onChange={(event) =>
-                    updateHouseScale({ maxHeight: Number(event.target.value) })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Масштаб</span>
-                  <span className="font-semibold text-slate-700">
-                    {activeHouseScale.scale.toFixed(2)}
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={2}
-                  step={0.01}
-                  value={activeHouseScale.scale}
-                  onChange={(event) =>
-                    updateHouseScale({ scale: Number(event.target.value) })
-                  }
-                />
-              </div>
             </div>
           </div>
         );
@@ -2452,9 +2365,6 @@ export default function CreateMemorialClient() {
                 houseOffsetX={activeHousePlacement.x}
                 houseOffsetZ={activeHousePlacement.z}
                 houseRotationY={activeHousePlacement.rotY}
-                houseScaleMaxWidth={activeHouseScale.maxWidth}
-                houseScaleMaxHeight={activeHouseScale.maxHeight}
-                houseScaleMultiplier={activeHouseScale.scale}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -2740,9 +2650,6 @@ export default function CreateMemorialClient() {
                       houseOffsetX={activeHousePlacement.x}
                       houseOffsetZ={activeHousePlacement.z}
                       houseRotationY={activeHousePlacement.rotY}
-                      houseScaleMaxWidth={activeHouseScale.maxWidth}
-                      houseScaleMaxHeight={activeHouseScale.maxHeight}
-                      houseScaleMultiplier={activeHouseScale.scale}
                       parts={partList}
                       colors={colorOverrides}
                       softEdges

@@ -66,9 +66,6 @@ type Props = {
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
-  houseScaleMaxWidth?: number;
-  houseScaleMaxHeight?: number;
-  houseScaleMultiplier?: number;
   suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -322,14 +319,11 @@ const KOTIK_MAX_HEIGHT = 2.5;
 function applyHouseScale(
   target: THREE.Object3D,
   houseId?: string | null,
-  overrides?: { maxWidth?: number; maxHeight?: number; scale?: number },
   baseSize?: THREE.Vector3
 ) {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
-  const maxHeight = overrides?.maxHeight ??
-    (baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT);
-  const maxWidth = overrides?.maxWidth ?? HOUSE_MAX_WIDTH;
-  const scaleMultiplier = overrides?.scale ?? 1;
+  const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
+  const maxWidth = baseId === "kotik_2" || baseId === "kotik_6" ? 2 : HOUSE_MAX_WIDTH;
   const sizeVec = baseSize ? baseSize.clone() : (() => {
     const box = new THREE.Box3().setFromObject(target);
     const size = new THREE.Vector3();
@@ -339,7 +333,7 @@ function applyHouseScale(
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y) * scaleMultiplier;
+  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -818,9 +812,6 @@ function TerrainWithHouse({
   houseOffsetX,
   houseOffsetZ,
   houseRotationY,
-  houseScaleMaxWidth,
-  houseScaleMaxHeight,
-  houseScaleMultiplier,
   onReady,
   visible = true
 }: {
@@ -860,9 +851,6 @@ function TerrainWithHouse({
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
-  houseScaleMaxWidth?: number;
-  houseScaleMaxHeight?: number;
-  houseScaleMultiplier?: number;
   onReady?: () => void;
   visible?: boolean;
 }) {
@@ -877,27 +865,12 @@ function TerrainWithHouse({
   }, [houseScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, houseBaseId, undefined, baseHouseSize);
+    applyHouseScale(cloned, houseBaseId, baseHouseSize);
     return cloned;
   }, [houseScene, houseBaseId, baseHouseSize]);
   const offsetX = houseOffsetX ?? 0;
   const offsetZ = houseOffsetZ ?? 0;
   const rotationY = houseRotationY ?? 0;
-
-  useEffect(() => {
-    applyHouseScale(house, houseBaseId, {
-      maxWidth: houseScaleMaxWidth,
-      maxHeight: houseScaleMaxHeight,
-      scale: houseScaleMultiplier
-    }, baseHouseSize);
-  }, [
-    house,
-    houseBaseId,
-    houseScaleMaxWidth,
-    houseScaleMaxHeight,
-    houseScaleMultiplier,
-    baseHouseSize
-  ]);
 
   useEffect(() => {
     house.position.set(offsetX, house.position.y, offsetZ);
@@ -1338,9 +1311,6 @@ export default function MemorialPreview({
   houseOffsetX = 0,
   houseOffsetZ = 0,
   houseRotationY = 0,
-  houseScaleMaxWidth,
-  houseScaleMaxHeight,
-  houseScaleMultiplier,
   suppressLoadingOverlay = false,
   className,
   style
