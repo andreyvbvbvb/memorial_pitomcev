@@ -322,16 +322,20 @@ const KOTIK_MAX_HEIGHT = 2.5;
 function applyHouseScale(
   target: THREE.Object3D,
   houseId?: string | null,
-  overrides?: { maxWidth?: number; maxHeight?: number; scale?: number }
+  overrides?: { maxWidth?: number; maxHeight?: number; scale?: number },
+  baseSize?: THREE.Vector3
 ) {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   const maxHeight = overrides?.maxHeight ??
     (baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT);
   const maxWidth = overrides?.maxWidth ?? HOUSE_MAX_WIDTH;
   const scaleMultiplier = overrides?.scale ?? 1;
-  const box = new THREE.Box3().setFromObject(target);
-  const sizeVec = new THREE.Vector3();
-  box.getSize(sizeVec);
+  const sizeVec = baseSize ? baseSize.clone() : (() => {
+    const box = new THREE.Box3().setFromObject(target);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return size;
+  })();
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
@@ -865,11 +869,17 @@ function TerrainWithHouse({
   const { scene: terrainScene } = useGLTF(terrainUrl);
   const { scene: houseScene } = useGLTF(houseUrl);
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
+  const baseHouseSize = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(houseScene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return size;
+  }, [houseScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, houseBaseId);
+    applyHouseScale(cloned, houseBaseId, undefined, baseHouseSize);
     return cloned;
-  }, [houseScene, houseBaseId]);
+  }, [houseScene, houseBaseId, baseHouseSize]);
   const offsetX = houseOffsetX ?? 0;
   const offsetZ = houseOffsetZ ?? 0;
   const rotationY = houseRotationY ?? 0;
@@ -879,8 +889,15 @@ function TerrainWithHouse({
       maxWidth: houseScaleMaxWidth,
       maxHeight: houseScaleMaxHeight,
       scale: houseScaleMultiplier
-    });
-  }, [house, houseBaseId, houseScaleMaxWidth, houseScaleMaxHeight, houseScaleMultiplier]);
+    }, baseHouseSize);
+  }, [
+    house,
+    houseBaseId,
+    houseScaleMaxWidth,
+    houseScaleMaxHeight,
+    houseScaleMultiplier,
+    baseHouseSize
+  ]);
 
   useEffect(() => {
     house.position.set(offsetX, house.position.y, offsetZ);
