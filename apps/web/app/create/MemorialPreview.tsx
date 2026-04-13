@@ -867,16 +867,20 @@ function TerrainWithHouse({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, houseBaseId, {
+    applyHouseScale(cloned, houseBaseId);
+    return cloned;
+  }, [houseScene, houseBaseId]);
+  const offsetX = houseOffsetX ?? 0;
+  const offsetZ = houseOffsetZ ?? 0;
+  const rotationY = houseRotationY ?? 0;
+
+  useEffect(() => {
+    applyHouseScale(house, houseBaseId, {
       maxWidth: houseScaleMaxWidth,
       maxHeight: houseScaleMaxHeight,
       scale: houseScaleMultiplier
     });
-    return cloned;
-  }, [houseScene, houseBaseId, houseScaleMaxWidth, houseScaleMaxHeight, houseScaleMultiplier]);
-  const offsetX = houseOffsetX ?? 0;
-  const offsetZ = houseOffsetZ ?? 0;
-  const rotationY = houseRotationY ?? 0;
+  }, [house, houseBaseId, houseScaleMaxWidth, houseScaleMaxHeight, houseScaleMultiplier]);
 
   useEffect(() => {
     house.position.set(offsetX, house.position.y, offsetZ);
