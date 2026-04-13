@@ -66,6 +66,9 @@ type Props = {
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
+  houseScaleMaxWidth?: number;
+  houseScaleMaxHeight?: number;
+  houseScaleMultiplier?: number;
   suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -316,16 +319,23 @@ const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
 const KOTIK_MAX_HEIGHT = 2.5;
 
-function applyHouseScale(target: THREE.Object3D, houseId?: string | null) {
+function applyHouseScale(
+  target: THREE.Object3D,
+  houseId?: string | null,
+  overrides?: { maxWidth?: number; maxHeight?: number; scale?: number }
+) {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
-  const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
+  const maxHeight = overrides?.maxHeight ??
+    (baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT);
+  const maxWidth = overrides?.maxWidth ?? HOUSE_MAX_WIDTH;
+  const scaleMultiplier = overrides?.scale ?? 1;
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, maxHeight / sizeVec.y);
+  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y) * scaleMultiplier;
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -851,9 +861,13 @@ function TerrainWithHouse({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, houseBaseId);
+    applyHouseScale(cloned, houseBaseId, {
+      maxWidth: houseScaleMaxWidth,
+      maxHeight: houseScaleMaxHeight,
+      scale: houseScaleMultiplier
+    });
     return cloned;
-  }, [houseScene, houseBaseId]);
+  }, [houseScene, houseBaseId, houseScaleMaxWidth, houseScaleMaxHeight, houseScaleMultiplier]);
   const offsetX = houseOffsetX ?? 0;
   const offsetZ = houseOffsetZ ?? 0;
   const rotationY = houseRotationY ?? 0;
@@ -1297,6 +1311,9 @@ export default function MemorialPreview({
   houseOffsetX = 0,
   houseOffsetZ = 0,
   houseRotationY = 0,
+  houseScaleMaxWidth,
+  houseScaleMaxHeight,
+  houseScaleMultiplier,
   suppressLoadingOverlay = false,
   className,
   style
