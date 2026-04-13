@@ -105,11 +105,6 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "budka_8__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
     "id": "budka_9__base",
     "name": "Будка",
     "description": "Автодобавлено"
@@ -140,32 +135,37 @@ export const houseOptionsGenerated = [
     "description": "Автодобавлено"
   },
   {
-    "id": "kotik_2__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_3__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_4__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "kotik_5__base",
-    "name": "Будка",
-    "description": "Автодобавлено"
-  },
-  {
     "id": "kotik_6__base",
     "name": "Будка",
     "description": "Автодобавлено"
   },
   {
+    "id": "kotik_6__second",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
     "id": "kotik_7__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_7__second",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_8__base",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_8__second",
+    "name": "Будка",
+    "description": "Автодобавлено"
+  },
+  {
+    "id": "kotik_8__third",
     "name": "Будка",
     "description": "Автодобавлено"
   },

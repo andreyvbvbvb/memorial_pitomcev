@@ -48,11 +48,22 @@ export const buildHouseVariantId = (baseId: string, textureId?: string | null) =
 
 export const makeHouseBaseName = (baseId: string) => {
   const number = extractNumber(baseId);
+  const lower = baseId.toLowerCase();
+  const withNumber = (label: string) => (number !== null ? `${label} ${number}` : label);
+  if (lower.startsWith("budka")) {
+    return withNumber("Будка");
+  }
+  if (lower.startsWith("kotik")) {
+    return withNumber("Котик");
+  }
+  if (lower.startsWith("mat")) {
+    return withNumber("Матрас");
+  }
   if (number !== null) {
-    return `Будка ${number}`;
+    return `Домик ${number}`;
   }
   const human = humanize(baseId);
-  return human || "Будка";
+  return human || "Домик";
 };
 
 export const makeHouseTextureName = (textureId: string | null) => {
