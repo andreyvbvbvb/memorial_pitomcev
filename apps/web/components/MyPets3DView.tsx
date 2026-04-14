@@ -22,6 +22,7 @@ import {
 ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
+import { applyHousePlacement } from "../lib/house-layout";
 
 type SceneParts = {
   roof?: string;
@@ -76,13 +77,14 @@ const KOTIK_MAX_HEIGHT = 2.5;
 function applyHouseScale(target: THREE.Object3D, houseId?: string | null) {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
+  const maxWidth = baseId === "kotik_2" || baseId === "kotik_6" ? 2 : HOUSE_MAX_WIDTH;
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(HOUSE_MAX_WIDTH / sizeVec.x, maxHeight / sizeVec.y);
+  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -280,6 +282,7 @@ function MemorialInstance({
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
     applyHouseScale(cloned, memorial?.houseId ?? null);
+    applyHousePlacement(cloned, memorial?.houseId ?? null);
     return cloned;
   }, [houseScene, memorial?.houseId]);
 

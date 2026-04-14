@@ -28,6 +28,7 @@ import {
   buildHouseVariantGroup,
   splitHouseVariantId
 } from "../../lib/house-variants";
+import { getHouseTransform } from "../../lib/house-layout";
 import {
   firstMarkerVariantId,
   markerAnchor,
@@ -374,6 +375,7 @@ export default function CreateMemorialClient() {
   const [housePlacementOverrides, setHousePlacementOverrides] = useState<
     Record<string, { x: number; z: number; rotY: number }>
   >({});
+  const [houseScaleOverrides, setHouseScaleOverrides] = useState<Record<string, number>>({});
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -475,8 +477,18 @@ export default function CreateMemorialClient() {
   const houseBaseOptions = houseVariantGroup.baseOptions;
   const houseTextureOptions =
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
+  const defaultHouseTransform = useMemo(
+    () => getHouseTransform(selectedHouseBaseId),
+    [selectedHouseBaseId]
+  );
   const activeHousePlacement =
-    housePlacementOverrides[selectedHouseBaseId] ?? { x: 0, z: 0, rotY: 0 };
+    housePlacementOverrides[selectedHouseBaseId] ?? {
+      x: defaultHouseTransform.offsetX,
+      z: defaultHouseTransform.offsetZ,
+      rotY: defaultHouseTransform.rotationY
+    };
+  const activeHouseScale =
+    houseScaleOverrides[selectedHouseBaseId] ?? defaultHouseTransform.scale;
   const updateHousePlacement = useCallback(
     (patch: Partial<{ x: number; z: number; rotY: number }>) => {
       if (!selectedHouseBaseId) {
@@ -485,12 +497,24 @@ export default function CreateMemorialClient() {
       setHousePlacementOverrides((prev) => ({
         ...prev,
         [selectedHouseBaseId]: {
-          x: 0,
-          z: 0,
-          rotY: 0,
+          x: defaultHouseTransform.offsetX,
+          z: defaultHouseTransform.offsetZ,
+          rotY: defaultHouseTransform.rotationY,
           ...(prev[selectedHouseBaseId] ?? {}),
           ...patch
         }
+      }));
+    },
+    [defaultHouseTransform.offsetX, defaultHouseTransform.offsetZ, defaultHouseTransform.rotationY, selectedHouseBaseId]
+  );
+  const updateHouseScale = useCallback(
+    (value: number) => {
+      if (!selectedHouseBaseId) {
+        return;
+      }
+      setHouseScaleOverrides((prev) => ({
+        ...prev,
+        [selectedHouseBaseId]: value
       }));
     },
     [selectedHouseBaseId]
@@ -1821,6 +1845,22 @@ export default function CreateMemorialClient() {
                   }
                 />
               </div>
+              <div className="grid gap-2">
+                <label className="flex items-center justify-between">
+                  <span>Масштаб</span>
+                  <span className="font-semibold text-slate-700">
+                    {activeHouseScale.toFixed(2)}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={0.25}
+                  max={3}
+                  step={0.01}
+                  value={activeHouseScale}
+                  onChange={(event) => updateHouseScale(Number(event.target.value))}
+                />
+              </div>
             </div>
           </div>
         );
@@ -2365,6 +2405,7 @@ export default function CreateMemorialClient() {
                 houseOffsetX={activeHousePlacement.x}
                 houseOffsetZ={activeHousePlacement.z}
                 houseRotationY={activeHousePlacement.rotY}
+                houseScaleMultiplier={activeHouseScale}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -2650,6 +2691,7 @@ export default function CreateMemorialClient() {
                       houseOffsetX={activeHousePlacement.x}
                       houseOffsetZ={activeHousePlacement.z}
                       houseRotationY={activeHousePlacement.rotY}
+                      houseScaleMultiplier={activeHouseScale}
                       parts={partList}
                       colors={colorOverrides}
                       softEdges

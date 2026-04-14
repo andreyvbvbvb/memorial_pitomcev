@@ -14,6 +14,7 @@ import {
 } from "../../lib/gifts";
 import type { HouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
+import { applyHousePlacement, getHouseTransform } from "../../lib/house-layout";
 
 ensureDracoLoader();
 
@@ -66,6 +67,7 @@ type Props = {
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
+  houseScaleMultiplier?: number;
   suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -319,7 +321,8 @@ const KOTIK_MAX_HEIGHT = 2.5;
 function applyHouseScale(
   target: THREE.Object3D,
   houseId?: string | null,
-  baseSize?: THREE.Vector3
+  baseSize?: THREE.Vector3,
+  scaleMultiplier = 1
 ) {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
@@ -333,7 +336,8 @@ function applyHouseScale(
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
+  const fitScale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
+  const scale = fitScale * scaleMultiplier;
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -812,6 +816,7 @@ function TerrainWithHouse({
   houseOffsetX,
   houseOffsetZ,
   houseRotationY,
+  houseScaleMultiplier,
   onReady,
   visible = true
 }: {
@@ -851,6 +856,7 @@ function TerrainWithHouse({
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
+  houseScaleMultiplier?: number;
   onReady?: () => void;
   visible?: boolean;
 }) {
@@ -863,19 +869,31 @@ function TerrainWithHouse({
     box.getSize(size);
     return size;
   }, [houseScene]);
+  const defaultHouseTransform = useMemo(
+    () => getHouseTransform(houseBaseId),
+    [houseBaseId]
+  );
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, houseBaseId, baseHouseSize);
+    applyHouseScale(
+      cloned,
+      houseBaseId,
+      baseHouseSize,
+      houseScaleMultiplier ?? defaultHouseTransform.scale
+    );
     return cloned;
-  }, [houseScene, houseBaseId, baseHouseSize]);
-  const offsetX = houseOffsetX ?? 0;
-  const offsetZ = houseOffsetZ ?? 0;
-  const rotationY = houseRotationY ?? 0;
+  }, [houseScene, houseBaseId, baseHouseSize, houseScaleMultiplier, defaultHouseTransform.scale]);
+  const offsetX = houseOffsetX ?? defaultHouseTransform.offsetX;
+  const offsetZ = houseOffsetZ ?? defaultHouseTransform.offsetZ;
+  const rotationY = houseRotationY ?? defaultHouseTransform.rotationY;
 
   useEffect(() => {
-    house.position.set(offsetX, house.position.y, offsetZ);
-    house.rotation.y = THREE.MathUtils.degToRad(rotationY);
-  }, [house, offsetX, offsetZ, rotationY]);
+    applyHousePlacement(house, houseBaseId, {
+      offsetX,
+      offsetZ,
+      rotationY
+    });
+  }, [house, houseBaseId, offsetX, offsetZ, rotationY]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
@@ -1308,9 +1326,10 @@ export default function MemorialPreview({
   onRenderContextReady,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
-  houseOffsetX = 0,
-  houseOffsetZ = 0,
-  houseRotationY = 0,
+  houseOffsetX,
+  houseOffsetZ,
+  houseRotationY,
+  houseScaleMultiplier,
   suppressLoadingOverlay = false,
   className,
   style
@@ -1647,6 +1666,7 @@ export default function MemorialPreview({
               houseOffsetX={houseOffsetX}
               houseOffsetZ={houseOffsetZ}
               houseRotationY={houseRotationY}
+              houseScaleMultiplier={houseScaleMultiplier}
               onReady={() => setSceneReady(true)}
             />
           ) : null}
@@ -1706,6 +1726,7 @@ export default function MemorialPreview({
                   houseOffsetX={houseOffsetX}
                   houseOffsetZ={houseOffsetZ}
                   houseRotationY={houseRotationY}
+                  houseScaleMultiplier={houseScaleMultiplier}
                   onReady={() => handlePendingReady(pendingSignature)}
                 />
               ) : pendingAssets.houseUrl ? (
