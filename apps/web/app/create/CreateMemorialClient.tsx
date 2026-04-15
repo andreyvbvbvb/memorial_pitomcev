@@ -533,6 +533,21 @@ export default function CreateMemorialClient() {
       ? houseVariantGroup.defaultVariantByBase[hoveredHouseBaseId] ?? hoveredHouseBaseId
       : null) ??
     form.houseId;
+  const previewHouseVariant = splitHouseVariantId(housePreviewId);
+  const previewHouseBaseId =
+    previewHouseVariant.baseId || hoveredHouseBaseId || selectedHouseBaseId || housePreviewId;
+  const previewHouseTransform = useMemo(
+    () => getHouseTransform(previewHouseBaseId),
+    [previewHouseBaseId]
+  );
+  const previewHousePlacement =
+    housePlacementOverrides[previewHouseBaseId] ?? {
+      x: previewHouseTransform.offsetX,
+      z: previewHouseTransform.offsetZ,
+      rotY: previewHouseTransform.rotationY
+    };
+  const previewHouseScale =
+    houseScaleOverrides[previewHouseBaseId] ?? previewHouseTransform.scale;
   const roofPreviewId = hoveredId("roof") ?? form.roofId;
   const wallPreviewId = hoveredId("wall") ?? form.wallId;
   const signPreviewId = hoveredId("sign") ?? form.signId;
@@ -2402,10 +2417,10 @@ export default function CreateMemorialClient() {
                 houseId={housePreviewId}
                 suppressLoadingOverlay
                 cameraPosition={[8, 5, 8]}
-                houseOffsetX={activeHousePlacement.x}
-                houseOffsetZ={activeHousePlacement.z}
-                houseRotationY={activeHousePlacement.rotY}
-                houseScaleMultiplier={activeHouseScale}
+                houseOffsetX={previewHousePlacement.x}
+                houseOffsetZ={previewHousePlacement.z}
+                houseRotationY={previewHousePlacement.rotY}
+                houseScaleMultiplier={previewHouseScale}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
