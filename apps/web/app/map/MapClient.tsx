@@ -37,7 +37,7 @@ import {
 } from "../../lib/gifts";
 import { getHouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
-import { applyHousePlacement } from "../../lib/house-layout";
+import { applyHousePlacement, getHouseTransform } from "../../lib/house-layout";
 
 type MarkerDto = {
   id: string;
@@ -76,6 +76,7 @@ type PetDetail = {
 
 type MemorialSceneData = {
   terrainUrl: string;
+  terrainId?: string | null;
   houseUrl: string;
   houseId?: string | null;
   parts: { slot: string; url: string }[];
@@ -323,17 +324,22 @@ const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
 const KOTIK_MAX_HEIGHT = 2.5;
 
-const applyHouseScale = (target: THREE.Object3D, houseId?: string | null) => {
+const applyHouseScale = (
+  target: THREE.Object3D,
+  houseId?: string | null,
+  terrainId?: string | null
+) => {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const maxWidth = baseId === "kotik_2" || baseId === "kotik_6" ? 2 : HOUSE_MAX_WIDTH;
+  const { scale: scaleMultiplier } = getHouseTransform(houseId, terrainId);
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
+  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y) * scaleMultiplier;
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -464,10 +470,10 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
     cloneMeshMaterials(cloned);
-    applyHouseScale(cloned, data.houseId);
-    applyHousePlacement(cloned, data.houseId);
+    applyHouseScale(cloned, data.houseId, data.terrainId);
+    applyHousePlacement(cloned, data.houseId, data.terrainId);
     return cloned;
-  }, [houseScene, data.houseId]);
+  }, [houseScene, data.houseId, data.terrainId]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
@@ -1344,6 +1350,7 @@ export default function MapClient() {
 
     return {
       terrainUrl: environmentUrl,
+      terrainId: memorial?.environmentId ?? null,
       houseUrl,
       houseId: memorial?.houseId ?? null,
       parts,

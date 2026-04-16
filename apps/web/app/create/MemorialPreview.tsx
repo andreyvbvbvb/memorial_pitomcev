@@ -20,6 +20,7 @@ ensureDracoLoader();
 
 type Props = {
   terrainUrl?: string | null;
+  terrainId?: string | null;
   houseUrl?: string | null;
   houseId?: string | null;
   parts?: { slot: string; url: string }[];
@@ -812,6 +813,7 @@ function TerrainWithHouse({
   orbitLastChangeRef,
   enableHoverHighlight,
   allowFocus,
+  terrainId,
   houseBaseId,
   houseOffsetX,
   houseOffsetZ,
@@ -852,6 +854,7 @@ function TerrainWithHouse({
   orbitLastChangeRef?: React.MutableRefObject<number | null>;
   enableHoverHighlight?: boolean;
   allowFocus?: boolean;
+  terrainId?: string | null;
   houseBaseId?: string;
   houseOffsetX?: number;
   houseOffsetZ?: number;
@@ -870,8 +873,8 @@ function TerrainWithHouse({
     return size;
   }, [houseScene]);
   const defaultHouseTransform = useMemo(
-    () => getHouseTransform(houseBaseId),
-    [houseBaseId]
+    () => getHouseTransform(houseBaseId, terrainId),
+    [houseBaseId, terrainId]
   );
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
@@ -882,18 +885,18 @@ function TerrainWithHouse({
       houseScaleMultiplier ?? defaultHouseTransform.scale
     );
     return cloned;
-  }, [houseScene, houseBaseId, baseHouseSize, houseScaleMultiplier, defaultHouseTransform.scale]);
+  }, [houseScene, houseBaseId, terrainId, baseHouseSize, houseScaleMultiplier, defaultHouseTransform.scale]);
   const offsetX = houseOffsetX ?? defaultHouseTransform.offsetX;
   const offsetZ = houseOffsetZ ?? defaultHouseTransform.offsetZ;
   const rotationY = houseRotationY ?? defaultHouseTransform.rotationY;
 
   useEffect(() => {
-    applyHousePlacement(house, houseBaseId, {
+    applyHousePlacement(house, houseBaseId, terrainId, {
       offsetX,
       offsetZ,
       rotationY
     });
-  }, [house, houseBaseId, offsetX, offsetZ, rotationY]);
+  }, [house, houseBaseId, terrainId, offsetX, offsetZ, rotationY]);
   const pointerStateRef = useRef<{ x: number; y: number; moved: boolean; pointerId: number | null } | null>(null);
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
@@ -1293,6 +1296,7 @@ function RenderContextReporter({
 
 export default function MemorialPreview({
   terrainUrl,
+  terrainId,
   houseUrl,
   houseId,
   parts,
@@ -1662,6 +1666,7 @@ export default function MemorialPreview({
               orbitLastChangeRef={orbitLastChangeRef}
               enableHoverHighlight={enableHoverHighlight}
               allowFocus={allowFocus}
+              terrainId={terrainId}
               houseBaseId={houseBaseId}
               houseOffsetX={houseOffsetX}
               houseOffsetZ={houseOffsetZ}
@@ -1722,6 +1727,7 @@ export default function MemorialPreview({
                   orbitLastChangeRef={orbitLastChangeRef}
                   enableHoverHighlight={false}
                   allowFocus={false}
+                  terrainId={terrainId}
                   houseBaseId={houseBaseId}
                   houseOffsetX={houseOffsetX}
                   houseOffsetZ={houseOffsetZ}

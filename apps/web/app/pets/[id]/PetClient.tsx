@@ -744,6 +744,7 @@ export default function PetClient({ id }: Props) {
         <MemorialPreview
           className="h-full w-full rounded-none border-transparent bg-transparent"
           terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
+          terrainId={pet.memorial?.environmentId ?? null}
           houseUrl={resolveHouseModel(pet.memorial?.houseId)}
           houseId={pet.memorial?.houseId ?? null}
           parts={fullPartList}

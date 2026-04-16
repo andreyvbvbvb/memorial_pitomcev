@@ -28,7 +28,7 @@ import {
   buildHouseVariantGroup,
   splitHouseVariantId
 } from "../../lib/house-variants";
-import { getHouseTransform } from "../../lib/house-layout";
+import { buildHouseLayoutKey, getHouseTransform, normalizeTerrainLayoutId } from "../../lib/house-layout";
 import {
   firstMarkerVariantId,
   markerAnchor,
@@ -474,50 +474,57 @@ export default function CreateMemorialClient() {
   const selectedHouseVariant = splitHouseVariantId(form.houseId);
   const selectedHouseBaseId =
     selectedHouseVariant.baseId || houseVariantGroup.baseOptions[0]?.id || form.houseId;
+  const selectedTerrainLayoutId = normalizeTerrainLayoutId(form.environmentId);
+  const selectedHouseLayoutKey = buildHouseLayoutKey(selectedTerrainLayoutId, selectedHouseBaseId);
   const houseBaseOptions = houseVariantGroup.baseOptions;
   const houseTextureOptions =
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
   const defaultHouseTransform = useMemo(
-    () => getHouseTransform(selectedHouseBaseId),
-    [selectedHouseBaseId]
+    () => getHouseTransform(selectedHouseBaseId, selectedTerrainLayoutId),
+    [selectedHouseBaseId, selectedTerrainLayoutId]
   );
   const activeHousePlacement =
-    housePlacementOverrides[selectedHouseBaseId] ?? {
+    housePlacementOverrides[selectedHouseLayoutKey] ?? {
       x: defaultHouseTransform.offsetX,
       z: defaultHouseTransform.offsetZ,
       rotY: defaultHouseTransform.rotationY
     };
   const activeHouseScale =
-    houseScaleOverrides[selectedHouseBaseId] ?? defaultHouseTransform.scale;
+    houseScaleOverrides[selectedHouseLayoutKey] ?? defaultHouseTransform.scale;
   const updateHousePlacement = useCallback(
     (patch: Partial<{ x: number; z: number; rotY: number }>) => {
-      if (!selectedHouseBaseId) {
+      if (!selectedHouseLayoutKey) {
         return;
       }
       setHousePlacementOverrides((prev) => ({
         ...prev,
-        [selectedHouseBaseId]: {
+        [selectedHouseLayoutKey]: {
           x: defaultHouseTransform.offsetX,
           z: defaultHouseTransform.offsetZ,
           rotY: defaultHouseTransform.rotationY,
-          ...(prev[selectedHouseBaseId] ?? {}),
+          ...(prev[selectedHouseLayoutKey] ?? {}),
           ...patch
         }
       }));
     },
-    [defaultHouseTransform.offsetX, defaultHouseTransform.offsetZ, defaultHouseTransform.rotationY, selectedHouseBaseId]
+    [
+      defaultHouseTransform.offsetX,
+      defaultHouseTransform.offsetZ,
+      defaultHouseTransform.rotationY,
+      selectedHouseLayoutKey
+    ]
   );
   const updateHouseScale = useCallback(
     (value: number) => {
-      if (!selectedHouseBaseId) {
+      if (!selectedHouseLayoutKey) {
         return;
       }
       setHouseScaleOverrides((prev) => ({
         ...prev,
-        [selectedHouseBaseId]: value
+        [selectedHouseLayoutKey]: value
       }));
     },
-    [selectedHouseBaseId]
+    [selectedHouseLayoutKey]
   );
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
@@ -536,18 +543,20 @@ export default function CreateMemorialClient() {
   const previewHouseVariant = splitHouseVariantId(housePreviewId);
   const previewHouseBaseId =
     previewHouseVariant.baseId || hoveredHouseBaseId || selectedHouseBaseId || housePreviewId;
+  const previewTerrainLayoutId = normalizeTerrainLayoutId(environmentPreviewId);
+  const previewHouseLayoutKey = buildHouseLayoutKey(previewTerrainLayoutId, previewHouseBaseId);
   const previewHouseTransform = useMemo(
-    () => getHouseTransform(previewHouseBaseId),
-    [previewHouseBaseId]
+    () => getHouseTransform(previewHouseBaseId, previewTerrainLayoutId),
+    [previewHouseBaseId, previewTerrainLayoutId]
   );
   const previewHousePlacement =
-    housePlacementOverrides[previewHouseBaseId] ?? {
+    housePlacementOverrides[previewHouseLayoutKey] ?? {
       x: previewHouseTransform.offsetX,
       z: previewHouseTransform.offsetZ,
       rotY: previewHouseTransform.rotationY
     };
   const previewHouseScale =
-    houseScaleOverrides[previewHouseBaseId] ?? previewHouseTransform.scale;
+    houseScaleOverrides[previewHouseLayoutKey] ?? previewHouseTransform.scale;
   const roofPreviewId = hoveredId("roof") ?? form.roofId;
   const wallPreviewId = hoveredId("wall") ?? form.wallId;
   const signPreviewId = hoveredId("sign") ?? form.signId;
@@ -1804,6 +1813,9 @@ export default function CreateMemorialClient() {
                 Временная настройка положения домика
               </div>
               <div className="text-[11px] text-slate-500">
+                Поверхность: <span className="font-semibold text-slate-700">{selectedTerrainLayoutId || "default"}</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
                 Домик: <span className="font-semibold text-slate-700">{selectedHouseBaseId}</span>
               </div>
               <div className="grid gap-2">
@@ -2413,6 +2425,7 @@ export default function CreateMemorialClient() {
               <MemorialPreview
                 className="h-full w-full rounded-none border-transparent bg-transparent"
                 terrainUrl={environmentUrl}
+                terrainId={environmentPreviewId}
                 houseUrl={houseUrl}
                 houseId={housePreviewId}
                 suppressLoadingOverlay
@@ -2701,6 +2714,7 @@ export default function CreateMemorialClient() {
                   <div className="grid gap-3">
                     <MemorialPreview
                       terrainUrl={environmentUrl}
+                      terrainId={form.environmentId}
                       houseUrl={houseUrl}
                       houseId={form.houseId}
                       houseOffsetX={activeHousePlacement.x}

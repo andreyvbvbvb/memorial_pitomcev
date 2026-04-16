@@ -22,7 +22,7 @@ import {
 ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
-import { applyHousePlacement } from "../lib/house-layout";
+import { applyHousePlacement, getHouseTransform } from "../lib/house-layout";
 
 type SceneParts = {
   roof?: string;
@@ -74,17 +74,22 @@ const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
 const KOTIK_MAX_HEIGHT = 2.5;
 
-function applyHouseScale(target: THREE.Object3D, houseId?: string | null) {
+function applyHouseScale(
+  target: THREE.Object3D,
+  houseId?: string | null,
+  terrainId?: string | null
+) {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const maxWidth = baseId === "kotik_2" || baseId === "kotik_6" ? 2 : HOUSE_MAX_WIDTH;
+  const { scale: scaleMultiplier } = getHouseTransform(houseId, terrainId);
   const box = new THREE.Box3().setFromObject(target);
   const sizeVec = new THREE.Vector3();
   box.getSize(sizeVec);
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
-  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y);
+  const scale = Math.min(maxWidth / sizeVec.x, maxHeight / sizeVec.y) * scaleMultiplier;
   if (Number.isFinite(scale) && scale > 0) {
     target.scale.setScalar(scale);
   }
@@ -281,10 +286,10 @@ function MemorialInstance({
   const terrain = useMemo(() => terrainScene.clone(true), [terrainScene]);
   const house = useMemo(() => {
     const cloned = houseScene.clone(true);
-    applyHouseScale(cloned, memorial?.houseId ?? null);
-    applyHousePlacement(cloned, memorial?.houseId ?? null);
+    applyHouseScale(cloned, memorial?.houseId ?? null, memorial?.environmentId ?? null);
+    applyHousePlacement(cloned, memorial?.houseId ?? null, memorial?.environmentId ?? null);
     return cloned;
-  }, [houseScene, memorial?.houseId]);
+  }, [houseScene, memorial?.houseId, memorial?.environmentId]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
