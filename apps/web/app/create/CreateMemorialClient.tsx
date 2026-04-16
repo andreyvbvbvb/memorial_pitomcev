@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
+import { canUseCalibration, type AccessLevel } from "../../lib/access";
 import {
   getAllMemorialModelUrls,
   getEnvironmentSeasons,
@@ -324,6 +325,7 @@ export default function CreateMemorialClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -920,8 +922,9 @@ export default function CreateMemorialClient() {
           router.replace("/auth");
           return;
         }
-        const data = (await response.json()) as { id: string };
+        const data = (await response.json()) as { id: string; accessLevel?: AccessLevel };
         setForm((prev) => (prev.ownerId ? prev : { ...prev, ownerId: data.id }));
+        setAccessLevel(data.accessLevel ?? "USER");
       } catch {
         router.replace("/auth");
       } finally {
@@ -1808,6 +1811,7 @@ export default function CreateMemorialClient() {
                 )}
               </div>
             ) : null}
+            {canUseCalibration(accessLevel) ? (
             <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-xs text-slate-600">
               <div className="text-xs font-semibold text-slate-800">
                 Временная настройка положения домика
@@ -1889,6 +1893,7 @@ export default function CreateMemorialClient() {
                 />
               </div>
             </div>
+            ) : null}
           </div>
         );
       case "roof":
@@ -1973,7 +1978,7 @@ export default function CreateMemorialClient() {
       <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
         Имя питомца
         <input
-          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "text-center" : ""}`}
+          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
           value={form.name}
           onChange={(event) => handleChange("name", event.target.value)}
           placeholder="Барсик"
@@ -1982,7 +1987,7 @@ export default function CreateMemorialClient() {
       <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
         Вид питомца
         <select
-          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "text-center" : ""}`}
+          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
           value={form.species}
           onChange={(event) => handleSpeciesChange(event.target.value)}
         >
@@ -2002,7 +2007,7 @@ export default function CreateMemorialClient() {
             type="date"
             className={`rounded-2xl border px-4 py-2 ${centered ? "text-center" : ""} ${
               dateValidationMessage ? "border-red-400" : "border-slate-200"
-            }`}
+            } ${centered ? "min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
             value={form.birthDate}
             onChange={(event) => handleChange("birthDate", event.target.value)}
             max={form.deathDate || todayInputValue}
@@ -2014,7 +2019,7 @@ export default function CreateMemorialClient() {
             type="date"
             className={`rounded-2xl border px-4 py-2 ${centered ? "text-center" : ""} ${
               dateValidationMessage ? "border-red-400" : "border-slate-200"
-            }`}
+            } ${centered ? "min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
             value={form.deathDate}
             onChange={(event) => handleChange("deathDate", event.target.value)}
             min={form.birthDate || undefined}
@@ -2386,17 +2391,45 @@ export default function CreateMemorialClient() {
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center bg-[var(--bg)]">
-                <div className="relative z-10 flex w-[520px] max-w-[94vw] flex-col items-center">
-                  <div className="w-full rounded-[40px] bg-[#efe6e2] p-4 shadow-[0_26px_55px_rgba(89,71,65,0.25)]">
-                    <div className="min-h-[460px] rounded-[32px] bg-[#f7f1ee] px-6 py-6 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.8)]">
-                      <div className="mb-4 text-center text-[12px] tracking-[0.35em] text-[#8c7f7a]">
+              <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(244,236,231,0.96)_35%,_rgba(238,228,222,1)_100%)] px-4">
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
+                <div className="pointer-events-none absolute left-5 top-1/2 hidden -translate-y-1/2 flex-col gap-4 xl:flex">
+                  {["i", "m", "h", "p"].map((item) => (
+                    <div
+                      key={item}
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-white bg-white/85 text-sm font-semibold uppercase text-[#d3a27f] shadow-md"
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+                <div className="relative z-10 flex w-[560px] max-w-[94vw] flex-col items-center">
+                  <div className="relative w-full rounded-[42px] border border-white/70 bg-[#efe6e2] p-4 shadow-[0_32px_60px_rgba(89,71,65,0.22)]">
+                    <div className="absolute left-1/2 top-0 h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)]" />
+                    <div className="relative min-h-[500px] rounded-[34px] border border-white/60 bg-[#f7f1ee] px-7 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)]">
+                      <div className="mb-6 text-center text-[13px] tracking-[0.38em] text-[#8c7f7a]">
                         MEMORIAL
                       </div>
-                      <div className="grid gap-3 text-center [&_label]:!text-[11px] [&_label]:!text-[#8a7c77] [&_input]:!rounded-2xl [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[#6f6360] [&_select]:!rounded-2xl [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[#6f6360]">
+                      <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[#6f6360]">
                         {renderBaseInfoForm(true)}
                       </div>
-                      {renderNavButtons("mt-4", "rounded-full bg-[#7f846f] px-8 py-3 text-[13px] font-semibold text-[#f6f3ee] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] hover:bg-[#70765f]")}
+                      {renderNavButtons(
+                        "mt-6",
+                        "group w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all hover:bg-[#1f2937] active:scale-[0.98]"
+                      )}
+                      <div className="mt-6 flex items-center justify-center gap-2">
+                        {[1, 2, 3].map((item) => (
+                          <div
+                            key={item}
+                            className={`h-1.5 rounded-full transition-all ${
+                              item === 1 ? "w-8 bg-[#d3a27f]" : "w-2 bg-[#efedeb]"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#adb5bd]">
+                        Шаг 1 из 3: Информация
+                      </p>
                     </div>
                   </div>
                 </div>

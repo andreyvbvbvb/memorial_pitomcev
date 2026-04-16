@@ -12,11 +12,10 @@ import {
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
 import { Request } from "express";
+import { canAccessAdmin } from "../auth/access-level";
 import { AuthService } from "../auth/auth.service";
 import { CharityService } from "./charity.service";
 import { CreateCharityReportDto } from "./dto/create-charity-report.dto";
-
-const ADMIN_EMAILS = new Set(["andreyvbvbvb@gmail.com"]);
 
 @Controller("charity")
 export class CharityController {
@@ -28,11 +27,10 @@ export class CharityController {
   private async ensureAdmin(req: Request) {
     const token = req.cookies?.access_token;
     const user = await this.authService.getUserFromToken(token);
-    if (!user || !user.email) {
+    if (!user) {
       throw new ForbiddenException("Доступ запрещён");
     }
-    const email = user.email.toLowerCase();
-    if (!ADMIN_EMAILS.has(email)) {
+    if (!canAccessAdmin(user)) {
       throw new ForbiddenException("Доступ запрещён");
     }
     return user;

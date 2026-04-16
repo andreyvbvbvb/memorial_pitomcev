@@ -4,14 +4,8 @@ import Link from "next/link";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { API_BASE } from "../lib/config";
+import { canAccessAdmin, type AuthUser } from "../lib/access";
 import AuthModal from "./AuthModal";
-
-type AuthUser = {
-  id: string;
-  login?: string | null;
-  email: string;
-  coinBalance?: number;
-};
 
 export default function AppHeader() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -138,14 +132,24 @@ export default function AppHeader() {
     { coins: 1000, rub: 1000, usd: 10 }
   ];
 
+  const pillClass =
+    "rounded-[22px] border border-white/80 bg-white/75 px-4 py-2 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-white/90 hover:text-[#5d4037]";
+  const iconPillClass =
+    "group relative flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+  const authButtonClass =
+    "rounded-[24px] border border-[#e7dbd3] bg-[#f6efea] px-5 py-2 text-sm font-semibold text-[#5d4037] shadow-[0_12px_24px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-[#fff7f2]";
+
   return (
     <>
       <header
         ref={headerRef}
         className="sticky top-0 z-40 bg-transparent"
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-2">
-          <Link href="/" className="chip">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <Link
+            href="/"
+            className="rounded-[24px] border border-white/80 bg-white/75 px-6 py-2 text-sm font-semibold uppercase tracking-[0.22em] text-[#7c6b63] shadow-[0_12px_26px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:bg-white/90"
+          >
             Memorial
           </Link>
           <div className="flex items-center gap-3">
@@ -153,31 +157,25 @@ export default function AppHeader() {
               <>
                 <Link
                   href="/create"
-                  className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/70 text-base text-slate-700 transition hover:bg-white/90"
+                  className={iconPillClass}
                   aria-label="Создать мемориал"
                 >
-                  <span className="absolute inset-0 rounded-full bg-slate-900/10 opacity-0 transition group-hover:opacity-70 group-hover:animate-ping" />
+                  <span className="absolute inset-0 rounded-[18px] bg-[#d3a27f]/20 opacity-0 transition group-hover:opacity-100" />
                   <span className="relative z-10">+</span>
-                  <span className="pointer-events-none absolute left-1/2 top-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
+                  <span className="pointer-events-none absolute left-1/2 top-12 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#eadfd8] bg-[#5d4037] px-2.5 py-1 text-[10px] text-white opacity-0 shadow-sm transition group-hover:opacity-100">
                     Создать мемориал
                   </span>
                 </Link>
-                <Link
-                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
-                  href="/my-pets"
-                >
+                <Link className={pillClass} href="/my-pets">
                   Мои питомцы
                 </Link>
-                <Link
-                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
-                  href="/map"
-                >
+                <Link className={pillClass} href="/map">
                   Карта
                 </Link>
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
-                    className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
+                    className={`${iconPillClass} !h-11 !w-11`}
                     aria-label="Открыть меню"
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >
@@ -231,6 +229,11 @@ export default function AppHeader() {
                         <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/charity">
                           Благотворительность
                         </Link>
+                        {canAccessAdmin(user.accessLevel) ? (
+                          <Link className="rounded-xl px-3 py-2 hover:bg-slate-100" href="/admin/sql">
+                            Админ
+                          </Link>
+                        ) : null}
                         <button
                           type="button"
                           className="mt-2 rounded-xl border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
@@ -246,7 +249,7 @@ export default function AppHeader() {
             ) : (
               <>
                 <Link
-                  className="btn btn-ghost !px-3 !py-2 text-sm bg-white/70 hover:bg-white/90"
+                  className={pillClass}
                   href="/about"
                 >
                   О проекте
@@ -254,7 +257,7 @@ export default function AppHeader() {
                 {pathname === "/auth" ? null : (
                   <button
                     type="button"
-                    className="btn btn-outline !px-4 !py-2 text-sm"
+                    className={authButtonClass}
                     onClick={openAuth}
                   >
                     Войти

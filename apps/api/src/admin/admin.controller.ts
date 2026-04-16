@@ -12,6 +12,7 @@ import {
   Req
 } from "@nestjs/common";
 import { Request } from "express";
+import { canAccessAdmin, canManageAdmins, getAccessLevel, isOwnerUser } from "../auth/access-level";
 import * as bcrypt from "bcryptjs";
 import { AuthService } from "../auth/auth.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -20,10 +21,9 @@ import {
   AdminLoadingTipCreateDto,
   AdminLoadingTipUpdateDto
 } from "./dto/admin-loading-tip.dto";
+import { AdminUpdateUserRoleDto } from "./dto/admin-update-user-role.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
-
-const ADMIN_EMAILS = new Set(["andreyvbvbvb@gmail.com"]);
 
 const toSafeJson = (value: unknown): unknown => {
   if (typeof value === "bigint") {
@@ -65,12 +65,19 @@ export class AdminController {
   private async ensureAdmin(req: Request) {
     const token = req.cookies?.access_token;
     const user = await this.authService.getUserFromToken(token);
-    if (!user || !user.email) {
+    if (!user) {
       throw new ForbiddenException("Доступ запрещён");
     }
-    const email = user.email.toLowerCase();
-    if (!ADMIN_EMAILS.has(email)) {
+    if (!canAccessAdmin(user)) {
       throw new ForbiddenException("Доступ запрещён");
+    }
+    return user;
+  }
+
+  private async ensureOwner(req: Request) {
+    const user = await this.ensureAdmin(req);
+    if (!canManageAdmins(user)) {
+      throw new ForbiddenException("Только владелец может управлять доступами");
     }
     return user;
   }
@@ -87,7 +94,8 @@ export class AdminController {
 
   @Post("sql")
   async runSql(@Req() req: Request, @Body() dto: AdminSqlDto) {
-    await this.ensureAdmin(req);
+    const user = await this.ensureAdmin(req);
+    const accessLevel = getAccessLevel(user);
     const rawQuery = dto.query ?? "";
     const trimmed = rawQuery.trim();
     if (!trimmed) {
@@ -106,6 +114,12 @@ export class AdminController {
     }
     if (/\b(insert|drop|alter|create|truncate|grant|revoke)\b/.test(lower)) {
       throw new BadRequestException("Запрос содержит запрещённые операции");
+    }
+    if (
+      accessLevel !== "OWNER" &&
+      /^(update|delete)\s+"?user"?\b/i.test(trimmed)
+    ) {
+      throw new ForbiddenException("Только владелец может изменять пользователей через SQL");
     }
 
     if (isSelect) {
@@ -167,9 +181,66 @@ export class AdminController {
     return { tables };
   }
 
+  @Get("access/users")
+  async listAccessUsers(@Req() req: Request) {
+    await this.ensureOwner(req);
+    const users = await this.prisma.user.findMany({
+      orderBy: [{ role: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        email: true,
+        login: true,
+        role: true,
+        createdAt: true
+      }
+    });
+    return {
+      users: users.map((user: { id: string; email: string; login: string | null; role: string; createdAt: Date }) => ({
+        ...user,
+        accessLevel: getAccessLevel(user),
+        isOwner: isOwnerUser(user)
+      }))
+    };
+  }
+
+  @Patch("access/role")
+  async updateUserRole(@Req() req: Request, @Body() dto: AdminUpdateUserRoleDto) {
+    await this.ensureOwner(req);
+    const email = dto.email.trim().toLowerCase();
+    const role = dto.role;
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, login: true, role: true }
+    });
+    if (!user) {
+      throw new BadRequestException("Пользователь не найден");
+    }
+    if (isOwnerUser(user)) {
+      throw new BadRequestException("Нельзя изменять уровень доступа владельца");
+    }
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { role },
+      select: {
+        id: true,
+        email: true,
+        login: true,
+        role: true,
+        createdAt: true
+      }
+    });
+    return {
+      user: {
+        ...updated,
+        accessLevel: getAccessLevel(updated),
+        isOwner: false
+      }
+    };
+  }
+
   @Post("reset-password")
   async resetPassword(@Req() req: Request, @Body() dto: AdminResetPasswordDto) {
-    await this.ensureAdmin(req);
+    const currentUser = await this.ensureAdmin(req);
     const email = dto.email.trim().toLowerCase();
     if (!email) {
       throw new BadRequestException("Email обязателен");
@@ -181,6 +252,9 @@ export class AdminController {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new BadRequestException("Пользователь не найден");
+    }
+    if (isOwnerUser(user) && !canManageAdmins(currentUser)) {
+      throw new ForbiddenException("Только владелец может изменять пароль владельца");
     }
     const passwordHash = await bcrypt.hash(nextPassword, 10);
     await this.prisma.user.update({

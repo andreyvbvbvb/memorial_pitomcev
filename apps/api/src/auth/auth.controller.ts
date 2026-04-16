@@ -9,6 +9,7 @@ import {
   UnauthorizedException
 } from "@nestjs/common";
 import { Request, Response } from "express";
+import { getAccessLevel } from "./access-level";
 import { AuthService } from "./auth.service";
 import { AcceptTermsDto } from "./dto/accept-terms.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
@@ -34,19 +35,33 @@ export class AuthController {
     });
   }
 
-  @Post("register")
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const user = await this.authService.register(dto);
-    const token = this.authService.signToken({ id: user.id, email: user.email });
-    this.setAuthCookie(res, token);
+  private buildAuthResponse(user: {
+    id: string;
+    login: string | null;
+    email: string;
+    coinBalance: number;
+    termsAccepted: boolean;
+    offerAccepted: boolean;
+    role: string;
+  }) {
     return {
       id: user.id,
       login: user.login,
       email: user.email,
       coinBalance: user.coinBalance,
+      role: user.role,
+      accessLevel: getAccessLevel(user),
       termsAccepted: user.termsAccepted,
       offerAccepted: user.offerAccepted
     };
+  }
+
+  @Post("register")
+  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const user = await this.authService.register(dto);
+    const token = this.authService.signToken({ id: user.id, email: user.email });
+    this.setAuthCookie(res, token);
+    return this.buildAuthResponse(user);
   }
 
   @Post("login")
@@ -54,14 +69,7 @@ export class AuthController {
     const user = await this.authService.login(dto);
     const token = this.authService.signToken({ id: user.id, email: user.email });
     this.setAuthCookie(res, token);
-    return {
-      id: user.id,
-      login: user.login,
-      email: user.email,
-      coinBalance: user.coinBalance,
-      termsAccepted: user.termsAccepted,
-      offerAccepted: user.offerAccepted
-    };
+    return this.buildAuthResponse(user);
   }
 
   @Post("accept-terms")
@@ -78,14 +86,7 @@ export class AuthController {
     const updated = await this.authService.acceptTerms(user.id, dto);
     const nextToken = this.authService.signToken({ id: updated.id, email: updated.email });
     this.setAuthCookie(res, nextToken);
-    return {
-      id: updated.id,
-      login: updated.login,
-      email: updated.email,
-      coinBalance: updated.coinBalance,
-      termsAccepted: updated.termsAccepted,
-      offerAccepted: updated.offerAccepted
-    };
+    return this.buildAuthResponse(updated);
   }
 
   @Post("forgot")
@@ -106,13 +107,6 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException("Не авторизован");
     }
-    return {
-      id: user.id,
-      login: user.login,
-      email: user.email,
-      coinBalance: user.coinBalance,
-      termsAccepted: user.termsAccepted,
-      offerAccepted: user.offerAccepted
-    };
+    return this.buildAuthResponse(user);
   }
 }

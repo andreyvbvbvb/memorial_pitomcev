@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
+import { canAccessAdmin, canManageAdmins, type AccessLevel } from "../../../lib/access";
 import ErrorToast from "../../../components/ErrorToast";
-
-const ADMIN_EMAIL = "andreyvbvbvb@gmail.com";
 
 const QUICK_QUERIES = [
   {
@@ -70,6 +69,16 @@ type LoadingTip = {
   createdAt?: string;
 };
 
+type AccessUser = {
+  id: string;
+  email: string;
+  login?: string | null;
+  role: "USER" | "ADMIN";
+  accessLevel: AccessLevel;
+  isOwner: boolean;
+  createdAt?: string;
+};
+
 const buildSelectQuery = (tableName: string, limit = 50) =>
   `SELECT * FROM "${tableName}" LIMIT ${limit};`;
 
@@ -82,6 +91,7 @@ export default function AdminSqlPage() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SqlResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +113,12 @@ export default function AdminSqlPage() {
   const [savingTipId, setSavingTipId] = useState<string | null>(null);
   const [deletingTipId, setDeletingTipId] = useState<string | null>(null);
   const [creatingTip, setCreatingTip] = useState(false);
+  const [accessUsers, setAccessUsers] = useState<AccessUser[]>([]);
+  const [accessUsersLoading, setAccessUsersLoading] = useState(false);
+  const [accessUsersError, setAccessUsersError] = useState<string | null>(null);
+  const [roleEmail, setRoleEmail] = useState("");
+  const [roleSaving, setRoleSaving] = useState<"USER" | "ADMIN" | null>(null);
+  const [roleNotice, setRoleNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -116,12 +132,13 @@ export default function AdminSqlPage() {
           router.replace("/auth");
           return;
         }
-        const data = (await response.json()) as { email?: string };
+        const data = (await response.json()) as { accessLevel?: AccessLevel };
         if (!isMounted) {
           return;
         }
-        const email = data.email?.toLowerCase() ?? "";
-        setIsAdmin(email === ADMIN_EMAIL);
+        const nextAccessLevel = data.accessLevel ?? "USER";
+        setAccessLevel(nextAccessLevel);
+        setIsAdmin(canAccessAdmin(nextAccessLevel));
       } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : "Ошибка авторизации");
@@ -174,6 +191,42 @@ export default function AdminSqlPage() {
       isMounted = false;
     };
   }, [apiUrl, authChecked, isAdmin]);
+
+  useEffect(() => {
+    if (!authChecked || !canManageAdmins(accessLevel)) {
+      return;
+    }
+    let isMounted = true;
+    const loadUsers = async () => {
+      setAccessUsersLoading(true);
+      setAccessUsersError(null);
+      try {
+        const response = await fetch(`${apiUrl}/admin/access/users`, {
+          credentials: "include"
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось загрузить доступы");
+        }
+        const data = (await response.json()) as { users?: AccessUser[] };
+        if (isMounted) {
+          setAccessUsers(Array.isArray(data.users) ? data.users : []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setAccessUsersError(err instanceof Error ? err.message : "Ошибка загрузки доступов");
+        }
+      } finally {
+        if (isMounted) {
+          setAccessUsersLoading(false);
+        }
+      }
+    };
+    void loadUsers();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl, authChecked, accessLevel]);
 
   useEffect(() => {
     if (!authChecked || !isAdmin) {
@@ -391,6 +444,42 @@ export default function AdminSqlPage() {
     }
   };
 
+  const updateAccessRole = async (role: "USER" | "ADMIN") => {
+    const email = roleEmail.trim().toLowerCase();
+    if (!email) {
+      setError("Введите email пользователя");
+      return;
+    }
+    setRoleSaving(role);
+    setRoleNotice(null);
+    setAccessUsersError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/access/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, role })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось обновить доступ");
+      }
+      const data = (await response.json()) as { user?: AccessUser };
+      if (data.user) {
+        setAccessUsers((prev) => {
+          const rest = prev.filter((item) => item.id !== data.user?.id);
+          return [data.user as AccessUser, ...rest];
+        });
+      }
+      setRoleNotice(role === "ADMIN" ? "Пользователь назначен админом" : "Пользователь понижен до user");
+      setRoleEmail("");
+    } catch (err) {
+      setAccessUsersError(err instanceof Error ? err.message : "Ошибка обновления доступа");
+    } finally {
+      setRoleSaving(null);
+    }
+  };
+
   const handlePetAction = async (action: "disable" | "delete" | "memorial" | "photos") => {
     const rawId = petId.trim();
     if (!rawId) {
@@ -484,6 +573,74 @@ export default function AdminSqlPage() {
               ) : null}
             </div>
           </div>
+
+          {canManageAdmins(accessLevel) ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase text-slate-500">
+                Управление доступами
+              </div>
+              <div className="mt-3 grid gap-2">
+                <input
+                  value={roleEmail}
+                  onChange={(event) => setRoleEmail(event.target.value)}
+                  placeholder="Email пользователя"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+                />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => updateAccessRole("ADMIN")}
+                    disabled={roleSaving !== null}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                  >
+                    {roleSaving === "ADMIN" ? "Сохраняем..." : "Сделать админом"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateAccessRole("USER")}
+                    disabled={roleSaving !== null}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                  >
+                    {roleSaving === "USER" ? "Сохраняем..." : "Понизить до user"}
+                  </button>
+                </div>
+                {roleNotice ? (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                    {roleNotice}
+                  </div>
+                ) : null}
+                {accessUsersError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                    {accessUsersError}
+                  </div>
+                ) : null}
+                <div className="max-h-[240px] space-y-2 overflow-auto pr-1">
+                  {accessUsersLoading && accessUsers.length === 0 ? (
+                    <div className="text-xs text-slate-500">Загрузка...</div>
+                  ) : null}
+                  {accessUsers.map((user) => (
+                    <div key={user.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
+                      <div className="font-semibold text-slate-800">
+                        {user.email}
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <span>{user.login || "—"}</span>
+                        <span className={`rounded-full px-2 py-0.5 font-semibold ${
+                          user.accessLevel === "OWNER"
+                            ? "bg-amber-100 text-amber-700"
+                            : user.accessLevel === "ADMIN"
+                              ? "bg-sky-100 text-sky-700"
+                              : "bg-slate-100 text-slate-600"
+                        }`}>
+                          {user.accessLevel}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="text-xs font-semibold uppercase text-slate-500">

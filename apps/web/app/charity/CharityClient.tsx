@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../lib/config";
+import { canAccessAdmin, type AccessLevel } from "../../lib/access";
 import ErrorToast from "../../components/ErrorToast";
-
-const ADMIN_EMAIL = "andreyvbvbvb@gmail.com";
 
 type CharityTotals = {
   totalAccrued: number;
@@ -80,12 +79,11 @@ export default function CharityClient() {
           }
           return;
         }
-        const data = (await response.json()) as { email?: string };
+        const data = (await response.json()) as { accessLevel?: AccessLevel };
         if (!mounted) {
           return;
         }
-        const email = data.email?.toLowerCase() ?? "";
-        setIsAdmin(email === ADMIN_EMAIL);
+        setIsAdmin(canAccessAdmin(data.accessLevel));
       } catch {
         if (mounted) {
           setIsAdmin(false);
