@@ -133,7 +133,7 @@ export default function AppHeader() {
   ];
 
   const pillClass =
-    "rounded-[22px] border border-white/80 bg-white/75 px-4 py-2 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-white/90 hover:text-[#5d4037]";
+    "group relative rounded-[22px] border border-white/80 bg-white/75 px-4 py-2 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
     "group relative flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const authButtonClass =

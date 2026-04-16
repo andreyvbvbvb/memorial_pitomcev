@@ -2357,13 +2357,13 @@ export default function CreateMemorialClient() {
         : "w-[520px] max-w-[92vw] max-h-[70vh]"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
-    `relative flex h-24 w-24 items-center justify-center rounded-2xl border transition ${
+    `group relative flex h-14 w-14 items-center justify-center rounded-2xl border-2 shadow-md transition-all ${
       active
-        ? "border-white/80 bg-white text-slate-900 shadow-lg"
-        : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+        ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+        : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
     } ${
       highlight
-        ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.25)]"
+        ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.18)]"
         : ""
       }`;
   const loadingMessage =
@@ -2393,29 +2393,16 @@ export default function CreateMemorialClient() {
             {step === 0 ? (
               <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(244,236,231,0.96)_35%,_rgba(238,228,222,1)_100%)] px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
-                <div className="pointer-events-none absolute left-5 top-1/2 hidden -translate-y-1/2 flex-col gap-4 xl:flex">
-                  {["i", "m", "h", "p"].map((item) => (
-                    <div
-                      key={item}
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-white bg-white/85 text-sm font-semibold uppercase text-[#d3a27f] shadow-md"
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
                 <div className="relative z-10 flex w-[560px] max-w-[94vw] flex-col items-center">
-                  <div className="relative w-full rounded-[42px] border border-white/70 bg-[#efe6e2] p-4 shadow-[0_32px_60px_rgba(89,71,65,0.22)]">
+                  <div className="relative w-full rounded-[42px] border border-white/70 bg-[#efe6e2] p-4 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.018]">
                     <div className="absolute left-1/2 top-0 h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)]" />
                     <div className="relative min-h-[500px] rounded-[34px] border border-white/60 bg-[#f7f1ee] px-7 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)]">
-                      <div className="mb-6 text-center text-[13px] tracking-[0.38em] text-[#8c7f7a]">
-                        MEMORIAL
-                      </div>
                       <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[#6f6360]">
                         {renderBaseInfoForm(true)}
                       </div>
                       {renderNavButtons(
                         "mt-6",
-                        "group w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all hover:bg-[#1f2937] active:scale-[0.98]"
+                        "group w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
                       )}
                       <div className="mt-6 flex items-center justify-center gap-2">
                         {[1, 2, 3].map((item) => (
@@ -2427,9 +2414,6 @@ export default function CreateMemorialClient() {
                           />
                         ))}
                       </div>
-                      <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#adb5bd]">
-                        Шаг 1 из 3: Информация
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -2607,7 +2591,7 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.base
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 11v5" />
                     <circle cx="12" cy="8" r="1" />
@@ -2627,7 +2611,7 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.story
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 5h8a3 3 0 0 1 3 3v11" />
                     <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                   </svg>
@@ -2646,7 +2630,7 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.marker
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
@@ -2665,7 +2649,7 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.photos
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="2" />
                     <circle cx="9" cy="11" r="2" />
                     <path d="M21 15l-4-4-4 4-3-3-5 5" />
@@ -2683,7 +2667,7 @@ export default function CreateMemorialClient() {
               <button
                 type="button"
                 onClick={openReview}
-                className="rounded-2xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+                className="rounded-xl bg-[#2d3436] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_0_0_#111827] transition-all active:translate-y-[4px] active:shadow-none"
               >
                 Завершить
               </button>
