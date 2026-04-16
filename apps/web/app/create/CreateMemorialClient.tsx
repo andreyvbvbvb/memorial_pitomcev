@@ -1485,7 +1485,6 @@ export default function CreateMemorialClient() {
         return cached;
       }
       const task = (async () => {
-        await warmAsset(url);
         if (!gltfLoaderRef.current) {
           gltfLoaderRef.current = new GLTFLoader();
           const draco = ensureDracoLoader();
@@ -1493,8 +1492,19 @@ export default function CreateMemorialClient() {
             gltfLoaderRef.current.setDRACOLoader(draco);
           }
         }
-        await gltfLoaderRef.current.loadAsync(url);
-        useGLTF.preload(url);
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            await gltfLoaderRef.current.loadAsync(url);
+            return;
+          } catch (error) {
+            if (attempt === 2) {
+              throw error;
+            }
+            await new Promise<void>((resolve) => {
+              setTimeout(resolve, 180 * (attempt + 1));
+            });
+          }
+        }
       })().catch((error) => {
         cache.delete(url);
         throw error;
@@ -2185,20 +2195,18 @@ export default function CreateMemorialClient() {
                           handleChange("markerStyle", firstMarkerVariantId(style.id));
                         }
                       }}
-                      className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                      className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border p-0 transition ${
                         isActive
                           ? "border-slate-900 bg-slate-900 text-white"
                           : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
                       }`}
                       aria-label={style.name}
                     >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/80">
-                        <img
-                          src={categoryIconUrl}
-                          alt={style.name}
-                          className="h-5 w-5 object-contain"
-                        />
-                      </span>
+                      <img
+                        src={categoryIconUrl}
+                        alt={style.name}
+                        className="h-full w-full object-contain p-1.5"
+                      />
                     </button>
                     <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
                       {style.name}
@@ -2490,12 +2498,28 @@ export default function CreateMemorialClient() {
 
           <div className="pointer-events-none fixed inset-0 z-10">
 
-            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 w-[320px] max-w-[85vw] lg:max-w-[32vw] rounded-3xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur overflow-hidden">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-900">Редактор мемориала</h3>
+            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 flex w-[320px] max-w-[85vw] flex-col overflow-hidden rounded-[32px] border-[6px] border-[#f8f9fa] bg-white/95 shadow-2xl">
+              <div className="border-b border-gray-100 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-black uppercase tracking-[0.08em] text-[#5d4037]">
+                    Редактор мемориала
+                  </h3>
+                  <label className="group relative flex items-center gap-2 text-[10px] font-bold text-green-600">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300"
+                      checked={giftPreviewEnabled}
+                      onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
+                    />
+                    <span>Посмотреть</span>
+                    <span className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                      При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
+                    </span>
+                  </label>
+                </div>
               </div>
-              <div className="mt-3 flex h-full min-h-0 gap-2 overflow-hidden">
-                <div className="flex w-12 flex-col items-center gap-2 overflow-visible">
+              <div className="flex min-h-0 flex-1 gap-3 overflow-hidden p-4">
+                <div className="flex w-[52px] flex-col items-center gap-3 overflow-visible">
                   {step3Tabs.map((tab) => {
                     const isActive = activeStep3Tab === tab.id;
                     const isTooltipVisible = tooltipTabId === tab.id;
@@ -2528,10 +2552,10 @@ export default function CreateMemorialClient() {
                             setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                           }}
                           aria-label={tab.label}
-                          className={`flex h-12 w-12 items-center justify-center rounded-2xl border text-sm transition ${
+                          className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 text-sm shadow-sm transition-all ${
                             isActive
-                              ? "border-sky-400 bg-sky-50 text-sky-700"
-                              : "border-slate-200 bg-white text-slate-500 hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
+                              ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+                              : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
                           }`}
                         >
                           <Step3TabIcon id={tab.id} />
@@ -2548,20 +2572,8 @@ export default function CreateMemorialClient() {
                   })}
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col min-h-0">
-                  <label className="group relative mb-2 flex items-center gap-2 text-xs text-slate-600">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={giftPreviewEnabled}
-                      onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
-                    />
-                    Посмотреть с подарками
-                    <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                      При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
-                    </span>
-                  </label>
-                  <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto pr-1">
+                <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
+                  <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3">
                     {renderStep3TabContent()}
                   </div>
                 </div>
@@ -2667,7 +2679,7 @@ export default function CreateMemorialClient() {
               <button
                 type="button"
                 onClick={openReview}
-                className="rounded-xl bg-[#2d3436] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_0_0_#111827] transition-all active:translate-y-[4px] active:shadow-none"
+                className="rounded-xl bg-[#2d3436] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
               >
                 Завершить
               </button>
