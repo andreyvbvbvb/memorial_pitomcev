@@ -150,7 +150,7 @@ export default function AppHeader() {
             href="/"
             className="rounded-[24px] border border-white/80 bg-white/75 px-6 py-2 text-sm font-semibold uppercase tracking-[0.22em] text-[#7c6b63] shadow-[0_12px_26px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:bg-white/90"
           >
-            Memorial
+            МяуГав
           </Link>
           <div className="flex items-center gap-3">
             {user ? (

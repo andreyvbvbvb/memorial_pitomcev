@@ -16,7 +16,7 @@ const displayFont = Playfair_Display({
 });
 
 export const metadata = {
-  title: "Memorial Pitomcev",
+  title: "МяуГав",
   description: "Create pet memorials and place them on a map."
 };
 

@@ -1403,10 +1403,27 @@ export default function CreateMemorialClient() {
         <button
           type="button"
           onClick={handleNext}
-          className={`rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white ${buttonClassName ?? ""}`}
+          className={`group inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white ${buttonClassName ?? ""}`}
           disabled={!authReady || isTransitioning}
         >
-          Продолжить
+          <span className="transition-transform duration-300 group-hover:-translate-x-1">
+            Продолжить
+          </span>
+          <span className="ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-all duration-300 group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100">
+            <svg
+              viewBox="0 0 20 20"
+              className="h-4 w-4 translate-x-[-4px] text-white transition-transform duration-300 group-hover:translate-x-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 10h10" />
+              <path d="m10 5 5 5-5 5" />
+            </svg>
+          </span>
         </button>
       ) : null}
     </div>
@@ -2050,8 +2067,8 @@ export default function CreateMemorialClient() {
       ? markerGroups.primary
       : markerGroups.all;
     return (
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
-        <div className="grid gap-3">
+      <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)]">
+        <div className="grid content-start gap-3">
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             {!apiKey ? (
               <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
@@ -2067,7 +2084,10 @@ export default function CreateMemorialClient() {
               </div>
             ) : (
               <GoogleMap
-                mapContainerStyle={{ width: "100%", height: "360px" }}
+                mapContainerStyle={{
+                  width: "100%",
+                  height: "clamp(230px, 34vh, 340px)"
+                }}
                 center={mapCenter}
                 zoom={canShowMarker ? 12 : 3}
                 onClick={(event) => {
@@ -2176,10 +2196,10 @@ export default function CreateMemorialClient() {
           </div>
         </div>
 
-        <div className="grid gap-2 min-w-0">
+        <div className="grid min-w-0 content-start gap-2">
           <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
-          <div className="grid grid-cols-[48px_minmax(0,1fr)] gap-2">
-            <div className="flex w-12 flex-col items-center gap-2">
+          <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3">
+            <div className="flex w-14 flex-col items-center gap-2">
               {markerStyles.map((style) => {
                 const isActive = markerCategory === style.id;
                 const categoryIconUrl =
@@ -2195,7 +2215,7 @@ export default function CreateMemorialClient() {
                           handleChange("markerStyle", firstMarkerVariantId(style.id));
                         }
                       }}
-                      className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border p-0 transition ${
+                      className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border p-0 transition sm:h-14 sm:w-14 ${
                         isActive
                           ? "border-slate-900 bg-slate-900 text-white"
                           : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
@@ -2205,7 +2225,7 @@ export default function CreateMemorialClient() {
                       <img
                         src={categoryIconUrl}
                         alt={style.name}
-                        className="h-full w-full object-contain p-1.5"
+                        className="h-full w-full scale-[1.12] object-contain p-0.5"
                       />
                     </button>
                     <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
@@ -2357,15 +2377,15 @@ export default function CreateMemorialClient() {
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
-    "pointer-events-auto absolute bottom-[calc(6.5rem+env(safe-area-inset-bottom))] left-[calc(1.5rem+6rem)] lg:left-[calc(5rem+6rem)] overflow-y-auto rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur";
+    "pointer-events-auto absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-[calc(1rem+4.25rem)] sm:left-[calc(1.5rem+4.75rem)] lg:left-[calc(5rem+5.5rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur sm:p-4";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
-        ? "w-[94vw] max-w-[94vw] lg:w-[1040px] max-h-[56vh]"
-        : "w-[520px] max-w-[92vw] max-h-[70vh]"
+        ? "w-[min(1120px,calc(100vw-1rem))] max-h-[min(74vh,700px)]"
+        : "w-[min(520px,calc(100vw-1rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
-    `group relative flex h-14 w-14 items-center justify-center rounded-2xl border-2 shadow-md transition-all ${
+    `group relative flex h-12 w-12 items-center justify-center rounded-2xl border-2 shadow-md transition-all sm:h-14 sm:w-14 xl:h-[3.75rem] xl:w-[3.75rem] ${
       active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -2382,7 +2402,7 @@ export default function CreateMemorialClient() {
     paddingTop: isBuilderStep
       ? 0
       : isInitialStep
-        ? headerOffset
+        ? 0
         : `calc(${headerOffset} + 24px)`
   };
 
@@ -2399,29 +2419,19 @@ export default function CreateMemorialClient() {
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="relative flex min-h-[calc(100dvh-var(--app-header-height,56px))] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.9),_rgba(244,236,231,0.96)_35%,_rgba(238,228,222,1)_100%)] px-4">
+              <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-4 pt-[var(--app-header-height,56px)]">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
-                <div className="relative z-10 flex w-[560px] max-w-[94vw] flex-col items-center">
-                  <div className="relative w-full rounded-[42px] border border-white/70 bg-[#efe6e2] p-4 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.018]">
+                <div className="relative z-10 flex w-full max-w-[560px] flex-col items-center px-2 sm:px-0">
+                  <div className="relative w-full rounded-[36px] border border-white/70 bg-[#efe6e2] p-3 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.018] sm:rounded-[42px] sm:p-4">
                     <div className="absolute left-1/2 top-0 h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)]" />
-                    <div className="relative min-h-[500px] rounded-[34px] border border-white/60 bg-[#f7f1ee] px-7 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)]">
+                    <div className="relative min-h-[460px] rounded-[30px] border border-white/60 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
                       <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[#6f6360]">
                         {renderBaseInfoForm(true)}
                       </div>
                       {renderNavButtons(
                         "mt-6",
-                        "group w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
+                        "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
                       )}
-                      <div className="mt-6 flex items-center justify-center gap-2">
-                        {[1, 2, 3].map((item) => (
-                          <div
-                            key={item}
-                            className={`h-1.5 rounded-full transition-all ${
-                              item === 1 ? "w-8 bg-[#d3a27f]" : "w-2 bg-[#efedeb]"
-                            }`}
-                          />
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -2498,7 +2508,7 @@ export default function CreateMemorialClient() {
 
           <div className="pointer-events-none fixed inset-0 z-10">
 
-            <div className="pointer-events-auto absolute right-6 top-[calc(var(--app-header-height,56px)+16px)] bottom-24 flex w-[320px] max-w-[85vw] flex-col overflow-hidden rounded-[32px] border-[6px] border-[#f8f9fa] bg-white/95 shadow-2xl">
+            <div className="pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+12px)] bottom-20 flex w-[min(340px,calc(100vw-1.5rem))] max-w-[90vw] flex-col overflow-hidden rounded-[28px] border-[5px] border-[#f8f9fa] bg-white/95 shadow-2xl sm:right-6 sm:top-[calc(var(--app-header-height,56px)+16px)] sm:bottom-24 sm:w-[min(360px,calc(100vw-2rem))] sm:rounded-[32px] sm:border-[6px] xl:w-[380px]">
               <div className="border-b border-gray-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-sm font-black uppercase tracking-[0.08em] text-[#5d4037]">
@@ -2519,7 +2529,7 @@ export default function CreateMemorialClient() {
                 </div>
               </div>
               <div className="flex min-h-0 flex-1 gap-3 overflow-hidden p-4">
-                <div className="flex w-[52px] flex-col items-center gap-3 overflow-visible">
+                <div className="flex w-[48px] flex-col items-center gap-2 overflow-visible sm:w-[52px] sm:gap-3">
                   {step3Tabs.map((tab) => {
                     const isActive = activeStep3Tab === tab.id;
                     const isTooltipVisible = tooltipTabId === tab.id;
@@ -2552,7 +2562,7 @@ export default function CreateMemorialClient() {
                             setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                           }}
                           aria-label={tab.label}
-                          className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 text-sm shadow-sm transition-all ${
+                          className={`flex h-11 w-11 items-center justify-center rounded-xl border-2 text-sm shadow-sm transition-all sm:h-12 sm:w-12 ${
                             isActive
                               ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
                               : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
