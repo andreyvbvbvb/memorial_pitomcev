@@ -136,6 +136,8 @@ export default function AppHeader() {
     "group relative rounded-[22px] border border-white/80 bg-white/75 px-4 py-2 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
     "group relative flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+  const createButtonClass =
+    "inline-flex items-center gap-2 rounded-[18px] bg-[#111827] px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none";
   const authButtonClass =
     "rounded-[24px] border border-[#e7dbd3] bg-[#f6efea] px-5 py-2 text-sm font-semibold text-[#5d4037] shadow-[0_12px_24px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-[#fff7f2]";
 
@@ -157,14 +159,11 @@ export default function AppHeader() {
               <>
                 <Link
                   href="/create"
-                  className={iconPillClass}
+                  className={createButtonClass}
                   aria-label="Создать мемориал"
                 >
-                  <span className="absolute inset-0 rounded-[18px] bg-[#d3a27f]/20 opacity-0 transition group-hover:opacity-100" />
-                  <span className="relative z-10">+</span>
-                  <span className="pointer-events-none absolute left-1/2 top-12 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#eadfd8] bg-[#5d4037] px-2.5 py-1 text-[10px] text-white opacity-0 shadow-sm transition group-hover:opacity-100">
-                    Создать мемориал
-                  </span>
+                  <span className="text-sm leading-none">+</span>
+                  <span>создать</span>
                 </Link>
                 <Link className={pillClass} href="/my-pets">
                   Мои питомцы

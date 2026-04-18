@@ -1,19 +1,6 @@
 import "./globals.css";
 import type { ReactNode } from "react";
-import { Commissioner, Playfair_Display } from "next/font/google";
 import AppHeader from "../components/AppHeader";
-
-const bodyFont = Commissioner({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-body",
-  weight: ["300", "400", "500", "600", "700"]
-});
-
-const displayFont = Playfair_Display({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-display",
-  weight: ["400", "600", "700"]
-});
 
 export const metadata = {
   title: "МяуГав",
@@ -23,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
-      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
+      <body>
         <AppHeader />
         {children}
       </body>

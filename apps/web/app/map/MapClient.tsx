@@ -1107,6 +1107,22 @@ export default function MapClient() {
   const hasFilters = typeFilter !== "all" || nameFilter.trim().length > 0;
   const activeTypeFilter = isMobile ? pendingTypeFilter : typeFilter;
   const activeNameFilter = isMobile ? pendingNameFilter : nameFilter;
+  const simsPanelClass =
+    "rounded-[32px] border-[4px] border-white bg-white/90 p-6 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.4)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_-22px_rgba(93,64,55,0.44)]";
+  const simsSidebarClass =
+    "rounded-[32px] border-[4px] border-[#f8f9fa] bg-white/92 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md";
+  const simsFieldClass =
+    "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-xs font-bold text-[#5d4037] outline-none transition focus:ring-2 focus:ring-[#d3a27f]/35";
+  const simsResetButtonClass =
+    "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
+  const modeToggleShellClass =
+    "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
+  const modeToggleButtonClass = (active: boolean) =>
+    `rounded-[14px] px-3 py-1.5 transition ${
+      active
+        ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+        : "hover:bg-[#fdf2e9]"
+    }`;
   const resetFilters = () => {
     if (isMobile) {
       setPendingTypeFilter("all");
@@ -1137,44 +1153,36 @@ export default function MapClient() {
   };
 
   const modeToggle = !isMobile ? (
-    <div className="flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] text-slate-600 shadow-sm">
+    <div className={modeToggleShellClass}>
       <button
         type="button"
         onClick={() => setMapMode("map")}
-        className={`rounded-full px-3 py-1 transition ${
-          mapMode === "map" ? "bg-slate-900 text-white" : "hover:bg-slate-100"
-        }`}
+        className={modeToggleButtonClass(mapMode === "map")}
       >
         Карта
       </button>
       <button
         type="button"
         onClick={() => setMapMode("carousel")}
-        className={`rounded-full px-3 py-1 transition ${
-          mapMode === "carousel" ? "bg-slate-900 text-white" : "hover:bg-slate-100"
-        }`}
+        className={modeToggleButtonClass(mapMode === "carousel")}
       >
         3D
       </button>
     </div>
   ) : null;
   const modeToggleMobile = isMobile ? (
-    <div className="flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] text-slate-600 shadow-sm">
+    <div className={modeToggleShellClass}>
       <button
         type="button"
         onClick={() => setMapMode("map")}
-        className={`rounded-full px-3 py-1 transition ${
-          mapMode === "map" ? "bg-slate-900 text-white" : "hover:bg-slate-100"
-        }`}
+        className={modeToggleButtonClass(mapMode === "map")}
       >
         Карта
       </button>
       <button
         type="button"
         onClick={() => setMapMode("carousel")}
-        className={`rounded-full px-3 py-1 transition ${
-          mapMode === "carousel" ? "bg-slate-900 text-white" : "hover:bg-slate-100"
-        }`}
+        className={modeToggleButtonClass(mapMode === "carousel")}
       >
         3D
       </button>
@@ -1508,10 +1516,10 @@ export default function MapClient() {
   if (isMobile) {
     return (
       <main
-        className="relative w-screen overflow-hidden bg-slate-50"
+        className="relative flex w-screen overflow-hidden bg-[#cfe9ff]"
         style={mapViewportStyle}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-100" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.6),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,206,172,0.14),_transparent_30%)]" />
         <div
           className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4"
           style={{ paddingTop: "calc(var(--app-header-height, 56px) + 16px)" }}
@@ -1528,7 +1536,7 @@ export default function MapClient() {
           </div>
           {mapMode === "map" ? (
             <>
-              <div className="relative h-[42vh] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur">
+              <div className={`relative h-[42vh] w-full overflow-hidden ${simsPanelClass}`}>
                 {!apiKey ? (
                   <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
                     Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -1626,16 +1634,18 @@ export default function MapClient() {
                 )}
               </div>
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-base font-semibold text-slate-900">Мемориалы</h2>
-                <span className="text-xs text-slate-500">{listMarkers.length}</span>
+                <h2 className="text-base font-black uppercase tracking-tight text-[#5d4037]">Мемориалы</h2>
+                <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
+                  {listMarkers.length}
+                </span>
               </div>
-              <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+              <div className={`flex-1 overflow-y-auto p-4 ${simsSidebarClass}`}>
                 {memorialListContent}
               </div>
             </>
           ) : (
             <>
-              <div className="relative h-[42vh] w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/85 shadow-sm backdrop-blur">
+              <div className={`relative h-[42vh] w-full overflow-hidden ${simsPanelClass}`}>
                 <CarouselScene
                   items={carouselItems}
                   activeIndex={carouselIndex}
@@ -1668,7 +1678,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white/85 p-4 shadow-sm backdrop-blur">
+              <div className={`flex-1 overflow-y-auto p-4 ${simsSidebarClass}`}>
                 {activeCarouselMarker ? (
                   <div className="flex h-full flex-col gap-3">
                     {activePreviewSrc ? (
@@ -1708,22 +1718,22 @@ export default function MapClient() {
         </div>
         {filterSheetOpen ? (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/30 px-4 py-6 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
+            <div className={`w-full max-w-sm p-5 ${simsPanelClass}`}>
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-900">Фильтры</h2>
+                <h2 className="text-base font-black uppercase tracking-tight text-[#5d4037]">Фильтры</h2>
                 <button
                   type="button"
                   onClick={() => setFilterSheetOpen(false)}
-                  className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
+                  className="rounded-full border-2 border-[#fdf2e9] px-2 py-1 text-xs font-black text-[#8d6e63]"
                   aria-label="Закрыть"
                 >
                   ✕
                 </button>
               </div>
-              <label className="mt-4 grid gap-1 text-sm text-slate-700">
+              <label className="mt-4 grid gap-1 text-sm text-[#8d6e63]">
                 Вид питомца
                 <select
-                  className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                  className={`${simsFieldClass} appearance-none pr-10`}
                   style={selectArrowStyle}
                   value={pendingTypeFilter}
                   onChange={(event) => handleTypeFilterChange(event.target.value)}
@@ -1735,10 +1745,10 @@ export default function MapClient() {
                   ))}
                 </select>
               </label>
-              <label className="mt-3 grid gap-1 text-sm text-slate-700">
+              <label className="mt-3 grid gap-1 text-sm text-[#8d6e63]">
                 Имя питомца
                 <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  className={simsFieldClass}
                   value={pendingNameFilter}
                   onChange={(event) => handleNameFilterChange(event.target.value)}
                   placeholder="Барсик"
@@ -1748,14 +1758,14 @@ export default function MapClient() {
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700"
+                  className={simsResetButtonClass}
                 >
                   Сбросить
                 </button>
                 <button
                   type="button"
                   onClick={applyFilters}
-                  className="flex-1 rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
+                  className="flex-1 rounded-2xl bg-[#111827] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-white shadow-[0_4px_0_0_#000] transition hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none"
                 >
                   Применить
                 </button>
@@ -1772,7 +1782,7 @@ export default function MapClient() {
 
   return (
     <main
-      className="relative w-screen overflow-hidden bg-slate-50"
+      className="relative w-screen overflow-hidden bg-[#cfe9ff]"
       style={mapViewportStyle}
     >
       <div className="absolute inset-0">
@@ -1879,16 +1889,16 @@ export default function MapClient() {
         {mapMode === "map" ? (
           <div className="relative h-full w-full">
             <div
-              className="pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
+              className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 ${simsPanelClass}`}
               style={{ top: overlayTop }}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="ml-auto">{modeToggle}</div>
               </div>
-              <label className="grid gap-1 text-sm text-slate-700">
+              <label className="grid gap-1 text-sm text-[#8d6e63]">
                 Вид питомца
                 <select
-                  className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                  className={`${simsFieldClass} appearance-none pr-10`}
                   style={selectArrowStyle}
                   value={activeTypeFilter}
                   onChange={(event) => handleTypeFilterChange(event.target.value)}
@@ -1900,10 +1910,10 @@ export default function MapClient() {
                   ))}
                 </select>
               </label>
-              <label className="grid gap-1 text-sm text-slate-700">
+              <label className="grid gap-1 text-sm text-[#8d6e63]">
                 Имя питомца
                 <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  className={simsFieldClass}
                   value={activeNameFilter}
                   onChange={(event) => handleNameFilterChange(event.target.value)}
                   placeholder="Барсик"
@@ -1913,18 +1923,20 @@ export default function MapClient() {
                 type="button"
                 onClick={resetFilters}
                 disabled={!hasFilters}
-                className="self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className={simsResetButtonClass}
               >
                 Сбросить
               </button>
             </div>
             <div
-              className="pointer-events-auto absolute right-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
+              className={`pointer-events-auto absolute right-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col p-5 ${simsSidebarClass}`}
               style={{ top: overlayTop }}
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Мемориалы</h2>
-                <span className="text-xs text-slate-500">{listMarkers.length}</span>
+                <h2 className="text-sm font-black uppercase tracking-tight text-[#5d4037]">Мемориалы</h2>
+                <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
+                  {listMarkers.length}
+                </span>
               </div>
               <div className="mt-4 flex-1 overflow-y-auto pr-1">{memorialListContent}</div>
             </div>
@@ -1956,16 +1968,16 @@ export default function MapClient() {
               </div>
             </div>
             <div
-              className="pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur"
+              className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 ${simsPanelClass}`}
               style={{ top: overlayTop }}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="ml-auto">{modeToggle}</div>
               </div>
-              <label className="grid gap-1 text-sm text-slate-700">
+              <label className="grid gap-1 text-sm text-[#8d6e63]">
                 Вид питомца
                 <select
-                  className="appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-2 pr-10"
+                  className={`${simsFieldClass} appearance-none pr-10`}
                   style={selectArrowStyle}
                   value={activeTypeFilter}
                   onChange={(event) => handleTypeFilterChange(event.target.value)}
@@ -1977,10 +1989,10 @@ export default function MapClient() {
                   ))}
                 </select>
               </label>
-              <label className="grid gap-1 text-sm text-slate-700">
+              <label className="grid gap-1 text-sm text-[#8d6e63]">
                 Имя питомца
                 <input
-                  className="rounded-2xl border border-slate-200 px-4 py-2"
+                  className={simsFieldClass}
                   value={activeNameFilter}
                   onChange={(event) => handleNameFilterChange(event.target.value)}
                   placeholder="Барсик"
@@ -1990,12 +2002,12 @@ export default function MapClient() {
                 type="button"
                 onClick={resetFilters}
                 disabled={!hasFilters}
-                className="self-start rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className={simsResetButtonClass}
               >
                 Сбросить
               </button>
             </div>
-            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 h-[60%] w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 rounded-3xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur">
+            <div className={`pointer-events-auto absolute right-6 top-1/2 z-20 h-[60%] w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 p-5 ${simsSidebarClass}`}>
               {activeCarouselMarker ? (
                 <div className="flex h-full flex-col gap-3">
                   {activePreviewSrc ? (

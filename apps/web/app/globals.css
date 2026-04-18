@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: light;
+  --font-body: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --font-display: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
   --bg: #fbf7f5;
   --surface: #ffffff;
   --primary: #2f6b8a;
@@ -34,7 +36,7 @@ h4,
 h5,
 h6 {
   color: var(--text);
-  font-family: var(--font-display), var(--font-body), serif;
+  font-family: var(--font-display), var(--font-body), sans-serif;
   letter-spacing: 0.015em;
 }
 

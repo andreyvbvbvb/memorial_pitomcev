@@ -97,92 +97,174 @@ export default function MyPetsClient() {
     });
   }, [pets, apiUrl]);
 
+  const formatLifeRange = (pet: PetWithPreview) => {
+    const birthYear = pet.birthDate ? new Date(pet.birthDate).getFullYear() : null;
+    const deathYear = pet.deathDate ? new Date(pet.deathDate).getFullYear() : null;
+    if (birthYear && deathYear) {
+      return `${birthYear} — ${deathYear}`;
+    }
+    if (birthYear) {
+      return `Рождён: ${birthYear}`;
+    }
+    if (deathYear) {
+      return `Ушёл: ${deathYear}`;
+    }
+    return "Без дат";
+  };
+
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen overflow-hidden bg-[#fcf8f5]">
+      <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
+      <div className="pointer-events-none fixed bottom-0 left-0 h-80 w-80 rounded-full bg-[#d3a27f]/12 blur-[120px]" />
       {viewMode === 5 ? <MyPets3DView pets={petsWithPreview} loading={loading} fullScreen /> : null}
       <div className="relative z-10 mx-auto max-w-6xl px-6 py-12 pointer-events-none">
         <div className="pointer-events-auto">
-        <div className="flex flex-col items-center gap-2 text-center"></div>
+          {viewMode === 4 ? (
+            <section className="rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6">
+              {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
 
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <div className="flex items-center gap-1 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm">
-            {[4, 5].map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setViewMode(mode as 4 | 5)}
-                className={`h-9 w-10 rounded-xl text-sm font-semibold transition ${
-                  viewMode === mode
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {viewMode === 4 ? (
-          <section className="mt-10 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
-            {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
-
-            <div className="mt-6">
               {petsWithPreview.length === 0 && !loading ? (
                 <p className="text-sm text-slate-500">Пока нет мемориалов.</p>
               ) : null}
 
-              <div className="columns-1 sm:columns-2 xl:columns-3 [column-gap:1.25rem]">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {petsWithPreview.map((pet) => (
                   <Link
                     key={pet.id}
                     href={`/pets/${pet.id}`}
-                    className="group mb-5 inline-block w-full break-inside-avoid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                    className="group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]"
                   >
-                    <div className="bg-slate-100">
+                    <div className="relative aspect-square overflow-hidden rounded-[24px] border-2 border-white bg-[#efedeb]">
                       {pet.previewUrl ? (
                         <img
                           src={pet.previewUrl}
                           alt={`Фото ${pet.name}`}
-                          className="h-auto w-full object-contain"
+                          className="h-full w-full object-cover"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="h-40 w-full bg-slate-200" />
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fdf2e9] to-[#d3a27f]/10">
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-12 w-12 text-[#d3a27f]/25"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="7.5" cy="7.5" r="1.5" />
+                            <circle cx="16.5" cy="7.5" r="1.5" />
+                            <circle cx="6" cy="14" r="1.75" />
+                            <circle cx="12" cy="16" r="2.1" />
+                            <circle cx="18" cy="14" r="1.75" />
+                          </svg>
+                        </div>
                       )}
-                    </div>
-                    <div className="space-y-2 p-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-lg font-semibold text-slate-900 group-hover:underline">
-                          {pet.name}
-                        </h3>
-                        <span className="text-xs text-slate-500">
+                      <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full border border-white bg-white/90 px-3 py-1 shadow-sm backdrop-blur">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            pet.isPublic ? "bg-[#3bceac]" : "bg-[#adb5bd]"
+                          }`}
+                        />
+                        <span className="text-[9px] font-black uppercase text-[#5d4037]">
                           {pet.isPublic ? "Публичный" : "Приватный"}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-600">
+                      <div className="pointer-events-none absolute -right-1 -top-1 opacity-0 transition-all duration-300 group-hover:translate-x-2 group-hover:translate-y-[-8px] group-hover:scale-100 group-hover:opacity-100">
+                        <div className="h-10 w-6 border border-white bg-gradient-to-t from-[#2da689] to-[#3bceac] shadow-lg [clip-path:polygon(50%_0%,100%_50%,50%_100%,0%_50%)]" />
+                      </div>
+                    </div>
+
+                    <div className="mt-4 px-2 pb-2">
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <h3 className="truncate text-lg font-black uppercase tracking-tight text-[#5d4037]">
+                          {pet.name}
+                        </h3>
+                        <span className="rounded-full px-1 text-[#adb5bd] transition group-hover:text-[#d3a27f]">
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          >
+                            <path d="M5 12h14" />
+                            <path d="m12 5 7 7-7 7" />
+                          </svg>
+                        </span>
+                      </div>
+
+                      <p className="mb-3 line-clamp-1 text-xs font-bold italic text-[#8d6e63]/70">
                         {pet.epitaph ?? "Без эпитафии"}
                       </p>
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                        {pet.birthDate ? (
-                          <span className="rounded-full bg-slate-100 px-3 py-1">
-                            Рождение: {new Date(pet.birthDate).toLocaleDateString()}
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center gap-2 rounded-full bg-[#fdf2e9] px-3 py-1.5">
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-3 w-3 text-[#d3a27f]"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <rect x="3" y="5" width="18" height="16" rx="2" />
+                            <path d="M16 3v4M8 3v4M3 11h18" />
+                          </svg>
+                          <span className="text-[10px] font-black text-[#8d6e63]">
+                            {formatLifeRange(pet)}
                           </span>
-                        ) : null}
-                        {pet.deathDate ? (
-                          <span className="rounded-full bg-slate-100 px-3 py-1">
-                            Уход: {new Date(pet.deathDate).toLocaleDateString()}
-                          </span>
-                        ) : null}
+                        </div>
+                        <span className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63] transition-all group-hover:translate-y-[1px] group-hover:shadow-[0_2px_0_0_#1e7a63]">
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M7 17 17 7" />
+                            <path d="M9 7h8v8" />
+                          </svg>
+                        </span>
                       </div>
                     </div>
                   </Link>
                 ))}
               </div>
-            </div>
-          </section>
-        ) : null}
-        <ErrorToast message={error} onClose={() => setError(null)} />
+            </section>
+          ) : null}
+          <ErrorToast message={error} onClose={() => setError(null)} />
+        </div>
+      </div>
+
+      <div className="pointer-events-auto fixed bottom-6 right-6 z-20">
+        <div className="flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur">
+          {[
+            { mode: 4 as const, label: "Карточки" },
+            { mode: 5 as const, label: "3D" }
+          ].map(({ mode, label }) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setViewMode(mode)}
+              className={`rounded-[18px] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] transition ${
+                viewMode === mode
+                  ? "bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63]"
+                  : "text-[#8d6e63] hover:bg-[#fdf2e9]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

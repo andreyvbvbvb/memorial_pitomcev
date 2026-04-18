@@ -1154,7 +1154,8 @@ export default function CreateMemorialClient() {
         new THREE.Vector3(0, 1, 0),
         THREE.MathUtils.degToRad(30)
       );
-      rotatedOffset.y -= 1;
+      rotatedOffset.multiplyScalar(0.84);
+      rotatedOffset.y -= 0.85;
       const nextPos = prevTarget.clone().add(rotatedOffset);
       const distance = nextPos.distanceTo(prevTarget);
       const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
@@ -1177,6 +1178,15 @@ export default function CreateMemorialClient() {
     }
 
     const { gl, scene } = renderContext;
+    const tempAmbient = new THREE.AmbientLight(0xffffff, 0.2);
+    const tempTopLight = new THREE.DirectionalLight(0xfff6de, 1.15);
+    const tempLightTarget = new THREE.Object3D();
+    tempTopLight.position.set(0, 12, 3);
+    tempLightTarget.position.set(0, 0, 0);
+    tempTopLight.target = tempLightTarget;
+    scene.add(tempAmbient);
+    scene.add(tempTopLight);
+    scene.add(tempLightTarget);
     const size = new THREE.Vector2();
     gl.getDrawingBufferSize(size);
     const width = Math.max(1, Math.round(size.x * 0.5));
@@ -1196,12 +1206,18 @@ export default function CreateMemorialClient() {
     gl.setRenderTarget(prevTarget);
     gl.autoClear = prevAutoClear;
     renderTarget.dispose();
+    scene.remove(tempAmbient);
+    scene.remove(tempTopLight);
+    scene.remove(tempLightTarget);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
+      scene.remove(tempAmbient);
+      scene.remove(tempTopLight);
+      scene.remove(tempLightTarget);
       restore?.();
       return null;
     }
