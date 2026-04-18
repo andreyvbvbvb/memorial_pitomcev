@@ -1530,10 +1530,10 @@ export default function MapClient() {
   );
   const desktopFilterPanel = (
     <div
-      className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-3 transition-all duration-300 ease-out ${simsPanelClass}`}
+      className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-3 transition-[transform,opacity,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${simsPanelClass}`}
       style={{
         top: overlayTop,
-        transform: mapMode === "carousel" ? "translateY(6px)" : "translateY(0px)"
+        transform: mapMode === "carousel" ? "translateY(2px)" : "translateY(0px)"
       }}
     >
       <div className="flex items-center justify-between gap-3">

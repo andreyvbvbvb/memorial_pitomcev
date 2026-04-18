@@ -134,11 +134,11 @@ export default function AppHeader() {
   ];
 
   const pillClass =
-    "group relative rounded-[14px] border border-white/80 bg-white/75 px-4 py-2 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+    "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 px-4 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
-    "group relative flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+    "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const createButtonClass =
-    "inline-flex h-10 items-center gap-1 rounded-[14px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none";
+    "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none";
   const authButtonClass =
     "rounded-[24px] border border-[#e7dbd3] bg-[#f6efea] px-5 py-2 text-sm font-semibold text-[#5d4037] shadow-[0_12px_24px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-[#fff7f2]";
   const menuPanelClass =

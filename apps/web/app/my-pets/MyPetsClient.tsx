@@ -246,7 +246,7 @@ export default function MyPetsClient() {
         </div>
       </div>
 
-      <div className="pointer-events-auto fixed bottom-6 right-6 z-20">
+      <div className="pointer-events-auto fixed bottom-6 left-6 z-20">
         <div className="flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur">
           {[
             { mode: 4 as const, label: "Карточки" },

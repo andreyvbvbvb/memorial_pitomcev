@@ -74,6 +74,26 @@ const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
 const KOTIK_MAX_HEIGHT = 2.5;
 
+function formatYear(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.getFullYear();
+}
+
+function formatYearRange(birthDate: string | null, deathDate: string | null) {
+  const birthYear = formatYear(birthDate);
+  const deathYear = formatYear(deathDate);
+  if (birthYear && deathYear) {
+    return `${birthYear} — ${deathYear}`;
+  }
+  return birthYear ?? deathYear ?? "Годы не указаны";
+}
+
 function applyHouseScale(
   target: THREE.Object3D,
   houseId?: string | null,
@@ -555,53 +575,74 @@ export default function MyPets3DView({
       </Canvas>
 
       {selectedItem ? (
-        <aside className="absolute right-6 top-1/2 z-20 w-[320px] -translate-y-1/2 rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-xl backdrop-blur">
+        <aside className="absolute right-6 top-1/2 z-20 w-[340px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
           <button
             type="button"
             onClick={() => setSelectedId(null)}
-            className="absolute right-3 top-3 h-8 w-8 rounded-full border border-slate-200 bg-white text-lg text-slate-500 transition hover:text-slate-800"
+            className="absolute right-4 top-4 h-8 w-8 rounded-full border border-[#eadfd9] bg-white text-lg text-[#8d6e63] transition hover:text-[#5d4037]"
             aria-label="Закрыть"
           >
             ×
           </button>
-          <div className="flex items-center gap-3">
-            {selectedItem.pet.previewUrl ? (
-              <img
-                src={selectedItem.pet.previewUrl}
-                alt={`Фото ${selectedItem.pet.name}`}
-                className="h-14 w-14 rounded-2xl object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="h-14 w-14 rounded-2xl bg-slate-200" />
-            )}
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Мемориал</p>
-              <h3 className="text-lg font-semibold text-slate-900">{selectedItem.pet.name}</h3>
+          <div className="rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
+            <div className="flex items-start gap-4">
+              <div className="relative">
+                {selectedItem.pet.previewUrl ? (
+                  <img
+                    src={selectedItem.pet.previewUrl}
+                    alt={`Фото ${selectedItem.pet.name}`}
+                    className="h-24 w-24 rounded-[22px] object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="h-24 w-24 rounded-[22px] bg-slate-200" />
+                )}
+                <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      selectedItem.pet.isPublic ? "bg-[#3bceac]" : "bg-[#adb5bd]"
+                    }`}
+                  />
+                  <span className="text-[9px] font-black uppercase text-[#5d4037]">
+                    {selectedItem.pet.isPublic ? "Публичный" : "Приватный"}
+                  </span>
+                </div>
+              </div>
+              <div className="min-w-0 flex-1 pt-1">
+                <h3 className="text-xl font-black uppercase tracking-tight text-[#5d4037]">
+                  {selectedItem.pet.name}
+                </h3>
+                <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
+                  {formatYearRange(selectedItem.pet.birthDate, selectedItem.pet.deathDate)}
+                </p>
+              </div>
             </div>
-          </div>
-          <p className="mt-3 text-sm text-slate-600">
-            {selectedItem.pet.epitaph ?? "Без эпитафии"}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-            {selectedItem.pet.birthDate ? (
-              <span className="rounded-full bg-slate-100 px-3 py-1">
-                Рождение: {new Date(selectedItem.pet.birthDate).toLocaleDateString()}
-              </span>
-            ) : null}
-            {selectedItem.pet.deathDate ? (
-              <span className="rounded-full bg-slate-100 px-3 py-1">
-                Уход: {new Date(selectedItem.pet.deathDate).toLocaleDateString()}
-              </span>
-            ) : null}
-            <span className="rounded-full bg-slate-100 px-3 py-1">
-              {selectedItem.pet.isPublic ? "Публичный" : "Приватный"}
-            </span>
-          </div>
-          <div className="mt-5">
-            <Link href={`/pets/${selectedItem.pet.id}`} className="btn btn-primary w-full">
-              Открыть мемориал
-            </Link>
+            <p className="mt-4 text-[15px] italic leading-relaxed text-[#6f6360]">
+              &ldquo;{selectedItem.pet.epitaph ?? "Без эпитафии"}&rdquo;
+            </p>
+            <div className="mt-5">
+              <Link
+                href={`/pets/${selectedItem.pet.id}`}
+                className="group inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-[1rem] font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+              >
+                <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                  Открыть мемориал
+                </span>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="ml-2 h-5 w-5 text-current transition-transform duration-300 group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m13 5 7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </aside>
       ) : null}

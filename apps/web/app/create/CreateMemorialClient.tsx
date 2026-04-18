@@ -2034,11 +2034,11 @@ export default function CreateMemorialClient() {
   const overlayLabelClass =
     "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
   const overlayInputClass =
-    "w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-5 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    "w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayTextareaClass =
-    "min-h-[180px] w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-5 py-4 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
-    "grid gap-6 rounded-[32px] border-[4px] border-white bg-white/95 p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]";
+    "grid gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] sm:p-5";
 
   const renderBaseInfoForm = (centered = false) => (
     <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
@@ -2180,7 +2180,7 @@ export default function CreateMemorialClient() {
             )}
           </div>
 
-          <div className="grid gap-3 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-4 shadow-inner">
+          <div className="grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
             <div className="grid grid-cols-2 gap-2">
               <label className="grid gap-2">
                 <span className={overlayLabelClass}>Широта</span>
@@ -2448,15 +2448,15 @@ export default function CreateMemorialClient() {
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
-    "pointer-events-auto absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-[calc(1rem+4.25rem)] sm:left-[calc(1.5rem+4.75rem)] lg:left-[calc(5rem+5.5rem)] overflow-hidden rounded-3xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur sm:p-4";
+    "pointer-events-auto absolute bottom-[calc(5.8rem+env(safe-area-inset-bottom))] left-[5.15rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[5.75rem] sm:p-3";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
-        ? "w-[min(1120px,calc(100vw-1rem))] max-h-[min(74vh,700px)]"
-        : "w-[min(520px,calc(100vw-1rem))] max-h-[70vh] overflow-y-auto"
+        ? "w-[min(1080px,calc(100vw-0.75rem))] max-h-[min(74vh,700px)]"
+        : "w-[min(500px,calc(100vw-0.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
-    `group relative flex h-12 w-12 items-center justify-center rounded-2xl border-2 shadow-md transition-all sm:h-14 sm:w-14 xl:h-[3.75rem] xl:w-[3.75rem] ${
+    `group relative flex h-14 w-14 items-center justify-center rounded-[22px] border-2 shadow-md transition-all sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem] ${
       active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -2579,28 +2579,29 @@ export default function CreateMemorialClient() {
 
           <div className="pointer-events-none fixed inset-0 z-10">
 
-            <div className="pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+12px)] bottom-20 flex w-[min(340px,calc(100vw-1.5rem))] max-w-[90vw] flex-col overflow-hidden rounded-[28px] border-[5px] border-[#f8f9fa] bg-white/95 shadow-2xl sm:right-6 sm:top-[calc(var(--app-header-height,56px)+16px)] sm:bottom-24 sm:w-[min(360px,calc(100vw-2rem))] sm:rounded-[32px] sm:border-[6px] xl:w-[380px]">
-              <div className="border-b border-gray-100 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-black uppercase tracking-[0.08em] text-[#5d4037]">
-                    Редактор мемориала
-                  </h3>
-                  <label className="group relative flex items-center gap-2 text-[10px] font-bold text-green-600">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300"
-                      checked={giftPreviewEnabled}
-                      onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
-                    />
-                    <span>Посмотреть</span>
-                    <span className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                      При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
-                    </span>
-                  </label>
+            <div className="pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]">
+                <div className="border-b border-[#eadfd9] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]">
+                      Редактор мемориала
+                    </h3>
+                    <label className="group relative flex items-center gap-2 text-[10px] font-bold text-green-600">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300"
+                        checked={giftPreviewEnabled}
+                        onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
+                      />
+                      <span>Посмотреть</span>
+                      <span className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
+                      </span>
+                    </label>
+                  </div>
                 </div>
-              </div>
-              <div className="flex min-h-0 flex-1 gap-3 overflow-hidden p-4">
-                <div className="flex w-[48px] flex-col items-center gap-2 overflow-visible sm:w-[52px] sm:gap-3">
+                <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3">
+                  <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
                   {step3Tabs.map((tab) => {
                     const isActive = activeStep3Tab === tab.id;
                     const isTooltipVisible = tooltipTabId === tab.id;
@@ -2633,7 +2634,7 @@ export default function CreateMemorialClient() {
                             setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                           }}
                           aria-label={tab.label}
-                          className={`flex h-11 w-11 items-center justify-center rounded-xl border-2 text-sm shadow-sm transition-all sm:h-12 sm:w-12 ${
+                          className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
                             isActive
                               ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
                               : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
@@ -2660,6 +2661,7 @@ export default function CreateMemorialClient() {
                 </div>
               </div>
             </div>
+            </div>
 
             {activeOverlay ? (
               <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : undefined)}>
@@ -2684,13 +2686,13 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.base
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 11v5" />
                     <circle cx="12" cy="8" r="1" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.base ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2704,12 +2706,12 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.story
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 5h8a3 3 0 0 1 3 3v11" />
                     <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.story ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2723,12 +2725,12 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.marker
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.marker ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2742,13 +2744,13 @@ export default function CreateMemorialClient() {
                     isBuilderStep && !visitedOverlays.photos
                   )}
                 >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="2" />
                     <circle cx="9" cy="11" r="2" />
                     <path d="M21 15l-4-4-4 4-3-3-5 5" />
                   </svg>
                   {isBuilderStep && !visitedOverlays.photos ? (
-                    <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[12px] font-bold text-white shadow">
+                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
                   ) : null}
@@ -2874,7 +2876,6 @@ export default function CreateMemorialClient() {
                           <span className="transition-transform duration-300 group-hover:-translate-x-1">
                             {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
                           </span>
-                          {!loading ? renderArrowIcon() : null}
                         </button>
                       </div>
                     </div>
