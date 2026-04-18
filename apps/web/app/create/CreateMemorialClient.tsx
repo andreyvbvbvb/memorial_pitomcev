@@ -2029,21 +2029,38 @@ export default function CreateMemorialClient() {
     }
   };
 
+  const overlaySectionTitleClass =
+    "mb-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.28em] text-[#8d6e63]";
+  const overlayLabelClass =
+    "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
+  const overlayInputClass =
+    "w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-5 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+  const overlayTextareaClass =
+    "min-h-[180px] w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-5 py-4 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+  const overlayShellClass =
+    "grid gap-6 rounded-[32px] border-[4px] border-white bg-white/95 p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]";
+
   const renderBaseInfoForm = (centered = false) => (
     <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
-      <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
-        Имя питомца
+      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}>
+        {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
+        {centered ? "Имя питомца" : null}
         <input
-          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
+          className={centered
+            ? `rounded-2xl border border-slate-200 px-4 py-2 min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+            : overlayInputClass}
           value={form.name}
           onChange={(event) => handleChange("name", event.target.value)}
           placeholder="Барсик"
         />
       </label>
-      <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
-        Вид питомца
+      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}>
+        {!centered ? <span className={overlayLabelClass}>Вид питомца</span> : null}
+        {centered ? "Вид питомца" : null}
         <select
-          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
+          className={centered
+            ? `rounded-2xl border border-slate-200 px-4 py-2 min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+            : overlayInputClass}
           value={form.species}
           onChange={(event) => handleSpeciesChange(event.target.value)}
         >
@@ -2057,25 +2074,31 @@ export default function CreateMemorialClient() {
         </select>
       </label>
       <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
-        <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "text-center" : ""}`}>
-          Дата рождения
+        <label className={`grid gap-2 ${centered ? "text-center text-sm text-slate-700" : ""}`}>
+          {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
+          {centered ? "Дата рождения" : null}
           <input
             type="date"
-            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center text-base font-semibold" : ""} ${
-              dateValidationMessage ? "border-red-400" : "border-slate-200"
-            } ${centered ? "min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
+            className={centered
+              ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
+                  dateValidationMessage ? "border-red-400" : "border-slate-200"
+                } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+              : `${overlayInputClass} ${dateValidationMessage ? "!border-red-400" : ""}`}
             value={form.birthDate}
             onChange={(event) => handleChange("birthDate", event.target.value)}
             max={form.deathDate || todayInputValue}
           />
         </label>
-        <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "text-center" : ""}`}>
-          Дата ухода
+        <label className={`grid gap-2 ${centered ? "text-center text-sm text-slate-700" : ""}`}>
+          {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
+          {centered ? "Дата ухода" : null}
           <input
             type="date"
-            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center text-base font-semibold" : ""} ${
-              dateValidationMessage ? "border-red-400" : "border-slate-200"
-            } ${centered ? "min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
+            className={centered
+              ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
+                  dateValidationMessage ? "border-red-400" : "border-slate-200"
+                } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+              : `${overlayInputClass} ${dateValidationMessage ? "!border-red-400" : ""}`}
             value={form.deathDate}
             onChange={(event) => handleChange("deathDate", event.target.value)}
             min={form.birthDate || undefined}
@@ -2096,9 +2119,14 @@ export default function CreateMemorialClient() {
       ? markerGroups.primary
       : markerGroups.all;
     return (
-      <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)]">
+      <div className={overlayShellClass}>
+        <h3 className={overlaySectionTitleClass}>
+          <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+          Маркер и карта
+        </h3>
+        <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)]">
         <div className="grid content-start gap-3">
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
+          <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner">
             {!apiKey ? (
               <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
                 Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -2152,23 +2180,23 @@ export default function CreateMemorialClient() {
             )}
           </div>
 
-          <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+          <div className="grid gap-3 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-4 shadow-inner">
             <div className="grid grid-cols-2 gap-2">
-              <label className="grid gap-1 text-[11px] text-slate-600">
-                Широта
+              <label className="grid gap-2">
+                <span className={overlayLabelClass}>Широта</span>
                 <input
                   inputMode="decimal"
-                  className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+                  className={overlayInputClass}
                   placeholder="55.755826"
                   value={form.lat}
                   onChange={(event) => handleChange("lat", event.target.value)}
                 />
               </label>
-              <label className="grid gap-1 text-[11px] text-slate-600">
-                Долгота
+              <label className="grid gap-2">
+                <span className={overlayLabelClass}>Долгота</span>
                 <input
                   inputMode="decimal"
-                  className="rounded-xl border border-slate-200 px-3 py-1 text-xs"
+                  className={overlayInputClass}
                   placeholder="37.617299"
                   value={form.lng}
                   onChange={(event) => handleChange("lng", event.target.value)}
@@ -2207,7 +2235,7 @@ export default function CreateMemorialClient() {
               </button>
             </div>
 
-            <label className="group relative flex items-center gap-2 text-xs text-slate-700">
+            <label className="group relative flex items-center gap-2 text-xs font-bold text-slate-700">
               <input
                 type="checkbox"
                 className="h-4 w-4"
@@ -2226,7 +2254,7 @@ export default function CreateMemorialClient() {
         </div>
 
         <div className="grid min-w-0 content-start gap-2">
-          <p className="text-sm font-semibold text-slate-900">Маркер на карте</p>
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-[#5d4037]">Маркер на карте</p>
           <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3">
             <div className="flex w-14 flex-col items-center gap-2">
               {markerStyles.map((style) => {
@@ -2300,25 +2328,30 @@ export default function CreateMemorialClient() {
           </div>
         </div>
       </div>
+      </div>
     );
   };
 
   const renderStoryPanel = () => (
-    <div className="grid gap-4">
-      <label className="grid gap-1 text-sm text-slate-700">
-        Эпитафия (до 200 символов)
+    <div className={overlayShellClass}>
+      <h3 className={overlaySectionTitleClass}>
+        <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+        История и эпитафия
+      </h3>
+      <label className="grid gap-2">
+        <span className={overlayLabelClass}>Эпитафия (до 200 символов)</span>
         <input
-          className="rounded-2xl border border-slate-200 px-4 py-2"
+          className={overlayInputClass}
           value={form.epitaph}
           maxLength={200}
           onChange={(event) => handleChange("epitaph", event.target.value)}
           placeholder="Самый лучший друг"
         />
       </label>
-      <label className="grid gap-1 text-sm text-slate-700">
-        История питомца
+      <label className="grid gap-2">
+        <span className={overlayLabelClass}>История питомца</span>
         <textarea
-          className="min-h-[160px] rounded-2xl border border-slate-200 px-4 py-2"
+          className={overlayTextareaClass}
           value={form.story}
           maxLength={2000}
           onChange={(event) => handleChange("story", event.target.value)}
@@ -2329,15 +2362,20 @@ export default function CreateMemorialClient() {
   );
 
   const renderPhotosPanel = () => (
-    <div className="grid gap-4">
+    <div className={overlayShellClass}>
+      <h3 className={overlaySectionTitleClass}>
+        <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+        Фотографии
+      </h3>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">Фотографии (до 10)</h3>
-        <span className="text-xs text-slate-500">{photos.length}/10</span>
+        <h3 className="text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">Фотографии (до 10)</h3>
+        <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">{photos.length}/10</span>
       </div>
       <input
         type="file"
         accept="image/*"
         multiple
+        className={overlayInputClass}
         onChange={(event) => {
           handlePhotosSelected(event.target.files);
           event.currentTarget.value = "";
@@ -2397,7 +2435,11 @@ export default function CreateMemorialClient() {
   );
 
   const renderBaseInfoPanel = () => (
-    <div className="grid gap-4">
+    <div className={overlayShellClass}>
+      <h3 className={overlaySectionTitleClass}>
+        <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+        Информация о мемориале
+      </h3>
       {renderBaseInfoForm()}
     </div>
   );

@@ -122,6 +122,21 @@ const formatDate = (value?: string | null) => {
   return `${day}.${month}.${year}`;
 };
 
+const formatYearRange = (birthDate?: string | null, deathDate?: string | null) => {
+  const birthYear = birthDate ? new Date(birthDate).getFullYear() : null;
+  const deathYear = deathDate ? new Date(deathDate).getFullYear() : null;
+  if (birthYear && deathYear) {
+    return `${birthYear} — ${deathYear}`;
+  }
+  if (birthYear) {
+    return `Рождён: ${birthYear}`;
+  }
+  if (deathYear) {
+    return `Ушёл: ${deathYear}`;
+  }
+  return "Без дат";
+};
+
 const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, string>) => {
   if (!colors) {
     return;
@@ -1494,7 +1509,7 @@ export default function MapClient() {
               <div className="border-t border-slate-200 bg-white/90 p-3">
                 <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
                 <p className="mt-1 text-xs text-slate-600">
-                  {`${formatDate(marker.birthDate)}-${formatDate(marker.deathDate)}`}
+                  {formatYearRange(marker.birthDate, marker.deathDate)}
                 </p>
               </div>
             </div>
@@ -1511,6 +1526,51 @@ export default function MapClient() {
           </a>
         );
       })}
+    </div>
+  );
+  const desktopFilterPanel = (
+    <div
+      className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-3 transition-all duration-300 ease-out ${simsPanelClass}`}
+      style={{
+        top: overlayTop,
+        transform: mapMode === "carousel" ? "translateY(6px)" : "translateY(0px)"
+      }}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="ml-auto">{modeToggle}</div>
+      </div>
+      <label className="grid gap-1 text-sm text-[#8d6e63]">
+        Вид питомца
+        <select
+          className={`${simsFieldClass} appearance-none pr-10`}
+          style={selectArrowStyle}
+          value={activeTypeFilter}
+          onChange={(event) => handleTypeFilterChange(event.target.value)}
+        >
+          {petTypeOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1 text-sm text-[#8d6e63]">
+        Имя питомца
+        <input
+          className={simsFieldClass}
+          value={activeNameFilter}
+          onChange={(event) => handleNameFilterChange(event.target.value)}
+          placeholder="Барсик"
+        />
+      </label>
+      <button
+        type="button"
+        onClick={resetFilters}
+        disabled={!hasFilters}
+        className={simsResetButtonClass}
+      >
+        Сбросить
+      </button>
     </div>
   );
   if (isMobile) {
@@ -1888,46 +1948,7 @@ export default function MapClient() {
       <div className="relative z-10 h-full w-full pointer-events-none">
         {mapMode === "map" ? (
           <div className="relative h-full w-full">
-            <div
-              className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 ${simsPanelClass}`}
-              style={{ top: overlayTop }}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="ml-auto">{modeToggle}</div>
-              </div>
-              <label className="grid gap-1 text-sm text-[#8d6e63]">
-                Вид питомца
-                <select
-                  className={`${simsFieldClass} appearance-none pr-10`}
-                  style={selectArrowStyle}
-                  value={activeTypeFilter}
-                  onChange={(event) => handleTypeFilterChange(event.target.value)}
-                >
-                  {petTypeOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="grid gap-1 text-sm text-[#8d6e63]">
-                Имя питомца
-                <input
-                  className={simsFieldClass}
-                  value={activeNameFilter}
-                  onChange={(event) => handleNameFilterChange(event.target.value)}
-                  placeholder="Барсик"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={resetFilters}
-                disabled={!hasFilters}
-                className={simsResetButtonClass}
-              >
-                Сбросить
-              </button>
-            </div>
+            {desktopFilterPanel}
             <div
               className={`pointer-events-auto absolute right-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col p-5 ${simsSidebarClass}`}
               style={{ top: overlayTop }}
@@ -1967,46 +1988,7 @@ export default function MapClient() {
                 />
               </div>
             </div>
-            <div
-              className={`pointer-events-auto absolute left-6 z-20 flex w-full max-w-[320px] flex-col gap-4 ${simsPanelClass}`}
-              style={{ top: overlayTop }}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="ml-auto">{modeToggle}</div>
-              </div>
-              <label className="grid gap-1 text-sm text-[#8d6e63]">
-                Вид питомца
-                <select
-                  className={`${simsFieldClass} appearance-none pr-10`}
-                  style={selectArrowStyle}
-                  value={activeTypeFilter}
-                  onChange={(event) => handleTypeFilterChange(event.target.value)}
-                >
-                  {petTypeOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="grid gap-1 text-sm text-[#8d6e63]">
-                Имя питомца
-                <input
-                  className={simsFieldClass}
-                  value={activeNameFilter}
-                  onChange={(event) => handleNameFilterChange(event.target.value)}
-                  placeholder="Барсик"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={resetFilters}
-                disabled={!hasFilters}
-                className={simsResetButtonClass}
-              >
-                Сбросить
-              </button>
-            </div>
+            {desktopFilterPanel}
             <div className={`pointer-events-auto absolute right-6 top-1/2 z-20 h-[60%] w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 p-5 ${simsSidebarClass}`}>
               {activeCarouselMarker ? (
                 <div className="flex h-full flex-col gap-3">

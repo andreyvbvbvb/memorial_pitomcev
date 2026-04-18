@@ -44,6 +44,24 @@ a {
   color: var(--primary);
 }
 
+@keyframes createPlusSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes createPlusSpinReverse {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
 @layer components {
   .btn {
     display: inline-flex;
