@@ -1152,7 +1152,7 @@ export default function CreateMemorialClient() {
       const offset = prevPos.clone().sub(prevTarget);
       const rotatedOffset = offset.clone().applyAxisAngle(
         new THREE.Vector3(0, 1, 0),
-        THREE.MathUtils.degToRad(30)
+        THREE.MathUtils.degToRad(-30)
       );
       rotatedOffset.multiplyScalar(0.84);
       rotatedOffset.y -= 0.85;
@@ -1178,15 +1178,28 @@ export default function CreateMemorialClient() {
     }
 
     const { gl, scene } = renderContext;
-    const tempAmbient = new THREE.AmbientLight(0xffffff, 0.2);
-    const tempTopLight = new THREE.DirectionalLight(0xfff6de, 1.15);
+    const tempAmbient = new THREE.AmbientLight(0xffffff, 0.55);
+    const tempHemisphere = new THREE.HemisphereLight(0xffffff, 0xded8cd, 0.7);
+    const tempTopLight = new THREE.DirectionalLight(0xfff6de, 1.75);
+    const tempFrontLight = new THREE.DirectionalLight(0xffffff, 1.1);
     const tempLightTarget = new THREE.Object3D();
     tempTopLight.position.set(0, 12, 3);
+    tempFrontLight.position.set(5, 6, 8);
     tempLightTarget.position.set(0, 0, 0);
     tempTopLight.target = tempLightTarget;
+    tempFrontLight.target = tempLightTarget;
     scene.add(tempAmbient);
+    scene.add(tempHemisphere);
     scene.add(tempTopLight);
+    scene.add(tempFrontLight);
     scene.add(tempLightTarget);
+    const cleanupTempLights = () => {
+      scene.remove(tempAmbient);
+      scene.remove(tempHemisphere);
+      scene.remove(tempTopLight);
+      scene.remove(tempFrontLight);
+      scene.remove(tempLightTarget);
+    };
     const size = new THREE.Vector2();
     gl.getDrawingBufferSize(size);
     const width = Math.max(1, Math.round(size.x * 0.5));
@@ -1206,18 +1219,14 @@ export default function CreateMemorialClient() {
     gl.setRenderTarget(prevTarget);
     gl.autoClear = prevAutoClear;
     renderTarget.dispose();
-    scene.remove(tempAmbient);
-    scene.remove(tempTopLight);
-    scene.remove(tempLightTarget);
+    cleanupTempLights();
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      scene.remove(tempAmbient);
-      scene.remove(tempTopLight);
-      scene.remove(tempLightTarget);
+      cleanupTempLights();
       restore?.();
       return null;
     }
@@ -1413,6 +1422,24 @@ export default function CreateMemorialClient() {
     setTimeout(() => setReviewOpen(false), 180);
   };
 
+  const renderArrowIcon = (className?: string) => (
+    <span className={`ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-all duration-300 group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100 ${className ?? ""}`}>
+      <svg
+        viewBox="0 0 20 20"
+        className="h-4 w-4 translate-x-[-4px] text-white transition-transform duration-300 group-hover:translate-x-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 10h10" />
+        <path d="m10 5 5 5-5 5" />
+      </svg>
+    </span>
+  );
+
   const renderNavButtons = (className?: string, buttonClassName?: string) => (
     <div className={`flex items-center justify-center ${className ?? ""}`}>
       {step < 1 ? (
@@ -1425,21 +1452,7 @@ export default function CreateMemorialClient() {
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
             Продолжить
           </span>
-          <span className="ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-all duration-300 group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100">
-            <svg
-              viewBox="0 0 20 20"
-              className="h-4 w-4 translate-x-[-4px] text-white transition-transform duration-300 group-hover:translate-x-0"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M4 10h10" />
-              <path d="m10 5 5 5-5 5" />
-            </svg>
-          </span>
+          {renderArrowIcon()}
         </button>
       ) : null}
     </div>
@@ -2021,7 +2034,7 @@ export default function CreateMemorialClient() {
       <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
         Имя питомца
         <input
-          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
+          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
           value={form.name}
           onChange={(event) => handleChange("name", event.target.value)}
           placeholder="Барсик"
@@ -2030,7 +2043,7 @@ export default function CreateMemorialClient() {
       <label className={`grid gap-1 text-sm text-slate-700 ${centered ? "w-full text-center" : ""}`}>
         Вид питомца
         <select
-          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
+          className={`rounded-2xl border border-slate-200 px-4 py-2 ${centered ? "min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
           value={form.species}
           onChange={(event) => handleSpeciesChange(event.target.value)}
         >
@@ -2048,7 +2061,7 @@ export default function CreateMemorialClient() {
           Дата рождения
           <input
             type="date"
-            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center" : ""} ${
+            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center text-base font-semibold" : ""} ${
               dateValidationMessage ? "border-red-400" : "border-slate-200"
             } ${centered ? "min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
             value={form.birthDate}
@@ -2060,7 +2073,7 @@ export default function CreateMemorialClient() {
           Дата ухода
           <input
             type="date"
-            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center" : ""} ${
+            className={`rounded-2xl border px-4 py-2 ${centered ? "text-center text-base font-semibold" : ""} ${
               dateValidationMessage ? "border-red-400" : "border-slate-200"
             } ${centered ? "min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" : ""}`}
             value={form.deathDate}
@@ -2441,7 +2454,7 @@ export default function CreateMemorialClient() {
                   <div className="relative w-full rounded-[36px] border border-white/70 bg-[#efe6e2] p-3 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.018] sm:rounded-[42px] sm:p-4">
                     <div className="absolute left-1/2 top-0 h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)]" />
                     <div className="relative min-h-[460px] rounded-[30px] border border-white/60 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
-                      <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[#6f6360]">
+                      <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
                         {renderBaseInfoForm(true)}
                       </div>
                       {renderNavButtons(
@@ -2705,9 +2718,12 @@ export default function CreateMemorialClient() {
               <button
                 type="button"
                 onClick={openReview}
-                className="rounded-xl bg-[#2d3436] px-6 py-3 text-sm font-bold text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                className="group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
               >
-                Завершить
+                <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                  Завершить
+                </span>
+                {renderArrowIcon()}
               </button>
             </div>
           </div>
@@ -2810,10 +2826,13 @@ export default function CreateMemorialClient() {
                         <button
                           type="button"
                           onClick={handleSubmit}
-                          className="mt-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white"
+                          className="group mt-2 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
                           disabled={loading}
                         >
-                          {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
+                          <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                            {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
+                          </span>
+                          {!loading ? renderArrowIcon() : null}
                         </button>
                       </div>
                     </div>

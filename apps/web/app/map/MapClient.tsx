@@ -1108,11 +1108,11 @@ export default function MapClient() {
   const activeTypeFilter = isMobile ? pendingTypeFilter : typeFilter;
   const activeNameFilter = isMobile ? pendingNameFilter : nameFilter;
   const simsPanelClass =
-    "rounded-[32px] border-[4px] border-white bg-white/90 p-6 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.4)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_-22px_rgba(93,64,55,0.44)]";
+    "rounded-[32px] border-[4px] border-white bg-white/90 p-4 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.4)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_-22px_rgba(93,64,55,0.44)]";
   const simsSidebarClass =
     "rounded-[32px] border-[4px] border-[#f8f9fa] bg-white/92 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md";
   const simsFieldClass =
-    "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-xs font-bold text-[#5d4037] outline-none transition focus:ring-2 focus:ring-[#d3a27f]/35";
+    "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-sm font-extrabold text-[#5d4037] outline-none transition focus:ring-2 focus:ring-[#d3a27f]/35";
   const simsResetButtonClass =
     "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const modeToggleShellClass =
