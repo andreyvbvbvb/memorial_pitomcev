@@ -1015,6 +1015,9 @@ export default function CreateMemorialClient() {
       if (!canShowMarker) {
         return "Нужно выбрать точку на карте (для приватного мемориала она хранится скрыто)";
       }
+      if (photos.length === 0) {
+        return "Добавьте хотя бы одну фотографию питомца";
+      }
     }
     return null;
   };
@@ -1146,27 +1149,40 @@ export default function CreateMemorialClient() {
       (renderContext.camera as THREE.PerspectiveCamera | undefined);
     const target = controls?.target as THREE.Vector3 | undefined;
     let restore: (() => void) | null = null;
-    if (camera && target) {
+    if (camera) {
       const prevPos = camera.position.clone();
-      const prevTarget = target.clone();
-      const offset = prevPos.clone().sub(prevTarget);
-      const rotatedOffset = offset.clone().applyAxisAngle(
+      const prevTarget = target?.clone();
+      const baseTarget = new THREE.Vector3(0, 0.6, 0);
+      const basePosition = new THREE.Vector3(8, 5, 8);
+      const baseOffset = basePosition.sub(baseTarget);
+      const rotatedOffset = baseOffset.clone().applyAxisAngle(
         new THREE.Vector3(0, 1, 0),
         THREE.MathUtils.degToRad(-30)
       );
       rotatedOffset.multiplyScalar(0.84);
       rotatedOffset.y -= 0.85;
-      const nextPos = prevTarget.clone().add(rotatedOffset);
-      const distance = nextPos.distanceTo(prevTarget);
+      const nextPos = baseTarget.clone().add(rotatedOffset);
+      const distance = nextPos.distanceTo(baseTarget);
       const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
-      const nextTarget = prevTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
+      const nextTarget = baseTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
       camera.position.copy(nextPos);
-      controls.target.copy(nextTarget);
-      controls.update();
+      if (target && controls) {
+        controls.target.copy(nextTarget);
+        controls.update();
+      } else {
+        camera.lookAt(nextTarget);
+      }
+      if ("updateProjectionMatrix" in camera) {
+        (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+      }
       restore = () => {
         camera.position.copy(prevPos);
-        controls.target.copy(prevTarget);
-        controls.update();
+        if (prevTarget && target && controls) {
+          controls.target.copy(prevTarget);
+          controls.update();
+        } else if (prevTarget) {
+          camera.lookAt(prevTarget);
+        }
       };
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -1178,28 +1194,6 @@ export default function CreateMemorialClient() {
     }
 
     const { gl, scene } = renderContext;
-    const tempAmbient = new THREE.AmbientLight(0xffffff, 0.55);
-    const tempHemisphere = new THREE.HemisphereLight(0xffffff, 0xded8cd, 0.7);
-    const tempTopLight = new THREE.DirectionalLight(0xfff6de, 1.75);
-    const tempFrontLight = new THREE.DirectionalLight(0xffffff, 1.1);
-    const tempLightTarget = new THREE.Object3D();
-    tempTopLight.position.set(0, 12, 3);
-    tempFrontLight.position.set(5, 6, 8);
-    tempLightTarget.position.set(0, 0, 0);
-    tempTopLight.target = tempLightTarget;
-    tempFrontLight.target = tempLightTarget;
-    scene.add(tempAmbient);
-    scene.add(tempHemisphere);
-    scene.add(tempTopLight);
-    scene.add(tempFrontLight);
-    scene.add(tempLightTarget);
-    const cleanupTempLights = () => {
-      scene.remove(tempAmbient);
-      scene.remove(tempHemisphere);
-      scene.remove(tempTopLight);
-      scene.remove(tempFrontLight);
-      scene.remove(tempLightTarget);
-    };
     const size = new THREE.Vector2();
     gl.getDrawingBufferSize(size);
     const width = Math.max(1, Math.round(size.x * 0.5));
@@ -1219,22 +1213,35 @@ export default function CreateMemorialClient() {
     gl.setRenderTarget(prevTarget);
     gl.autoClear = prevAutoClear;
     renderTarget.dispose();
-    cleanupTempLights();
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      cleanupTempLights();
       restore?.();
       return null;
     }
+    const toSrgbByte = (value: number) => {
+      const normalized = value / 255;
+      const srgb =
+        normalized <= 0.0031308
+          ? normalized * 12.92
+          : 1.055 * Math.pow(normalized, 1 / 2.4) - 0.055;
+      return Math.max(0, Math.min(255, Math.round(srgb * 255)));
+    };
     const imageData = ctx.createImageData(width, height);
     for (let y = 0; y < height; y += 1) {
       const srcStart = (height - y - 1) * width * 4;
       const destStart = y * width * 4;
-      imageData.data.set(buffer.subarray(srcStart, srcStart + width * 4), destStart);
+      for (let x = 0; x < width; x += 1) {
+        const src = srcStart + x * 4;
+        const dest = destStart + x * 4;
+        imageData.data[dest] = toSrgbByte(buffer[src] ?? 0);
+        imageData.data[dest + 1] = toSrgbByte(buffer[src + 1] ?? 0);
+        imageData.data[dest + 2] = toSrgbByte(buffer[src + 2] ?? 0);
+        imageData.data[dest + 3] = buffer[src + 3] ?? 255;
+      }
     }
     ctx.putImageData(imageData, 0, 0);
     restore?.();

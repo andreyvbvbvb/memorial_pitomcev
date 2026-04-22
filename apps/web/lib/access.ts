@@ -5,6 +5,7 @@ export type AuthUser = {
   login?: string | null;
   email: string;
   coinBalance?: number;
+  maxMemorials?: number | null;
   role?: "USER" | "ADMIN";
   accessLevel?: AccessLevel;
   termsAccepted?: boolean;

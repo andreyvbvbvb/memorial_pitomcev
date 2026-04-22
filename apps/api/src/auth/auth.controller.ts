@@ -40,6 +40,7 @@ export class AuthController {
     login: string | null;
     email: string;
     coinBalance: number;
+    maxMemorials: number | null;
     termsAccepted: boolean;
     offerAccepted: boolean;
     role: string;
@@ -49,6 +50,7 @@ export class AuthController {
       login: user.login,
       email: user.email,
       coinBalance: user.coinBalance,
+      maxMemorials: user.maxMemorials,
       role: user.role,
       accessLevel: getAccessLevel(user),
       termsAccepted: user.termsAccepted,

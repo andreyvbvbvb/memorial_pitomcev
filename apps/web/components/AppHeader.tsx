@@ -18,6 +18,10 @@ export default function AppHeader() {
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [createSpin, setCreateSpin] = useState({ key: 0, reverse: false });
+  const [createChecking, setCreateChecking] = useState(false);
+  const [createLimitOpen, setCreateLimitOpen] = useState(false);
+  const [createLimitVisible, setCreateLimitVisible] = useState(false);
+  const [createLimitMessage, setCreateLimitMessage] = useState("");
   const headerRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const apiUrl = useMemo(() => API_BASE, []);
@@ -115,6 +119,55 @@ export default function AppHeader() {
     setTimeout(() => setTopUpOpen(false), 180);
   };
 
+  const openCreateLimit = (message: string) => {
+    setCreateLimitMessage(message);
+    setCreateLimitOpen(true);
+    requestAnimationFrame(() => setCreateLimitVisible(true));
+  };
+
+  const closeCreateLimit = () => {
+    setCreateLimitVisible(false);
+    setTimeout(() => setCreateLimitOpen(false), 180);
+  };
+
+  const handleCreateClick = async () => {
+    if (!user || createChecking) {
+      return;
+    }
+    setCreateChecking(true);
+    try {
+      const response = await fetch(
+        `${apiUrl}/pets/create-limit/${encodeURIComponent(user.id)}`,
+        { credentials: "include" }
+      );
+      if (!response.ok) {
+        router.push("/create");
+        return;
+      }
+      const data = (await response.json()) as {
+        maxMemorials?: number;
+        canCreate?: boolean;
+      };
+      if (data.canCreate === false) {
+        const maxMemorials =
+          typeof data.maxMemorials === "number"
+            ? data.maxMemorials
+            : user.accessLevel === "OWNER"
+              ? 10000
+              : user.maxMemorials ?? 5;
+        openCreateLimit(
+          `На данный момент можно создать только ${maxMemorials} мемориалов. Для увеличения лимита напишите запрос на primer@gmail.com.`
+        );
+        return;
+      }
+      router.push("/create");
+    } catch {
+      router.push("/create");
+    } finally {
+      setCreateChecking(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch(`${apiUrl}/auth/logout`, { method: "POST", credentials: "include" });
@@ -208,10 +261,12 @@ export default function AppHeader() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <Link
-                  href="/create"
+                <button
+                  type="button"
                   className={createButtonClass}
                   aria-label="Создать мемориал"
+                  onClick={handleCreateClick}
+                  disabled={createChecking}
                   onMouseEnter={() => triggerCreateSpin(false)}
                   onMouseLeave={() => triggerCreateSpin(true)}
                 >
@@ -225,8 +280,8 @@ export default function AppHeader() {
                   >
                     +
                   </span>
-                  <span>создать</span>
-                </Link>
+                  <span>{createChecking ? "проверка" : "создать"}</span>
+                </button>
                 <Link className={pillClass} href="/my-pets">
                   Мои питомцы
                 </Link>
@@ -429,6 +484,37 @@ export default function AppHeader() {
               disabled={!topUpPlan}
             >
               Продолжить
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {createLimitOpen ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            createLimitVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/35 backdrop-blur-sm"
+            onClick={closeCreateLimit}
+          />
+          <div
+            className={`relative w-full max-w-md rounded-[28px] border-[4px] border-white bg-white p-6 shadow-[0_24px_70px_-24px_rgba(0,0,0,0.35)] transition-transform duration-200 ${
+              createLimitVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <h3 className="text-lg font-black text-[#5d4037]">Лимит мемориалов</h3>
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-[#7c6b63]">
+              {createLimitMessage}
+            </p>
+            <button
+              type="button"
+              className="mt-5 w-full rounded-xl bg-[#111827] px-5 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition active:translate-y-[3px] active:shadow-none"
+              onClick={closeCreateLimit}
+            >
+              Понятно
             </button>
           </div>
         </div>

@@ -21,6 +21,7 @@ import {
   AdminLoadingTipCreateDto,
   AdminLoadingTipUpdateDto
 } from "./dto/admin-loading-tip.dto";
+import { AdminUpdateMemorialLimitDto } from "./dto/admin-update-memorial-limit.dto";
 import { AdminUpdateUserRoleDto } from "./dto/admin-update-user-role.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
@@ -183,7 +184,7 @@ export class AdminController {
 
   @Get("access/users")
   async listAccessUsers(@Req() req: Request) {
-    await this.ensureOwner(req);
+    await this.ensureAdmin(req);
     const users = await this.prisma.user.findMany({
       orderBy: [{ role: "desc" }, { createdAt: "desc" }],
       select: {
@@ -191,14 +192,27 @@ export class AdminController {
         email: true,
         login: true,
         role: true,
-        createdAt: true
+        maxMemorials: true,
+        createdAt: true,
+        _count: { select: { pets: true } }
       }
     });
     return {
-      users: users.map((user: { id: string; email: string; login: string | null; role: string; createdAt: Date }) => ({
+      users: users.map((user: {
+        id: string;
+        email: string;
+        login: string | null;
+        role: string;
+        maxMemorials: number | null;
+        createdAt: Date;
+        _count: { pets: number };
+      }) => ({
         ...user,
         accessLevel: getAccessLevel(user),
-        isOwner: isOwnerUser(user)
+        isOwner: isOwnerUser(user),
+        maxMemorials: isOwnerUser(user) ? 10000 : user.maxMemorials ?? 5,
+        memorialCount: user._count.pets,
+        _count: undefined
       }))
     };
   }
@@ -226,15 +240,93 @@ export class AdminController {
         email: true,
         login: true,
         role: true,
-        createdAt: true
+        maxMemorials: true,
+        createdAt: true,
+        _count: { select: { pets: true } }
       }
     });
     return {
       user: {
         ...updated,
         accessLevel: getAccessLevel(updated),
-        isOwner: false
+        isOwner: false,
+        maxMemorials: updated.maxMemorials ?? 5,
+        memorialCount: updated._count.pets,
+        _count: undefined
       }
+    };
+  }
+
+  @Patch("access/memorial-limit")
+  async updateMemorialLimit(
+    @Req() req: Request,
+    @Body() dto: AdminUpdateMemorialLimitDto
+  ) {
+    await this.ensureAdmin(req);
+    const emails = Array.from(
+      new Set(dto.emails.map((email) => email.trim().toLowerCase()).filter(Boolean))
+    );
+    if (emails.length === 0) {
+      throw new BadRequestException("Укажите хотя бы один email");
+    }
+    const users = (await this.prisma.user.findMany({
+      where: { email: { in: emails } },
+      select: { id: true, email: true, login: true }
+    })) as Array<{ id: string; email: string; login: string | null }>;
+    const editableUsers = users.filter(
+      (user: { id: string; email: string; login: string | null }) => !isOwnerUser(user)
+    );
+    if (editableUsers.length > 0) {
+      await this.prisma.user.updateMany({
+        where: {
+          id: {
+            in: editableUsers.map(
+              (user: { id: string; email: string; login: string | null }) => user.id
+            )
+          }
+        },
+        data: { maxMemorials: dto.maxMemorials }
+      });
+    }
+    const updatedUsers = await this.prisma.user.findMany({
+      where: { email: { in: emails } },
+      orderBy: [{ role: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        email: true,
+        login: true,
+        role: true,
+        maxMemorials: true,
+        createdAt: true,
+        _count: { select: { pets: true } }
+      }
+    });
+    return {
+      users: updatedUsers.map((user: {
+        id: string;
+        email: string;
+        login: string | null;
+        role: string;
+        maxMemorials: number | null;
+        createdAt: Date;
+        _count: { pets: number };
+      }) => ({
+        ...user,
+        accessLevel: getAccessLevel(user),
+        isOwner: isOwnerUser(user),
+        maxMemorials: isOwnerUser(user) ? 10000 : user.maxMemorials ?? 5,
+        memorialCount: user._count.pets,
+        _count: undefined
+      })),
+      skippedOwners: users
+        .filter((user: { id: string; email: string; login: string | null }) => isOwnerUser(user))
+        .map((user: { id: string; email: string; login: string | null }) => user.email),
+      missingEmails: emails.filter(
+        (email: string) =>
+          !users.some(
+            (user: { id: string; email: string; login: string | null }) => user.email === email
+          )
+      )
     };
   }
 

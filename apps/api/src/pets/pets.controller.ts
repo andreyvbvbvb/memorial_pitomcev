@@ -32,6 +32,11 @@ export class PetsController {
     return this.petsService.findAll(ownerId, visibility);
   }
 
+  @Get("create-limit/:ownerId")
+  getCreationLimit(@Param("ownerId") ownerId: string) {
+    return this.petsService.getCreationLimit(ownerId);
+  }
+
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.petsService.findOne(id);

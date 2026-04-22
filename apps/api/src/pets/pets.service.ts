@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { extname } from "path";
+import { isOwnerUser } from "../auth/access-level";
 import { PrismaService } from "../prisma/prisma.service";
 import { S3Service } from "../storage/s3.service";
 import { CreatePetDto } from "./dto/create-pet.dto";
@@ -14,6 +15,8 @@ const MEMORIAL_PLAN_PRICES = new Map<number, number>([
 ]);
 const DUST_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
 const MAX_DUST_STAGE = 4;
+const DEFAULT_MAX_MEMORIALS = 5;
+const OWNER_MAX_MEMORIALS = 10000;
 
 @Injectable()
 export class PetsService {
@@ -50,8 +53,43 @@ export class PetsService {
     return Math.min(MAX_DUST_STAGE, Math.floor(elapsed / DUST_INTERVAL_MS));
   }
 
+  private resolveMaxMemorials(owner: {
+    email?: string | null;
+    login?: string | null;
+    role?: string | null;
+    maxMemorials?: number | null;
+  }) {
+    if (isOwnerUser(owner)) {
+      return OWNER_MAX_MEMORIALS;
+    }
+    return owner.maxMemorials ?? DEFAULT_MAX_MEMORIALS;
+  }
+
+  async getCreationLimit(ownerId: string) {
+    const owner = await this.ensureOwner(ownerId);
+    const maxMemorials = this.resolveMaxMemorials(owner);
+    const currentCount = await this.prisma.pet.count({
+      where: { ownerId: owner.id }
+    });
+    return {
+      ownerId: owner.id,
+      currentCount,
+      maxMemorials,
+      canCreate: currentCount < maxMemorials
+    };
+  }
+
   async create(dto: CreatePetDto) {
     const owner = await this.ensureOwner(dto.ownerId);
+    const maxMemorials = this.resolveMaxMemorials(owner);
+    const currentCount = await this.prisma.pet.count({
+      where: { ownerId: owner.id }
+    });
+    if (currentCount >= maxMemorials) {
+      throw new BadRequestException(
+        `Достигнут лимит мемориалов: ${maxMemorials}. Для увеличения лимита напишите на primer@gmail.com`
+      );
+    }
     const planYears =
       typeof dto.memorialPlanYears === "number" ? dto.memorialPlanYears : 1;
     const planPrice = MEMORIAL_PLAN_PRICES.get(planYears);

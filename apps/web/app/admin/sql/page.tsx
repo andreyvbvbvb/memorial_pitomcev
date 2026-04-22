@@ -76,6 +76,8 @@ type AccessUser = {
   role: "USER" | "ADMIN";
   accessLevel: AccessLevel;
   isOwner: boolean;
+  maxMemorials: number;
+  memorialCount: number;
   createdAt?: string;
 };
 
@@ -119,6 +121,10 @@ export default function AdminSqlPage() {
   const [roleEmail, setRoleEmail] = useState("");
   const [roleSaving, setRoleSaving] = useState<"USER" | "ADMIN" | null>(null);
   const [roleNotice, setRoleNotice] = useState<string | null>(null);
+  const [limitEmails, setLimitEmails] = useState("");
+  const [limitValue, setLimitValue] = useState("5");
+  const [limitSaving, setLimitSaving] = useState(false);
+  const [limitNotice, setLimitNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -193,7 +199,7 @@ export default function AdminSqlPage() {
   }, [apiUrl, authChecked, isAdmin]);
 
   useEffect(() => {
-    if (!authChecked || !canManageAdmins(accessLevel)) {
+    if (!authChecked || !isAdmin) {
       return;
     }
     let isMounted = true;
@@ -226,7 +232,7 @@ export default function AdminSqlPage() {
     return () => {
       isMounted = false;
     };
-  }, [apiUrl, authChecked, accessLevel]);
+  }, [apiUrl, authChecked, isAdmin]);
 
   useEffect(() => {
     if (!authChecked || !isAdmin) {
@@ -480,6 +486,62 @@ export default function AdminSqlPage() {
     }
   };
 
+  const updateMemorialLimit = async () => {
+    const emails = limitEmails
+      .split(/[,\n;]/)
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+    const maxMemorials = Number(limitValue);
+    if (emails.length === 0) {
+      setError("Введите хотя бы один email");
+      return;
+    }
+    if (!Number.isInteger(maxMemorials) || maxMemorials < 0 || maxMemorials > 10000) {
+      setError("Лимит должен быть целым числом от 0 до 10000");
+      return;
+    }
+    setLimitSaving(true);
+    setLimitNotice(null);
+    setAccessUsersError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/access/memorial-limit`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ emails, maxMemorials })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось обновить лимит");
+      }
+      const data = (await response.json()) as {
+        users?: AccessUser[];
+        missingEmails?: string[];
+        skippedOwners?: string[];
+      };
+      if (Array.isArray(data.users)) {
+        setAccessUsers((prev) => {
+          const next = new Map(prev.map((user) => [user.id, user]));
+          data.users!.forEach((user) => next.set(user.id, user));
+          return Array.from(next.values());
+        });
+      }
+      const details = [
+        data.missingEmails?.length ? `не найдены: ${data.missingEmails.join(", ")}` : "",
+        data.skippedOwners?.length ? `owner не менялся: ${data.skippedOwners.join(", ")}` : ""
+      ].filter(Boolean);
+      setLimitNotice(
+        details.length > 0
+          ? `Лимит обновлён. ${details.join("; ")}`
+          : "Лимит мемориалов обновлён"
+      );
+    } catch (err) {
+      setAccessUsersError(err instanceof Error ? err.message : "Ошибка обновления лимита");
+    } finally {
+      setLimitSaving(false);
+    }
+  };
+
   const handlePetAction = async (action: "disable" | "delete" | "memorial" | "photos") => {
     const rawId = petId.trim();
     if (!rawId) {
@@ -574,6 +636,45 @@ export default function AdminSqlPage() {
             </div>
           </div>
 
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Лимит мемориалов
+            </div>
+            <div className="mt-3 grid gap-2">
+              <textarea
+                value={limitEmails}
+                onChange={(event) => setLimitEmails(event.target.value)}
+                placeholder="Email или несколько email через запятую / с новой строки"
+                className="min-h-[76px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <input
+                type="number"
+                min={0}
+                max={10000}
+                value={limitValue}
+                onChange={(event) => setLimitValue(event.target.value)}
+                placeholder="Максимум мемориалов"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <button
+                type="button"
+                onClick={updateMemorialLimit}
+                disabled={limitSaving}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {limitSaving ? "Сохраняем..." : "Обновить лимит"}
+              </button>
+              <p className="text-[11px] text-slate-500">
+                По умолчанию — 5 мемориалов. Для owner всегда действует лимит 10000.
+              </p>
+              {limitNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {limitNotice}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           {canManageAdmins(accessLevel) ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="text-xs font-semibold uppercase text-slate-500">
@@ -634,6 +735,9 @@ export default function AdminSqlPage() {
                         }`}>
                           {user.accessLevel}
                         </span>
+                      </div>
+                      <div className="mt-1 text-[10px] text-slate-500">
+                        Мемориалов: {user.memorialCount ?? 0}/{user.maxMemorials ?? 5}
                       </div>
                     </div>
                   ))}
