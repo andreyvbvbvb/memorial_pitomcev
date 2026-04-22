@@ -2455,12 +2455,12 @@ export default function CreateMemorialClient() {
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
-    "pointer-events-auto absolute bottom-[calc(5.8rem+env(safe-area-inset-bottom))] left-[5.15rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[5.75rem] sm:p-3";
+    "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
-        ? "w-[min(1080px,calc(100vw-0.75rem))] max-h-[min(74vh,700px)]"
-        : "w-[min(500px,calc(100vw-0.75rem))] max-h-[70vh] overflow-y-auto"
+        ? "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)]"
+        : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
     `group relative flex h-14 w-14 items-center justify-center rounded-[22px] border-2 shadow-md transition-all sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem] ${

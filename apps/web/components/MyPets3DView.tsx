@@ -481,10 +481,12 @@ export default function MyPets3DView({
   fullScreen?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hasArrowNavigation, setHasArrowNavigation] = useState(false);
   const controlsRef = useRef<any>(null);
   const orbitMovedRef = useRef(false);
   const orbitingRef = useRef(false);
   const orbitEndTimeoutRef = useRef<number | null>(null);
+  const autoSelectedSignatureRef = useRef<string | null>(null);
 
   const items = useMemo<SceneItem[]>(() => {
     const positions = buildGridPositions(pets.length);
@@ -496,7 +498,11 @@ export default function MyPets3DView({
   }, [pets]);
 
   const selectedItem = items.find((item) => item.pet.id === selectedId) ?? null;
+  const selectedIndex = selectedItem
+    ? items.findIndex((item) => item.pet.id === selectedItem.pet.id)
+    : -1;
   const focusPosition = selectedItem ? selectedItem.position : null;
+  const petsSignature = useMemo(() => pets.map((pet) => pet.id).join("|"), [pets]);
 
   const containerClassName = fullScreen
     ? "fixed inset-0 z-0 h-screen w-screen overflow-hidden bg-slate-50"
@@ -509,6 +515,34 @@ export default function MyPets3DView({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (pets.length === 0) {
+      setSelectedId(null);
+      autoSelectedSignatureRef.current = petsSignature;
+      return;
+    }
+    const selectedExists = selectedId
+      ? pets.some((pet) => pet.id === selectedId)
+      : false;
+    if (selectedExists) {
+      return;
+    }
+    if (autoSelectedSignatureRef.current !== petsSignature || selectedId) {
+      autoSelectedSignatureRef.current = petsSignature;
+      setSelectedId(pets[0]?.id ?? null);
+    }
+  }, [pets, petsSignature, selectedId]);
+
+  const navigateMemorial = (direction: -1 | 1) => {
+    if (items.length === 0) {
+      return;
+    }
+    const currentIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIndex = (currentIndex + direction + items.length) % items.length;
+    setSelectedId(items[nextIndex]?.pet.id ?? null);
+    setHasArrowNavigation(true);
+  };
 
   return (
     <div className={containerClassName}>
@@ -645,6 +679,61 @@ export default function MyPets3DView({
             </div>
           </div>
         </aside>
+      ) : null}
+
+      {items.length > 1 ? (
+        <>
+          <button
+            type="button"
+            onClick={() => navigateMemorial(-1)}
+            aria-label="Предыдущий мемориал"
+            className="group absolute bottom-0 left-0 top-0 z-10 flex w-28 items-center justify-start px-4"
+          >
+            <span
+              className={`flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                hasArrowNavigation ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-7 w-7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 18 9 12l6-6" />
+              </svg>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateMemorial(1)}
+            aria-label="Следующий мемориал"
+            className="group absolute bottom-0 right-0 top-0 z-10 flex w-28 items-center justify-end px-4"
+          >
+            <span
+              className={`flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                hasArrowNavigation ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-7 w-7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </span>
+          </button>
+        </>
       ) : null}
     </div>
   );

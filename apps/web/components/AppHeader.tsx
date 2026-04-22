@@ -18,6 +18,7 @@ export default function AppHeader() {
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [createSpin, setCreateSpin] = useState({ key: 0, reverse: false });
+  const [balanceSpin, setBalanceSpin] = useState({ key: 0, reverse: false });
   const [createChecking, setCreateChecking] = useState(false);
   const [createLimitOpen, setCreateLimitOpen] = useState(false);
   const [createLimitVisible, setCreateLimitVisible] = useState(false);
@@ -205,6 +206,10 @@ export default function AppHeader() {
     setCreateSpin((prev) => ({ key: prev.key + 1, reverse }));
   };
 
+  const triggerBalanceSpin = (reverse: boolean) => {
+    setBalanceSpin((prev) => ({ key: prev.key + 1, reverse }));
+  };
+
   const renderMenuIcon = (kind: "profile" | "about" | "charity" | "admin" | "logout") => {
     switch (kind) {
       case "profile":
@@ -317,19 +322,18 @@ export default function AppHeader() {
                             <span className="text-[10px] font-black uppercase tracking-widest text-[#adb5bd]">Аккаунт</span>
                             <span className="text-sm font-black text-[#5d4037]">{user.login ?? user.email}</span>
                           </div>
-                          <button
-                            type="button"
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#fdf2e9] text-[#d3a27f] transition-transform hover:scale-110"
-                            onClick={() => {
-                              closeMenu();
-                              openTopUp();
-                            }}
-                            aria-label="Пополнить баланс"
-                          >
-                            <span className="text-base leading-none">+</span>
-                          </button>
                         </div>
-                        <div className="flex items-center justify-between rounded-2xl border-2 border-[#fdf2e9] bg-[#fcf8f5] p-4">
+                        <button
+                          type="button"
+                          className="group flex w-full items-center justify-between rounded-2xl border-2 border-[#fdf2e9] bg-[#fcf8f5] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#d3a27f]/50 hover:bg-[#fff7f2] hover:shadow-[0_12px_28px_-18px_rgba(93,64,55,0.45)] active:translate-y-[2px]"
+                          onClick={() => {
+                            closeMenu();
+                            openTopUp();
+                          }}
+                          onMouseEnter={() => triggerBalanceSpin(false)}
+                          onMouseLeave={() => triggerBalanceSpin(true)}
+                          aria-label="Пополнить баланс"
+                        >
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm text-[#d3a27f]">
                               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -338,8 +342,22 @@ export default function AppHeader() {
                             </div>
                             <span className="text-xs font-black uppercase text-[#8d6e63]">Баланс:</span>
                           </div>
-                          <span className="text-lg font-black text-[#5d4037]">{user.coinBalance ?? 0}</span>
-                        </div>
+                          <span className="flex items-center gap-2">
+                            <span className="text-lg font-black text-[#5d4037]">{user.coinBalance ?? 0}</span>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111827] text-white shadow-[0_3px_0_0_#000] transition group-active:translate-y-[2px] group-active:shadow-none">
+                              <span
+                                key={balanceSpin.key}
+                                className={`inline-flex text-base leading-none ${
+                                  balanceSpin.reverse
+                                    ? "animate-[createPlusSpinReverse_0.45s_ease-in-out]"
+                                    : "animate-[createPlusSpin_0.45s_ease-in-out]"
+                                }`}
+                              >
+                                +
+                              </span>
+                            </span>
+                          </span>
+                        </button>
                       </div>
                       <div className="px-2 pb-2 text-sm text-slate-700">
                         <Link className={menuItemClass} href="/profile">
