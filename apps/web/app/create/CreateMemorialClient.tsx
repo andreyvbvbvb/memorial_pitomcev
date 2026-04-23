@@ -2059,6 +2059,9 @@ export default function CreateMemorialClient() {
           value={form.name}
           onChange={(event) => handleChange("name", event.target.value)}
           placeholder="Барсик"
+          required
+          aria-invalid={!form.name.trim()}
+          maxLength={80}
         />
       </label>
       <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}>

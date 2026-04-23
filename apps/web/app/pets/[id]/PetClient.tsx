@@ -32,6 +32,12 @@ import { splitHouseVariantId } from "../../../lib/house-variants";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
 const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
+const MEMORIAL_EXTENSION_PLANS = [
+  { id: "1y", years: 1, label: "1 год", price: 100 },
+  { id: "2y", years: 2, label: "2 года", price: 200 },
+  { id: "5y", years: 5, label: "5 лет", price: 500 }
+] as const;
+
 const buildDirtModelUrls = (houseId?: string | null): string[] => {
   const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
   const prefix = baseId ? `/models/dirt/${baseId}` : "/models/dirt";
@@ -133,7 +139,7 @@ export default function PetClient({ id }: Props) {
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
   const [giftSlotsVisible, setGiftSlotsVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<
-    "info" | "photos" | "gifts" | "memorials" | null
+    "info" | "photos" | "gifts" | "memorials" | "manage" | null
   >(null);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
@@ -142,6 +148,12 @@ export default function PetClient({ id }: Props) {
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [extendingMemorial, setExtendingMemorial] = useState(false);
   const [deletingMemorial, setDeletingMemorial] = useState(false);
+  const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
+  const [extensionDialogVisible, setExtensionDialogVisible] = useState(false);
+  const [selectedExtensionYears, setSelectedExtensionYears] = useState<1 | 2 | 5>(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [deleteConfirmationName, setDeleteConfirmationName] = useState("");
   const [previewContextReady, setPreviewContextReady] = useState(false);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
@@ -515,8 +527,31 @@ export default function PetClient({ id }: Props) {
   };
 
   const toggleGiftPanel = () => setGiftPanelOpen((prev) => !prev);
-  const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials") =>
+  const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials" | "manage") =>
     setActivePanel((prev) => (prev === panel ? null : panel));
+
+  const openExtensionDialog = () => {
+    setLifecycleError(null);
+    setExtensionDialogOpen(true);
+    requestAnimationFrame(() => setExtensionDialogVisible(true));
+  };
+
+  const closeExtensionDialog = () => {
+    setExtensionDialogVisible(false);
+    setTimeout(() => setExtensionDialogOpen(false), 180);
+  };
+
+  const openDeleteDialog = () => {
+    setLifecycleError(null);
+    setDeleteConfirmationName("");
+    setDeleteDialogOpen(true);
+    requestAnimationFrame(() => setDeleteDialogVisible(true));
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogVisible(false);
+    setTimeout(() => setDeleteDialogOpen(false), 180);
+  };
 
   const capturePreviewImage = useCallback(async () => {
     const renderContext = previewRenderRef.current;
@@ -715,7 +750,7 @@ export default function PetClient({ id }: Props) {
   ];
 
   const isOwner = Boolean(currentUser?.id && pet?.ownerId === currentUser.id);
-  const handleExtendMemorial = async () => {
+  const handleExtendMemorial = async (years: 1 | 2 | 5) => {
     if (!currentUser?.id) {
       setLifecycleError("Войдите, чтобы продлить мемориал");
       return;
@@ -726,7 +761,7 @@ export default function PetClient({ id }: Props) {
       const response = await fetch(`${apiUrl}/pets/${id}/memorial/extend`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: currentUser.id, years: 1 })
+        body: JSON.stringify({ ownerId: currentUser.id, years })
       });
       if (!response.ok) {
         const text = await response.text();
@@ -757,6 +792,7 @@ export default function PetClient({ id }: Props) {
       if (currentUser.id) {
         void loadWallet(currentUser.id);
       }
+      closeExtensionDialog();
     } catch (err) {
       setLifecycleError(err instanceof Error ? err.message : "Ошибка продления");
     } finally {
@@ -765,7 +801,11 @@ export default function PetClient({ id }: Props) {
   };
 
   const handleDeleteMemorial = async () => {
-    if (!window.confirm("Удалить мемориал? Он исчезнет из всех списков, но данные останутся в базе.")) {
+    if (!pet) {
+      return;
+    }
+    if (deleteConfirmationName.trim() !== pet.name.trim()) {
+      setLifecycleError("Введите имя мемориала точно как в заголовке");
       return;
     }
     setLifecycleError(null);
@@ -973,6 +1013,11 @@ export default function PetClient({ id }: Props) {
   const activeUntil = pet.memorial?.activeUntil ?? sceneJson.memorialPaidUntil ?? null;
   const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Бессрочно";
   const canExtendMemorial = Boolean(activeUntil);
+  const selectedExtensionPlan =
+    MEMORIAL_EXTENSION_PLANS.find((plan) => plan.years === selectedExtensionYears) ??
+    MEMORIAL_EXTENSION_PLANS[0];
+  const canConfirmDelete =
+    deleteConfirmationName.trim() === pet.name.trim() && !deletingMemorial;
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
@@ -1027,49 +1072,6 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
 
-        {isOwner ? (
-          <div className="pointer-events-auto absolute left-4 top-[calc(var(--app-header-height,0px)+0.75rem)] z-20 w-[280px] max-w-[calc(100vw-2rem)] rounded-[28px] border-[4px] border-white bg-[#f7f1ee]/95 p-3 shadow-[0_22px_54px_-24px_rgba(0,0,0,0.35)] backdrop-blur sm:w-[320px]">
-            <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#adb5bd]">
-                Управление мемориалом
-              </p>
-              <div className="mt-3 rounded-2xl bg-[#fdf2e9] px-3 py-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                  Активен до
-                </p>
-                <p className="mt-1 text-lg font-black text-[#5d4037]">
-                  {activeUntilLabel}
-                </p>
-              </div>
-              {lifecycleError ? (
-                <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
-              ) : null}
-              <div className="mt-3 grid gap-2">
-                <button
-                  type="button"
-                  onClick={handleExtendMemorial}
-                  disabled={extendingMemorial || !canExtendMemorial}
-                  className="rounded-xl bg-[#111827] px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-                >
-                  {extendingMemorial
-                    ? "Продление..."
-                    : canExtendMemorial
-                      ? "Продлить на 1 год"
-                      : "Бессрочно"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteMemorial}
-                  disabled={deletingMemorial}
-                  className="rounded-xl border-2 border-red-100 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {deletingMemorial ? "Удаление..." : "Удалить мемориал"}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
         <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4">
           <div className="relative">
             <div className="flex flex-col gap-2">
@@ -1120,6 +1122,19 @@ export default function PetClient({ id }: Props) {
                   <path d="M21 20c0-3-3-5-5-5" />
                 </svg>
               </button>
+              {isOwner ? (
+                <button
+                  type="button"
+                  onClick={() => togglePanel("manage")}
+                  aria-label="Управление мемориалом"
+                  className={panelButtonClass(activePanel === "manage")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                  </svg>
+                </button>
+              ) : null}
             </div>
 
             {activePanel === "info" ? (
@@ -1321,6 +1336,43 @@ export default function PetClient({ id }: Props) {
                     Других мемориалов пока нет.
                   </p>
                 )}
+              </div>
+            ) : null}
+
+            {isOwner && activePanel === "manage" ? (
+              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                  Управление
+                </p>
+                <div className="mt-3 rounded-2xl border border-slate-200/80 bg-white/75 p-3">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Активен до
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {activeUntilLabel}
+                  </p>
+                </div>
+                {lifecycleError ? (
+                  <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
+                ) : null}
+                <div className="mt-3 grid gap-2">
+                  <button
+                    type="button"
+                    onClick={openExtensionDialog}
+                    disabled={!canExtendMemorial}
+                    className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                  >
+                    {canExtendMemorial ? "Продлить" : "Бессрочно"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openDeleteDialog}
+                    disabled={deletingMemorial}
+                    className="w-1/2 justify-self-start rounded-xl border border-red-100 bg-white px-3 py-1.5 text-[11px] font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingMemorial ? "Удаление..." : "Удалить"}
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>
@@ -1542,6 +1594,152 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
       </div>
+
+      {extensionDialogOpen ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            extensionDialogVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={closeExtensionDialog}
+          />
+          <div
+            className={`relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+              extensionDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                  Продление
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                  Выберите срок
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                onClick={closeExtensionDialog}
+              >
+                Закрыть
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              Текущий срок: {activeUntilLabel}. Баланс:{" "}
+              {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
+            </p>
+            <div className="mt-4 grid gap-2">
+              {MEMORIAL_EXTENSION_PLANS.map((plan) => {
+                const isSelected = plan.years === selectedExtensionYears;
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setSelectedExtensionYears(plan.years)}
+                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                      isSelected
+                        ? "border-sky-400 bg-sky-50 text-slate-900"
+                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className="font-semibold">{plan.label}</span>
+                    <span className="text-slate-500">{plan.price} монет</span>
+                  </button>
+                );
+              })}
+            </div>
+            {lifecycleError ? (
+              <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => handleExtendMemorial(selectedExtensionYears)}
+              disabled={extendingMemorial || !canExtendMemorial}
+              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+            >
+              {extendingMemorial
+                ? "Продление..."
+                : `Продлить на ${selectedExtensionPlan.label} • ${selectedExtensionPlan.price} монет`}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteDialogOpen ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            deleteDialogVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={closeDeleteDialog}
+          />
+          <div
+            className={`relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+              deleteDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-red-400">
+                  Удаление
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                  Подтвердите действие
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                onClick={closeDeleteDialog}
+              >
+                Закрыть
+              </button>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              Мемориал исчезнет из списков и карты, но данные останутся в базе. Для
+              подтверждения введите имя:{" "}
+              <span className="font-semibold text-slate-900">{pet.name}</span>
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmationName}
+              onChange={(event) => setDeleteConfirmationName(event.target.value)}
+              className="mt-4 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-300 focus:ring-4 focus:ring-red-100"
+              placeholder={pet.name}
+              autoComplete="off"
+            />
+            {lifecycleError ? (
+              <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
+            ) : null}
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDeleteDialog}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteMemorial}
+                disabled={!canConfirmDelete}
+                className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {deletingMemorial ? "Удаление..." : "Удалить"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {topUpOpen ? (
         <div

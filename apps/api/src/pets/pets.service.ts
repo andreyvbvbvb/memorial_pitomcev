@@ -160,6 +160,10 @@ export class PetsService {
   async create(dto: CreatePetDto) {
     const owner = await this.ensureOwner(dto.ownerId);
     await this.deactivateExpiredMemorials();
+    const name = typeof dto.name === "string" ? dto.name.trim() : "";
+    if (!name) {
+      throw new BadRequestException("Имя питомца обязательно");
+    }
     const maxMemorials = this.resolveMaxMemorials(owner);
     const currentCount = await this.prisma.pet.count({
       where: { ownerId: owner.id, ...this.activePetWhere() }
@@ -201,7 +205,7 @@ export class PetsService {
       this.prisma.pet.create({
         data: {
           ownerId: owner.id,
-          name: dto.name,
+          name,
           species: dto.species ?? null,
           birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
           deathDate: dto.deathDate ? new Date(dto.deathDate) : null,

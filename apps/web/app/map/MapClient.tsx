@@ -10,7 +10,7 @@ import {
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
@@ -609,6 +609,69 @@ function MemorialCardPreview({
   );
 }
 
+type CarouselCameraSettings = { distanceOffset: number; height: number; tiltDeg: number };
+
+const CAROUSEL_DESIRED_SPACING = 20;
+const CAROUSEL_MIN_RADIUS = 30;
+const CAROUSEL_POP_DISTANCE = 3.6;
+const CAROUSEL_SCALE_BOOST = 0.1;
+
+const getCarouselRadius = (count: number) =>
+  Math.max(CAROUSEL_MIN_RADIUS, (CAROUSEL_DESIRED_SPACING * Math.max(1, count)) / (Math.PI * 2));
+
+const wrapCarouselIndex = (value: number, count: number) => {
+  if (count <= 0) {
+    return 0;
+  }
+  let wrapped = value % count;
+  if (wrapped < 0) {
+    wrapped += count;
+  }
+  return wrapped;
+};
+
+const carouselDistanceBetween = (index: number, center: number, count: number) => {
+  const diff = Math.abs(index - center);
+  return Math.min(diff, count - diff);
+};
+
+const carouselDimForDistance = (dist: number) => {
+  if (dist <= 0) {
+    return 0;
+  }
+  if (dist < 1) {
+    return THREE.MathUtils.lerp(0, 0.2, dist);
+  }
+  if (dist < 2) {
+    return THREE.MathUtils.lerp(0.2, 0.35, dist - 1);
+  }
+  if (dist < 3) {
+    return THREE.MathUtils.lerp(0.35, 0.5, dist - 2);
+  }
+  return 0.5;
+};
+
+const applyCarouselCamera = (
+  camera: THREE.Camera,
+  count: number,
+  activeIndex: number,
+  cameraSettings: CarouselCameraSettings
+) => {
+  const radius = getCarouselRadius(count);
+  const safeIndex = wrapCarouselIndex(activeIndex, Math.max(1, count));
+  const centerAngle = safeIndex * ((Math.PI * 2) / Math.max(1, count));
+  camera.position.set(
+    Math.cos(centerAngle) * (radius + cameraSettings.distanceOffset),
+    cameraSettings.height,
+    Math.sin(centerAngle) * (radius + cameraSettings.distanceOffset)
+  );
+  camera.lookAt(0, 0, 0);
+  camera.rotateX(-THREE.MathUtils.degToRad(cameraSettings.tiltDeg));
+  if ("updateProjectionMatrix" in camera) {
+    (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+  }
+};
+
 function RowCarouselStage({
   items,
   activeIndex,
@@ -623,7 +686,7 @@ function RowCarouselStage({
   targetIndex: number | null;
   onArrive: (index: number) => void;
   onAnimationEnd: () => void;
-  cameraSettings: { distanceOffset: number; height: number; tiltDeg: number };
+  cameraSettings: CarouselCameraSettings;
   enableHoverHighlight?: boolean;
 }) {
   const { camera } = useThree();
@@ -728,26 +791,37 @@ function RowCarouselStage({
     };
   }, [targetIndex]);
 
-  useEffect(() => {
+  const placeInstance = useCallback(
+    (node: THREE.Group | null, idx: number, centerIndexFloat = activeIndexRef.current) => {
+      const count = items.length;
+      if (!node || count === 0) {
+        return;
+      }
+      const radius = getCarouselRadius(count);
+      radiusRef.current = radius;
+      const angleStep = (Math.PI * 2) / count;
+      const angle = idx * angleStep;
+      const distToCenter = carouselDistanceBetween(idx, centerIndexFloat, count);
+      const centerWeight = Math.max(0, 1 - distToCenter);
+      const radial = radius + CAROUSEL_POP_DISTANCE * centerWeight;
+      node.position.set(Math.cos(angle) * radial, 0, Math.sin(angle) * radial);
+      node.scale.setScalar(1 + CAROUSEL_SCALE_BOOST * centerWeight);
+      node.lookAt(0, 0, 0);
+      node.rotateY(Math.PI);
+      applyMaterialDimming(node, carouselDimForDistance(distToCenter));
+      applyMaterialHighlight(node, 0);
+    },
+    [items.length]
+  );
+
+  useLayoutEffect(() => {
     const count = items.length;
     if (count === 0 || animRef.current) {
       return;
     }
-    const desiredSpacing = 20;
-    const minRadius = 30;
-    const radius = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
-    radiusRef.current = radius;
-    const safeIndex = ((activeIndex % count) + count) % count;
-    const centerAngle = safeIndex * ((Math.PI * 2) / count);
-    camera.position.set(
-      Math.cos(centerAngle) * (radius + cameraSettings.distanceOffset),
-      cameraSettings.height,
-      Math.sin(centerAngle) * (radius + cameraSettings.distanceOffset)
-    );
-    camera.lookAt(0, 0, 0);
-    camera.rotateX(-THREE.MathUtils.degToRad(cameraSettings.tiltDeg));
-    camera.updateProjectionMatrix();
-  }, [activeIndex, camera, cameraSettings.distanceOffset, cameraSettings.height, cameraSettings.tiltDeg, items.length]);
+    applyCarouselCamera(camera, count, activeIndex, cameraSettings);
+    instanceRefs.current.forEach((node, idx) => placeInstance(node, idx, activeIndex));
+  }, [activeIndex, camera, cameraSettings, items.length, placeInstance]);
 
   useFrame((_, delta) => {
     const count = items.length;
@@ -760,23 +834,11 @@ function RowCarouselStage({
       }
       return;
     }
-    const desiredSpacing = 20;
-    const minRadius = 30;
-    radiusRef.current = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
+    radiusRef.current = getCarouselRadius(count);
     const cameraRadius = radiusRef.current + cameraSettings.distanceOffset;
     const cameraHeight = cameraSettings.height;
     const cameraTilt = THREE.MathUtils.degToRad(cameraSettings.tiltDeg);
     const angleStep = (Math.PI * 2) / count;
-    const popDistance = 3.6;
-    const scaleBoost = 0.1;
-
-    const wrapIndex = (value: number) => {
-      let wrapped = value % count;
-      if (wrapped < 0) {
-        wrapped += count;
-      }
-      return wrapped;
-    };
 
     let fromIndex = activeIndexRef.current;
     let toIndex = activeIndexRef.current;
@@ -797,7 +859,7 @@ function RowCarouselStage({
       } else if (deltaIndex < -count / 2) {
         deltaIndex += count;
       }
-      centerIndexFloat = wrapIndex(fromIndex + deltaIndex * eased);
+      centerIndexFloat = wrapCarouselIndex(fromIndex + deltaIndex * eased, count);
       centerAngle = centerIndexFloat * angleStep;
       camera.position.x = Math.cos(centerAngle) * cameraRadius;
       camera.position.z = Math.sin(centerAngle) * cameraRadius;
@@ -818,51 +880,30 @@ function RowCarouselStage({
       camera.rotateX(-cameraTilt);
     }
 
-    const distanceBetween = (index: number, center: number) => {
-      const diff = Math.abs(index - center);
-      return Math.min(diff, count - diff);
-    };
-
-    const dimForDistance = (dist: number) => {
-      if (dist <= 0) {
-        return 0;
-      }
-      if (dist < 1) {
-        return THREE.MathUtils.lerp(0, 0.2, dist);
-      }
-      if (dist < 2) {
-        return THREE.MathUtils.lerp(0.2, 0.35, dist - 1);
-      }
-      if (dist < 3) {
-        return THREE.MathUtils.lerp(0.35, 0.5, dist - 2);
-      }
-      return 0.5;
-    };
-
     instanceRefs.current.forEach((node, idx) => {
       if (!node) {
         return;
       }
       const angle = idx * angleStep;
-      const distToCenter = distanceBetween(idx, centerIndexFloat);
+      const distToCenter = carouselDistanceBetween(idx, centerIndexFloat, count);
       const centerWeight = Math.max(0, 1 - distToCenter);
-      const pop = popDistance * centerWeight;
+      const pop = CAROUSEL_POP_DISTANCE * centerWeight;
       const radial = radiusRef.current + pop;
       node.position.x = Math.cos(angle) * radial;
       node.position.z = Math.sin(angle) * radial;
       node.position.y = 0;
-      const scale = 1 + scaleBoost * centerWeight;
+      const scale = 1 + CAROUSEL_SCALE_BOOST * centerWeight;
       node.scale.setScalar(scale);
       node.lookAt(0, 0, 0);
       node.rotateY(Math.PI);
 
-      const dim = dimForDistance(distToCenter);
+      const dim = carouselDimForDistance(distToCenter);
       applyMaterialDimming(node, dim);
       applyMaterialHighlight(node, 0);
     });
 
     if (activeLightRef.current) {
-      const lightRadius = radiusRef.current + popDistance;
+      const lightRadius = radiusRef.current + CAROUSEL_POP_DISTANCE;
       activeLightRef.current.position.set(
         Math.cos(centerAngle) * lightRadius,
         6,
@@ -912,6 +953,7 @@ function RowCarouselStage({
             tone={1}
             innerRef={(node) => {
               instanceRefs.current[idx] = node;
+              placeInstance(node, idx);
             }}
             onHover={
               enableHoverHighlight
@@ -951,23 +993,27 @@ function CarouselScene({
   targetIndex: number | null;
   onArrive: (index: number) => void;
   onAnimationEnd: () => void;
-  cameraSettings: { distanceOffset: number; height: number; tiltDeg: number };
+  cameraSettings: CarouselCameraSettings;
   enableHoverHighlight?: boolean;
 }) {
   const initialCameraPosition = useMemo(() => {
     const count = Math.max(1, items.length);
-    const desiredSpacing = 20;
-    const minRadius = 30;
-    const radius = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
+    const radius = getCarouselRadius(count);
     const cameraRadius = radius + cameraSettings.distanceOffset;
-    return [cameraRadius, cameraSettings.height, 0] as [number, number, number];
-  }, [items.length, cameraSettings]);
+    const safeIndex = wrapCarouselIndex(activeIndex, count);
+    const centerAngle = safeIndex * ((Math.PI * 2) / count);
+    return [
+      Math.cos(centerAngle) * cameraRadius,
+      cameraSettings.height,
+      Math.sin(centerAngle) * cameraRadius
+    ] as [number, number, number];
+  }, [activeIndex, items.length, cameraSettings]);
   return (
     <Canvas
       dpr={1}
       camera={{ position: initialCameraPosition, fov: 45 }}
       onCreated={({ camera }) => {
-        camera.lookAt(0, 0, 0);
+        applyCarouselCamera(camera, items.length, activeIndex, cameraSettings);
       }}
     >
       <RowCarouselStage
@@ -1022,11 +1068,11 @@ export default function MapClient() {
     height: "100dvh",
     marginTop: "calc(-1 * var(--app-header-height, 56px))"
   } as const;
-  const cameraSettings = {
+  const cameraSettings = useMemo<CarouselCameraSettings>(() => ({
     distanceOffset: 16,
     height: 4.0,
     tiltDeg: 14.5
-  };
+  }), []);
   const [petCache, setPetCache] = useState<Record<string, PetDetail>>({});
   const hasAutoFitRef = useRef(false);
 
