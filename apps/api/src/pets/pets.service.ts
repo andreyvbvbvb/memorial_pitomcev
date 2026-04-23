@@ -65,11 +65,89 @@ export class PetsService {
     return owner.maxMemorials ?? DEFAULT_MAX_MEMORIALS;
   }
 
+  private activePetWhere(now = new Date()): Prisma.PetWhereInput {
+    return {
+      isActive: true,
+      memorial: {
+        is: {
+          deactivatedAt: null,
+          OR: [{ activeUntil: null }, { activeUntil: { gt: now } }]
+        }
+      }
+    };
+  }
+
+  private async deactivateExpiredMemorials(now = new Date()) {
+    const expired = await this.prisma.memorial.findMany({
+      where: {
+        deactivatedAt: null,
+        activeUntil: { lte: now },
+        pet: { isActive: true }
+      },
+      select: { id: true, petId: true }
+    });
+    if (expired.length === 0) {
+      return 0;
+    }
+    const memorialIds = expired.map((item: { id: string; petId: string }) => item.id);
+    const petIds = expired.map((item: { id: string; petId: string }) => item.petId);
+    await this.prisma.$transaction([
+      this.prisma.memorial.updateMany({
+        where: { id: { in: memorialIds } },
+        data: {
+          deactivatedAt: now,
+          deactivationReason: "expired"
+        }
+      }),
+      this.prisma.pet.updateMany({
+        where: { id: { in: petIds } },
+        data: {
+          isActive: false,
+          deactivatedAt: now,
+          deactivationReason: "expired"
+        }
+      })
+    ]);
+    return expired.length;
+  }
+
+  private async deactivateExpiredGifts(petId?: string, now = new Date()) {
+    const expired = await this.prisma.giftPlacement.findMany({
+      where: {
+        ...(petId ? { petId } : {}),
+        isActive: true,
+        expiresAt: { lte: now }
+      },
+      select: { id: true, petId: true }
+    });
+    if (expired.length === 0) {
+      return 0;
+    }
+    const giftIds = expired.map((gift: { id: string; petId: string }) => gift.id);
+    const petIds = [...new Set(expired.map((gift: { id: string; petId: string }) => gift.petId))];
+    await this.prisma.$transaction([
+      this.prisma.giftPlacement.updateMany({
+        where: { id: { in: giftIds } },
+        data: {
+          isActive: false,
+          deactivatedAt: now,
+          deactivationReason: "expired"
+        }
+      }),
+      this.prisma.memorial.updateMany({
+        where: { petId: { in: petIds }, deactivatedAt: null },
+        data: { needsPreviewRefresh: true }
+      })
+    ]);
+    return expired.length;
+  }
+
   async getCreationLimit(ownerId: string) {
     const owner = await this.ensureOwner(ownerId);
+    await this.deactivateExpiredMemorials();
     const maxMemorials = this.resolveMaxMemorials(owner);
     const currentCount = await this.prisma.pet.count({
-      where: { ownerId: owner.id }
+      where: { ownerId: owner.id, ...this.activePetWhere() }
     });
     return {
       ownerId: owner.id,
@@ -81,9 +159,10 @@ export class PetsService {
 
   async create(dto: CreatePetDto) {
     const owner = await this.ensureOwner(dto.ownerId);
+    await this.deactivateExpiredMemorials();
     const maxMemorials = this.resolveMaxMemorials(owner);
     const currentCount = await this.prisma.pet.count({
-      where: { ownerId: owner.id }
+      where: { ownerId: owner.id, ...this.activePetWhere() }
     });
     if (currentCount >= maxMemorials) {
       throw new BadRequestException(
@@ -132,6 +211,7 @@ export class PetsService {
           favoriteSleepPlaces: dto.favoriteSleepPlaces ?? null,
           story: dto.story ?? null,
           isPublic: dto.isPublic ?? false,
+          isActive: true,
           createdAt: now,
           memorial: {
             create: {
@@ -139,6 +219,7 @@ export class PetsService {
               houseId: dto.houseId ?? null,
               sceneJson,
               dustUpdatedAt: now,
+              activeUntil: paidUntil,
               createdAt: now
             }
           },
@@ -160,7 +241,8 @@ export class PetsService {
   }
 
   async findAll(ownerId?: string, visibility?: string) {
-    const where: { ownerId?: string; isPublic?: boolean } = {};
+    await this.deactivateExpiredMemorials();
+    const where: Prisma.PetWhereInput = this.activePetWhere();
     if (ownerId) {
       where.ownerId = ownerId;
     }
@@ -171,7 +253,7 @@ export class PetsService {
     }
 
     return this.prisma.pet.findMany({
-      where: Object.keys(where).length > 0 ? where : undefined,
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         memorial: true,
@@ -184,6 +266,8 @@ export class PetsService {
   }
 
   async findOne(id: string) {
+    await this.deactivateExpiredMemorials();
+    await this.deactivateExpiredGifts(id);
     const pet = await this.prisma.pet.findUnique({
       where: { id },
       include: {
@@ -198,6 +282,7 @@ export class PetsService {
           }
         },
         gifts: {
+          where: { isActive: true },
           include: {
             gift: true,
             owner: {
@@ -216,8 +301,15 @@ export class PetsService {
     if (!pet) {
       throw new NotFoundException("Pet not found");
     }
+    const now = new Date();
+    if (
+      !pet.isActive ||
+      pet.memorial?.deactivatedAt ||
+      (pet.memorial?.activeUntil && pet.memorial.activeUntil <= now)
+    ) {
+      throw new NotFoundException("Memorial not found");
+    }
     if (pet.memorial) {
-      const now = new Date();
       const nextStage = this.calculateDustStage(pet.memorial, now);
       if (nextStage !== pet.memorial.dustStage) {
         await this.prisma.memorial.update({
@@ -269,10 +361,87 @@ export class PetsService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.pet.delete({
-      where: { id }
+    const pet = await this.prisma.pet.findUnique({
+      where: { id },
+      include: { memorial: true }
     });
+    if (!pet) {
+      throw new NotFoundException("Pet not found");
+    }
+    const now = new Date();
+    return this.prisma.pet.update({
+      where: { id },
+      data: {
+        isActive: false,
+        isPublic: false,
+        deactivatedAt: now,
+        deactivationReason: "deleted",
+        memorial: pet.memorial
+          ? {
+              update: {
+                deactivatedAt: now,
+                deactivationReason: "deleted"
+              }
+            }
+          : undefined
+      },
+      include: { memorial: true }
+    });
+  }
+
+  async extendMemorial(id: string, ownerId: string, years: number) {
+    if (!MEMORIAL_PLAN_PRICES.has(years)) {
+      throw new BadRequestException("Неверный срок продления");
+    }
+    const pet = await this.findOne(id);
+    if (pet.ownerId !== ownerId) {
+      throw new BadRequestException("Продлить мемориал может только владелец");
+    }
+    if (!pet.memorial) {
+      throw new BadRequestException("Мемориал не найден");
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: ownerId } });
+    if (!user) {
+      throw new BadRequestException("Пользователь не найден");
+    }
+    const price = MEMORIAL_PLAN_PRICES.get(years)!;
+    if (user.coinBalance < price) {
+      throw new BadRequestException("Недостаточно монет для продления мемориала");
+    }
+    const now = new Date();
+    const base =
+      pet.memorial.activeUntil && pet.memorial.activeUntil > now
+        ? pet.memorial.activeUntil
+        : now;
+    const activeUntil = this.addYears(base, years);
+    const baseSceneJson =
+      pet.memorial.sceneJson &&
+      typeof pet.memorial.sceneJson === "object" &&
+      !Array.isArray(pet.memorial.sceneJson)
+        ? (pet.memorial.sceneJson as Record<string, unknown>)
+        : {};
+    const sceneJson: Prisma.InputJsonValue = {
+      ...baseSceneJson,
+      memorialPaidUntil: activeUntil.toISOString(),
+      memorialLastExtendedAt: now.toISOString(),
+      memorialLastExtensionYears: years,
+      memorialLastExtensionPrice: price
+    };
+    const [updatedUser, memorial] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: ownerId },
+        data: { coinBalance: { decrement: price } }
+      }),
+      this.prisma.memorial.update({
+        where: { petId: id },
+        data: { activeUntil, sceneJson }
+      })
+    ]);
+    return {
+      activeUntil: memorial.activeUntil,
+      coinBalance: updatedUser.coinBalance,
+      spent: price
+    };
   }
 
   async addPhoto(petId: string, file: { originalname: string; buffer: Buffer }) {
@@ -320,7 +489,11 @@ export class PetsService {
     };
     await this.prisma.memorial.update({
       where: { petId },
-      data: { sceneJson: nextSceneJson }
+      data: {
+        sceneJson: nextSceneJson,
+        needsPreviewRefresh: false,
+        previewUpdatedAt: new Date()
+      }
     });
     return { url };
   }

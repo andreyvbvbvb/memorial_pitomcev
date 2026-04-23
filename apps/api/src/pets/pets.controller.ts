@@ -14,6 +14,7 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CreatePetDto } from "./dto/create-pet.dto";
+import { ExtendMemorialDto } from "./dto/extend-memorial.dto";
 import { SetPreviewPhotoDto } from "./dto/set-preview-photo.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 import { PetsService } from "./pets.service";
@@ -87,6 +88,11 @@ export class PetsController {
   @Patch(":id/memorial/clean")
   cleanMemorial(@Param("id") id: string) {
     return this.petsService.cleanMemorial(id);
+  }
+
+  @Patch(":id/memorial/extend")
+  extendMemorial(@Param("id") id: string, @Body() dto: ExtendMemorialDto) {
+    return this.petsService.extendMemorial(id, dto.ownerId, dto.years);
   }
 
   @Delete(":id")

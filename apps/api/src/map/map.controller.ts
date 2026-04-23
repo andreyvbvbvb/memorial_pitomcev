@@ -19,10 +19,45 @@ export class MapController {
 
   @Get("markers")
   async getMarkers() {
+    const now = new Date();
+    const expired = await this.prisma.memorial.findMany({
+      where: {
+        deactivatedAt: null,
+        activeUntil: { lte: now },
+        pet: { isActive: true }
+      },
+      select: { id: true, petId: true }
+    });
+    if (expired.length > 0) {
+      await this.prisma.$transaction([
+        this.prisma.memorial.updateMany({
+          where: { id: { in: expired.map((item: { id: string; petId: string }) => item.id) } },
+          data: {
+            deactivatedAt: now,
+            deactivationReason: "expired"
+          }
+        }),
+        this.prisma.pet.updateMany({
+          where: { id: { in: expired.map((item: { id: string; petId: string }) => item.petId) } },
+          data: {
+            isActive: false,
+            deactivatedAt: now,
+            deactivationReason: "expired"
+          }
+        })
+      ]);
+    }
     const markers: MarkerWithPet[] = await this.prisma.mapMarker.findMany({
       where: {
         pet: {
-          isPublic: true
+          isPublic: true,
+          isActive: true,
+          memorial: {
+            is: {
+              deactivatedAt: null,
+              OR: [{ activeUntil: null }, { activeUntil: { gt: now } }]
+            }
+          }
         }
       },
       include: {

@@ -45,6 +45,9 @@ model Pet {
   favoriteSleepPlaces String?
   story     String?
   isPublic  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  deactivatedAt DateTime?
+  deactivationReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -53,6 +56,8 @@ model Pet {
   marker    MapMarker?
   photos    PetPhoto[]
   gifts     GiftPlacement[]
+
+  @@index([ownerId, isActive])
 }
 
 model Memorial {
@@ -63,10 +68,17 @@ model Memorial {
   sceneJson     Json?
   dustStage     Int      @default(0)
   dustUpdatedAt DateTime?
+  activeUntil   DateTime?
+  deactivatedAt DateTime?
+  deactivationReason String?
+  needsPreviewRefresh Boolean @default(false)
+  previewUpdatedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   pet           Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([activeUntil, deactivatedAt])
 }
 
 model MapMarker {
@@ -116,12 +128,16 @@ model GiftPlacement {
   size      String?
   placedAt  DateTime @default(now())
   expiresAt DateTime?
+  isActive  Boolean  @default(true)
+  deactivatedAt DateTime?
+  deactivationReason String?
 
   pet   Pet         @relation(fields: [petId], references: [id], onDelete: Cascade)
   gift  GiftCatalog @relation(fields: [giftId], references: [id])
   owner User        @relation(fields: [ownerId], references: [id])
 
   @@index([petId, slotName])
+  @@index([petId, isActive, expiresAt])
 }
 
 model CharityTotals {

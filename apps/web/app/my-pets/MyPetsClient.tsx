@@ -41,6 +41,7 @@ export default function MyPetsClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<4 | 5>(4);
+  const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -112,6 +113,29 @@ export default function MyPetsClient() {
     return "Без дат";
   };
 
+  const handleDeletePet = async (pet: PetWithPreview) => {
+    if (!window.confirm(`Удалить мемориал "${pet.name}"? Он исчезнет из списков, но данные сохранятся в базе.`)) {
+      return;
+    }
+    setDeletingPetId(pet.id);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/pets/${pet.id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось удалить мемориал");
+      }
+      setPets((prev) => prev.filter((item) => item.id !== pet.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка удаления");
+    } finally {
+      setDeletingPetId(null);
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fcf8f5]">
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
@@ -129,12 +153,12 @@ export default function MyPetsClient() {
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {petsWithPreview.map((pet) => (
-                  <Link
+                  <div
                     key={pet.id}
-                    href={`/pets/${pet.id}`}
                     className="group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]"
                   >
-                    <div className="relative aspect-square overflow-hidden rounded-[24px] border-2 border-white bg-[#efedeb]">
+                    <Link href={`/pets/${pet.id}`} className="block">
+                      <div className="relative aspect-square overflow-hidden rounded-[24px] border-2 border-white bg-[#efedeb]">
                       {pet.previewUrl ? (
                         <img
                           src={pet.previewUrl}
@@ -175,9 +199,9 @@ export default function MyPetsClient() {
                       <div className="pointer-events-none absolute -right-1 -top-1 opacity-0 transition-all duration-300 group-hover:translate-x-2 group-hover:translate-y-[-8px] group-hover:scale-100 group-hover:opacity-100">
                         <div className="h-10 w-6 border border-white bg-gradient-to-t from-[#2da689] to-[#3bceac] shadow-lg [clip-path:polygon(50%_0%,100%_50%,50%_100%,0%_50%)]" />
                       </div>
-                    </div>
+                      </div>
 
-                    <div className="mt-4 px-2 pb-2">
+                      <div className="mt-4 px-2 pb-2">
                       <div className="mb-1 flex items-start justify-between gap-2">
                         <h3 className="truncate text-lg font-black uppercase tracking-tight text-[#5d4037]">
                           {pet.name}
@@ -236,8 +260,24 @@ export default function MyPetsClient() {
                           </svg>
                         </span>
                       </div>
-                    </div>
-                  </Link>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeletePet(pet)}
+                      disabled={deletingPetId === pet.id}
+                      className="absolute right-5 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-white/90 text-red-500 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      aria-label="Удалить мемориал"
+                      title="Удалить мемориал"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v5M14 11v5" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             </section>

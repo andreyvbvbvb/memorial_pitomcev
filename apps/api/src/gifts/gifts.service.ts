@@ -135,8 +135,17 @@ export class GiftsService {
     size?: string;
   }) {
     const { petId, ownerId, giftId, slotName, months, size } = options;
-    const pet = await this.prisma.pet.findUnique({ where: { id: petId } });
-    if (!pet) {
+    const now = new Date();
+    const pet = await this.prisma.pet.findUnique({
+      where: { id: petId },
+      include: { memorial: true }
+    });
+    if (
+      !pet ||
+      !pet.isActive ||
+      pet.memorial?.deactivatedAt ||
+      (pet.memorial?.activeUntil && pet.memorial.activeUntil <= now)
+    ) {
       throw new NotFoundException("Мемориал не найден");
     }
     const gift = await this.prisma.giftCatalog.findUnique({ where: { id: giftId } });
@@ -150,6 +159,7 @@ export class GiftsService {
       where: {
         petId,
         slotName,
+        isActive: true,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
       }
     });
@@ -162,7 +172,7 @@ export class GiftsService {
       throw new BadRequestException("Недостаточно монет");
     }
 
-    const expiresAt = durationMonths ? this.addMonths(new Date(), durationMonths) : null;
+    const expiresAt = durationMonths ? this.addMonths(now, durationMonths) : null;
     const [updatedUser, placement] = await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: ownerId },
@@ -175,12 +185,17 @@ export class GiftsService {
           ownerId,
           slotName,
           expiresAt,
+          isActive: true,
           size: size ?? null
         },
         include: {
           gift: true,
           owner: true
         }
+      }),
+      this.prisma.memorial.update({
+        where: { petId },
+        data: { needsPreviewRefresh: true }
       })
     ]);
 

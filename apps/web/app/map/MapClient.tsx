@@ -69,6 +69,7 @@ type PetDetail = {
     slotName: string;
     placedAt: string;
     expiresAt: string | null;
+    isActive?: boolean;
     size?: string | null;
     gift: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
   }[];
@@ -727,6 +728,27 @@ function RowCarouselStage({
     };
   }, [targetIndex]);
 
+  useEffect(() => {
+    const count = items.length;
+    if (count === 0 || animRef.current) {
+      return;
+    }
+    const desiredSpacing = 20;
+    const minRadius = 30;
+    const radius = Math.max(minRadius, (desiredSpacing * count) / (Math.PI * 2));
+    radiusRef.current = radius;
+    const safeIndex = ((activeIndex % count) + count) % count;
+    const centerAngle = safeIndex * ((Math.PI * 2) / count);
+    camera.position.set(
+      Math.cos(centerAngle) * (radius + cameraSettings.distanceOffset),
+      cameraSettings.height,
+      Math.sin(centerAngle) * (radius + cameraSettings.distanceOffset)
+    );
+    camera.lookAt(0, 0, 0);
+    camera.rotateX(-THREE.MathUtils.degToRad(cameraSettings.tiltDeg));
+    camera.updateProjectionMatrix();
+  }, [activeIndex, camera, cameraSettings.distanceOffset, cameraSettings.height, cameraSettings.tiltDeg, items.length]);
+
   useFrame((_, delta) => {
     const count = items.length;
     if (count === 0) {
@@ -993,6 +1015,7 @@ export default function MapClient() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [carouselTargetIndex, setCarouselTargetIndex] = useState<number | null>(null);
   const [carouselQueue, setCarouselQueue] = useState(0);
+  const [hasCarouselArrowNavigation, setHasCarouselArrowNavigation] = useState(false);
   const carouselQueueRef = useRef(0);
   const overlayTop = "calc(var(--app-header-height, 56px) + 16px)";
   const mapViewportStyle = {
@@ -1113,6 +1136,17 @@ export default function MapClient() {
   }, [carouselQueue]);
 
   const activeCarouselMarker = carouselOrder[carouselIndex] ?? null;
+
+  useEffect(() => {
+    if (carouselOrder.length === 0) {
+      return;
+    }
+    if (carouselIndex >= carouselOrder.length) {
+      setCarouselIndex(0);
+      setCarouselTargetIndex(null);
+      setCarouselQueue(0);
+    }
+  }, [carouselIndex, carouselOrder.length]);
 
   const listMarkers = useMemo(() => {
     const source = boundsReady ? visibleMarkers : markers;
@@ -1358,7 +1392,11 @@ export default function MapClient() {
 
     const now = new Date();
     const activeGifts =
-      pet?.gifts?.filter((gift) => !gift.expiresAt || new Date(gift.expiresAt) > now) ?? [];
+      pet?.gifts?.filter(
+        (gift) =>
+          gift.isActive !== false &&
+          (!gift.expiresAt || new Date(gift.expiresAt) > now)
+      ) ?? [];
     const gifts = activeGifts.map((gift) => {
       const slotType = getGiftSlotType(gift.slotName);
       const resolvedUrl =
@@ -1400,6 +1438,7 @@ export default function MapClient() {
       if (carouselOrder.length < 2) {
         return;
       }
+      setHasCarouselArrowNavigation(true);
       if (step > 0 && carouselQueueRef.current >= 4) {
         return;
       }
@@ -1722,8 +1761,14 @@ export default function MapClient() {
                     onClick={handleCarouselNext}
                     className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
                   >
-                    <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 opacity-0 transition group-hover:opacity-100">
-                      <span className="block h-0 w-0 border-y-[18px] border-y-transparent border-r-[26px] border-r-white/60 drop-shadow" />
+                    <span
+                      className={`pointer-events-none absolute left-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                        hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
+                      }`}
+                    >
+                      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M15 18 9 12l6-6" />
+                      </svg>
                     </span>
                   </button>
                   <button
@@ -1732,8 +1777,14 @@ export default function MapClient() {
                     onClick={handleCarouselPrev}
                     className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
                   >
-                    <span className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 opacity-0 transition group-hover:opacity-100">
-                      <span className="block h-0 w-0 border-y-[18px] border-y-transparent border-l-[26px] border-l-white/60 drop-shadow" />
+                    <span
+                      className={`pointer-events-none absolute right-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                        hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
+                      }`}
+                    >
+                      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
                     </span>
                   </button>
                 </div>
@@ -1978,14 +2029,34 @@ export default function MapClient() {
                   type="button"
                   aria-label="Предыдущий мемориал"
                   onClick={handleCarouselNext}
-                  className="pointer-events-auto absolute left-0 top-0 h-full w-[20%] bg-transparent"
-                />
+                  className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
+                >
+                  <span
+                    className={`pointer-events-none absolute left-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(0,0,0,0.48)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                      hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M15 18 9 12l6-6" />
+                    </svg>
+                  </span>
+                </button>
                 <button
                   type="button"
                   aria-label="Следующий мемориал"
                   onClick={handleCarouselPrev}
-                  className="pointer-events-auto absolute right-0 top-0 h-full w-[20%] bg-transparent"
-                />
+                  className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
+                >
+                  <span
+                    className={`pointer-events-none absolute right-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(0,0,0,0.48)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                      hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </span>
+                </button>
               </div>
             </div>
             {desktopFilterPanel}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as THREE from "three";
 import { API_BASE } from "../../../lib/config";
 import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
@@ -55,6 +56,8 @@ type Pet = {
     sceneJson: Record<string, unknown> | null;
     dustStage?: number | null;
     dustUpdatedAt?: string | null;
+    activeUntil?: string | null;
+    needsPreviewRefresh?: boolean | null;
   } | null;
   photos?: { id: string; url: string }[];
   gifts?: {
@@ -62,6 +65,7 @@ type Pet = {
     slotName: string;
     placedAt: string;
     expiresAt: string | null;
+    isActive?: boolean;
     size?: string | null;
     gift: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
     owner?: {
@@ -85,6 +89,7 @@ type OwnerMemorial = {
     sceneJson: Record<string, unknown> | null;
     dustStage?: number | null;
     dustUpdatedAt?: string | null;
+    activeUntil?: string | null;
   } | null;
 };
 
@@ -134,6 +139,17 @@ export default function PetClient({ id }: Props) {
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
   const [ownerMemorials, setOwnerMemorials] = useState<OwnerMemorial[]>([]);
   const [dirtLevel, setDirtLevel] = useState(0);
+  const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const [extendingMemorial, setExtendingMemorial] = useState(false);
+  const [deletingMemorial, setDeletingMemorial] = useState(false);
+  const [previewContextReady, setPreviewContextReady] = useState(false);
+  const previewControlsRef = useRef<any>(null);
+  const previewRenderRef = useRef<{
+    gl: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.Camera;
+  } | null>(null);
+  const previewRefreshInFlightRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -384,7 +400,11 @@ export default function PetClient({ id }: Props) {
 
   const terrainGiftSlots = detectedSlots ?? getTerrainGiftSlots(pet?.memorial?.environmentId);
   const activeGifts =
-    pet?.gifts?.filter((gift) => !gift.expiresAt || new Date(gift.expiresAt) > new Date()) ?? [];
+    pet?.gifts?.filter(
+      (gift) =>
+        gift.isActive !== false &&
+        (!gift.expiresAt || new Date(gift.expiresAt) > new Date())
+    ) ?? [];
   const occupiedSlots = new Set(activeGifts.map((gift) => gift.slotName));
   const availableSlots = terrainGiftSlots.filter((slot) => !occupiedSlots.has(slot));
   const giftsWithSlots = useMemo(() => {
@@ -498,6 +518,138 @@ export default function PetClient({ id }: Props) {
   const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials") =>
     setActivePanel((prev) => (prev === panel ? null : panel));
 
+  const capturePreviewImage = useCallback(async () => {
+    const renderContext = previewRenderRef.current;
+    if (!renderContext) {
+      return null;
+    }
+    const controls = previewControlsRef.current;
+    const camera =
+      (controls?.object as THREE.PerspectiveCamera | undefined) ??
+      (renderContext.camera as THREE.PerspectiveCamera | undefined);
+    const target = controls?.target as THREE.Vector3 | undefined;
+    let restore: (() => void) | null = null;
+    if (camera) {
+      const prevPos = camera.position.clone();
+      const prevTarget = target?.clone();
+      const baseTarget = new THREE.Vector3(0, 0.6, 0);
+      const basePosition = new THREE.Vector3(8, 5, 8);
+      const baseOffset = basePosition.sub(baseTarget);
+      const rotatedOffset = baseOffset.clone().applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        THREE.MathUtils.degToRad(-30)
+      );
+      rotatedOffset.multiplyScalar(0.84);
+      rotatedOffset.y -= 0.85;
+      const nextPos = baseTarget.clone().add(rotatedOffset);
+      const distance = nextPos.distanceTo(baseTarget);
+      const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
+      const nextTarget = baseTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
+      camera.position.copy(nextPos);
+      if (target && controls) {
+        controls.target.copy(nextTarget);
+        controls.update();
+      } else {
+        camera.lookAt(nextTarget);
+      }
+      camera.updateProjectionMatrix();
+      restore = () => {
+        camera.position.copy(prevPos);
+        if (prevTarget && target && controls) {
+          controls.target.copy(prevTarget);
+          controls.update();
+        } else if (prevTarget) {
+          camera.lookAt(prevTarget);
+        }
+      };
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    }
+    if (!camera) {
+      restore?.();
+      return null;
+    }
+
+    const { gl, scene } = renderContext;
+    const size = new THREE.Vector2();
+    gl.getDrawingBufferSize(size);
+    const width = Math.max(1, Math.round(size.x * 0.5));
+    const height = Math.max(1, Math.round(size.y * 0.5));
+    const renderTarget = new THREE.WebGLRenderTarget(width, height, {
+      depthBuffer: true,
+      stencilBuffer: false
+    });
+    const prevTarget = gl.getRenderTarget();
+    const prevAutoClear = gl.autoClear;
+    gl.autoClear = true;
+    gl.setRenderTarget(renderTarget);
+    gl.clear();
+    gl.render(scene, camera);
+    const buffer = new Uint8Array(width * height * 4);
+    gl.readRenderTargetPixels(renderTarget, 0, 0, width, height, buffer);
+    gl.setRenderTarget(prevTarget);
+    gl.autoClear = prevAutoClear;
+    renderTarget.dispose();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      restore?.();
+      return null;
+    }
+    const toSrgbByte = (value: number) => {
+      const normalized = value / 255;
+      const srgb =
+        normalized <= 0.0031308
+          ? normalized * 12.92
+          : 1.055 * Math.pow(normalized, 1 / 2.4) - 0.055;
+      return Math.max(0, Math.min(255, Math.round(srgb * 255)));
+    };
+    const imageData = ctx.createImageData(width, height);
+    for (let y = 0; y < height; y += 1) {
+      const srcStart = (height - y - 1) * width * 4;
+      const destStart = y * width * 4;
+      for (let x = 0; x < width; x += 1) {
+        const src = srcStart + x * 4;
+        const dest = destStart + x * 4;
+        imageData.data[dest] = toSrgbByte(buffer[src] ?? 0);
+        imageData.data[dest + 1] = toSrgbByte(buffer[src + 1] ?? 0);
+        imageData.data[dest + 2] = toSrgbByte(buffer[src + 2] ?? 0);
+        imageData.data[dest + 3] = buffer[src + 3] ?? 255;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    restore?.();
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    });
+  }, []);
+
+  const uploadMapPreview = useCallback(async () => {
+    if (previewRefreshInFlightRef.current) {
+      return;
+    }
+    previewRefreshInFlightRef.current = true;
+    try {
+      const snapshot = await capturePreviewImage();
+      if (!snapshot) {
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", snapshot, "map-preview.png");
+      await fetch(`${apiUrl}/pets/${id}/map-preview`, {
+        method: "POST",
+        body: formData
+      });
+      await loadPet();
+    } finally {
+      previewRefreshInFlightRef.current = false;
+    }
+  }, [apiUrl, capturePreviewImage, id, loadPet]);
+
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot || !selectedDuration) {
       setGiftError("Выбери подарок, срок и слот");
@@ -529,6 +681,11 @@ export default function PetClient({ id }: Props) {
         }
         throw new Error(text || "Ошибка покупки подарка");
       }
+      setSelectedGiftId(null);
+      setSelectedSlot(null);
+      setSelectedDuration(null);
+      setGiftPreviewEnabled(false);
+      setSlotManuallyCleared(false);
       await loadPet();
       if (currentUser?.id) {
         loadWallet(currentUser.id);
@@ -556,6 +713,91 @@ export default function PetClient({ id }: Props) {
     { coins: 500, rub: 500, usd: 500 },
     { coins: 1000, rub: 1000, usd: 10 }
   ];
+
+  const isOwner = Boolean(currentUser?.id && pet?.ownerId === currentUser.id);
+  const handleExtendMemorial = async () => {
+    if (!currentUser?.id) {
+      setLifecycleError("Войдите, чтобы продлить мемориал");
+      return;
+    }
+    setLifecycleError(null);
+    setExtendingMemorial(true);
+    try {
+      const response = await fetch(`${apiUrl}/pets/${id}/memorial/extend`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: currentUser.id, years: 1 })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        if (text.toLowerCase().includes("недостаточно")) {
+          openTopUp();
+          return;
+        }
+        throw new Error(text || "Не удалось продлить мемориал");
+      }
+      const data = (await response.json()) as {
+        activeUntil?: string | null;
+        coinBalance?: number;
+      };
+      if (typeof data.coinBalance === "number") {
+        setWalletBalance(data.coinBalance);
+      }
+      setPet((prev) =>
+        prev?.memorial
+          ? {
+              ...prev,
+              memorial: {
+                ...prev.memorial,
+                activeUntil: data.activeUntil ?? prev.memorial.activeUntil ?? null
+              }
+            }
+          : prev
+      );
+      if (currentUser.id) {
+        void loadWallet(currentUser.id);
+      }
+    } catch (err) {
+      setLifecycleError(err instanceof Error ? err.message : "Ошибка продления");
+    } finally {
+      setExtendingMemorial(false);
+    }
+  };
+
+  const handleDeleteMemorial = async () => {
+    if (!window.confirm("Удалить мемориал? Он исчезнет из всех списков, но данные останутся в базе.")) {
+      return;
+    }
+    setLifecycleError(null);
+    setDeletingMemorial(true);
+    try {
+      const response = await fetch(`${apiUrl}/pets/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось удалить мемориал");
+      }
+      router.replace("/my-pets");
+    } catch (err) {
+      setLifecycleError(err instanceof Error ? err.message : "Ошибка удаления");
+    } finally {
+      setDeletingMemorial(false);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      !previewContextReady ||
+      !pet?.memorial?.needsPreviewRefresh ||
+      giftPreviewEnabled ||
+      selectedGiftId
+    ) {
+      return;
+    }
+    void uploadMapPreview().catch(() => {
+      // Preview refresh is best-effort; the server flag remains true until a later successful upload.
+    });
+  }, [giftPreviewEnabled, pet?.id, pet?.memorial?.needsPreviewRefresh, previewContextReady, selectedGiftId, uploadMapPreview]);
+
   const starSizeOptions: { id: GiftSize; label: string; helper: string }[] = [
     { id: "s", label: "S", helper: "Маленькая" },
     { id: "m", label: "M", helper: "Средняя" },
@@ -665,6 +907,7 @@ export default function PetClient({ id }: Props) {
       bowlWater?: string;
     };
     colors?: Record<string, string>;
+    memorialPaidUntil?: string | null;
   };
   const partList = [
     houseSlots.roof ? { slot: houseSlots.roof, url: resolveRoofModel(sceneJson.parts?.roof) } : null,
@@ -724,8 +967,12 @@ export default function PetClient({ id }: Props) {
   const previewGifts = previewGift ? [...giftInstances, previewGift] : giftInstances;
   const totalPrice =
     selectedGift && selectedDuration ? selectedGift.price * selectedDuration : null;
+
   const formatDate = (value?: string | null) =>
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
+  const activeUntil = pet.memorial?.activeUntil ?? sceneJson.memorialPaidUntil ?? null;
+  const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Бессрочно";
+  const canExtendMemorial = Boolean(activeUntil);
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
@@ -762,6 +1009,13 @@ export default function PetClient({ id }: Props) {
           showControls={false}
           showGiftSlots={shouldShowGiftSlots}
           cameraPosition={[8, 6, 8]}
+          onControlsReady={(controls) => {
+            previewControlsRef.current = controls;
+          }}
+          onRenderContextReady={(context) => {
+            previewRenderRef.current = context;
+            setPreviewContextReady(true);
+          }}
         />
       </div>
 
@@ -772,6 +1026,49 @@ export default function PetClient({ id }: Props) {
             <div className="text-xs text-slate-600">{dateRange}</div>
           </div>
         </div>
+
+        {isOwner ? (
+          <div className="pointer-events-auto absolute left-4 top-[calc(var(--app-header-height,0px)+0.75rem)] z-20 w-[280px] max-w-[calc(100vw-2rem)] rounded-[28px] border-[4px] border-white bg-[#f7f1ee]/95 p-3 shadow-[0_22px_54px_-24px_rgba(0,0,0,0.35)] backdrop-blur sm:w-[320px]">
+            <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#adb5bd]">
+                Управление мемориалом
+              </p>
+              <div className="mt-3 rounded-2xl bg-[#fdf2e9] px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                  Активен до
+                </p>
+                <p className="mt-1 text-lg font-black text-[#5d4037]">
+                  {activeUntilLabel}
+                </p>
+              </div>
+              {lifecycleError ? (
+                <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
+              ) : null}
+              <div className="mt-3 grid gap-2">
+                <button
+                  type="button"
+                  onClick={handleExtendMemorial}
+                  disabled={extendingMemorial || !canExtendMemorial}
+                  className="rounded-xl bg-[#111827] px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                >
+                  {extendingMemorial
+                    ? "Продление..."
+                    : canExtendMemorial
+                      ? "Продлить на 1 год"
+                      : "Бессрочно"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteMemorial}
+                  disabled={deletingMemorial}
+                  className="rounded-xl border-2 border-red-100 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deletingMemorial ? "Удаление..." : "Удалить мемориал"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4">
           <div className="relative">
