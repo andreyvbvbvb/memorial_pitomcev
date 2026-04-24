@@ -1415,7 +1415,7 @@ export default function CreateMemorialClient() {
   };
 
   const openReview = () => {
-    const message = validateStep(1);
+    const message = validateStep(0) ?? validateStep(1);
     if (message) {
       setError(message);
       return;
