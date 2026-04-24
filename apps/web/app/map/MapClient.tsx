@@ -138,6 +138,9 @@ const formatYearRange = (birthDate?: string | null, deathDate?: string | null) =
   return "Без дат";
 };
 
+const getMarkerPreviewSrc = (marker: MarkerDto | null | undefined) =>
+  marker?.previewImageUrl ?? marker?.previewPhotoUrl ?? null;
+
 const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, string>) => {
   if (!colors) {
     return;
@@ -1558,7 +1561,70 @@ export default function MapClient() {
   }, [carouselTargetIndex, carouselQueue, carouselIndex, carouselOrder.length]);
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
-  const activePreviewSrc = resolvePreviewSrc(activeCarouselMarker?.previewPhotoUrl);
+  const activePreviewSrc = resolvePreviewSrc(getMarkerPreviewSrc(activeCarouselMarker));
+  const activeCarouselInfoContent = activeCarouselMarker ? (
+    <div className="rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
+      <div className="flex items-start gap-4">
+        <div className="relative">
+          {activePreviewSrc ? (
+            <img
+              src={activePreviewSrc}
+              alt={`Фото ${activeCarouselMarker.name}`}
+              className="h-24 w-24 rounded-[22px] object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-24 w-24 rounded-[22px] bg-slate-200" />
+          )}
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
+            <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+            <span className="text-[9px] font-black uppercase text-[#5d4037]">
+              Публичный
+            </span>
+          </div>
+        </div>
+        <div className="min-w-0 flex-1 pt-1">
+          <h3 className="text-xl font-black uppercase tracking-tight text-[#5d4037]">
+            {activeCarouselMarker.name}
+          </h3>
+          <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
+            {formatYearRange(activeCarouselMarker.birthDate, activeCarouselMarker.deathDate)}
+          </p>
+        </div>
+      </div>
+      <p className="mt-4 text-[15px] italic leading-relaxed text-[#6f6360]">
+        &ldquo;{activeCarouselMarker.epitaph ?? "Без эпитафии"}&rdquo;
+      </p>
+      {activeCarouselPet?.story ? (
+        <p className="mt-4 max-h-28 overflow-y-auto text-sm leading-relaxed text-[#7b6b65]">
+          {activeCarouselPet.story}
+        </p>
+      ) : null}
+      <a
+        className="group mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+        href={`/pets/${activeCarouselMarker.petId}`}
+      >
+        <span className="transition-transform duration-300 group-hover:-translate-x-1">
+          Открыть мемориал
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          className="ml-2 h-5 w-5 text-current transition-transform duration-300 group-hover:translate-x-1"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M5 12h14" />
+          <path d="m13 5 7 7-7 7" />
+        </svg>
+      </a>
+    </div>
+  ) : (
+    <p className="text-sm text-slate-500">Нет мемориалов</p>
+  );
 
   const memorialListContent = (
     <div className="grid grid-cols-1 gap-4">
@@ -1758,9 +1824,9 @@ export default function MapClient() {
                         options={{ maxWidth: 260 }}
                       >
                         <div className="max-w-[240px] text-sm">
-                          {resolvePreviewSrc(active.previewPhotoUrl) ? (
+                          {resolvePreviewSrc(getMarkerPreviewSrc(active)) ? (
                             <img
-                              src={resolvePreviewSrc(active.previewPhotoUrl)!}
+                              src={resolvePreviewSrc(getMarkerPreviewSrc(active))!}
                               alt="Фото питомца"
                               className="mb-2 w-full rounded-md object-contain"
                               style={{ maxHeight: 160 }}
@@ -1835,40 +1901,8 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={`flex-1 overflow-y-auto p-4 ${simsSidebarClass}`}>
-                {activeCarouselMarker ? (
-                  <div className="flex h-full flex-col gap-3">
-                    {activePreviewSrc ? (
-                      <img
-                        src={activePreviewSrc}
-                        alt="Фото питомца"
-                        className="h-40 w-full flex-shrink-0 rounded-2xl object-contain"
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-900">
-                        {activeCarouselMarker.name}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {activeCarouselMarker.epitaph ?? "Без эпитафии"}
-                      </p>
-                    </div>
-                    {activeCarouselPet?.story ? (
-                      <p className="flex-1 overflow-y-auto text-xs text-slate-500">
-                        {activeCarouselPet.story}
-                      </p>
-                    ) : null}
-                    <a
-                      className="mt-auto inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
-                      href={`/pets/${activeCarouselMarker.petId}`}
-                    >
-                      Открыть мемориал
-                    </a>
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">Нет мемориалов</p>
-                )}
+              <div className="mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+                {activeCarouselInfoContent}
               </div>
             </>
           )}
@@ -2018,9 +2052,9 @@ export default function MapClient() {
                   options={{ maxWidth: 260 }}
                 >
                   <div className="max-w-[240px] text-sm">
-                    {resolvePreviewSrc(active.previewPhotoUrl) ? (
+                    {resolvePreviewSrc(getMarkerPreviewSrc(active)) ? (
                       <img
-                        src={resolvePreviewSrc(active.previewPhotoUrl)!}
+                        src={resolvePreviewSrc(getMarkerPreviewSrc(active))!}
                         alt="Фото питомца"
                         className="mb-2 w-full rounded-md object-contain"
                         style={{ maxHeight: 160 }}
@@ -2106,40 +2140,8 @@ export default function MapClient() {
               </div>
             </div>
             {desktopFilterPanel}
-            <div className={`pointer-events-auto absolute right-6 top-1/2 z-20 h-[60%] w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 p-5 ${simsSidebarClass}`}>
-              {activeCarouselMarker ? (
-                <div className="flex h-full flex-col gap-3">
-                  {activePreviewSrc ? (
-                    <img
-                      src={activePreviewSrc}
-                      alt="Фото питомца"
-                      className="h-40 w-full flex-shrink-0 rounded-2xl object-contain"
-                      loading="lazy"
-                    />
-                  ) : null}
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {activeCarouselMarker.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {activeCarouselMarker.epitaph ?? "Без эпитафии"}
-                    </p>
-                  </div>
-                  {activeCarouselPet?.story ? (
-                    <p className="flex-1 overflow-y-auto text-xs text-slate-500">
-                      {activeCarouselPet.story}
-                    </p>
-                  ) : null}
-                  <a
-                    className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm text-white"
-                    href={`/pets/${activeCarouselMarker.petId}`}
-                  >
-                    Открыть мемориал
-                  </a>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">Нет мемориалов</p>
-              )}
+            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+              {activeCarouselInfoContent}
             </div>
           </div>
         )}

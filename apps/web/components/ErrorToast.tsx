@@ -7,13 +7,15 @@ type Props = {
   onClose?: () => void;
   durationMs?: number;
   offset?: number;
+  variant?: "error" | "success";
 };
 
 export default function ErrorToast({
   message,
   onClose,
   durationMs = 4000,
-  offset = 0
+  offset = 0,
+  variant = "error"
 }: Props) {
   const [visible, setVisible] = useState(false);
 
@@ -42,6 +44,15 @@ export default function ErrorToast({
     return null;
   }
 
+  const shellClass =
+    variant === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : "border-red-200 bg-red-50 text-red-700";
+  const closeClass =
+    variant === "success"
+      ? "text-emerald-600 hover:bg-emerald-100"
+      : "text-red-600 hover:bg-red-100";
+
   return (
     <div
       className={`fixed right-6 z-[999] max-w-[320px] transition-all duration-200 ${
@@ -49,12 +60,12 @@ export default function ErrorToast({
       }`}
       style={{ bottom: 24 + offset }}
     >
-      <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-lg">
+      <div className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg ${shellClass}`}>
         <span className="flex-1">{message}</span>
         <button
           type="button"
           onClick={() => setVisible(false)}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-red-600 hover:bg-red-100"
+          className={`flex h-6 w-6 items-center justify-center rounded-full ${closeClass}`}
           aria-label="Закрыть"
         >
           ×

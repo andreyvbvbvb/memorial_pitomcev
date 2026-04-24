@@ -44,6 +44,18 @@ const buildDirtModelUrls = (houseId?: string | null): string[] => {
   return [1, 2, 3, 4].map((index) => `${prefix}/dirt_${index}.glb`);
 };
 
+const formatMonthsLabel = (months: number) => {
+  const mod10 = months % 10;
+  const mod100 = months % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return `${months} месяц`;
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${months} месяца`;
+  }
+  return `${months} месяцев`;
+};
+
 type Pet = {
   id: string;
   ownerId: string;
@@ -127,6 +139,7 @@ export default function PetClient({ id }: Props) {
     { id: string; code?: string | null; name: string; price: number; modelUrl: string }[]
   >([]);
   const [giftError, setGiftError] = useState<string | null>(null);
+  const [giftSuccess, setGiftSuccess] = useState<string | null>(null);
   const [giftLoading, setGiftLoading] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
   const [selectedGiftSize, setSelectedGiftSize] = useState<GiftSize>("m");
@@ -675,15 +688,33 @@ export default function PetClient({ id }: Props) {
       }
       const formData = new FormData();
       formData.append("file", snapshot, "map-preview.png");
-      await fetch(`${apiUrl}/pets/${id}/map-preview`, {
+      const response = await fetch(`${apiUrl}/pets/${id}/map-preview`, {
         method: "POST",
         body: formData
       });
-      await loadPet();
+      if (!response.ok) {
+        throw new Error("Не удалось обновить обложку карты");
+      }
+      const data = (await response.json()) as { url?: string };
+      setPet((prev) =>
+        prev?.memorial
+          ? {
+              ...prev,
+              memorial: {
+                ...prev.memorial,
+                needsPreviewRefresh: false,
+                sceneJson: {
+                  ...(prev.memorial.sceneJson ?? {}),
+                  ...(data.url ? { previewImageUrl: data.url } : {})
+                }
+              }
+            }
+          : prev
+      );
     } finally {
       previewRefreshInFlightRef.current = false;
     }
-  }, [apiUrl, capturePreviewImage, id, loadPet]);
+  }, [apiUrl, capturePreviewImage, id]);
 
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot || !selectedDuration) {
@@ -696,6 +727,11 @@ export default function PetClient({ id }: Props) {
     }
     setGiftLoading(true);
     setGiftError(null);
+    setGiftSuccess(null);
+    const purchasedGift = selectedGift;
+    const purchasedSlot = selectedSlot;
+    const purchasedDuration = selectedDuration;
+    const purchasedGiftSize = selectedGiftSupportsSize ? selectedGiftSize : null;
     try {
       const response = await fetch(`${apiUrl}/pets/${id}/gifts`, {
         method: "POST",
@@ -716,14 +752,83 @@ export default function PetClient({ id }: Props) {
         }
         throw new Error(text || "Ошибка покупки подарка");
       }
+      const data = (await response.json()) as {
+        coinBalance?: number;
+        placement?: {
+          id: string;
+          slotName: string;
+          placedAt: string;
+          expiresAt: string | null;
+          size?: string | null;
+          gift?: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
+          owner?: {
+            id: string;
+            email?: string | null;
+            login?: string | null;
+          } | null;
+        };
+      };
       setSelectedGiftId(null);
       setSelectedSlot(null);
       setSelectedDuration(null);
       setGiftPreviewEnabled(false);
       setSlotManuallyCleared(false);
-      await loadPet();
-      if (currentUser?.id) {
-        loadWallet(currentUser.id);
+      if (typeof data.coinBalance === "number") {
+        setWalletBalance(data.coinBalance);
+      } else if (currentUser?.id) {
+        void loadWallet(currentUser.id);
+      }
+      if (data.placement) {
+        const placement = data.placement;
+        const giftPayload =
+          placement.gift ??
+          (purchasedGift
+            ? {
+                id: purchasedGift.id,
+                code: purchasedGift.code ?? null,
+                name: purchasedGift.name,
+                price: purchasedGift.price,
+                modelUrl: purchasedGift.modelUrl
+              }
+            : null);
+        if (giftPayload) {
+          setPet((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  gifts: [
+                    {
+                      id: placement.id,
+                      slotName: placement.slotName,
+                      placedAt: placement.placedAt,
+                      expiresAt: placement.expiresAt,
+                      isActive: true,
+                      size: placement.size ?? purchasedGiftSize,
+                      gift: giftPayload,
+                      owner: {
+                        id: placement.owner?.id ?? currentUser.id,
+                        email: placement.owner?.email ?? currentUser.email ?? null,
+                        login: placement.owner?.login ?? currentUser.login ?? null,
+                        pets: []
+                      }
+                    },
+                    ...((prev.gifts ?? []).filter((gift) => gift.slotName !== placement.slotName))
+                  ],
+                  memorial: prev.memorial
+                    ? {
+                        ...prev.memorial,
+                        needsPreviewRefresh: true
+                      }
+                    : prev.memorial
+                }
+              : prev
+          );
+        }
+      }
+      if (purchasedGift) {
+        setGiftSuccess(
+          `Вы подарили ${purchasedGift.name} ${pet?.name ?? "мемориалу"} на ${formatMonthsLabel(purchasedDuration)}.`
+        );
       }
     } catch (err) {
       setGiftError(err instanceof Error ? err.message : "Ошибка покупки подарка");
@@ -1566,6 +1671,12 @@ export default function PetClient({ id }: Props) {
                     </div>
 
                     <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />
+                    <ErrorToast
+                      message={giftSuccess}
+                      onClose={() => setGiftSuccess(null)}
+                      offset={88}
+                      variant="success"
+                    />
 
                     <button
                       type="button"

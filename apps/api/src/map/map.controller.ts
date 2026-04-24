@@ -75,9 +75,16 @@ export class MapController {
         ? marker.pet.photos.find((photo) => photo.id === marker.previewPhotoId)
         : marker.pet.photos[0];
       const sceneJson = marker.pet.memorial?.sceneJson;
-      const previewImageUrl =
+      const rawPreviewImageUrl =
         sceneJson && typeof sceneJson === "object" && !Array.isArray(sceneJson)
           ? (sceneJson as Record<string, unknown>).previewImageUrl
+          : null;
+      const previewUpdatedAt = marker.pet.memorial?.previewUpdatedAt;
+      const previewImageUrl =
+        typeof rawPreviewImageUrl === "string"
+          ? previewUpdatedAt
+            ? `${rawPreviewImageUrl}${rawPreviewImageUrl.includes("?") ? "&" : "?"}v=${previewUpdatedAt.getTime()}`
+            : rawPreviewImageUrl
           : null;
 
       return {
@@ -91,7 +98,7 @@ export class MapController {
         lng: marker.lng,
         markerStyle: marker.markerStyle ?? null,
         previewPhotoUrl: previewPhoto?.url ?? null,
-        previewImageUrl: typeof previewImageUrl === "string" ? previewImageUrl : null
+        previewImageUrl
       };
     });
   }

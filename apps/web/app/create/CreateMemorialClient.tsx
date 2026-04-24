@@ -1272,7 +1272,9 @@ export default function CreateMemorialClient() {
     const message = step0Message ?? step1Message;
     if (message) {
       setError(message);
-      setStep(step1Message ? 1 : 0);
+      if (step1Message) {
+        setStep(1);
+      }
       return;
     }
 
