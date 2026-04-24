@@ -337,6 +337,8 @@ export default function CreateMemorialClient() {
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
   const photosRef = useRef<PhotoDraft[]>([]);
+  const birthDateInputRef = useRef<HTMLInputElement | null>(null);
+  const deathDateInputRef = useRef<HTMLInputElement | null>(null);
   const [markerCategory, setMarkerCategory] = useState(form.species);
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
   const [focusRequestId, setFocusRequestId] = useState(0);
@@ -1089,6 +1091,19 @@ export default function CreateMemorialClient() {
   const handleChange = (field: keyof FormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  const openDatePicker = useCallback((input: HTMLInputElement | null) => {
+    if (!input) {
+      return;
+    }
+    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof pickerInput.showPicker === "function") {
+      pickerInput.showPicker();
+      return;
+    }
+    input.focus();
+    input.click();
+  }, []);
 
   const handleSpeciesChange = (value: string) => {
     setForm((prev) => {
@@ -2086,10 +2101,14 @@ export default function CreateMemorialClient() {
         </select>
       </label>
       <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
-        <label className={`grid gap-2 ${centered ? "text-center text-sm text-slate-700" : ""}`}>
+        <label
+          className={`grid gap-2 cursor-pointer ${centered ? "text-center text-sm text-slate-700" : ""}`}
+          onClick={() => openDatePicker(birthDateInputRef.current)}
+        >
           {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
           {centered ? "Дата рождения" : null}
           <input
+            ref={birthDateInputRef}
             type="date"
             className={centered
               ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
@@ -2101,10 +2120,14 @@ export default function CreateMemorialClient() {
             max={form.deathDate || todayInputValue}
           />
         </label>
-        <label className={`grid gap-2 ${centered ? "text-center text-sm text-slate-700" : ""}`}>
+        <label
+          className={`grid gap-2 cursor-pointer ${centered ? "text-center text-sm text-slate-700" : ""}`}
+          onClick={() => openDatePicker(deathDateInputRef.current)}
+        >
           {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
           {centered ? "Дата ухода" : null}
           <input
+            ref={deathDateInputRef}
             type="date"
             className={centered
               ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
