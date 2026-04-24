@@ -1,0 +1,2 @@
+export const MAP_PREVIEW_CAPTURE_WIDTH = 1600;
+export const MAP_PREVIEW_CAPTURE_HEIGHT = 960;

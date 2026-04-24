@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { API_BASE } from "../../../lib/config";
+import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../lib/map-preview";
 import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
 import {
@@ -571,10 +572,14 @@ export default function PetClient({ id }: Props) {
     if (!renderContext) {
       return null;
     }
+    const width = MAP_PREVIEW_CAPTURE_WIDTH;
+    const height = MAP_PREVIEW_CAPTURE_HEIGHT;
     const controls = previewControlsRef.current;
     const camera =
       (controls?.object as THREE.PerspectiveCamera | undefined) ??
       (renderContext.camera as THREE.PerspectiveCamera | undefined);
+    const perspectiveCamera = camera instanceof THREE.PerspectiveCamera ? camera : null;
+    const prevAspect = perspectiveCamera?.aspect ?? null;
     const target = controls?.target as THREE.Vector3 | undefined;
     let restore: (() => void) | null = null;
     if (camera) {
@@ -600,7 +605,10 @@ export default function PetClient({ id }: Props) {
       } else {
         camera.lookAt(nextTarget);
       }
-      camera.updateProjectionMatrix();
+      if (perspectiveCamera) {
+        perspectiveCamera.aspect = width / height;
+        perspectiveCamera.updateProjectionMatrix();
+      }
       restore = () => {
         camera.position.copy(prevPos);
         if (prevTarget && target && controls) {
@@ -608,6 +616,10 @@ export default function PetClient({ id }: Props) {
           controls.update();
         } else if (prevTarget) {
           camera.lookAt(prevTarget);
+        }
+        if (perspectiveCamera && prevAspect !== null) {
+          perspectiveCamera.aspect = prevAspect;
+          perspectiveCamera.updateProjectionMatrix();
         }
       };
       await new Promise<void>((resolve) => {
@@ -620,10 +632,6 @@ export default function PetClient({ id }: Props) {
     }
 
     const { gl, scene } = renderContext;
-    const size = new THREE.Vector2();
-    gl.getDrawingBufferSize(size);
-    const width = Math.max(1, Math.round(size.x * 0.5));
-    const height = Math.max(1, Math.round(size.y * 0.5));
     const renderTarget = new THREE.WebGLRenderTarget(width, height, {
       depthBuffer: true,
       stencilBuffer: false

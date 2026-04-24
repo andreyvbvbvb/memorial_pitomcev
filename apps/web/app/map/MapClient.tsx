@@ -537,6 +537,9 @@ function MemorialInstance({
   tone,
   innerRef,
   onSelect,
+  onPressStart,
+  onDragMove,
+  onPressEnd,
   onHover,
   onLeave
 }: {
@@ -544,6 +547,9 @@ function MemorialInstance({
   tone: number;
   innerRef: (node: THREE.Group | null) => void;
   onSelect?: () => void;
+  onPressStart?: (event: any) => void;
+  onDragMove?: (event: any) => void;
+  onPressEnd?: (event: any) => void;
   onHover?: () => void;
   onLeave?: () => void;
 }) {
@@ -554,11 +560,36 @@ function MemorialInstance({
     <Group
       ref={innerRef}
       onPointerDown={(event: any) => {
+        if (onPressStart) {
+          event.stopPropagation();
+          onPressStart(event);
+        }
         if (!onSelect) {
           return;
         }
         event.stopPropagation();
         onSelect();
+      }}
+      onPointerMove={(event: any) => {
+        if (!onDragMove) {
+          return;
+        }
+        event.stopPropagation();
+        onDragMove(event);
+      }}
+      onPointerUp={(event: any) => {
+        if (!onPressEnd) {
+          return;
+        }
+        event.stopPropagation();
+        onPressEnd(event);
+      }}
+      onPointerCancel={(event: any) => {
+        if (!onPressEnd) {
+          return;
+        }
+        event.stopPropagation();
+        onPressEnd(event);
       }}
       onPointerOver={(event: any) => {
         if (!onHover) {
@@ -707,6 +738,18 @@ function RowCarouselStage({
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
+  const activeRotationYRef = useRef(0);
+  const activeDragRef = useRef<{
+    dragging: boolean;
+    pointerId: number | null;
+    startX: number;
+    startRotation: number;
+  }>({
+    dragging: false,
+    pointerId: null,
+    startX: 0,
+    startRotation: 0
+  });
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -727,7 +770,63 @@ function RowCarouselStage({
   useEffect(() => {
     return () => {
       hoveredRef.current = null;
+      document.body.style.cursor = "";
     };
+  }, []);
+
+  useEffect(() => {
+    activeRotationYRef.current = 0;
+    activeDragRef.current = {
+      dragging: false,
+      pointerId: null,
+      startX: 0,
+      startRotation: 0
+    };
+    document.body.style.cursor = "";
+  }, [activeIndex, targetIndex]);
+
+  const handleRotationStart = useCallback((event: any, idx: number) => {
+    if (animRef.current || idx !== activeIndexRef.current) {
+      return;
+    }
+    activeDragRef.current = {
+      dragging: true,
+      pointerId: typeof event.pointerId === "number" ? event.pointerId : null,
+      startX: typeof event.clientX === "number" ? event.clientX : 0,
+      startRotation: activeRotationYRef.current
+    };
+    event.target.setPointerCapture?.(event.pointerId);
+    document.body.style.cursor = "grabbing";
+  }, []);
+
+  const handleRotationMove = useCallback((event: any, idx: number) => {
+    const drag = activeDragRef.current;
+    if (!drag.dragging || animRef.current || idx !== activeIndexRef.current) {
+      return;
+    }
+    if (drag.pointerId !== null && event.pointerId !== drag.pointerId) {
+      return;
+    }
+    const clientX = typeof event.clientX === "number" ? event.clientX : drag.startX;
+    activeRotationYRef.current = drag.startRotation + (clientX - drag.startX) * 0.01;
+  }, []);
+
+  const handleRotationEnd = useCallback((event: any) => {
+    const drag = activeDragRef.current;
+    if (!drag.dragging) {
+      return;
+    }
+    if (drag.pointerId !== null && typeof event.pointerId === "number" && event.pointerId !== drag.pointerId) {
+      return;
+    }
+    event.target.releasePointerCapture?.(event.pointerId);
+    activeDragRef.current = {
+      dragging: false,
+      pointerId: null,
+      startX: 0,
+      startRotation: activeRotationYRef.current
+    };
+    document.body.style.cursor = "";
   }, []);
 
   const OcclusionPlane = ({ size }: { size: number }) => {
@@ -810,7 +909,9 @@ function RowCarouselStage({
       node.position.set(Math.cos(angle) * radial, 0, Math.sin(angle) * radial);
       node.scale.setScalar(1 + CAROUSEL_SCALE_BOOST * centerWeight);
       node.lookAt(0, 0, 0);
-      node.rotateY(Math.PI);
+      node.rotateY(
+        Math.PI + (idx === activeIndexRef.current ? activeRotationYRef.current : 0)
+      );
       applyMaterialDimming(node, carouselDimForDistance(distToCenter));
       applyMaterialHighlight(node, 0);
     },
@@ -898,7 +999,12 @@ function RowCarouselStage({
       const scale = 1 + CAROUSEL_SCALE_BOOST * centerWeight;
       node.scale.setScalar(scale);
       node.lookAt(0, 0, 0);
-      node.rotateY(Math.PI);
+      node.rotateY(
+        Math.PI +
+          (!animRef.current && idx === activeIndexRef.current
+            ? activeRotationYRef.current
+            : 0)
+      );
 
       const dim = carouselDimForDistance(distToCenter);
       applyMaterialDimming(node, dim);
@@ -958,6 +1064,9 @@ function RowCarouselStage({
               instanceRefs.current[idx] = node;
               placeInstance(node, idx);
             }}
+            onPressStart={(event) => handleRotationStart(event, idx)}
+            onDragMove={(event) => handleRotationMove(event, idx)}
+            onPressEnd={handleRotationEnd}
             onHover={
               enableHoverHighlight
                 ? () => {
