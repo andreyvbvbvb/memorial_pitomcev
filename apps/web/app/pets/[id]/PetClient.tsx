@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { API_BASE } from "../../../lib/config";
 import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../lib/map-preview";
+import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
 import {
@@ -47,6 +49,8 @@ import {
   wallOptions as allWallOptions,
   type OptionItem
 } from "../../../lib/memorial-options";
+
+ensureDracoLoader();
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
 const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
@@ -101,6 +105,18 @@ const colorPalette = [
   "#5A3A1B",
   "#422913"
 ] as const;
+
+const APPEARANCE_TAB_DESCRIPTIONS: Record<AppearanceTabId, string> = {
+  house: "Выбор формы домика и его текстуры.",
+  roof: "Крыша домика и её цвет.",
+  wall: "Стены домика и материалы.",
+  sign: "Украшение над входом.",
+  frameLeft: "Левая фоторамка у домика.",
+  frameRight: "Правая фоторамка у домика.",
+  mat: "Коврик перед входом.",
+  bowlFood: "Миска с кормом.",
+  bowlWater: "Миска с водой."
+};
 
 type AppearanceTabId =
   | "house"
@@ -252,6 +268,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [appearanceDraft, setAppearanceDraft] = useState<AppearanceDraft | null>(null);
   const [appearanceTab, setAppearanceTab] = useState<AppearanceTabId>("house");
+  const [appearanceFocusSlot, setAppearanceFocusSlot] = useState<string | null>(null);
+  const [appearanceFocusRequestId, setAppearanceFocusRequestId] = useState(0);
+  const [hoveredAppearanceOption, setHoveredAppearanceOption] = useState<{
+    category: string;
+    id: string;
+  } | null>(null);
+  const hoverAppearanceIntentRef = useRef<{ category: string; id: string } | null>(null);
+  const [appearanceTooltipTabId, setAppearanceTooltipTabId] = useState<AppearanceTabId | null>(
+    null
+  );
+  const appearanceTooltipTimerRef = useRef<number | null>(null);
   const [appearanceError, setAppearanceError] = useState<string | null>(null);
   const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
   const [savingAppearance, setSavingAppearance] = useState(false);
@@ -266,6 +293,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
   } | null>(null);
   const previewRefreshInFlightRef = useRef(false);
   const editModeInitializedRef = useRef(false);
+  const gltfLoaderRef = useRef<GLTFLoader | null>(null);
+  const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
+  const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -536,6 +566,19 @@ export default function PetClient({ id, mode = "view" }: Props) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [lightboxIndex, goNext, goPrev, mounted]);
 
+  const clearAppearanceTooltipTimer = useCallback(() => {
+    if (appearanceTooltipTimerRef.current !== null) {
+      window.clearTimeout(appearanceTooltipTimerRef.current);
+      appearanceTooltipTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearAppearanceTooltipTimer();
+    };
+  }, [clearAppearanceTooltipTimer]);
+
   const currentUserLogin = currentUser?.login ?? pet?.owner?.login ?? null;
   const houseOptions = useMemo(
     () => filterOptionsForUser(allHouseOptions, currentUserLogin),
@@ -641,6 +684,180 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const houseTextureOptions =
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
   const houseSlots = getHouseSlots(effectiveHouseId);
+  const hoveredAppearanceId = useCallback(
+    (category: string) =>
+      hoveredAppearanceOption?.category === category ? hoveredAppearanceOption.id : null,
+    [hoveredAppearanceOption]
+  );
+  const previewHouseVariantId = hoveredAppearanceId("house-texture");
+  const previewHouseBaseId = hoveredAppearanceId("house-base");
+  const editPreviewHouseId =
+    previewHouseVariantId ??
+    (previewHouseBaseId
+      ? houseVariantGroup.defaultVariantByBase[previewHouseBaseId] ?? previewHouseBaseId
+      : null) ??
+    effectiveHouseId;
+  const previewHouseSlots = getHouseSlots(editPreviewHouseId);
+  const previewRoofId = hoveredAppearanceId("roof") ?? draftAppearance.roofId;
+  const previewWallId = hoveredAppearanceId("wall") ?? draftAppearance.wallId;
+  const previewSignId = hoveredAppearanceId("sign") ?? draftAppearance.signId;
+  const previewFrameLeftId = hoveredAppearanceId("frame-left") ?? draftAppearance.frameLeftId;
+  const previewFrameRightId = hoveredAppearanceId("frame-right") ?? draftAppearance.frameRightId;
+  const previewMatId = hoveredAppearanceId("mat") ?? draftAppearance.matId;
+  const previewBowlFoodId = hoveredAppearanceId("bowl-food") ?? draftAppearance.bowlFoodId;
+  const previewBowlWaterId =
+    hoveredAppearanceId("bowl-water") ?? draftAppearance.bowlWaterId;
+  const resolveAppearanceHoverModelUrl = useCallback(
+    (category: string, optionId: string) => {
+      if (!optionId || optionId === "none") {
+        return null;
+      }
+      switch (category) {
+        case "house-base": {
+          const variant = houseVariantGroup.defaultVariantByBase[optionId] ?? optionId;
+          return resolveHouseModel(variant);
+        }
+        case "house-texture":
+          return resolveHouseModel(optionId);
+        case "roof":
+          return resolveRoofModel(optionId);
+        case "wall":
+          return resolveWallModel(optionId);
+        case "sign":
+          return resolveSignModel(optionId);
+        case "frame-left":
+          return resolveFrameLeftModel(optionId);
+        case "frame-right":
+          return resolveFrameRightModel(optionId);
+        case "mat":
+          return resolveMatModel(optionId);
+        case "bowl-food":
+          return resolveBowlFoodModel(optionId);
+        case "bowl-water":
+          return resolveBowlWaterModel(optionId);
+        default:
+          return null;
+      }
+    },
+    [houseVariantGroup.defaultVariantByBase]
+  );
+  const selectedAppearanceIdForCategory = useCallback(
+    (category: string) => {
+      switch (category) {
+        case "house-base":
+          return selectedHouseBaseId;
+        case "house-texture":
+          return draftAppearance.houseId;
+        case "roof":
+          return draftAppearance.roofId;
+        case "wall":
+          return draftAppearance.wallId;
+        case "sign":
+          return draftAppearance.signId;
+        case "frame-left":
+          return draftAppearance.frameLeftId;
+        case "frame-right":
+          return draftAppearance.frameRightId;
+        case "mat":
+          return draftAppearance.matId;
+        case "bowl-food":
+          return draftAppearance.bowlFoodId;
+        case "bowl-water":
+          return draftAppearance.bowlWaterId;
+        default:
+          return null;
+      }
+    },
+    [
+      draftAppearance.bowlFoodId,
+      draftAppearance.bowlWaterId,
+      draftAppearance.frameLeftId,
+      draftAppearance.frameRightId,
+      draftAppearance.houseId,
+      draftAppearance.matId,
+      draftAppearance.roofId,
+      draftAppearance.signId,
+      draftAppearance.wallId,
+      selectedHouseBaseId
+    ]
+  );
+  const queueAppearanceGltfLoad = useCallback(async (url: string) => {
+    if (!url) {
+      return;
+    }
+    const loader =
+      gltfLoaderRef.current ??
+      (() => {
+        const next = new GLTFLoader();
+        gltfLoaderRef.current = next;
+        return next;
+      })();
+    const cache = gltfLoadCacheRef.current;
+    if (!cache.has(url)) {
+      cache.set(
+        url,
+        new Promise<void>((resolve, reject) => {
+          loader.load(
+            url,
+            () => resolve(),
+            undefined,
+            (error) => reject(error)
+          );
+        }).catch(() => {
+          cache.delete(url);
+        }) as Promise<void>
+      );
+    }
+    const loadPromise = cache.get(url);
+    if (!loadPromise) {
+      return;
+    }
+    gltfQueueRef.current = gltfQueueRef.current
+      .catch(() => undefined)
+      .then(() => loadPromise)
+      .catch(() => undefined);
+    await gltfQueueRef.current;
+  }, []);
+  const preloadAppearanceOptionModel = useCallback(
+    async (category: string, optionId: string) => {
+      const url = resolveAppearanceHoverModelUrl(category, optionId);
+      if (!url) {
+        return;
+      }
+      await queueAppearanceGltfLoad(url);
+    },
+    [queueAppearanceGltfLoad, resolveAppearanceHoverModelUrl]
+  );
+  const handleAppearanceOptionHover = useCallback(
+    async (category: string, optionId: string) => {
+      hoverAppearanceIntentRef.current = { category, id: optionId };
+      if (category !== "house-base" && optionId === selectedAppearanceIdForCategory(category)) {
+        setHoveredAppearanceOption({ category, id: optionId });
+        return;
+      }
+      await preloadAppearanceOptionModel(category, optionId);
+      if (
+        hoverAppearanceIntentRef.current?.category === category &&
+        hoverAppearanceIntentRef.current?.id === optionId
+      ) {
+        setHoveredAppearanceOption({ category, id: optionId });
+      }
+    },
+    [preloadAppearanceOptionModel, selectedAppearanceIdForCategory]
+  );
+  const handleAppearanceOptionLeave = useCallback((category: string) => {
+    if (hoverAppearanceIntentRef.current?.category === category) {
+      hoverAppearanceIntentRef.current = null;
+    }
+    setHoveredAppearanceOption((prev) => (prev?.category === category ? null : prev));
+  }, []);
+  const handleAppearanceOptionSelect = useCallback(
+    async (category: string, optionId: string, apply: () => void) => {
+      await preloadAppearanceOptionModel(category, optionId);
+      apply();
+    },
+    [preloadAppearanceOptionModel]
+  );
   useEffect(() => {
     setDetectedSlots(null);
     setSlotManuallyCleared(false);
@@ -769,8 +986,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setAppearanceError(null);
     setAppearanceReviewOpen(false);
     setAppearanceReviewVisible(false);
+    setHoveredAppearanceOption(null);
+    hoverAppearanceIntentRef.current = null;
+    clearAppearanceTooltipTimer();
+    setAppearanceTooltipTabId(null);
     setAppearanceDraft(currentAppearance);
     setAppearanceTab("house");
+    requestAppearanceFocus("dom_slot");
     setActivePanel(null);
     setGiftPanelOpen(false);
     setGiftSlotsVisible(false);
@@ -783,6 +1005,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setTimeout(() => {
       setEditDialogOpen(false);
       setAppearanceDraft(null);
+      setHoveredAppearanceOption(null);
+      hoverAppearanceIntentRef.current = null;
+      clearAppearanceTooltipTimer();
+      setAppearanceTooltipTabId(null);
+      setAppearanceFocusSlot(null);
       setAppearanceReviewOpen(false);
       setAppearanceReviewVisible(false);
       if (isEditMode) {
@@ -793,6 +1020,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const openAppearanceReview = () => {
     setAppearanceError(null);
+    setHoveredAppearanceOption(null);
+    hoverAppearanceIntentRef.current = null;
     setAppearanceReviewOpen(true);
     requestAnimationFrame(() => setAppearanceReviewVisible(true));
   };
@@ -1231,25 +1460,133 @@ export default function PetClient({ id, mode = "view" }: Props) {
   };
 
   const appearanceTabs = useMemo<
-    { id: AppearanceTabId; label: string; imageCategory: string }[]
+    { id: AppearanceTabId; label: string; imageCategory: string; focusSlot?: string | null }[]
   >(() => {
-    const tabs: { id: AppearanceTabId; label: string; imageCategory: string }[] = [
-      { id: "house", label: "Домик", imageCategory: "house" }
+    const tabs: {
+      id: AppearanceTabId;
+      label: string;
+      imageCategory: string;
+      focusSlot?: string | null;
+    }[] = [
+      { id: "house", label: "Домик", imageCategory: "house", focusSlot: "dom_slot" }
     ];
-    if (houseSlots.roof) tabs.push({ id: "roof", label: "Крыша", imageCategory: "roof" });
-    if (houseSlots.wall) tabs.push({ id: "wall", label: "Стены", imageCategory: "wall" });
-    if (houseSlots.sign) tabs.push({ id: "sign", label: "Украшение", imageCategory: "sign" });
+    if (houseSlots.roof)
+      tabs.push({
+        id: "roof",
+        label: "Крыша",
+        imageCategory: "roof",
+        focusSlot: houseSlots.roof
+      });
+    if (houseSlots.wall)
+      tabs.push({
+        id: "wall",
+        label: "Стены",
+        imageCategory: "wall",
+        focusSlot: houseSlots.wall
+      });
+    if (houseSlots.sign)
+      tabs.push({
+        id: "sign",
+        label: "Украшение",
+        imageCategory: "sign",
+        focusSlot: houseSlots.sign
+      });
     if (houseSlots.frameLeft)
-      tabs.push({ id: "frameLeft", label: "Рамка слева", imageCategory: "frame-left" });
+      tabs.push({
+        id: "frameLeft",
+        label: "Рамка слева",
+        imageCategory: "frame-left",
+        focusSlot: houseSlots.frameLeft
+      });
     if (houseSlots.frameRight)
-      tabs.push({ id: "frameRight", label: "Рамка справа", imageCategory: "frame-right" });
-    if (houseSlots.mat) tabs.push({ id: "mat", label: "Коврик", imageCategory: "mat" });
+      tabs.push({
+        id: "frameRight",
+        label: "Рамка справа",
+        imageCategory: "frame-right",
+        focusSlot: houseSlots.frameRight
+      });
+    if (houseSlots.mat)
+      tabs.push({
+        id: "mat",
+        label: "Коврик",
+        imageCategory: "mat",
+        focusSlot: houseSlots.mat
+      });
     if (houseSlots.bowlFood)
-      tabs.push({ id: "bowlFood", label: "Миска с кормом", imageCategory: "bowl-food" });
+      tabs.push({
+        id: "bowlFood",
+        label: "Миска с кормом",
+        imageCategory: "bowl-food",
+        focusSlot: houseSlots.bowlFood
+      });
     if (houseSlots.bowlWater)
-      tabs.push({ id: "bowlWater", label: "Миска с водой", imageCategory: "bowl-water" });
+      tabs.push({
+        id: "bowlWater",
+        label: "Миска с водой",
+        imageCategory: "bowl-water",
+        focusSlot: houseSlots.bowlWater
+      });
     return tabs;
   }, [houseSlots]);
+
+  const appearanceTabBySlot = useMemo(() => {
+    const mapping = new Map<string, AppearanceTabId>();
+    if (houseSlots.roof) mapping.set(houseSlots.roof, "roof");
+    if (houseSlots.wall) mapping.set(houseSlots.wall, "wall");
+    if (houseSlots.sign) mapping.set(houseSlots.sign, "sign");
+    if (houseSlots.frameLeft) mapping.set(houseSlots.frameLeft, "frameLeft");
+    if (houseSlots.frameRight) mapping.set(houseSlots.frameRight, "frameRight");
+    if (houseSlots.mat) mapping.set(houseSlots.mat, "mat");
+    if (houseSlots.bowlFood) mapping.set(houseSlots.bowlFood, "bowlFood");
+    if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
+    return mapping;
+  }, [houseSlots]);
+
+  const activeAppearanceFocusSlot = useMemo(
+    () => appearanceTabs.find((tab) => tab.id === appearanceTab)?.focusSlot ?? null,
+    [appearanceTab, appearanceTabs]
+  );
+
+  const appearanceCameraOffsetAdjustments = useMemo(
+    () => ({
+      dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
+      sign_slot: { x: 0, y: 0, z: 2.85 }
+    }),
+    []
+  );
+
+  const activeAppearanceCameraKey = useMemo(() => {
+    if (!activeAppearanceFocusSlot) {
+      return null;
+    }
+    if (appearanceTab === "house") {
+      return "dom_slot_house";
+    }
+    return activeAppearanceFocusSlot;
+  }, [activeAppearanceFocusSlot, appearanceTab]);
+
+  const requestAppearanceFocus = useCallback((slot: string | null) => {
+    setAppearanceFocusSlot(slot);
+    setAppearanceFocusRequestId((prev) => prev + 1);
+  }, []);
+
+  const handleEditPreviewDetailClick = useCallback(
+    (detail: { slot?: string; area?: "environment" | "house" }) => {
+      if (detail.slot) {
+        const tabId = appearanceTabBySlot.get(detail.slot);
+        if (tabId) {
+          setAppearanceTab(tabId);
+          requestAppearanceFocus(detail.slot);
+          return;
+        }
+      }
+      if (detail.area === "house") {
+        setAppearanceTab("house");
+        requestAppearanceFocus("dom_slot");
+      }
+    },
+    [appearanceTabBySlot, requestAppearanceFocus]
+  );
 
   useEffect(() => {
     if (!appearanceTabs.some((tab) => tab.id === appearanceTab)) {
@@ -1507,31 +1844,51 @@ export default function PetClient({ id, mode = "view" }: Props) {
   }
 
   const appearanceParts = {
-    roof: draftAppearance.roofId,
-    wall: draftAppearance.wallId,
-    sign: draftAppearance.signId,
-    frameLeft: draftAppearance.frameLeftId,
-    frameRight: draftAppearance.frameRightId,
-    mat: draftAppearance.matId,
-    bowlFood: draftAppearance.bowlFoodId,
-    bowlWater: draftAppearance.bowlWaterId
+    roof: previewRoofId,
+    wall: previewWallId,
+    sign: previewSignId,
+    frameLeft: previewFrameLeftId,
+    frameRight: previewFrameRightId,
+    mat: previewMatId,
+    bowlFood: previewBowlFoodId,
+    bowlWater: previewBowlWaterId
   };
   const partList = [
-    houseSlots.roof ? { slot: houseSlots.roof, url: resolveRoofModel(appearanceParts.roof) } : null,
-    houseSlots.wall ? { slot: houseSlots.wall, url: resolveWallModel(appearanceParts.wall) } : null,
-    houseSlots.sign ? { slot: houseSlots.sign, url: resolveSignModel(appearanceParts.sign) } : null,
-    houseSlots.frameLeft
-      ? { slot: houseSlots.frameLeft, url: resolveFrameLeftModel(appearanceParts.frameLeft) }
+    previewHouseSlots.roof
+      ? { slot: previewHouseSlots.roof, url: resolveRoofModel(appearanceParts.roof) }
       : null,
-    houseSlots.frameRight
-      ? { slot: houseSlots.frameRight, url: resolveFrameRightModel(appearanceParts.frameRight) }
+    previewHouseSlots.wall
+      ? { slot: previewHouseSlots.wall, url: resolveWallModel(appearanceParts.wall) }
       : null,
-    houseSlots.mat ? { slot: houseSlots.mat, url: resolveMatModel(appearanceParts.mat) } : null,
-    houseSlots.bowlFood
-      ? { slot: houseSlots.bowlFood, url: resolveBowlFoodModel(appearanceParts.bowlFood) }
+    previewHouseSlots.sign
+      ? { slot: previewHouseSlots.sign, url: resolveSignModel(appearanceParts.sign) }
       : null,
-    houseSlots.bowlWater
-      ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(appearanceParts.bowlWater) }
+    previewHouseSlots.frameLeft
+      ? {
+          slot: previewHouseSlots.frameLeft,
+          url: resolveFrameLeftModel(appearanceParts.frameLeft)
+        }
+      : null,
+    previewHouseSlots.frameRight
+      ? {
+          slot: previewHouseSlots.frameRight,
+          url: resolveFrameRightModel(appearanceParts.frameRight)
+        }
+      : null,
+    previewHouseSlots.mat
+      ? { slot: previewHouseSlots.mat, url: resolveMatModel(appearanceParts.mat) }
+      : null,
+    previewHouseSlots.bowlFood
+      ? {
+          slot: previewHouseSlots.bowlFood,
+          url: resolveBowlFoodModel(appearanceParts.bowlFood)
+        }
+      : null,
+    previewHouseSlots.bowlWater
+      ? {
+          slot: previewHouseSlots.bowlWater,
+          url: resolveBowlWaterModel(appearanceParts.bowlWater)
+        }
       : null
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
   const fullPartList = partList;
@@ -1708,7 +2065,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="mx-auto grid w-full max-w-[440px] grid-cols-2 gap-2 sm:max-w-[520px] sm:grid-cols-3">
+    <div className="grid grid-cols-2 place-items-center gap-0.5">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = appearanceOptionImage(imageCategory, option.id);
@@ -1716,13 +2073,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
           <button
             key={option.id}
             type="button"
-            onClick={() => onSelect(option.id)}
+            onClick={() => {
+              void handleAppearanceOptionSelect(category, option.id, () => onSelect(option.id));
+            }}
+            onMouseEnter={() => {
+              void handleAppearanceOptionHover(category, option.id);
+            }}
+            onMouseLeave={() => handleAppearanceOptionLeave(category)}
+            onFocus={() => {
+              void handleAppearanceOptionHover(category, option.id);
+            }}
+            onBlur={() => handleAppearanceOptionLeave(category)}
             aria-label={option.name}
             title={option.name}
-            className={`group relative flex aspect-square min-h-[128px] w-full items-center justify-center overflow-hidden rounded-[18px] border-[3px] bg-white p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] transition ${
+            className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
-                ? "border-[#3bceac] bg-[#f0fffb]"
-                : "border-white hover:border-[#d3a27f]/45 hover:bg-[#fff7f2]"
+                ? "border-sky-400 bg-sky-50"
+                : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
             }`}
           >
             {imageUrl ? (
@@ -1731,19 +2098,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 alt={option.name}
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full rounded-xl object-contain"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
+                className="h-full w-full rounded-lg object-contain"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#f8f9fa] px-3 text-center text-xs font-semibold text-slate-500">
-                Нет превью
-              </div>
+              <div className="text-xs text-slate-500">Нет</div>
             )}
-            <span className="pointer-events-none absolute inset-x-2 bottom-2 rounded-xl bg-white/92 px-2 py-1 text-[11px] font-semibold leading-tight text-[#5d4037] shadow-sm">
-              {option.name}
-            </span>
           </button>
         );
       })}
@@ -1757,8 +2116,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
           className="h-full w-full rounded-none border-transparent bg-transparent"
           terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
           terrainId={pet.memorial?.environmentId ?? null}
-          houseUrl={resolveHouseModel(effectiveHouseId)}
-          houseId={effectiveHouseId}
+          houseUrl={resolveHouseModel(editDialogOpen ? editPreviewHouseId : effectiveHouseId)}
+          houseId={editDialogOpen ? editPreviewHouseId : effectiveHouseId}
           parts={fullPartList}
           dirtUrls={dirtModelUrls}
           dirtLevel={dirtLevel}
@@ -1770,9 +2129,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
           preloadGiftUrl={pendingPreviewUrl}
           onGiftPreloaded={handleGiftPreloaded}
           colors={colorOverrides}
-          onDetailClick={handleMemorialDetailClick}
+          onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
           showControls={false}
           showGiftSlots={shouldShowGiftSlots}
+          enableHoverHighlight={editDialogOpen}
+          focusSlot={editDialogOpen ? appearanceFocusSlot ?? activeAppearanceFocusSlot : null}
+          focusRequestId={editDialogOpen ? appearanceFocusRequestId : undefined}
+          cameraOffsetAdjustments={
+            editDialogOpen ? appearanceCameraOffsetAdjustments : undefined
+          }
+          cameraAdjustmentKey={editDialogOpen ? activeAppearanceCameraKey : undefined}
           cameraPosition={[8, 6, 8]}
           onControlsReady={(controls) => {
             previewControlsRef.current = controls;
@@ -2373,22 +2739,60 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
                     {appearanceTabs.map((tab) => {
                       const isActive = appearanceTab === tab.id;
+                      const isTooltipVisible = appearanceTooltipTabId === tab.id;
+                      const description = APPEARANCE_TAB_DESCRIPTIONS[tab.id];
                       return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setAppearanceTab(tab.id)}
-                          aria-label={tab.label}
-                          title={tab.label}
-                          className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
-                            isActive
-                              ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-                              : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
-                          }`}
-                        >
-                          {renderAppearanceTabIcon(tab.id)}
-                          <span className="sr-only">{tab.label}</span>
-                        </button>
+                        <div key={tab.id} className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAppearanceTab(tab.id);
+                              requestAppearanceFocus(tab.focusSlot ?? null);
+                            }}
+                            onMouseEnter={() => {
+                              clearAppearanceTooltipTimer();
+                              setAppearanceTooltipTabId(null);
+                              appearanceTooltipTimerRef.current = window.setTimeout(() => {
+                                setAppearanceTooltipTabId(tab.id);
+                              }, 500);
+                            }}
+                            onMouseLeave={() => {
+                              clearAppearanceTooltipTimer();
+                              setAppearanceTooltipTabId((prev) =>
+                                prev === tab.id ? null : prev
+                              );
+                            }}
+                            onFocus={() => {
+                              clearAppearanceTooltipTimer();
+                              setAppearanceTooltipTabId(null);
+                              appearanceTooltipTimerRef.current = window.setTimeout(() => {
+                                setAppearanceTooltipTabId(tab.id);
+                              }, 500);
+                            }}
+                            onBlur={() => {
+                              clearAppearanceTooltipTimer();
+                              setAppearanceTooltipTabId((prev) =>
+                                prev === tab.id ? null : prev
+                              );
+                            }}
+                            aria-label={tab.label}
+                            title={tab.label}
+                            className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
+                              isActive
+                                ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+                                : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
+                            }`}
+                          >
+                            {renderAppearanceTabIcon(tab.id)}
+                            <span className="sr-only">{tab.label}</span>
+                          </button>
+                          {isTooltipVisible ? (
+                            <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
+                              <div className="font-semibold text-slate-900">{tab.label}</div>
+                              <div className="mt-1 text-slate-500">{description}</div>
+                            </div>
+                          ) : null}
+                        </div>
                       );
                     })}
                   </div>
@@ -2407,6 +2811,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 const nextVariant =
                                   houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
                                 updateAppearanceDraft("houseId", nextVariant);
+                                requestAppearanceFocus("dom_slot");
                               },
                               "house"
                             )}
@@ -2420,7 +2825,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 "house-texture",
                                 houseTextureOptions,
                                 appearanceDraft.houseId,
-                                (variantId) => updateAppearanceDraft("houseId", variantId),
+                                (variantId) => {
+                                  updateAppearanceDraft("houseId", variantId);
+                                  requestAppearanceFocus("dom_slot");
+                                },
                                 "house-texture"
                               )}
                             </div>
@@ -2431,56 +2839,80 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           "roof",
                           roofOptions,
                           appearanceDraft.roofId,
-                          (id) => updateAppearanceDraft("roofId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("roofId", optionId);
+                            requestAppearanceFocus(houseSlots.roof ?? null);
+                          }
                         )
                       ) : appearanceTab === "wall" ? (
                         renderAppearanceOptionGrid(
                           "wall",
                           wallOptions,
                           appearanceDraft.wallId,
-                          (id) => updateAppearanceDraft("wallId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("wallId", optionId);
+                            requestAppearanceFocus(houseSlots.wall ?? null);
+                          }
                         )
                       ) : appearanceTab === "sign" ? (
                         renderAppearanceOptionGrid(
                           "sign",
                           signOptions,
                           appearanceDraft.signId,
-                          (id) => updateAppearanceDraft("signId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("signId", optionId);
+                            requestAppearanceFocus(houseSlots.sign ?? null);
+                          }
                         )
                       ) : appearanceTab === "frameLeft" ? (
                         renderAppearanceOptionGrid(
                           "frame-left",
                           frameLeftOptions,
                           appearanceDraft.frameLeftId,
-                          (id) => updateAppearanceDraft("frameLeftId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("frameLeftId", optionId);
+                            requestAppearanceFocus(houseSlots.frameLeft ?? null);
+                          }
                         )
                       ) : appearanceTab === "frameRight" ? (
                         renderAppearanceOptionGrid(
                           "frame-right",
                           frameRightOptions,
                           appearanceDraft.frameRightId,
-                          (id) => updateAppearanceDraft("frameRightId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("frameRightId", optionId);
+                            requestAppearanceFocus(houseSlots.frameRight ?? null);
+                          }
                         )
                       ) : appearanceTab === "mat" ? (
                         renderAppearanceOptionGrid(
                           "mat",
                           matOptions,
                           appearanceDraft.matId,
-                          (id) => updateAppearanceDraft("matId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("matId", optionId);
+                            requestAppearanceFocus(houseSlots.mat ?? null);
+                          }
                         )
                       ) : appearanceTab === "bowlFood" ? (
                         renderAppearanceOptionGrid(
                           "bowl-food",
                           bowlFoodOptions,
                           appearanceDraft.bowlFoodId,
-                          (id) => updateAppearanceDraft("bowlFoodId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("bowlFoodId", optionId);
+                            requestAppearanceFocus(houseSlots.bowlFood ?? null);
+                          }
                         )
                       ) : appearanceTab === "bowlWater" ? (
                         renderAppearanceOptionGrid(
                           "bowl-water",
                           bowlWaterOptions,
                           appearanceDraft.bowlWaterId,
-                          (id) => updateAppearanceDraft("bowlWaterId", id)
+                          (optionId) => {
+                            updateAppearanceDraft("bowlWaterId", optionId);
+                            requestAppearanceFocus(houseSlots.bowlWater ?? null);
+                          }
                         )
                       ) : null}
 
