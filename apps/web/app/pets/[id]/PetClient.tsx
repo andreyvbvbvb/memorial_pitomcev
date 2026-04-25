@@ -1573,7 +1573,7 @@ export default function PetClient({ id }: Props) {
     onSelect: (id: string) => void,
     imageCategory: string = category
   ) => (
-    <div className="grid grid-cols-2 place-items-center gap-0.5">
+    <div className="mx-auto grid w-full max-w-[440px] grid-cols-2 gap-2 sm:max-w-[520px] sm:grid-cols-3">
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = appearanceOptionImage(imageCategory, option.id);
@@ -1584,10 +1584,10 @@ export default function PetClient({ id }: Props) {
             onClick={() => onSelect(option.id)}
             aria-label={option.name}
             title={option.name}
-            className={`flex aspect-square w-full items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
+            className={`group relative flex aspect-square min-h-[128px] w-full items-center justify-center overflow-hidden rounded-[18px] border-[3px] bg-white p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] transition ${
               isSelected
-                ? "border-sky-400 bg-sky-50"
-                : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
+                ? "border-[#3bceac] bg-[#f0fffb]"
+                : "border-white hover:border-[#d3a27f]/45 hover:bg-[#fff7f2]"
             }`}
           >
             {imageUrl ? (
@@ -1596,11 +1596,19 @@ export default function PetClient({ id }: Props) {
                 alt={option.name}
                 loading="lazy"
                 decoding="async"
-                className="h-full w-full rounded-lg object-contain"
+                className="h-full w-full rounded-xl object-contain"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                }}
               />
             ) : (
-              <div className="text-xs text-slate-500">Нет</div>
+              <div className="flex h-full w-full items-center justify-center rounded-xl bg-[#f8f9fa] px-3 text-center text-xs font-semibold text-slate-500">
+                Нет превью
+              </div>
             )}
+            <span className="pointer-events-none absolute inset-x-2 bottom-2 rounded-xl bg-white/92 px-2 py-1 text-[11px] font-semibold leading-tight text-[#5d4037] shadow-sm">
+              {option.name}
+            </span>
           </button>
         );
       })}
@@ -2203,11 +2211,11 @@ export default function PetClient({ id }: Props) {
             onClick={closeEditDialog}
           />
           <div
-            className={`relative flex w-full max-w-3xl flex-col rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+            className={`relative flex w-full max-w-[820px] flex-col rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
               editDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
-            <div className={`${panelSectionClass} min-h-[min(72vh,760px)]`}>
+            <div className={`${panelSectionClass} min-h-0 max-h-[min(78vh,760px)] overflow-hidden`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className={panelLabelClass}>Редактирование</p>
@@ -2224,7 +2232,7 @@ export default function PetClient({ id }: Props) {
                 </button>
               </div>
 
-              <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+              <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
                 <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
                   {appearanceTabs.map((tab) => {
                     const isActive = appearanceTab === tab.id;
@@ -2251,8 +2259,11 @@ export default function PetClient({ id }: Props) {
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                   <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto pr-1 pb-3">
                     {appearanceTab === "house" ? (
-                      <div className="grid gap-4">
+                      <div className="grid gap-5">
                         <div className="grid gap-3">
+                          <h4 className="text-base font-semibold text-slate-900">
+                            Форма домика
+                          </h4>
                           {renderAppearanceOptionGrid(
                             "house-base",
                             houseBaseOptions,
@@ -2339,7 +2350,7 @@ export default function PetClient({ id }: Props) {
                     ) : null}
 
                     {appearanceColorField ? (
-                      <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                      <div className="mx-auto mt-4 grid w-full max-w-[440px] gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:max-w-[520px]">
                         <div className="text-sm font-semibold text-slate-900">Цвет детали</div>
                         <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
                           {colorPalette.map((color) => {
