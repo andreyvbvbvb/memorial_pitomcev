@@ -95,7 +95,7 @@ const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
-const MAP_PREVIEW_ROTATION_Y = THREE.MathUtils.degToRad(15);
+const MAP_PREVIEW_ROTATION_Y = THREE.MathUtils.degToRad(-35);
 const CARD_PREVIEW_ASPECT = "15 / 9";
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
@@ -649,7 +649,6 @@ const CAROUSEL_DESIRED_SPACING = 20;
 const CAROUSEL_MIN_RADIUS = 30;
 const CAROUSEL_POP_DISTANCE = 3.6;
 const CAROUSEL_SCALE_BOOST = 0.1;
-const CAROUSEL_INITIAL_ACTIVE_ROTATION_Y = THREE.MathUtils.degToRad(-20);
 
 const getCarouselRadius = (count: number) =>
   Math.max(CAROUSEL_MIN_RADIUS, (CAROUSEL_DESIRED_SPACING * Math.max(1, count)) / (Math.PI * 2));
@@ -739,7 +738,7 @@ function RowCarouselStage({
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
-  const activeRotationYRef = useRef(CAROUSEL_INITIAL_ACTIVE_ROTATION_Y);
+  const activeRotationYRef = useRef(0);
   const activeDragRef = useRef<{
     dragging: boolean;
     pointerId: number | null;
@@ -749,7 +748,7 @@ function RowCarouselStage({
     dragging: false,
     pointerId: null,
     startX: 0,
-    startRotation: CAROUSEL_INITIAL_ACTIVE_ROTATION_Y
+    startRotation: 0
   });
 
   useEffect(() => {
@@ -776,12 +775,12 @@ function RowCarouselStage({
   }, []);
 
   useEffect(() => {
-    activeRotationYRef.current = CAROUSEL_INITIAL_ACTIVE_ROTATION_Y;
+    activeRotationYRef.current = 0;
     activeDragRef.current = {
       dragging: false,
       pointerId: null,
       startX: 0,
-      startRotation: CAROUSEL_INITIAL_ACTIVE_ROTATION_Y
+      startRotation: 0
     };
     document.body.style.cursor = "";
   }, [activeIndex, targetIndex]);
@@ -796,7 +795,7 @@ function RowCarouselStage({
       startX: typeof event.clientX === "number" ? event.clientX : 0,
       startRotation: activeRotationYRef.current
     };
-    event.target.setPointerCapture?.(event.pointerId);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     document.body.style.cursor = "grabbing";
   }, []);
 
@@ -820,7 +819,7 @@ function RowCarouselStage({
     if (drag.pointerId !== null && typeof event.pointerId === "number" && event.pointerId !== drag.pointerId) {
       return;
     }
-    event.target.releasePointerCapture?.(event.pointerId);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
     activeDragRef.current = {
       dragging: false,
       pointerId: null,
