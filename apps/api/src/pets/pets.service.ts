@@ -346,7 +346,69 @@ export class PetsService {
   }
 
   async update(id: string, dto: UpdatePetDto) {
-    await this.findOne(id);
+    const pet = await this.findOne(id);
+    const shouldUpdateMemorial =
+      typeof dto.houseId !== "undefined" || typeof dto.sceneJson !== "undefined";
+    let memorialUpdate:
+      | Prisma.MemorialUpdateOneWithoutPetNestedInput
+      | undefined;
+
+    if (shouldUpdateMemorial) {
+      if (!pet.memorial) {
+        throw new BadRequestException("Мемориал не найден");
+      }
+      const baseSceneJson =
+        pet.memorial.sceneJson &&
+        typeof pet.memorial.sceneJson === "object" &&
+        !Array.isArray(pet.memorial.sceneJson)
+          ? (pet.memorial.sceneJson as Record<string, unknown>)
+          : {};
+      const nextSceneJsonSource =
+        dto.sceneJson && typeof dto.sceneJson === "object" && !Array.isArray(dto.sceneJson)
+          ? (dto.sceneJson as Record<string, unknown>)
+          : null;
+      const baseParts =
+        baseSceneJson.parts &&
+        typeof baseSceneJson.parts === "object" &&
+        !Array.isArray(baseSceneJson.parts)
+          ? (baseSceneJson.parts as Record<string, unknown>)
+          : {};
+      const nextParts =
+        nextSceneJsonSource?.parts &&
+        typeof nextSceneJsonSource.parts === "object" &&
+        !Array.isArray(nextSceneJsonSource.parts)
+          ? (nextSceneJsonSource.parts as Record<string, unknown>)
+          : null;
+      const baseColors =
+        baseSceneJson.colors &&
+        typeof baseSceneJson.colors === "object" &&
+        !Array.isArray(baseSceneJson.colors)
+          ? (baseSceneJson.colors as Record<string, unknown>)
+          : {};
+      const nextColors =
+        nextSceneJsonSource?.colors &&
+        typeof nextSceneJsonSource.colors === "object" &&
+        !Array.isArray(nextSceneJsonSource.colors)
+          ? (nextSceneJsonSource.colors as Record<string, unknown>)
+          : null;
+      const sceneJson = nextSceneJsonSource
+        ? ({
+            ...baseSceneJson,
+            ...nextSceneJsonSource,
+            ...(nextParts ? { parts: { ...baseParts, ...nextParts } } : {}),
+            ...(nextColors ? { colors: { ...baseColors, ...nextColors } } : {})
+          } as Prisma.InputJsonValue)
+        : undefined;
+
+      memorialUpdate = {
+        update: {
+          ...(typeof dto.houseId !== "undefined" ? { houseId: dto.houseId } : {}),
+          ...(sceneJson ? { sceneJson } : {}),
+          needsPreviewRefresh: true
+        }
+      };
+    }
+
     return this.prisma.pet.update({
       where: { id },
       data: {
@@ -359,7 +421,8 @@ export class PetsService {
         favoriteToys: dto.favoriteToys,
         favoriteSleepPlaces: dto.favoriteSleepPlaces,
         story: dto.story,
-        isPublic: dto.isPublic
+        isPublic: dto.isPublic,
+        memorial: memorialUpdate
       }
     });
   }

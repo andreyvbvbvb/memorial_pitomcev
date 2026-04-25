@@ -29,7 +29,23 @@ import {
   resolveGiftModelUrl,
   resolveGiftIconUrl
 } from "../../../lib/gifts";
-import { splitHouseVariantId } from "../../../lib/house-variants";
+import {
+  buildHouseVariantGroup,
+  splitHouseVariantId
+} from "../../../lib/house-variants";
+import {
+  bowlFoodOptions as allBowlFoodOptions,
+  bowlWaterOptions as allBowlWaterOptions,
+  filterOptionsForUser,
+  frameLeftOptions as allFrameLeftOptions,
+  frameRightOptions as allFrameRightOptions,
+  houseOptions as allHouseOptions,
+  matOptions as allMatOptions,
+  roofOptions as allRoofOptions,
+  signOptions as allSignOptions,
+  wallOptions as allWallOptions,
+  type OptionItem
+} from "../../../lib/memorial-options";
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
 const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
@@ -55,6 +71,65 @@ const formatMonthsLabel = (months: number) => {
     return `${months} месяца`;
   }
   return `${months} месяцев`;
+};
+
+const colorPalette = [
+  "#F36C6C",
+  "#F28C6B",
+  "#F2B476",
+  "#FFD166",
+  "#FFE9A5",
+  "#9BD1A5",
+  "#6FCF97",
+  "#8ECAE6",
+  "#6FA8DC",
+  "#5DADE2",
+  "#CDB4DB",
+  "#B39DDB",
+  "#9B8CCC",
+  "#FFFFFF",
+  "#6B7280",
+  "#F5E6D3",
+  "#E9D1B3",
+  "#DDBA8E",
+  "#CFA06E",
+  "#B88753",
+  "#A0723F",
+  "#8A5E2E",
+  "#714A22",
+  "#5A3A1B",
+  "#422913"
+] as const;
+
+type AppearanceTabId =
+  | "house"
+  | "roof"
+  | "wall"
+  | "sign"
+  | "frameLeft"
+  | "frameRight"
+  | "mat"
+  | "bowlFood"
+  | "bowlWater";
+
+type AppearanceDraft = {
+  houseId: string;
+  roofId: string;
+  wallId: string;
+  signId: string;
+  frameLeftId: string;
+  frameRightId: string;
+  matId: string;
+  bowlFoodId: string;
+  bowlWaterId: string;
+  roofColor: string;
+  wallColor: string;
+  signColor: string;
+  frameLeftColor: string;
+  frameRightColor: string;
+  matColor: string;
+  bowlFoodColor: string;
+  bowlWaterColor: string;
 };
 
 type Pet = {
@@ -169,6 +244,13 @@ export default function PetClient({ id }: Props) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [deleteConfirmationName, setDeleteConfirmationName] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editDialogVisible, setEditDialogVisible] = useState(false);
+  const [appearanceDraft, setAppearanceDraft] = useState<AppearanceDraft | null>(null);
+  const [appearanceTab, setAppearanceTab] = useState<AppearanceTabId>("house");
+  const [appearanceError, setAppearanceError] = useState<string | null>(null);
+  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
+  const [savingAppearance, setSavingAppearance] = useState(false);
   const [previewContextReady, setPreviewContextReady] = useState(false);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
@@ -421,7 +503,111 @@ export default function PetClient({ id }: Props) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [lightboxIndex, goNext, goPrev, mounted]);
 
-  const houseSlots = getHouseSlots(pet?.memorial?.houseId);
+  const currentUserLogin = currentUser?.login ?? pet?.owner?.login ?? null;
+  const houseOptions = useMemo(
+    () => filterOptionsForUser(allHouseOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const roofOptions = useMemo(
+    () => filterOptionsForUser(allRoofOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const wallOptions = useMemo(
+    () => filterOptionsForUser(allWallOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const signOptions = useMemo(
+    () => filterOptionsForUser(allSignOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const frameLeftOptions = useMemo(
+    () => filterOptionsForUser(allFrameLeftOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const frameRightOptions = useMemo(
+    () => filterOptionsForUser(allFrameRightOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const matOptions = useMemo(
+    () => filterOptionsForUser(allMatOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const bowlFoodOptions = useMemo(
+    () => filterOptionsForUser(allBowlFoodOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const bowlWaterOptions = useMemo(
+    () => filterOptionsForUser(allBowlWaterOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const sceneJson = useMemo(() => {
+    const value = pet?.memorial?.sceneJson;
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return {};
+    }
+    return value as Record<string, unknown>;
+  }, [pet?.memorial?.sceneJson]);
+  const currentAppearance = useMemo<AppearanceDraft>(() => {
+    const parts =
+      sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
+        ? (sceneJson.parts as Record<string, unknown>)
+        : {};
+    const colors =
+      sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
+        ? (sceneJson.colors as Record<string, unknown>)
+        : {};
+    const firstId = (options: OptionItem[], fallback = "none") => options[0]?.id ?? fallback;
+    const colorValue = (key: string, fallback: string) =>
+      typeof colors[key] === "string" && colors[key] ? String(colors[key]) : fallback;
+    const partId = (key: string, options: OptionItem[], fallback = "none") =>
+      typeof parts[key] === "string" && parts[key]
+        ? String(parts[key])
+        : firstId(options, fallback);
+    return {
+      houseId: pet?.memorial?.houseId ?? houseOptions[0]?.id ?? "",
+      roofId: partId("roof", roofOptions, allRoofOptions[0]?.id ?? ""),
+      wallId: partId("wall", wallOptions, allWallOptions[0]?.id ?? ""),
+      signId: partId("sign", signOptions),
+      frameLeftId: partId("frameLeft", frameLeftOptions),
+      frameRightId: partId("frameRight", frameRightOptions),
+      matId: partId("mat", matOptions),
+      bowlFoodId: partId("bowlFood", bowlFoodOptions),
+      bowlWaterId: partId("bowlWater", bowlWaterOptions),
+      roofColor: colorValue("roof_paint", colorPalette[0]),
+      wallColor: colorValue("wall_paint", colorPalette[1]),
+      signColor: colorValue("sign_paint", colorPalette[16]),
+      frameLeftColor: colorValue("frame_left_paint", colorPalette[16]),
+      frameRightColor: colorValue("frame_right_paint", colorPalette[16]),
+      matColor: colorValue("mat_paint", colorPalette[9]),
+      bowlFoodColor: colorValue("bowl_food_paint", colorPalette[3]),
+      bowlWaterColor: colorValue("bowl_water_paint", colorPalette[7])
+    };
+  }, [
+    bowlFoodOptions,
+    bowlWaterOptions,
+    frameLeftOptions,
+    frameRightOptions,
+    houseOptions,
+    matOptions,
+    pet?.memorial?.houseId,
+    roofOptions,
+    sceneJson,
+    signOptions,
+    wallOptions
+  ]);
+  const draftAppearance = appearanceDraft ?? currentAppearance;
+  const effectiveHouseId = draftAppearance.houseId || pet?.memorial?.houseId || null;
+  const houseVariantGroup = useMemo(
+    () => buildHouseVariantGroup(houseOptions),
+    [houseOptions]
+  );
+  const selectedHouseVariant = splitHouseVariantId(draftAppearance.houseId);
+  const selectedHouseBaseId =
+    selectedHouseVariant.baseId || houseVariantGroup.baseOptions[0]?.id || draftAppearance.houseId;
+  const houseBaseOptions = houseVariantGroup.baseOptions;
+  const houseTextureOptions =
+    houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
+  const houseSlots = getHouseSlots(effectiveHouseId);
   useEffect(() => {
     setDetectedSlots(null);
     setSlotManuallyCleared(false);
@@ -546,6 +732,35 @@ export default function PetClient({ id }: Props) {
   const toggleGiftPanel = () => setGiftPanelOpen((prev) => !prev);
   const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials" | "manage") =>
     setActivePanel((prev) => (prev === panel ? null : panel));
+  const openEditDialog = () => {
+    setAppearanceError(null);
+    setAppearanceDraft(currentAppearance);
+    setAppearanceTab("house");
+    setEditDialogOpen(true);
+    requestAnimationFrame(() => setEditDialogVisible(true));
+  };
+
+  const closeEditDialog = () => {
+    setEditDialogVisible(false);
+    setTimeout(() => {
+      setEditDialogOpen(false);
+      setAppearanceDraft(null);
+    }, 180);
+  };
+
+  const updateAppearanceDraft = <K extends keyof AppearanceDraft>(
+    field: K,
+    value: AppearanceDraft[K]
+  ) => {
+    setAppearanceDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            [field]: value
+          }
+        : prev
+    );
+  };
 
   const openExtensionDialog = () => {
     setLifecycleError(null);
@@ -569,6 +784,23 @@ export default function PetClient({ id }: Props) {
     setDeleteDialogVisible(false);
     setTimeout(() => setDeleteDialogOpen(false), 180);
   };
+
+  useEffect(() => {
+    if (!editDialogOpen) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeEditDialog();
+      }
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [editDialogOpen]);
 
   const capturePreviewImage = useCallback(async () => {
     const renderContext = previewRenderRef.current;
@@ -940,6 +1172,100 @@ export default function PetClient({ id }: Props) {
     }
   };
 
+  const appearanceTabs = useMemo<
+    { id: AppearanceTabId; label: string; imageCategory: string }[]
+  >(() => {
+    const tabs: { id: AppearanceTabId; label: string; imageCategory: string }[] = [
+      { id: "house", label: "Домик", imageCategory: "house" }
+    ];
+    if (houseSlots.roof) tabs.push({ id: "roof", label: "Крыша", imageCategory: "roof" });
+    if (houseSlots.wall) tabs.push({ id: "wall", label: "Стены", imageCategory: "wall" });
+    if (houseSlots.sign) tabs.push({ id: "sign", label: "Украшение", imageCategory: "sign" });
+    if (houseSlots.frameLeft)
+      tabs.push({ id: "frameLeft", label: "Рамка слева", imageCategory: "frame-left" });
+    if (houseSlots.frameRight)
+      tabs.push({ id: "frameRight", label: "Рамка справа", imageCategory: "frame-right" });
+    if (houseSlots.mat) tabs.push({ id: "mat", label: "Коврик", imageCategory: "mat" });
+    if (houseSlots.bowlFood)
+      tabs.push({ id: "bowlFood", label: "Миска с кормом", imageCategory: "bowl-food" });
+    if (houseSlots.bowlWater)
+      tabs.push({ id: "bowlWater", label: "Миска с водой", imageCategory: "bowl-water" });
+    return tabs;
+  }, [houseSlots]);
+
+  useEffect(() => {
+    if (!appearanceTabs.some((tab) => tab.id === appearanceTab)) {
+      setAppearanceTab("house");
+    }
+  }, [appearanceTab, appearanceTabs]);
+
+  const handleSaveAppearance = async () => {
+    if (!appearanceDraft || !pet?.memorial) {
+      return;
+    }
+    setAppearanceError(null);
+    setSavingAppearance(true);
+    const nextSceneJson = {
+      parts: {
+        roof: appearanceDraft.roofId,
+        wall: appearanceDraft.wallId,
+        sign: appearanceDraft.signId,
+        frameLeft: appearanceDraft.frameLeftId,
+        frameRight: appearanceDraft.frameRightId,
+        mat: appearanceDraft.matId,
+        bowlFood: appearanceDraft.bowlFoodId,
+        bowlWater: appearanceDraft.bowlWaterId
+      },
+      colors: {
+        roof_paint: appearanceDraft.roofColor,
+        wall_paint: appearanceDraft.wallColor,
+        sign_paint: appearanceDraft.signColor,
+        frame_left_paint: appearanceDraft.frameLeftColor,
+        frame_right_paint: appearanceDraft.frameRightColor,
+        mat_paint: appearanceDraft.matColor,
+        bowl_food_paint: appearanceDraft.bowlFoodColor,
+        bowl_water_paint: appearanceDraft.bowlWaterColor
+      },
+      version: 3
+    };
+    try {
+      const response = await fetch(`${apiUrl}/pets/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          houseId: appearanceDraft.houseId,
+          sceneJson: nextSceneJson
+        })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось обновить оформление");
+      }
+      setPet((prev) =>
+        prev?.memorial
+          ? {
+              ...prev,
+              memorial: {
+                ...prev.memorial,
+                houseId: appearanceDraft.houseId,
+                sceneJson: {
+                  ...(prev.memorial.sceneJson ?? {}),
+                  ...nextSceneJson
+                },
+                needsPreviewRefresh: true
+              }
+            }
+          : prev
+      );
+      setAppearanceSuccess("Оформление мемориала обновлено.");
+      closeEditDialog();
+    } catch (err) {
+      setAppearanceError(err instanceof Error ? err.message : "Ошибка сохранения");
+    } finally {
+      setSavingAppearance(false);
+    }
+  };
+
   useEffect(() => {
     if (
       !previewContextReady ||
@@ -981,8 +1307,8 @@ export default function PetClient({ id }: Props) {
   }, []);
   const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
   const dirtModelUrls = useMemo(
-    () => buildDirtModelUrls(pet?.memorial?.houseId),
-    [pet?.memorial?.houseId]
+    () => buildDirtModelUrls(effectiveHouseId),
+    [effectiveHouseId]
   );
 
   useEffect(() => {
@@ -1051,40 +1377,45 @@ export default function PetClient({ id }: Props) {
     );
   }
 
-  const sceneJson = (pet?.memorial?.sceneJson ?? {}) as {
-    parts?: {
-      roof?: string;
-      wall?: string;
-      sign?: string;
-      frameLeft?: string;
-      frameRight?: string;
-      mat?: string;
-      bowlFood?: string;
-      bowlWater?: string;
-    };
-    colors?: Record<string, string>;
-    memorialPaidUntil?: string | null;
+  const appearanceParts = {
+    roof: draftAppearance.roofId,
+    wall: draftAppearance.wallId,
+    sign: draftAppearance.signId,
+    frameLeft: draftAppearance.frameLeftId,
+    frameRight: draftAppearance.frameRightId,
+    mat: draftAppearance.matId,
+    bowlFood: draftAppearance.bowlFoodId,
+    bowlWater: draftAppearance.bowlWaterId
   };
   const partList = [
-    houseSlots.roof ? { slot: houseSlots.roof, url: resolveRoofModel(sceneJson.parts?.roof) } : null,
-    houseSlots.wall ? { slot: houseSlots.wall, url: resolveWallModel(sceneJson.parts?.wall) } : null,
-    houseSlots.sign ? { slot: houseSlots.sign, url: resolveSignModel(sceneJson.parts?.sign) } : null,
+    houseSlots.roof ? { slot: houseSlots.roof, url: resolveRoofModel(appearanceParts.roof) } : null,
+    houseSlots.wall ? { slot: houseSlots.wall, url: resolveWallModel(appearanceParts.wall) } : null,
+    houseSlots.sign ? { slot: houseSlots.sign, url: resolveSignModel(appearanceParts.sign) } : null,
     houseSlots.frameLeft
-      ? { slot: houseSlots.frameLeft, url: resolveFrameLeftModel(sceneJson.parts?.frameLeft) }
+      ? { slot: houseSlots.frameLeft, url: resolveFrameLeftModel(appearanceParts.frameLeft) }
       : null,
     houseSlots.frameRight
-      ? { slot: houseSlots.frameRight, url: resolveFrameRightModel(sceneJson.parts?.frameRight) }
+      ? { slot: houseSlots.frameRight, url: resolveFrameRightModel(appearanceParts.frameRight) }
       : null,
-    houseSlots.mat ? { slot: houseSlots.mat, url: resolveMatModel(sceneJson.parts?.mat) } : null,
+    houseSlots.mat ? { slot: houseSlots.mat, url: resolveMatModel(appearanceParts.mat) } : null,
     houseSlots.bowlFood
-      ? { slot: houseSlots.bowlFood, url: resolveBowlFoodModel(sceneJson.parts?.bowlFood) }
+      ? { slot: houseSlots.bowlFood, url: resolveBowlFoodModel(appearanceParts.bowlFood) }
       : null,
     houseSlots.bowlWater
-      ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(sceneJson.parts?.bowlWater) }
+      ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(appearanceParts.bowlWater) }
       : null
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
   const fullPartList = partList;
-  const colorOverrides = sceneJson.colors ?? undefined;
+  const colorOverrides = {
+    roof_paint: draftAppearance.roofColor,
+    wall_paint: draftAppearance.wallColor,
+    sign_paint: draftAppearance.signColor,
+    frame_left_paint: draftAppearance.frameLeftColor,
+    frame_right_paint: draftAppearance.frameRightColor,
+    mat_paint: draftAppearance.matColor,
+    bowl_food_paint: draftAppearance.bowlFoodColor,
+    bowl_water_paint: draftAppearance.bowlWaterColor
+  };
   const giftInstances = activeGifts.map((gift) => {
     const ownerPets = gift.owner?.pets ?? [];
     const ownerLabel =
@@ -1126,7 +1457,9 @@ export default function PetClient({ id }: Props) {
 
   const formatDate = (value?: string | null) =>
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
-  const activeUntil = pet.memorial?.activeUntil ?? sceneJson.memorialPaidUntil ?? null;
+  const memorialPaidUntil =
+    typeof sceneJson.memorialPaidUntil === "string" ? sceneJson.memorialPaidUntil : null;
+  const activeUntil = pet.memorial?.activeUntil ?? memorialPaidUntil ?? null;
   const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Бессрочно";
   const canExtendMemorial = Boolean(activeUntil);
   const selectedExtensionPlan =
@@ -1144,7 +1477,7 @@ export default function PetClient({ id }: Props) {
   const panelLabelClass =
     "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
-    `flex h-12 w-12 items-center justify-center rounded-[22px] border-2 shadow-md transition-all ${
+    `group relative flex h-14 w-14 items-center justify-center rounded-[24px] border-[3px] shadow-md transition-all sm:h-16 sm:w-16 ${
       active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -1153,6 +1486,126 @@ export default function PetClient({ id }: Props) {
     "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
+  const sidePanelAnchorClass = "absolute bottom-0 left-[4.5rem] sm:left-20";
+  const appearanceOptionImage = (category: string, optionId: string) =>
+    optionId === "none" ? null : `/memorial/options/${category}/${optionId}.png`;
+  const appearanceColorField =
+    appearanceTab === "roof"
+      ? "roofColor"
+      : appearanceTab === "wall"
+        ? "wallColor"
+        : appearanceTab === "sign"
+          ? "signColor"
+          : appearanceTab === "frameLeft"
+            ? "frameLeftColor"
+            : appearanceTab === "frameRight"
+              ? "frameRightColor"
+              : appearanceTab === "mat"
+                ? "matColor"
+                : appearanceTab === "bowlFood"
+                  ? "bowlFoodColor"
+                  : appearanceTab === "bowlWater"
+                    ? "bowlWaterColor"
+                    : null;
+  const renderAppearanceTabIcon = (tabId: AppearanceTabId) => {
+    switch (tabId) {
+      case "house":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 11.5 12 4l9 7.5" />
+            <path d="M5.5 10.5V20h13V10.5" />
+            <path d="M9 20v-5h6v5" />
+          </svg>
+        );
+      case "roof":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12 12 4l9 8" />
+            <path d="M6 12h12" />
+          </svg>
+        );
+      case "wall":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 7h14v12H5z" />
+            <path d="M5 11h14" />
+            <path d="M9 7v12" />
+            <path d="M15 7v12" />
+          </svg>
+        );
+      case "sign":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 6h10l-2 4 2 4H7z" />
+            <path d="M7 6v12" />
+          </svg>
+        );
+      case "frameLeft":
+      case "frameRight":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="6" y="5" width="12" height="14" rx="2" />
+            <path d="M9 8h6v8H9z" />
+          </svg>
+        );
+      case "mat":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="9" width="16" height="7" rx="2" />
+          </svg>
+        );
+      case "bowlFood":
+      case "bowlWater":
+        return (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 11h14l-1 5a3 3 0 0 1-3 2H9a3 3 0 0 1-3-2z" />
+            <path d="M7 11V9h10v2" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+  const renderAppearanceOptionGrid = (
+    category: string,
+    options: OptionItem[],
+    selectedId: string,
+    onSelect: (id: string) => void,
+    imageCategory: string = category
+  ) => (
+    <div className="grid grid-cols-2 place-items-center gap-0.5">
+      {options.map((option) => {
+        const isSelected = selectedId === option.id;
+        const imageUrl = appearanceOptionImage(imageCategory, option.id);
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onSelect(option.id)}
+            aria-label={option.name}
+            title={option.name}
+            className={`flex aspect-square w-full items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
+              isSelected
+                ? "border-sky-400 bg-sky-50"
+                : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
+            }`}
+          >
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={option.name}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full rounded-lg object-contain"
+              />
+            ) : (
+              <div className="text-xs text-slate-500">Нет</div>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#fcf8f5]">
@@ -1161,8 +1614,8 @@ export default function PetClient({ id }: Props) {
           className="h-full w-full rounded-none border-transparent bg-transparent"
           terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
           terrainId={pet.memorial?.environmentId ?? null}
-          houseUrl={resolveHouseModel(pet.memorial?.houseId)}
-          houseId={pet.memorial?.houseId ?? null}
+          houseUrl={resolveHouseModel(effectiveHouseId)}
+          houseId={effectiveHouseId}
           parts={fullPartList}
           dirtUrls={dirtModelUrls}
           dirtLevel={dirtLevel}
@@ -1210,7 +1663,7 @@ export default function PetClient({ id }: Props) {
                 aria-label="Информация"
                 className={panelButtonClass(activePanel === "info")}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 11v5" />
                   <circle cx="12" cy="8" r="1" />
@@ -1222,7 +1675,7 @@ export default function PetClient({ id }: Props) {
                 aria-label="Фотографии"
                 className={panelButtonClass(activePanel === "photos")}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="5" width="18" height="14" rx="2" />
                   <circle cx="9" cy="11" r="2" />
                   <path d="M21 15l-4-4-4 4-3-3-5 5" />
@@ -1234,7 +1687,7 @@ export default function PetClient({ id }: Props) {
                 aria-label="Подарки"
                 className={panelButtonClass(activePanel === "gifts")}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" />
                 </svg>
               </button>
@@ -1244,7 +1697,7 @@ export default function PetClient({ id }: Props) {
                 aria-label="Другие мемориалы"
                 className={panelButtonClass(activePanel === "memorials")}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8" cy="9" r="3" />
                   <circle cx="16" cy="9" r="3" />
                   <path d="M3 20c0-3 3-5 5-5" />
@@ -1258,7 +1711,7 @@ export default function PetClient({ id }: Props) {
                   aria-label="Управление мемориалом"
                   className={panelButtonClass(activePanel === "manage")}
                 >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
                   </svg>
@@ -1267,7 +1720,7 @@ export default function PetClient({ id }: Props) {
             </div>
 
             {activePanel === "info" ? (
-              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
                 <div className={`${panelSectionClass} text-sm text-[#6f6360]`}>
                   <div>
                     <p className={panelLabelClass}>Эпитафия</p>
@@ -1308,7 +1761,7 @@ export default function PetClient({ id }: Props) {
             ) : null}
 
             {activePanel === "photos" ? (
-              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
                 <div className={panelSectionClass}>
                   <p className={panelLabelClass}>Фотографии</p>
                   {photos.length > 0 ? (
@@ -1339,7 +1792,7 @@ export default function PetClient({ id }: Props) {
             ) : null}
 
             {activePanel === "gifts" ? (
-              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
                 <div className={panelSectionClass}>
                   <p className={panelLabelClass}>Подарки</p>
                   <div className="max-h-[50vh] overflow-y-auto pr-1">
@@ -1426,7 +1879,7 @@ export default function PetClient({ id }: Props) {
             ) : null}
 
             {activePanel === "memorials" ? (
-              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
                 <div className={panelSectionClass}>
                   <p className={panelLabelClass}>Мемориалы хозяина</p>
                   {otherMemorials.length > 0 ? (
@@ -1471,7 +1924,7 @@ export default function PetClient({ id }: Props) {
             ) : null}
 
             {isOwner && activePanel === "manage" ? (
-              <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
+              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
                 <div className={panelSectionClass}>
                   <p className={panelLabelClass}>Управление</p>
                   <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
@@ -1484,6 +1937,13 @@ export default function PetClient({ id }: Props) {
                     <p className="text-xs font-semibold text-red-600">{lifecycleError}</p>
                   ) : null}
                   <div className="grid gap-2">
+                    <button
+                      type="button"
+                      onClick={openEditDialog}
+                      className={secondaryActionClass}
+                    >
+                      Редактировать домик
+                    </button>
                     <button
                       type="button"
                       onClick={openExtensionDialog}
@@ -1513,7 +1973,7 @@ export default function PetClient({ id }: Props) {
               type="button"
               onClick={toggleGiftPanel}
               aria-label="Подарки"
-              className={`flex h-14 w-14 items-center justify-center rounded-[22px] border-2 shadow-md transition-all ${
+              className={`flex h-14 w-14 items-center justify-center rounded-[24px] border-[3px] shadow-md transition-all sm:h-16 sm:w-16 ${
                 giftPanelOpen
                   ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
                   : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -1729,6 +2189,209 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
       </div>
+
+      {editDialogOpen && appearanceDraft ? (
+        <div
+          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
+            editDialogVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={closeEditDialog}
+          />
+          <div
+            className={`relative flex w-full max-w-3xl flex-col rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+              editDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            }`}
+          >
+            <div className={`${panelSectionClass} min-h-[min(72vh,760px)]`}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className={panelLabelClass}>Редактирование</p>
+                  <h3 className="mt-1 text-lg font-black text-[#5d4037]">
+                    Домик и детали мемориала
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className={secondaryActionClass}
+                  onClick={closeEditDialog}
+                >
+                  Закрыть
+                </button>
+              </div>
+
+              <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+                <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
+                  {appearanceTabs.map((tab) => {
+                    const isActive = appearanceTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setAppearanceTab(tab.id)}
+                        aria-label={tab.label}
+                        title={tab.label}
+                        className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
+                          isActive
+                            ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+                            : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
+                        }`}
+                      >
+                        {renderAppearanceTabIcon(tab.id)}
+                        <span className="sr-only">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                  <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto pr-1 pb-3">
+                    {appearanceTab === "house" ? (
+                      <div className="grid gap-4">
+                        <div className="grid gap-3">
+                          {renderAppearanceOptionGrid(
+                            "house-base",
+                            houseBaseOptions,
+                            selectedHouseBaseId,
+                            (baseId) => {
+                              const nextVariant =
+                                houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
+                              updateAppearanceDraft("houseId", nextVariant);
+                            },
+                            "house"
+                          )}
+                        </div>
+                        {houseTextureOptions.length > 0 ? (
+                          <div className="grid gap-3">
+                            <h4 className="text-base font-semibold text-slate-900">
+                              Текстура домика
+                            </h4>
+                            {renderAppearanceOptionGrid(
+                              "house-texture",
+                              houseTextureOptions,
+                              appearanceDraft.houseId,
+                              (variantId) => updateAppearanceDraft("houseId", variantId),
+                              "house-texture"
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : appearanceTab === "roof" ? (
+                      renderAppearanceOptionGrid(
+                        "roof",
+                        roofOptions,
+                        appearanceDraft.roofId,
+                        (id) => updateAppearanceDraft("roofId", id)
+                      )
+                    ) : appearanceTab === "wall" ? (
+                      renderAppearanceOptionGrid(
+                        "wall",
+                        wallOptions,
+                        appearanceDraft.wallId,
+                        (id) => updateAppearanceDraft("wallId", id)
+                      )
+                    ) : appearanceTab === "sign" ? (
+                      renderAppearanceOptionGrid(
+                        "sign",
+                        signOptions,
+                        appearanceDraft.signId,
+                        (id) => updateAppearanceDraft("signId", id)
+                      )
+                    ) : appearanceTab === "frameLeft" ? (
+                      renderAppearanceOptionGrid(
+                        "frame-left",
+                        frameLeftOptions,
+                        appearanceDraft.frameLeftId,
+                        (id) => updateAppearanceDraft("frameLeftId", id)
+                      )
+                    ) : appearanceTab === "frameRight" ? (
+                      renderAppearanceOptionGrid(
+                        "frame-right",
+                        frameRightOptions,
+                        appearanceDraft.frameRightId,
+                        (id) => updateAppearanceDraft("frameRightId", id)
+                      )
+                    ) : appearanceTab === "mat" ? (
+                      renderAppearanceOptionGrid(
+                        "mat",
+                        matOptions,
+                        appearanceDraft.matId,
+                        (id) => updateAppearanceDraft("matId", id)
+                      )
+                    ) : appearanceTab === "bowlFood" ? (
+                      renderAppearanceOptionGrid(
+                        "bowl-food",
+                        bowlFoodOptions,
+                        appearanceDraft.bowlFoodId,
+                        (id) => updateAppearanceDraft("bowlFoodId", id)
+                      )
+                    ) : appearanceTab === "bowlWater" ? (
+                      renderAppearanceOptionGrid(
+                        "bowl-water",
+                        bowlWaterOptions,
+                        appearanceDraft.bowlWaterId,
+                        (id) => updateAppearanceDraft("bowlWaterId", id)
+                      )
+                    ) : null}
+
+                    {appearanceColorField ? (
+                      <div className="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-sm font-semibold text-slate-900">Цвет детали</div>
+                        <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
+                          {colorPalette.map((color) => {
+                            const isActive = appearanceDraft[appearanceColorField] === color;
+                            return (
+                              <button
+                                key={color}
+                                type="button"
+                                onClick={() => updateAppearanceDraft(appearanceColorField, color)}
+                                className={`h-10 w-full rounded-xl border-2 transition ${
+                                  isActive
+                                    ? "border-slate-900 ring-2 ring-sky-200"
+                                    : "border-white hover:border-slate-300"
+                                }`}
+                                style={{ backgroundColor: color }}
+                                aria-label={color}
+                                title={color}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {appearanceError ? (
+                <p className="text-xs font-semibold text-red-600">{appearanceError}</p>
+              ) : null}
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeEditDialog}
+                  className={secondaryActionClass}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAppearance}
+                  disabled={savingAppearance}
+                  className={primaryActionClass}
+                >
+                  {savingAppearance ? "Сохраняем..." : "Сохранить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {extensionDialogOpen ? (
         <div
@@ -2073,6 +2736,12 @@ export default function PetClient({ id }: Props) {
         message={cleanSuccess}
         onClose={() => setCleanSuccess(null)}
         offset={88}
+        variant="success"
+      />
+      <ErrorToast
+        message={appearanceSuccess}
+        onClose={() => setAppearanceSuccess(null)}
+        offset={152}
         variant="success"
       />
       <ErrorToast message={error} onClose={() => setError(null)} />

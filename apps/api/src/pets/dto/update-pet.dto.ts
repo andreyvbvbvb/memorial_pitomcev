@@ -1,4 +1,11 @@
-import { IsBoolean, IsDateString, IsOptional, IsString, Length } from "class-validator";
+import {
+  IsBoolean,
+  IsDateString,
+  IsObject,
+  IsOptional,
+  IsString,
+  Length
+} from "class-validator";
 
 export class UpdatePetDto {
   @IsOptional()
@@ -47,4 +54,13 @@ export class UpdatePetDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  houseId?: string;
+
+  @IsOptional()
+  @IsObject()
+  sceneJson?: Record<string, unknown>;
 }

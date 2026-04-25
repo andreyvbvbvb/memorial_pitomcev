@@ -373,6 +373,7 @@ export default function CreateMemorialClient() {
   });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
+  const [reviewAttempted, setReviewAttempted] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingProgressRef = useRef<number | null>(null);
@@ -1112,6 +1113,9 @@ export default function CreateMemorialClient() {
     }
     return null;
   }, [form.birthDate, form.deathDate, today]);
+  const hasRequiredDateError =
+    reviewAttempted && (!form.birthDate.trim() || !form.deathDate.trim());
+  const hasDateFieldError = hasRequiredDateError || Boolean(dateValidationMessage);
 
   const todayInputValue = useMemo(() => today.toISOString().slice(0, 10), [today]);
 
@@ -1410,6 +1414,7 @@ export default function CreateMemorialClient() {
   );
 
   const handleSubmit = async () => {
+    setReviewAttempted(true);
     const step0Message = validateStep(0);
     const step1Message = validateStep(1);
     const message = step0Message ?? step1Message;
@@ -1558,6 +1563,7 @@ export default function CreateMemorialClient() {
   };
 
   const openReview = () => {
+    setReviewAttempted(true);
     const message = validateStep(0) ?? validateStep(1);
     if (message) {
       setError(message);
@@ -2248,12 +2254,13 @@ export default function CreateMemorialClient() {
             type="date"
             className={centered
               ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
-                  dateValidationMessage ? "border-red-400" : "border-slate-200"
+                  hasDateFieldError ? "border-red-400" : "border-slate-200"
                 } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
-              : `${overlayInputClass} ${dateValidationMessage ? "!border-red-400" : ""}`}
+              : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
             value={form.birthDate}
             onChange={(event) => handleChange("birthDate", event.target.value)}
             max={form.deathDate || todayInputValue}
+            aria-invalid={hasDateFieldError}
           />
         </label>
         <label
@@ -2267,13 +2274,14 @@ export default function CreateMemorialClient() {
             type="date"
             className={centered
               ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
-                  dateValidationMessage ? "border-red-400" : "border-slate-200"
+                  hasDateFieldError ? "border-red-400" : "border-slate-200"
                 } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
-              : `${overlayInputClass} ${dateValidationMessage ? "!border-red-400" : ""}`}
+              : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
             value={form.deathDate}
             onChange={(event) => handleChange("deathDate", event.target.value)}
             min={form.birthDate || undefined}
             max={todayInputValue}
+            aria-invalid={hasDateFieldError}
           />
         </label>
       </div>
@@ -2757,7 +2765,7 @@ export default function CreateMemorialClient() {
                     <h3 className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]">
                       Редактор мемориала
                     </h3>
-                    <label className="group relative flex items-center gap-2 text-[10px] font-bold text-green-600">
+                    <label className="group relative z-[120] flex items-center gap-2 text-[10px] font-bold text-green-600">
                       <input
                         type="checkbox"
                         className="h-4 w-4 rounded border-slate-300"
@@ -2765,7 +2773,7 @@ export default function CreateMemorialClient() {
                         onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
                       />
                       <span>Посмотреть</span>
-                      <span className="pointer-events-none absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                      <span className="pointer-events-none absolute right-0 top-full z-[130] mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                         При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
                       </span>
                     </label>
