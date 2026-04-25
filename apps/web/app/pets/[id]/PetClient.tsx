@@ -141,6 +141,7 @@ export default function PetClient({ id }: Props) {
   >([]);
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftSuccess, setGiftSuccess] = useState<string | null>(null);
+  const [cleanSuccess, setCleanSuccess] = useState<string | null>(null);
   const [giftLoading, setGiftLoading] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
   const [selectedGiftSize, setSelectedGiftSize] = useState<GiftSize>("m");
@@ -181,6 +182,7 @@ export default function PetClient({ id }: Props) {
   const router = useRouter();
   const handleCleanDirt = useCallback(async () => {
     try {
+      setCleanSuccess(null);
       const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
         method: "PATCH"
       });
@@ -205,6 +207,7 @@ export default function PetClient({ id }: Props) {
             }
           : prev
       );
+      setCleanSuccess("Спасибо, что поддерживаете мемориал в чистоте.");
     } catch {
       setDirtLevel(0);
     }
@@ -1135,16 +1138,24 @@ export default function PetClient({ id }: Props) {
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
   const panelBaseClass =
-    "w-[280px] max-w-[80vw] rounded-2xl border border-white/60 bg-white/90 p-4 shadow-xl backdrop-blur sm:w-[320px]";
+    "w-[290px] max-w-[82vw] rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur sm:w-[340px]";
+  const panelSectionClass =
+    "grid gap-3 rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]";
+  const panelLabelClass =
+    "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
-    `flex h-12 w-12 items-center justify-center rounded-2xl border transition ${
+    `flex h-12 w-12 items-center justify-center rounded-[22px] border-2 shadow-md transition-all ${
       active
-        ? "border-white/80 bg-white text-slate-900 shadow-lg"
-        : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+        ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+        : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
     }`;
+  const primaryActionClass =
+    "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
+  const secondaryActionClass =
+    "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#e9f2fb]">
+    <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#fcf8f5]">
       <div className="fixed inset-0 z-0">
         <MemorialPreview
           className="h-full w-full rounded-none border-transparent bg-transparent"
@@ -1176,12 +1187,17 @@ export default function PetClient({ id }: Props) {
           }}
         />
       </div>
+      <div className="pointer-events-none fixed right-0 top-0 z-[1] h-80 w-80 rounded-full bg-[#3bceac]/10 blur-[120px]" />
+      <div className="pointer-events-none fixed bottom-0 left-0 z-[1] h-80 w-80 rounded-full bg-[#d3a27f]/14 blur-[120px]" />
 
       <div className="fixed inset-0 z-10 pointer-events-none">
         <div className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]">
-          <div className="rounded-full bg-white/60 px-4 py-2 backdrop-blur">
-            <div className="text-lg font-semibold text-slate-900">{pet.name}</div>
-            <div className="text-xs text-slate-600">{dateRange}</div>
+          <div className="rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur">
+            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
+              Мемориал
+            </div>
+            <div className="mt-1 text-lg font-black text-[#5d4037]">{pet.name}</div>
+            <div className="text-xs font-semibold text-[#8d6e63]">{dateRange}</div>
           </div>
         </div>
 
@@ -1252,26 +1268,24 @@ export default function PetClient({ id }: Props) {
 
             {activePanel === "info" ? (
               <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
-                <div className="grid gap-3 text-sm text-slate-700">
+                <div className={`${panelSectionClass} text-sm text-[#6f6360]`}>
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                      Эпитафия
-                    </p>
-                    <p className="mt-2 text-sm text-slate-800">
+                    <p className={panelLabelClass}>Эпитафия</p>
+                    <p className="mt-2 text-sm font-semibold text-[#5d4037]">
                       {pet.epitaph ?? "Без эпитафии"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                      История
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    <p className={panelLabelClass}>История</p>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6f6360]">
                       {pet.story ?? "История пока не заполнена."}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-slate-200/80 bg-white/70 p-3">
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span className="font-semibold text-slate-800">Чистота мемориала</span>
+                  <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
+                    <div className="flex items-center justify-between text-xs font-semibold text-[#8d6e63]">
+                      <span className="font-black uppercase tracking-[0.16em] text-[#5d4037]">
+                        Чистота мемориала
+                      </span>
                       <span>
                         {dirtLevel}/{DIRT_SLOTS.length}
                       </span>
@@ -1280,10 +1294,10 @@ export default function PetClient({ id }: Props) {
                       type="button"
                       onClick={handleCleanDirt}
                       disabled={dirtLevel === 0}
-                      className={`mt-3 w-full rounded-full px-3 py-2 text-xs font-semibold transition ${
+                      className={`mt-3 w-full ${primaryActionClass} ${
                         dirtLevel === 0
-                          ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                          : "bg-slate-900 text-white hover:bg-slate-800"
+                          ? "cursor-not-allowed bg-slate-300 text-slate-500 shadow-none"
+                          : ""
                       }`}
                     >
                       Почистить мемориал
@@ -1295,41 +1309,42 @@ export default function PetClient({ id }: Props) {
 
             {activePanel === "photos" ? (
               <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                  Фотографии
-                </p>
-                {photos.length > 0 ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {photos.map((photo, index) => (
-                      <button
-                        key={photo.id}
-                        type="button"
-                        onClick={() => openLightbox(index)}
-                        className="overflow-hidden rounded-xl"
-                      >
-                        <img
-                          src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
-                          alt="Фото питомца"
-                          className="h-28 w-full object-cover"
-                          loading="lazy"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm text-slate-500">Фотографии пока не добавлены.</p>
-                )}
+                <div className={panelSectionClass}>
+                  <p className={panelLabelClass}>Фотографии</p>
+                  {photos.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {photos.map((photo, index) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => openLightbox(index)}
+                          className="group overflow-hidden rounded-[22px] border-[3px] border-white bg-[#f8f9fa] shadow-inner"
+                        >
+                          <img
+                            src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
+                            alt="Фото питомца"
+                            className="h-28 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm font-semibold text-[#8d6e63]">
+                      Фотографии пока не добавлены.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : null}
 
             {activePanel === "gifts" ? (
               <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                  Подарки
-                </p>
-                <div className="mt-3 max-h-[50vh] overflow-y-auto pr-1">
+                <div className={panelSectionClass}>
+                  <p className={panelLabelClass}>Подарки</p>
+                  <div className="max-h-[50vh] overflow-y-auto pr-1">
                   {activeGifts.length > 0 ? (
-                    <div className="grid gap-2 text-sm text-slate-700">
+                    <div className="grid gap-2 text-sm text-[#6f6360]">
                       {activeGifts.map((gift) => {
                         const ownerPets = gift.owner?.pets ?? [];
                         const ownerName =
@@ -1347,9 +1362,9 @@ export default function PetClient({ id }: Props) {
                         return (
                           <div
                             key={gift.id}
-                            className="group relative flex gap-3 rounded-xl border border-transparent bg-white p-3 transition hover:border-slate-200 hover:bg-slate-50"
+                            className="group relative flex gap-3 rounded-[22px] border border-white bg-white/90 p-3 transition hover:-translate-y-0.5 hover:border-[#fdf2e9] hover:bg-white"
                           >
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[16px] bg-[#f8f9fa] shadow-inner">
                               {iconUrl ? (
                                 <img
                                   src={iconUrl ?? undefined}
@@ -1365,9 +1380,9 @@ export default function PetClient({ id }: Props) {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between">
-                                <p className="font-semibold">{gift.gift.name}</p>
+                                <p className="font-black text-[#5d4037]">{gift.gift.name}</p>
                               </div>
-                              <p className="mt-1 text-xs text-slate-500">
+                              <p className="mt-1 text-xs font-semibold text-[#8d6e63]">
                                 От хозяина:{" "}
                                 {ownerPets.length > 0 ? (
                                   <span className="inline-flex flex-wrap gap-1">
@@ -1375,7 +1390,7 @@ export default function PetClient({ id }: Props) {
                                       <span key={petItem.id} className="inline-flex items-center gap-1">
                                         <a
                                           href={`/pets/${petItem.id}`}
-                                          className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+                                          className="text-[#5d4037] underline decoration-[#d3a27f]/50 underline-offset-2 hover:text-[#111827]"
                                         >
                                           {petItem.name}
                                         </a>
@@ -1388,11 +1403,13 @@ export default function PetClient({ id }: Props) {
                                 )}
                               </p>
                               {expiresLabel ? (
-                                <p className="text-xs text-slate-500">До: {expiresLabel}</p>
+                                <p className="text-xs font-semibold text-[#8d6e63]">
+                                  До: {expiresLabel}
+                                </p>
                               ) : null}
                             </div>
-                            <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg group-hover:block">
-                              <p className="font-semibold text-slate-800">{gift.gift.name}</p>
+                            <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-[18px] border border-white bg-white/95 p-3 text-xs font-semibold text-[#8d6e63] shadow-lg group-hover:block">
+                              <p className="font-black text-[#5d4037]">{gift.gift.name}</p>
                               <p className="mt-1">От: {ownerLabel}</p>
                               {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
                             </div>
@@ -1401,19 +1418,19 @@ export default function PetClient({ id }: Props) {
                       })}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500">Пока нет подарков.</p>
+                    <p className="text-sm font-semibold text-[#8d6e63]">Пока нет подарков.</p>
                   )}
+                </div>
                 </div>
               </div>
             ) : null}
 
             {activePanel === "memorials" ? (
               <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                  Мемориалы хозяина
-                </p>
-                {otherMemorials.length > 0 ? (
-                  <div className="mt-3 max-h-[50vh] overflow-y-auto pr-1">
+                <div className={panelSectionClass}>
+                  <p className={panelLabelClass}>Мемориалы хозяина</p>
+                  {otherMemorials.length > 0 ? (
+                  <div className="max-h-[50vh] overflow-y-auto pr-1">
                     <div className="grid gap-3">
                       {otherMemorials.map((item) => {
                         const photo = item.photos?.[0];
@@ -1426,16 +1443,16 @@ export default function PetClient({ id }: Props) {
                           <a
                             key={item.id}
                             href={`/pets/${item.id}`}
-                            className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 transition hover:border-slate-300"
+                            className="group flex items-center gap-3 rounded-[22px] border border-white bg-white/90 px-3 py-2 transition hover:-translate-y-0.5 hover:border-[#fdf2e9]"
                           >
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[16px] bg-[#f8f9fa] shadow-inner">
                               {url ? (
                                 <img src={url} alt="" className="h-full w-full object-cover" />
                               ) : null}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-sm font-black text-[#5d4037]">{item.name}</p>
+                              <p className="text-xs font-semibold text-[#8d6e63]">
                                 {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
                               </p>
                             </div>
@@ -1445,46 +1462,45 @@ export default function PetClient({ id }: Props) {
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">
+                  <p className="text-sm font-semibold text-[#8d6e63]">
                     Других мемориалов пока нет.
                   </p>
                 )}
+                </div>
               </div>
             ) : null}
 
             {isOwner && activePanel === "manage" ? (
               <div className={`absolute bottom-0 left-16 ${panelBaseClass}`}>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                  Управление
-                </p>
-                <div className="mt-3 rounded-2xl border border-slate-200/80 bg-white/75 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                    Активен до
-                  </p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
-                    {activeUntilLabel}
-                  </p>
-                </div>
-                {lifecycleError ? (
-                  <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
-                ) : null}
-                <div className="mt-3 grid gap-2">
-                  <button
-                    type="button"
-                    onClick={openExtensionDialog}
-                    disabled={!canExtendMemorial}
-                    className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-                  >
-                    {canExtendMemorial ? "Продлить" : "Бессрочно"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openDeleteDialog}
-                    disabled={deletingMemorial}
-                    className="w-1/2 justify-self-start rounded-xl border border-red-100 bg-white px-3 py-1.5 text-[11px] font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {deletingMemorial ? "Удаление..." : "Удалить"}
-                  </button>
+                <div className={panelSectionClass}>
+                  <p className={panelLabelClass}>Управление</p>
+                  <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
+                    <p className={panelLabelClass}>Активен до</p>
+                    <p className="mt-1 text-lg font-black text-[#5d4037]">
+                      {activeUntilLabel}
+                    </p>
+                  </div>
+                  {lifecycleError ? (
+                    <p className="text-xs font-semibold text-red-600">{lifecycleError}</p>
+                  ) : null}
+                  <div className="grid gap-2">
+                    <button
+                      type="button"
+                      onClick={openExtensionDialog}
+                      disabled={!canExtendMemorial}
+                      className={primaryActionClass}
+                    >
+                      {canExtendMemorial ? "Продлить" : "Бессрочно"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openDeleteDialog}
+                      disabled={deletingMemorial}
+                      className="w-1/2 justify-self-start rounded-[16px] border-2 border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingMemorial ? "Удаление..." : "Удалить"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -1497,10 +1513,10 @@ export default function PetClient({ id }: Props) {
               type="button"
               onClick={toggleGiftPanel}
               aria-label="Подарки"
-              className={`flex h-14 w-14 items-center justify-center rounded-2xl border transition ${
+              className={`flex h-14 w-14 items-center justify-center rounded-[22px] border-2 shadow-md transition-all ${
                 giftPanelOpen
-                  ? "border-white/80 bg-white text-slate-900 shadow-lg"
-                  : "border-white/60 bg-white/70 text-slate-600 hover:bg-white/90"
+                  ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+                  : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
               }`}
             >
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
@@ -1515,31 +1531,30 @@ export default function PetClient({ id }: Props) {
               <div
                 className={`fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                      Подарки
-                    </p>
-                    <p className="text-sm font-semibold text-slate-900">Сделать подарок</p>
+                <div className={`flex min-h-0 flex-1 flex-col ${panelSectionClass}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className={panelLabelClass}>Подарки</p>
+                      <p className="text-sm font-black text-[#5d4037]">Сделать подарок</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleGiftPanel}
+                      className={secondaryActionClass}
+                    >
+                      Закрыть
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={toggleGiftPanel}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
-                  >
-                    Закрыть
-                  </button>
-                </div>
                 {currentUser ? (
                   <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
-                    <div className="flex min-h-0 flex-1 flex-col gap-2 text-sm text-slate-700">
+                    <div className="flex min-h-0 flex-1 flex-col gap-2 text-sm font-semibold text-[#6f6360]">
                       <span>Подарок</span>
                       <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1">
                         {giftCatalogLoading ? (
                           Array.from({ length: 8 }).map((_, index) => (
                             <div
                               key={`gift-skeleton-${index}`}
-                              className="relative h-28 w-full animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                              className="relative h-28 w-full animate-pulse overflow-hidden rounded-[22px] border border-white bg-white"
                             >
                               <div className="absolute inset-0 bg-slate-100" />
                               <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-slate-200" />
@@ -1557,10 +1572,10 @@ export default function PetClient({ id }: Props) {
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
-                                className={`relative flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border transition ${
+                                className={`relative flex h-28 w-full items-center justify-center overflow-hidden rounded-[22px] border-[3px] transition ${
                                   selectedGiftId === gift.id
-                                    ? "border-sky-400/70 bg-sky-50 text-slate-900 shadow-sm"
-                                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                                    ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-sm"
+                                    : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/50"
                                 }`}
                               >
                                 {iconUrl ? (
@@ -1575,7 +1590,7 @@ export default function PetClient({ id }: Props) {
                                     }}
                                   />
                                 ) : null}
-                                <span className="pointer-events-none absolute bottom-2 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-slate-900 text-[9px] font-semibold text-white shadow-md">
+                                <span className="pointer-events-none absolute bottom-2 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md">
                                   {gift.price}
                                 </span>
                                 <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-slate-700 opacity-0">
@@ -1588,8 +1603,8 @@ export default function PetClient({ id }: Props) {
                       </div>
                     </div>
 
-                    <div className="grid gap-2 text-sm text-slate-700">
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-[#6f6360]">
                         <input
                           type="checkbox"
                           className="h-4 w-4"
@@ -1604,8 +1619,8 @@ export default function PetClient({ id }: Props) {
                       ) : null}
                     </div>
 
-                    {selectedGiftSupportsSize ? (
-                      <div className="grid gap-2 text-sm text-slate-700">
+                      {selectedGiftSupportsSize ? (
+                      <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
                         Размер звезды
                         <div className="flex flex-wrap gap-2">
                           {starSizeOptions.map((option) => (
@@ -1613,24 +1628,24 @@ export default function PetClient({ id }: Props) {
                               key={option.id}
                               type="button"
                               onClick={() => setSelectedGiftSize(option.id)}
-                              className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${
+                              className={`flex items-center gap-2 rounded-[18px] border-[3px] px-3 py-2 text-xs ${
                                 selectedGiftSize === option.id
-                                  ? "border-sky-400 bg-sky-50 text-slate-900"
-                                  : "border-slate-200 bg-white text-slate-600"
+                                  ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                                  : "border-white bg-white text-[#8d6e63]"
                               }`}
                             >
-                              <span className="text-sm font-semibold">{option.label}</span>
-                              <span className="text-[11px] text-slate-400">{option.helper}</span>
+                              <span className="text-sm font-black">{option.label}</span>
+                              <span className="text-[11px] text-[#adb5bd]">{option.helper}</span>
                             </button>
                           ))}
                         </div>
                       </div>
                     ) : null}
 
-                    <div className="grid gap-2 text-sm text-slate-700">
+                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
                       Срок подарка
                       <div className="grid gap-2">
-                        <div className="text-sm font-semibold text-slate-900">
+                        <div className="text-sm font-black text-[#5d4037]">
                           {selectedDuration ? `${selectedDuration} мес` : "Выберите срок"}
                         </div>
                         <input
@@ -1643,9 +1658,9 @@ export default function PetClient({ id }: Props) {
                             const index = Number(event.target.value);
                             setSelectedDuration(DURATION_OPTIONS[index] ?? DURATION_OPTIONS[0]);
                           }}
-                          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200"
+                          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9]"
                         />
-                        <div className="flex justify-between text-[11px] text-slate-400">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#adb5bd]">
                           {DURATION_OPTIONS.map((value) => (
                             <span key={value}>{value}м</span>
                           ))}
@@ -1653,10 +1668,10 @@ export default function PetClient({ id }: Props) {
                       </div>
                     </div>
 
-                    <div className="grid gap-2 text-sm text-slate-700">
+                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
                       Слот
                       {filteredAvailableSlots.length === 0 ? (
-                        <p className="text-sm text-slate-500">Выберите подарок.</p>
+                        <p className="text-sm text-[#8d6e63]">Выберите подарок.</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {filteredAvailableSlots.map((slot, index) => (
@@ -1664,10 +1679,10 @@ export default function PetClient({ id }: Props) {
                               key={slot}
                               type="button"
                               onClick={() => handleSelectSlot(slot)}
-                              className={`h-10 w-10 rounded-full border text-sm ${
+                              className={`h-10 w-10 rounded-full border-[3px] text-sm font-black ${
                                 selectedSlot === slot
-                                  ? "border-slate-900 bg-slate-900 text-white"
-                                  : "border-slate-200 bg-white text-slate-700"
+                                  ? "border-[#111827] bg-[#111827] text-white"
+                                  : "border-white bg-white text-[#8d6e63]"
                               }`}
                               aria-label={`Слот ${index + 1}`}
                             >
@@ -1689,10 +1704,10 @@ export default function PetClient({ id }: Props) {
                     <button
                       type="button"
                       onClick={handlePlaceGift}
-                      className={`rounded-2xl px-4 py-2 text-sm font-semibold ${
+                      className={`px-4 py-3 ${
                         selectedGiftId && selectedSlot && selectedDuration && !giftLoading
-                          ? "bg-slate-900 text-white"
-                          : "cursor-not-allowed bg-slate-300 text-slate-500"
+                          ? primaryActionClass
+                          : "cursor-not-allowed rounded-[22px] bg-slate-300 text-sm font-black uppercase tracking-[0.14em] text-slate-500 shadow-none"
                       }`}
                       disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                     >
@@ -1704,10 +1719,11 @@ export default function PetClient({ id }: Props) {
                     </button>
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-600">
+                  <p className="mt-3 text-sm font-semibold text-[#8d6e63]">
                     Войдите, чтобы дарить подарки.
                   </p>
                 )}
+                </div>
               </div>
             ) : null}
           </div>
@@ -1727,28 +1743,29 @@ export default function PetClient({ id }: Props) {
             onClick={closeExtensionDialog}
           />
           <div
-            className={`relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+            className={`relative w-full max-w-lg rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
               extensionDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
+            <div className={panelSectionClass}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                <p className={panelLabelClass}>
                   Продление
                 </p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                <h3 className="mt-1 text-lg font-black text-[#5d4037]">
                   Выберите срок
                 </h3>
               </div>
               <button
                 type="button"
-                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                className={secondaryActionClass}
                 onClick={closeExtensionDialog}
               >
                 Закрыть
               </button>
             </div>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm font-semibold text-[#8d6e63]">
               Текущий срок: {activeUntilLabel}. Баланс:{" "}
               {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
             </p>
@@ -1760,14 +1777,14 @@ export default function PetClient({ id }: Props) {
                     key={plan.id}
                     type="button"
                     onClick={() => setSelectedExtensionYears(plan.years)}
-                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                    className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
                       isSelected
-                        ? "border-sky-400 bg-sky-50 text-slate-900"
-                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                        : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                     }`}
                   >
-                    <span className="font-semibold">{plan.label}</span>
-                    <span className="text-slate-500">{plan.price} монет</span>
+                    <span className="font-black">{plan.label}</span>
+                    <span className="font-semibold text-[#8d6e63]">{plan.price} монет</span>
                   </button>
                 );
               })}
@@ -1779,12 +1796,13 @@ export default function PetClient({ id }: Props) {
               type="button"
               onClick={() => handleExtendMemorial(selectedExtensionYears)}
               disabled={extendingMemorial || !canExtendMemorial}
-              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+              className={`mt-5 w-full ${primaryActionClass}`}
             >
               {extendingMemorial
                 ? "Продление..."
                 : `Продлить на ${selectedExtensionPlan.label} • ${selectedExtensionPlan.price} монет`}
             </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1802,37 +1820,38 @@ export default function PetClient({ id }: Props) {
             onClick={closeDeleteDialog}
           />
           <div
-            className={`relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+            className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
               deleteDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
+            <div className={panelSectionClass}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-red-400">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-red-400">
                   Удаление
                 </p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                <h3 className="mt-1 text-lg font-black text-[#5d4037]">
                   Подтвердите действие
                 </h3>
               </div>
               <button
                 type="button"
-                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600"
+                className={secondaryActionClass}
                 onClick={closeDeleteDialog}
               >
                 Закрыть
               </button>
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+            <p className="mt-3 text-sm font-semibold leading-relaxed text-[#8d6e63]">
               Мемориал исчезнет из списков и карты, но данные останутся в базе. Для
               подтверждения введите имя:{" "}
-              <span className="font-semibold text-slate-900">{pet.name}</span>
+              <span className="font-black text-[#5d4037]">{pet.name}</span>
             </p>
             <input
               type="text"
               value={deleteConfirmationName}
               onChange={(event) => setDeleteConfirmationName(event.target.value)}
-              className="mt-4 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-red-300 focus:ring-4 focus:ring-red-100"
+              className="mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"
               placeholder={pet.name}
               autoComplete="off"
             />
@@ -1843,7 +1862,7 @@ export default function PetClient({ id }: Props) {
               <button
                 type="button"
                 onClick={closeDeleteDialog}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                className={secondaryActionClass}
               >
                 Отмена
               </button>
@@ -1851,10 +1870,11 @@ export default function PetClient({ id }: Props) {
                 type="button"
                 onClick={handleDeleteMemorial}
                 disabled={!canConfirmDelete}
-                className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-all hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
               >
                 {deletingMemorial ? "Удаление..." : "Удалить"}
               </button>
+            </div>
             </div>
           </div>
         </div>
@@ -1873,20 +1893,24 @@ export default function PetClient({ id }: Props) {
             onClick={closeTopUp}
           />
           <div
-            className={`relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+            className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
               topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Пополнение баланса</h3>
-              <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeTopUp}>
+            <div className={panelSectionClass}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className={panelLabelClass}>Баланс</p>
+                <h3 className="text-lg font-black text-[#5d4037]">Пополнение баланса</h3>
+              </div>
+              <button type="button" className={secondaryActionClass} onClick={closeTopUp}>
                 Закрыть
               </button>
             </div>
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
               Баланс: {walletBalance ?? 0} монет
             </p>
-            <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
+            <div className="mt-4 flex gap-2 rounded-full bg-[#fdf2e9] p-1.5">
               {(["RUB", "USD"] as const).map((currency) => {
                 const isActive = topUpCurrency === currency;
                 return (
@@ -1894,8 +1918,8 @@ export default function PetClient({ id }: Props) {
                     key={currency}
                     type="button"
                     onClick={() => setTopUpCurrency(currency)}
-                    className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold ${
-                      isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                    className={`flex-1 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${
+                      isActive ? "bg-white text-[#5d4037] shadow-sm" : "text-[#8d6e63]"
                     }`}
                   >
                     {currency}
@@ -1912,21 +1936,21 @@ export default function PetClient({ id }: Props) {
                     key={option.coins}
                     type="button"
                     onClick={() => setTopUpPlan(option.coins)}
-                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                    className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
                       isSelected
-                        ? "border-sky-400 bg-sky-50 text-slate-900"
-                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                        : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                     }`}
                   >
-                    <span className="font-semibold">{option.coins} монет</span>
-                    <span className="text-slate-500">{price}</span>
+                    <span className="font-black">{option.coins} монет</span>
+                    <span className="font-semibold text-[#8d6e63]">{price}</span>
                   </button>
                 );
               })}
             </div>
             <button
               type="button"
-              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              className={`mt-5 w-full ${primaryActionClass}`}
               onClick={() => {
                 if (!topUpPlan) {
                   return;
@@ -1938,6 +1962,7 @@ export default function PetClient({ id }: Props) {
             >
               Продолжить
             </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -2044,6 +2069,13 @@ export default function PetClient({ id }: Props) {
           </div>
         </div>
       ) : null}
+      <ErrorToast
+        message={cleanSuccess}
+        onClose={() => setCleanSuccess(null)}
+        offset={88}
+        variant="success"
+      />
+      <ErrorToast message={error} onClose={() => setError(null)} />
     </main>
   );
 }

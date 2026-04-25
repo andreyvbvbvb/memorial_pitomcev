@@ -649,6 +649,7 @@ const CAROUSEL_DESIRED_SPACING = 20;
 const CAROUSEL_MIN_RADIUS = 30;
 const CAROUSEL_POP_DISTANCE = 3.6;
 const CAROUSEL_SCALE_BOOST = 0.1;
+const CAROUSEL_INITIAL_ACTIVE_ROTATION_Y = THREE.MathUtils.degToRad(-20);
 
 const getCarouselRadius = (count: number) =>
   Math.max(CAROUSEL_MIN_RADIUS, (CAROUSEL_DESIRED_SPACING * Math.max(1, count)) / (Math.PI * 2));
@@ -738,7 +739,7 @@ function RowCarouselStage({
   const activeIndexRef = useRef(activeIndex);
   const onArriveRef = useRef(onArrive);
   const onAnimationEndRef = useRef(onAnimationEnd);
-  const activeRotationYRef = useRef(0);
+  const activeRotationYRef = useRef(CAROUSEL_INITIAL_ACTIVE_ROTATION_Y);
   const activeDragRef = useRef<{
     dragging: boolean;
     pointerId: number | null;
@@ -748,7 +749,7 @@ function RowCarouselStage({
     dragging: false,
     pointerId: null,
     startX: 0,
-    startRotation: 0
+    startRotation: CAROUSEL_INITIAL_ACTIVE_ROTATION_Y
   });
 
   useEffect(() => {
@@ -775,12 +776,12 @@ function RowCarouselStage({
   }, []);
 
   useEffect(() => {
-    activeRotationYRef.current = 0;
+    activeRotationYRef.current = CAROUSEL_INITIAL_ACTIVE_ROTATION_Y;
     activeDragRef.current = {
       dragging: false,
       pointerId: null,
       startX: 0,
-      startRotation: 0
+      startRotation: CAROUSEL_INITIAL_ACTIVE_ROTATION_Y
     };
     document.body.style.cursor = "";
   }, [activeIndex, targetIndex]);

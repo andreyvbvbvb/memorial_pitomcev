@@ -15,6 +15,7 @@ export type OptionItem = {
   id: string;
   name: string;
   description: string;
+  allowedUsers?: readonly string[];
 };
 
 export const DEFAULT_OPTION: OptionItem = {
@@ -73,6 +74,27 @@ export const ambienceOptions: OptionItem[] = [
   { id: "sunset", name: "Закат", description: "Тёплые оттенки" },
   { id: "night", name: "Ночь", description: "Звёздное небо" }
 ];
+
+export const normalizeModelUserKey = (value?: string | null) =>
+  value?.trim().toLowerCase() ?? "";
+
+export const optionAllowedForUser = (option: OptionItem, username?: string | null) => {
+  if (!option.allowedUsers?.length) {
+    return true;
+  }
+  const normalizedUsername = normalizeModelUserKey(username);
+  if (!normalizedUsername) {
+    return false;
+  }
+  return option.allowedUsers.some(
+    (allowedUser) => normalizeModelUserKey(allowedUser) === normalizedUsername
+  );
+};
+
+export const filterOptionsForUser = (
+  options: OptionItem[],
+  username?: string | null
+) => options.filter((option) => optionAllowedForUser(option, username));
 
 export const optionById = (options: OptionItem[], id?: string): OptionItem =>
   options.find((item) => item.id === id) ?? options[0] ?? DEFAULT_OPTION;

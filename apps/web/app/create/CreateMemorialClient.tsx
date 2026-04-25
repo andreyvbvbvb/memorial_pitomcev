@@ -52,17 +52,18 @@ import {
 } from "../../lib/gifts";
 import { giftModelsGenerated } from "../../lib/gifts.generated";
 import {
-  environmentOptions,
-  houseOptions,
-  optionById,
-  roofOptions,
-  wallOptions,
-  signOptions,
-  frameLeftOptions,
-  frameRightOptions,
-  matOptions,
-  bowlFoodOptions,
-  bowlWaterOptions
+  bowlFoodOptions as allBowlFoodOptions,
+  bowlWaterOptions as allBowlWaterOptions,
+  environmentOptions as allEnvironmentOptions,
+  filterOptionsForUser,
+  frameLeftOptions as allFrameLeftOptions,
+  frameRightOptions as allFrameRightOptions,
+  houseOptions as allHouseOptions,
+  matOptions as allMatOptions,
+  roofOptions as allRoofOptions,
+  signOptions as allSignOptions,
+  wallOptions as allWallOptions,
+  type OptionItem
 } from "../../lib/memorial-options";
 
 ensureDracoLoader();
@@ -298,18 +299,18 @@ const initialState: FormState = {
   lat: "",
   lng: "",
   markerStyle: markerStyles[0]?.id ?? "dog",
-  environmentId: environmentOptions[0]?.id ?? "summer",
+  environmentId: allEnvironmentOptions[0]?.id ?? "summer",
   environmentSeason: getSeasonForDate(),
   environmentSeasonAuto: false,
-  houseId: houseOptions[0]?.id ?? "budka_1",
-  roofId: roofOptions[0]?.id ?? "roof_1",
-  wallId: wallOptions[0]?.id ?? "wall_1",
-  signId: signOptions[1]?.id ?? "sign_1",
-  frameLeftId: frameLeftOptions[1]?.id ?? "frame_left_1",
-  frameRightId: frameRightOptions[1]?.id ?? "frame_right_1",
-  matId: matOptions[1]?.id ?? "mat_1",
-  bowlFoodId: bowlFoodOptions[1]?.id ?? "bowl_food_1",
-  bowlWaterId: bowlWaterOptions[1]?.id ?? "bowl_water_1",
+  houseId: allHouseOptions[0]?.id ?? "budka_1",
+  roofId: allRoofOptions[0]?.id ?? "roof_1",
+  wallId: allWallOptions[0]?.id ?? "wall_1",
+  signId: allSignOptions[1]?.id ?? "sign_1",
+  frameLeftId: allFrameLeftOptions[1]?.id ?? "frame_left_1",
+  frameRightId: allFrameRightOptions[1]?.id ?? "frame_right_1",
+  matId: allMatOptions[1]?.id ?? "mat_1",
+  bowlFoodId: allBowlFoodOptions[1]?.id ?? "bowl_food_1",
+  bowlWaterId: allBowlWaterOptions[1]?.id ?? "bowl_water_1",
   roofColor: colorPalette[0] ?? "#F36C6C",
   wallColor: colorPalette[1] ?? "#F2B476",
   signColor: colorPalette[16] ?? "#E9D1B3",
@@ -327,6 +328,7 @@ export default function CreateMemorialClient() {
   const [loading, setLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
+  const [currentUserLogin, setCurrentUserLogin] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -463,6 +465,46 @@ export default function CreateMemorialClient() {
     () => markerVariantsForSpecies(markerCategory),
     [markerCategory]
   );
+  const environmentOptions = useMemo(
+    () => filterOptionsForUser(allEnvironmentOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const houseOptions = useMemo(
+    () => filterOptionsForUser(allHouseOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const roofOptions = useMemo(
+    () => filterOptionsForUser(allRoofOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const wallOptions = useMemo(
+    () => filterOptionsForUser(allWallOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const signOptions = useMemo(
+    () => filterOptionsForUser(allSignOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const frameLeftOptions = useMemo(
+    () => filterOptionsForUser(allFrameLeftOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const frameRightOptions = useMemo(
+    () => filterOptionsForUser(allFrameRightOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const matOptions = useMemo(
+    () => filterOptionsForUser(allMatOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const bowlFoodOptions = useMemo(
+    () => filterOptionsForUser(allBowlFoodOptions, currentUserLogin),
+    [currentUserLogin]
+  );
+  const bowlWaterOptions = useMemo(
+    () => filterOptionsForUser(allBowlWaterOptions, currentUserLogin),
+    [currentUserLogin]
+  );
   const memorialPlan = useMemo(
     () => MEMORIAL_PLANS.find((plan) => plan.id === memorialPlanId) ?? MEMORIAL_PLANS[0],
     [memorialPlanId]
@@ -476,6 +518,81 @@ export default function CreateMemorialClient() {
     () => buildHouseVariantGroup(houseOptions),
     [houseOptions]
   );
+  useEffect(() => {
+    const firstId = (options: OptionItem[]) => options[0]?.id ?? "";
+    setForm((prev) => {
+      const nextEnvironmentId = environmentOptions.some((option) => option.id === prev.environmentId)
+        ? prev.environmentId
+        : firstId(environmentOptions);
+      const nextHouseId = houseOptions.some((option) => option.id === prev.houseId)
+        ? prev.houseId
+        : firstId(houseOptions);
+      const nextRoofId = roofOptions.some((option) => option.id === prev.roofId)
+        ? prev.roofId
+        : firstId(roofOptions);
+      const nextWallId = wallOptions.some((option) => option.id === prev.wallId)
+        ? prev.wallId
+        : firstId(wallOptions);
+      const nextSignId = signOptions.some((option) => option.id === prev.signId)
+        ? prev.signId
+        : firstId(signOptions);
+      const nextFrameLeftId = frameLeftOptions.some((option) => option.id === prev.frameLeftId)
+        ? prev.frameLeftId
+        : firstId(frameLeftOptions);
+      const nextFrameRightId = frameRightOptions.some((option) => option.id === prev.frameRightId)
+        ? prev.frameRightId
+        : firstId(frameRightOptions);
+      const nextMatId = matOptions.some((option) => option.id === prev.matId)
+        ? prev.matId
+        : firstId(matOptions);
+      const nextBowlFoodId = bowlFoodOptions.some((option) => option.id === prev.bowlFoodId)
+        ? prev.bowlFoodId
+        : firstId(bowlFoodOptions);
+      const nextBowlWaterId = bowlWaterOptions.some((option) => option.id === prev.bowlWaterId)
+        ? prev.bowlWaterId
+        : firstId(bowlWaterOptions);
+
+      if (
+        nextEnvironmentId === prev.environmentId &&
+        nextHouseId === prev.houseId &&
+        nextRoofId === prev.roofId &&
+        nextWallId === prev.wallId &&
+        nextSignId === prev.signId &&
+        nextFrameLeftId === prev.frameLeftId &&
+        nextFrameRightId === prev.frameRightId &&
+        nextMatId === prev.matId &&
+        nextBowlFoodId === prev.bowlFoodId &&
+        nextBowlWaterId === prev.bowlWaterId
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        environmentId: nextEnvironmentId,
+        houseId: nextHouseId,
+        roofId: nextRoofId,
+        wallId: nextWallId,
+        signId: nextSignId,
+        frameLeftId: nextFrameLeftId,
+        frameRightId: nextFrameRightId,
+        matId: nextMatId,
+        bowlFoodId: nextBowlFoodId,
+        bowlWaterId: nextBowlWaterId
+      };
+    });
+  }, [
+    bowlFoodOptions,
+    bowlWaterOptions,
+    environmentOptions,
+    frameLeftOptions,
+    frameRightOptions,
+    houseOptions,
+    matOptions,
+    roofOptions,
+    signOptions,
+    wallOptions
+  ]);
   const selectedHouseVariant = splitHouseVariantId(form.houseId);
   const selectedHouseBaseId =
     selectedHouseVariant.baseId || houseVariantGroup.baseOptions[0]?.id || form.houseId;
@@ -925,8 +1042,13 @@ export default function CreateMemorialClient() {
           router.replace("/auth");
           return;
         }
-        const data = (await response.json()) as { id: string; accessLevel?: AccessLevel };
+        const data = (await response.json()) as {
+          id: string;
+          login?: string | null;
+          accessLevel?: AccessLevel;
+        };
         setForm((prev) => (prev.ownerId ? prev : { ...prev, ownerId: data.id }));
+        setCurrentUserLogin(data.login ?? null);
         setAccessLevel(data.accessLevel ?? "USER");
       } catch {
         router.replace("/auth");
@@ -1521,7 +1643,15 @@ export default function CreateMemorialClient() {
     bowlFoodOptions.forEach((option) => add("bowl-food", option.id));
     bowlWaterOptions.forEach((option) => add("bowl-water", option.id));
     return Array.from(urls.values());
-  }, [houseVariantGroup.baseOptions]);
+  }, [
+    bowlFoodOptions,
+    bowlWaterOptions,
+    environmentOptions,
+    houseOptions,
+    houseVariantGroup.baseOptions,
+    matOptions,
+    signOptions
+  ]);
 
   const warmAsset = useCallback(async (url: string) => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -1768,7 +1898,7 @@ export default function CreateMemorialClient() {
 
   const renderOptionGrid = (
     category: string,
-    options: typeof environmentOptions,
+    options: OptionItem[],
     selectedId: string,
     onSelect: (id: string) => void,
     imageCategory: string = category

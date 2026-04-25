@@ -4,6 +4,7 @@ export type GeneratedOptionItem = {
   id: string;
   name: string;
   description: string;
+  allowedUsers?: readonly string[];
 };
 
 export const environmentOptionsGenerated = [

@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 
 const ROOT = path.resolve(process.cwd(), "public", "models");
+const EXTRA_DIR_NAME = "extra";
+const SHARED_USER_SEPARATOR = "+";
 
 const envNameMap = {
   summer: "Лето",
@@ -115,6 +117,54 @@ const humanize = (value) =>
     .trim()
     .replace(/^./, (char) => char.toUpperCase());
 
+const toPosixPath = (value) => value.split(path.sep).join("/");
+
+const normalizeUserKey = (value) => value.trim().toLowerCase();
+
+const serializeAllowedUsers = (allowedUsers) =>
+  Array.isArray(allowedUsers) && allowedUsers.length > 0
+    ? [...allowedUsers].map(normalizeUserKey).sort().join(",")
+    : "";
+
+const readFilesRecursive = (dirPath) => {
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  return entries.flatMap((entry) => {
+    const entryPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      return readFilesRecursive(entryPath);
+    }
+    return [entryPath];
+  });
+};
+
+const readAllowedUsers = (categoryDirPath, filePath) => {
+  const relativeDir = path.relative(categoryDirPath, path.dirname(filePath));
+  if (!relativeDir || relativeDir === ".") {
+    return undefined;
+  }
+  const segments = relativeDir.split(path.sep).filter(Boolean);
+  const extraIndex = segments.indexOf(EXTRA_DIR_NAME);
+  if (extraIndex === -1) {
+    return undefined;
+  }
+  const usersSegment = segments[extraIndex + 1];
+  if (!usersSegment) {
+    return undefined;
+  }
+  const allowedUsers = usersSegment
+    .split(SHARED_USER_SEPARATOR)
+    .map(normalizeUserKey)
+    .filter(Boolean);
+  return allowedUsers.length > 0 ? allowedUsers : undefined;
+};
+
+const makeOptionItem = (id, name, description, allowedUsers) => ({
+  id,
+  name,
+  description,
+  ...(allowedUsers?.length ? { allowedUsers } : {})
+});
+
 const makeName = (category, id) => {
   if (category.naming === "environment") {
     const baseName = envNameMap[id] ?? humanize(id);
@@ -183,7 +233,7 @@ const parseEnvironmentId = (id) => {
   return { baseId: id, season: null };
 };
 
-const makeEnvironmentOption = (baseId) => {
+const makeEnvironmentOption = (baseId, allowedUsers) => {
   const number = extractNumber(baseId);
   const isNumericId = /^[0-9]+$/.test(baseId);
   const labelNumber = isNumericId ? baseId : number;
@@ -192,11 +242,7 @@ const makeEnvironmentOption = (baseId) => {
     (isNumericId
       ? `Поверхность ${labelNumber}`
       : humanize(baseId));
-  return {
-    id: baseId,
-    name,
-    description: "Автодобавлено"
-  };
+  return makeOptionItem(baseId, name, "Автодобавлено", allowedUsers);
 };
 
 const readCategory = (category) => {
@@ -204,19 +250,24 @@ const readCategory = (category) => {
   if (!fs.existsSync(dirPath)) {
     return [];
   }
-  return fs
-    .readdirSync(dirPath)
-    .filter((file) => file.toLowerCase().endsWith(".glb"))
-    .filter((file) => {
+  return readFilesRecursive(dirPath)
+    .filter((filePath) => filePath.toLowerCase().endsWith(".glb"))
+    .filter((filePath) => {
+      const file = path.basename(filePath);
       if (!category.filePrefix) {
         return true;
       }
       return path.basename(file).startsWith(category.filePrefix);
     })
-    .map((file) => ({
-      file,
-      id: toId(file, category.filePrefix)
-    }))
+    .map((filePath) => {
+      const file = path.basename(filePath);
+      return {
+        file,
+        relativePath: toPosixPath(path.relative(dirPath, filePath)),
+        id: toId(file, category.filePrefix),
+        allowedUsers: readAllowedUsers(dirPath, filePath)
+      };
+    })
     .sort((a, b) => compareEntries(category, a, b));
 };
 
@@ -235,14 +286,21 @@ if (environmentCategory) {
     if (!seasonalMap[baseId]) {
       seasonalMap[baseId] = {};
     }
-    const url = `${environmentCategory.urlPrefix}${item.file}`;
+    const url = `${environmentCategory.urlPrefix}${item.relativePath}`;
     if (season) {
       seasonalMap[baseId][season] = url;
     } else if (!seasonalMap[baseId].summer) {
       seasonalMap[baseId].summer = url;
     }
-    if (!optionMap.has(baseId)) {
-      optionMap.set(baseId, makeEnvironmentOption(baseId));
+    const existingOption = optionMap.get(baseId);
+    if (existingOption) {
+      if (serializeAllowedUsers(existingOption.allowedUsers) !== serializeAllowedUsers(item.allowedUsers)) {
+        throw new Error(
+          `Environment option "${baseId}" mixes public and extra access. Keep all seasonal files in the same visibility scope.`
+        );
+      }
+    } else {
+      optionMap.set(baseId, makeEnvironmentOption(baseId, item.allowedUsers));
     }
   });
 
@@ -272,12 +330,21 @@ categories
     const modelMap = {};
     const optionList = [];
     items.forEach((item) => {
-      modelMap[item.id] = `${category.urlPrefix}${item.file}`;
-      optionList.push({
-        id: item.id,
-        name: makeName(category, item.id),
-        description: makeDescription(category, item.id)
-      });
+      const url = `${category.urlPrefix}${item.relativePath}`;
+      if (modelMap[item.id] && modelMap[item.id] !== url) {
+        throw new Error(
+          `Duplicate model id "${item.id}" in category "${category.key}". Use unique file names inside the category, including extra user folders.`
+        );
+      }
+      modelMap[item.id] = url;
+      optionList.push(
+        makeOptionItem(
+          item.id,
+          makeName(category, item.id),
+          makeDescription(category, item.id),
+          item.allowedUsers
+        )
+      );
     });
     mappings[category.key] = modelMap;
     options[category.key] = optionList;
@@ -288,7 +355,7 @@ if (houseCategory) {
   const items = readCategory(houseCategory);
   const slotsMap = {};
   items.forEach((item) => {
-    const filePath = path.join(ROOT, houseCategory.dir, item.file);
+    const filePath = path.join(ROOT, houseCategory.dir, item.relativePath);
     const gltf = readGlbJson(filePath);
     if (!gltf || !Array.isArray(gltf.nodes)) {
       return;
@@ -341,6 +408,7 @@ export type GeneratedOptionItem = {
   id: string;
   name: string;
   description: string;
+  allowedUsers?: readonly string[];
 };
 
 ${formatExport("environmentOptionsGenerated", options.environment)}
