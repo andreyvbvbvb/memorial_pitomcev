@@ -197,15 +197,18 @@ type AuthUser = {
 
 type Props = {
   id: string;
+  mode?: "view" | "edit";
 };
 
-export default function PetClient({ id }: Props) {
+export default function PetClient({ id, mode = "view" }: Props) {
+  const isEditMode = mode === "edit";
   const [pet, setPet] = useState<Pet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -262,6 +265,7 @@ export default function PetClient({ id }: Props) {
     camera: THREE.Camera;
   } | null>(null);
   const previewRefreshInFlightRef = useRef(false);
+  const editModeInitializedRef = useRef(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -339,6 +343,7 @@ export default function PetClient({ id }: Props) {
       if (!response.ok) {
         setCurrentUser(null);
         setWalletBalance(null);
+        setAuthResolved(true);
         return;
       }
       const data = (await response.json()) as AuthUser;
@@ -346,6 +351,8 @@ export default function PetClient({ id }: Props) {
     } catch {
       setCurrentUser(null);
       setWalletBalance(null);
+    } finally {
+      setAuthResolved(true);
     }
   }, [apiUrl]);
 
@@ -381,6 +388,29 @@ export default function PetClient({ id }: Props) {
       loadWallet(currentUser.id);
     }
   }, [currentUser, loadWallet]);
+
+  useEffect(() => {
+    if (!isEditMode || loading || !authResolved) {
+      return;
+    }
+    if (!currentUser?.id) {
+      router.replace("/auth");
+      return;
+    }
+    if (!pet) {
+      return;
+    }
+    if (pet.ownerId !== currentUser.id) {
+      router.replace(`/pets/${id}`);
+      return;
+    }
+    if (!editModeInitializedRef.current) {
+      editModeInitializedRef.current = true;
+      setTimeout(() => {
+        openEditDialog();
+      }, 0);
+    }
+  }, [authResolved, currentUser?.id, id, isEditMode, loading, pet, router]);
 
   useEffect(() => {
     if (!pet?.ownerId) {
@@ -755,6 +785,9 @@ export default function PetClient({ id }: Props) {
       setAppearanceDraft(null);
       setAppearanceReviewOpen(false);
       setAppearanceReviewVisible(false);
+      if (isEditMode) {
+        router.replace(`/pets/${id}`);
+      }
     }, 180);
   };
 
@@ -1282,7 +1315,9 @@ export default function PetClient({ id }: Props) {
             }
           : prev
       );
-      setAppearanceSuccess("Оформление мемориала обновлено.");
+      if (!isEditMode) {
+        setAppearanceSuccess("Оформление мемориала обновлено.");
+      }
       closeEditDialog();
     } catch (err) {
       setAppearanceError(err instanceof Error ? err.message : "Ошибка сохранения");
@@ -1752,7 +1787,7 @@ export default function PetClient({ id }: Props) {
       <div className="pointer-events-none fixed bottom-0 left-0 z-[1] h-80 w-80 rounded-full bg-[#d3a27f]/14 blur-[120px]" />
 
       <div className="fixed inset-0 z-10 pointer-events-none">
-        {!editDialogOpen ? (
+        {!editDialogOpen && !isEditMode ? (
           <>
         <div className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]">
           <div className="rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur">
@@ -2049,7 +2084,7 @@ export default function PetClient({ id }: Props) {
                   <div className="grid gap-2">
                     <button
                       type="button"
-                      onClick={openEditDialog}
+                      onClick={() => router.push(`/edit?id=${id}`)}
                       className={secondaryActionClass}
                     >
                       Редактировать домик
