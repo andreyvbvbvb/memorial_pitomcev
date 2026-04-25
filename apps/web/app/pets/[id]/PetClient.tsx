@@ -41,6 +41,7 @@ import {
   frameRightOptions as allFrameRightOptions,
   houseOptions as allHouseOptions,
   matOptions as allMatOptions,
+  optionById,
   roofOptions as allRoofOptions,
   signOptions as allSignOptions,
   wallOptions as allWallOptions,
@@ -251,6 +252,8 @@ export default function PetClient({ id }: Props) {
   const [appearanceError, setAppearanceError] = useState<string | null>(null);
   const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
   const [savingAppearance, setSavingAppearance] = useState(false);
+  const [appearanceReviewOpen, setAppearanceReviewOpen] = useState(false);
+  const [appearanceReviewVisible, setAppearanceReviewVisible] = useState(false);
   const [previewContextReady, setPreviewContextReady] = useState(false);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
@@ -734,8 +737,13 @@ export default function PetClient({ id }: Props) {
     setActivePanel((prev) => (prev === panel ? null : panel));
   const openEditDialog = () => {
     setAppearanceError(null);
+    setAppearanceReviewOpen(false);
+    setAppearanceReviewVisible(false);
     setAppearanceDraft(currentAppearance);
     setAppearanceTab("house");
+    setActivePanel(null);
+    setGiftPanelOpen(false);
+    setGiftSlotsVisible(false);
     setEditDialogOpen(true);
     requestAnimationFrame(() => setEditDialogVisible(true));
   };
@@ -745,7 +753,20 @@ export default function PetClient({ id }: Props) {
     setTimeout(() => {
       setEditDialogOpen(false);
       setAppearanceDraft(null);
+      setAppearanceReviewOpen(false);
+      setAppearanceReviewVisible(false);
     }, 180);
+  };
+
+  const openAppearanceReview = () => {
+    setAppearanceError(null);
+    setAppearanceReviewOpen(true);
+    requestAnimationFrame(() => setAppearanceReviewVisible(true));
+  };
+
+  const closeAppearanceReview = () => {
+    setAppearanceReviewVisible(false);
+    setTimeout(() => setAppearanceReviewOpen(false), 180);
   };
 
   const updateAppearanceDraft = <K extends keyof AppearanceDraft>(
@@ -791,6 +812,10 @@ export default function PetClient({ id }: Props) {
     }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (appearanceReviewOpen) {
+          closeAppearanceReview();
+          return;
+        }
         closeEditDialog();
       }
     };
@@ -800,7 +825,7 @@ export default function PetClient({ id }: Props) {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", onKey);
     };
-  }, [editDialogOpen]);
+  }, [appearanceReviewOpen, editDialogOpen]);
 
   const capturePreviewImage = useCallback(async () => {
     const renderContext = previewRenderRef.current;
@@ -1310,6 +1335,75 @@ export default function PetClient({ id }: Props) {
     () => buildDirtModelUrls(effectiveHouseId),
     [effectiveHouseId]
   );
+  const appearanceReviewItems = useMemo(() => {
+    const items: { label: string; value: string }[] = [
+      { label: "Домик", value: optionById(houseOptions, draftAppearance.houseId).name }
+    ];
+    if (houseSlots.roof) {
+      items.push({ label: "Крыша", value: optionById(roofOptions, draftAppearance.roofId).name });
+    }
+    if (houseSlots.wall) {
+      items.push({ label: "Стены", value: optionById(wallOptions, draftAppearance.wallId).name });
+    }
+    if (houseSlots.sign) {
+      items.push({ label: "Украшение", value: optionById(signOptions, draftAppearance.signId).name });
+    }
+    if (houseSlots.frameLeft) {
+      items.push({
+        label: "Рамка слева",
+        value: optionById(frameLeftOptions, draftAppearance.frameLeftId).name
+      });
+    }
+    if (houseSlots.frameRight) {
+      items.push({
+        label: "Рамка справа",
+        value: optionById(frameRightOptions, draftAppearance.frameRightId).name
+      });
+    }
+    if (houseSlots.mat) {
+      items.push({ label: "Коврик", value: optionById(matOptions, draftAppearance.matId).name });
+    }
+    if (houseSlots.bowlFood) {
+      items.push({
+        label: "Миска с кормом",
+        value: optionById(bowlFoodOptions, draftAppearance.bowlFoodId).name
+      });
+    }
+    if (houseSlots.bowlWater) {
+      items.push({
+        label: "Миска с водой",
+        value: optionById(bowlWaterOptions, draftAppearance.bowlWaterId).name
+      });
+    }
+    return items;
+  }, [
+    bowlFoodOptions,
+    bowlWaterOptions,
+    draftAppearance.bowlFoodId,
+    draftAppearance.bowlWaterId,
+    draftAppearance.frameLeftId,
+    draftAppearance.frameRightId,
+    draftAppearance.houseId,
+    draftAppearance.matId,
+    draftAppearance.roofId,
+    draftAppearance.signId,
+    draftAppearance.wallId,
+    frameLeftOptions,
+    frameRightOptions,
+    houseOptions,
+    houseSlots.bowlFood,
+    houseSlots.bowlWater,
+    houseSlots.frameLeft,
+    houseSlots.frameRight,
+    houseSlots.mat,
+    houseSlots.roof,
+    houseSlots.sign,
+    houseSlots.wall,
+    matOptions,
+    roofOptions,
+    signOptions,
+    wallOptions
+  ]);
 
   useEffect(() => {
     if (
@@ -1487,6 +1581,12 @@ export default function PetClient({ id }: Props) {
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = "absolute bottom-0 left-[4.5rem] sm:left-20";
+  const editEditorPanelClass =
+    "pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]";
+  const editFinishButtonClass =
+    "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+  const editCancelButtonClass =
+    "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
   const appearanceOptionImage = (category: string, optionId: string) =>
     optionId === "none" ? null : `/memorial/options/${category}/${optionId}.png`;
   const appearanceColorField =
@@ -1652,6 +1752,8 @@ export default function PetClient({ id }: Props) {
       <div className="pointer-events-none fixed bottom-0 left-0 z-[1] h-80 w-80 rounded-full bg-[#d3a27f]/14 blur-[120px]" />
 
       <div className="fixed inset-0 z-10 pointer-events-none">
+        {!editDialogOpen ? (
+          <>
         <div className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]">
           <div className="rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur">
             <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
@@ -2196,212 +2298,308 @@ export default function PetClient({ id }: Props) {
             ) : null}
           </div>
         </div>
+          </>
+        ) : null}
       </div>
 
       {editDialogOpen && appearanceDraft ? (
-        <div
-          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
-            editDialogVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <button
-            type="button"
-            aria-label="Закрыть"
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={closeEditDialog}
-          />
+        <>
           <div
-            className={`relative flex w-full max-w-[820px] flex-col rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-              editDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+            className={`fixed inset-0 z-[999] transition-opacity duration-200 ${
+              editDialogVisible ? "opacity-100" : "opacity-0"
             }`}
           >
-            <div className={`${panelSectionClass} min-h-0 max-h-[min(78vh,760px)] overflow-hidden`}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className={panelLabelClass}>Редактирование</p>
-                  <h3 className="mt-1 text-lg font-black text-[#5d4037]">
-                    Домик и детали мемориала
-                  </h3>
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),transparent_35%,rgba(214,190,176,0.14)_100%)]" />
+            <div className="pointer-events-none absolute left-1/2 top-[calc(var(--app-header-height,0px)+0.75rem)] z-10 -translate-x-1/2 text-center">
+              <div className="rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur">
+                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
+                  Редактирование
                 </div>
-                <button
-                  type="button"
-                  className={secondaryActionClass}
-                  onClick={closeEditDialog}
-                >
-                  Закрыть
-                </button>
+                <div className="mt-1 text-lg font-black text-[#5d4037]">{pet.name}</div>
+                <div className="text-xs font-semibold text-[#8d6e63]">
+                  Меняется только домик и его детали
+                </div>
               </div>
+            </div>
 
-              <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
-                <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
-                  {appearanceTabs.map((tab) => {
-                    const isActive = appearanceTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setAppearanceTab(tab.id)}
-                        aria-label={tab.label}
-                        title={tab.label}
-                        className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
-                          isActive
-                            ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-                            : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
-                        }`}
-                      >
-                        {renderAppearanceTabIcon(tab.id)}
-                        <span className="sr-only">{tab.label}</span>
-                      </button>
-                    );
-                  })}
+            <div className={editEditorPanelClass}>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]">
+                <div className="border-b border-[#eadfd9] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]">
+                      Редактор мемориала
+                    </h3>
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]">
+                      Только оформление
+                    </span>
+                  </div>
                 </div>
+                <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3">
+                  <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
+                    {appearanceTabs.map((tab) => {
+                      const isActive = appearanceTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setAppearanceTab(tab.id)}
+                          aria-label={tab.label}
+                          title={tab.label}
+                          className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
+                            isActive
+                              ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+                              : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
+                          }`}
+                        >
+                          {renderAppearanceTabIcon(tab.id)}
+                          <span className="sr-only">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                  <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto pr-1 pb-3">
-                    {appearanceTab === "house" ? (
-                      <div className="grid gap-5">
-                        <div className="grid gap-3">
-                          <h4 className="text-base font-semibold text-slate-900">
-                            Форма домика
-                          </h4>
-                          {renderAppearanceOptionGrid(
-                            "house-base",
-                            houseBaseOptions,
-                            selectedHouseBaseId,
-                            (baseId) => {
-                              const nextVariant =
-                                houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
-                              updateAppearanceDraft("houseId", nextVariant);
-                            },
-                            "house"
-                          )}
-                        </div>
-                        {houseTextureOptions.length > 0 ? (
+                  <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+                    <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3">
+                      {appearanceTab === "house" ? (
+                        <div className="grid gap-5">
                           <div className="grid gap-3">
-                            <h4 className="text-base font-semibold text-slate-900">
-                              Текстура домика
-                            </h4>
+                            <h4 className="text-base font-semibold text-slate-900">Форма домика</h4>
                             {renderAppearanceOptionGrid(
-                              "house-texture",
-                              houseTextureOptions,
-                              appearanceDraft.houseId,
-                              (variantId) => updateAppearanceDraft("houseId", variantId),
-                              "house-texture"
+                              "house-base",
+                              houseBaseOptions,
+                              selectedHouseBaseId,
+                              (baseId) => {
+                                const nextVariant =
+                                  houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
+                                updateAppearanceDraft("houseId", nextVariant);
+                              },
+                              "house"
                             )}
                           </div>
-                        ) : null}
-                      </div>
-                    ) : appearanceTab === "roof" ? (
-                      renderAppearanceOptionGrid(
-                        "roof",
-                        roofOptions,
-                        appearanceDraft.roofId,
-                        (id) => updateAppearanceDraft("roofId", id)
-                      )
-                    ) : appearanceTab === "wall" ? (
-                      renderAppearanceOptionGrid(
-                        "wall",
-                        wallOptions,
-                        appearanceDraft.wallId,
-                        (id) => updateAppearanceDraft("wallId", id)
-                      )
-                    ) : appearanceTab === "sign" ? (
-                      renderAppearanceOptionGrid(
-                        "sign",
-                        signOptions,
-                        appearanceDraft.signId,
-                        (id) => updateAppearanceDraft("signId", id)
-                      )
-                    ) : appearanceTab === "frameLeft" ? (
-                      renderAppearanceOptionGrid(
-                        "frame-left",
-                        frameLeftOptions,
-                        appearanceDraft.frameLeftId,
-                        (id) => updateAppearanceDraft("frameLeftId", id)
-                      )
-                    ) : appearanceTab === "frameRight" ? (
-                      renderAppearanceOptionGrid(
-                        "frame-right",
-                        frameRightOptions,
-                        appearanceDraft.frameRightId,
-                        (id) => updateAppearanceDraft("frameRightId", id)
-                      )
-                    ) : appearanceTab === "mat" ? (
-                      renderAppearanceOptionGrid(
-                        "mat",
-                        matOptions,
-                        appearanceDraft.matId,
-                        (id) => updateAppearanceDraft("matId", id)
-                      )
-                    ) : appearanceTab === "bowlFood" ? (
-                      renderAppearanceOptionGrid(
-                        "bowl-food",
-                        bowlFoodOptions,
-                        appearanceDraft.bowlFoodId,
-                        (id) => updateAppearanceDraft("bowlFoodId", id)
-                      )
-                    ) : appearanceTab === "bowlWater" ? (
-                      renderAppearanceOptionGrid(
-                        "bowl-water",
-                        bowlWaterOptions,
-                        appearanceDraft.bowlWaterId,
-                        (id) => updateAppearanceDraft("bowlWaterId", id)
-                      )
-                    ) : null}
-
-                    {appearanceColorField ? (
-                      <div className="mx-auto mt-4 grid w-full max-w-[440px] gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:max-w-[520px]">
-                        <div className="text-sm font-semibold text-slate-900">Цвет детали</div>
-                        <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
-                          {colorPalette.map((color) => {
-                            const isActive = appearanceDraft[appearanceColorField] === color;
-                            return (
-                              <button
-                                key={color}
-                                type="button"
-                                onClick={() => updateAppearanceDraft(appearanceColorField, color)}
-                                className={`h-10 w-full rounded-xl border-2 transition ${
-                                  isActive
-                                    ? "border-slate-900 ring-2 ring-sky-200"
-                                    : "border-white hover:border-slate-300"
-                                }`}
-                                style={{ backgroundColor: color }}
-                                aria-label={color}
-                                title={color}
-                              />
-                            );
-                          })}
+                          {houseTextureOptions.length > 0 ? (
+                            <div className="grid gap-3">
+                              <h4 className="text-base font-semibold text-slate-900">
+                                Текстура домика
+                              </h4>
+                              {renderAppearanceOptionGrid(
+                                "house-texture",
+                                houseTextureOptions,
+                                appearanceDraft.houseId,
+                                (variantId) => updateAppearanceDraft("houseId", variantId),
+                                "house-texture"
+                              )}
+                            </div>
+                          ) : null}
                         </div>
-                      </div>
-                    ) : null}
+                      ) : appearanceTab === "roof" ? (
+                        renderAppearanceOptionGrid(
+                          "roof",
+                          roofOptions,
+                          appearanceDraft.roofId,
+                          (id) => updateAppearanceDraft("roofId", id)
+                        )
+                      ) : appearanceTab === "wall" ? (
+                        renderAppearanceOptionGrid(
+                          "wall",
+                          wallOptions,
+                          appearanceDraft.wallId,
+                          (id) => updateAppearanceDraft("wallId", id)
+                        )
+                      ) : appearanceTab === "sign" ? (
+                        renderAppearanceOptionGrid(
+                          "sign",
+                          signOptions,
+                          appearanceDraft.signId,
+                          (id) => updateAppearanceDraft("signId", id)
+                        )
+                      ) : appearanceTab === "frameLeft" ? (
+                        renderAppearanceOptionGrid(
+                          "frame-left",
+                          frameLeftOptions,
+                          appearanceDraft.frameLeftId,
+                          (id) => updateAppearanceDraft("frameLeftId", id)
+                        )
+                      ) : appearanceTab === "frameRight" ? (
+                        renderAppearanceOptionGrid(
+                          "frame-right",
+                          frameRightOptions,
+                          appearanceDraft.frameRightId,
+                          (id) => updateAppearanceDraft("frameRightId", id)
+                        )
+                      ) : appearanceTab === "mat" ? (
+                        renderAppearanceOptionGrid(
+                          "mat",
+                          matOptions,
+                          appearanceDraft.matId,
+                          (id) => updateAppearanceDraft("matId", id)
+                        )
+                      ) : appearanceTab === "bowlFood" ? (
+                        renderAppearanceOptionGrid(
+                          "bowl-food",
+                          bowlFoodOptions,
+                          appearanceDraft.bowlFoodId,
+                          (id) => updateAppearanceDraft("bowlFoodId", id)
+                        )
+                      ) : appearanceTab === "bowlWater" ? (
+                        renderAppearanceOptionGrid(
+                          "bowl-water",
+                          bowlWaterOptions,
+                          appearanceDraft.bowlWaterId,
+                          (id) => updateAppearanceDraft("bowlWaterId", id)
+                        )
+                      ) : null}
+
+                      {appearanceColorField ? (
+                        <div className="mx-auto mt-4 grid w-full max-w-[440px] gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:max-w-[520px]">
+                          <div className="text-sm font-semibold text-slate-900">Цвет детали</div>
+                          <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
+                            {colorPalette.map((color) => {
+                              const isActive = appearanceDraft[appearanceColorField] === color;
+                              return (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  onClick={() => updateAppearanceDraft(appearanceColorField, color)}
+                                  className={`h-10 w-full rounded-xl border-2 transition ${
+                                    isActive
+                                      ? "border-slate-900 ring-2 ring-sky-200"
+                                      : "border-white hover:border-slate-300"
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                  aria-label={color}
+                                  title={color}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {appearanceError ? (
-                <p className="text-xs font-semibold text-red-600">{appearanceError}</p>
-              ) : null}
-
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={closeEditDialog}
-                  className={secondaryActionClass}
-                >
-                  Отмена
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveAppearance}
-                  disabled={savingAppearance}
-                  className={primaryActionClass}
-                >
-                  {savingAppearance ? "Сохраняем..." : "Сохранить"}
-                </button>
-              </div>
+            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6">
+              <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
+                Отмена
+              </button>
+            </div>
+            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6">
+              <button
+                type="button"
+                onClick={openAppearanceReview}
+                className={editFinishButtonClass}
+              >
+                Завершить
+              </button>
             </div>
           </div>
-        </div>
+
+          {appearanceReviewOpen ? (
+            <div
+              className={`fixed inset-0 z-[1000] flex items-center justify-center px-4 transition-opacity duration-200 ${
+                appearanceReviewVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <button
+                type="button"
+                aria-label="Закрыть"
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={closeAppearanceReview}
+              />
+              <div
+                className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+                  appearanceReviewVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-900">Проверка мемориала</h3>
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    onClick={closeAppearanceReview}
+                  >
+                    Вернуться
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-6">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div className="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+                      <p>Мемориал: {pet.name}</p>
+                      <p>Период: {dateRange}</p>
+                    </div>
+                    <div className="mt-4 grid gap-2 md:grid-cols-2">
+                      {appearanceReviewItems.map((item) => (
+                        <div
+                          key={item.label}
+                          className="rounded-2xl border border-white bg-white px-4 py-3 text-sm text-slate-700"
+                        >
+                          <div className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                            {item.label}
+                          </div>
+                          <div className="mt-1 font-semibold text-slate-900">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <MemorialPreview
+                      terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
+                      terrainId={pet.memorial?.environmentId ?? null}
+                      houseUrl={resolveHouseModel(effectiveHouseId)}
+                      houseId={effectiveHouseId}
+                      parts={fullPartList}
+                      dirtUrls={dirtModelUrls}
+                      dirtLevel={dirtLevel}
+                      gifts={giftInstances}
+                      colors={colorOverrides}
+                      softEdges
+                      className="h-[420px]"
+                    />
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                      <div className="grid gap-3 text-sm text-slate-700">
+                        <p className="font-semibold text-slate-900">Сохранение изменений</p>
+                        <p className="text-xs text-slate-500">
+                          Будут обновлены только домик и его детали. Остальные данные мемориала не меняются.
+                        </p>
+                        {appearanceError ? (
+                          <p className="text-xs font-semibold text-red-600">{appearanceError}</p>
+                        ) : null}
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={closeEditDialog}
+                            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          >
+                            Отмена
+                          </button>
+                          <button
+                            type="button"
+                            onClick={closeAppearanceReview}
+                            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          >
+                            Назад к редактированию
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveAppearance}
+                            className="group inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
+                            disabled={savingAppearance}
+                          >
+                            {savingAppearance ? "Сохраняем..." : "Сохранить изменения"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       {extensionDialogOpen ? (
