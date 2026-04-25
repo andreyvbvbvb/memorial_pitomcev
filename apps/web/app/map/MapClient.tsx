@@ -756,10 +756,6 @@ function RowCarouselStage({
   }, [activeIndex]);
 
   useEffect(() => {
-    instanceRefs.current = new Array(items.length).fill(null);
-  }, [items.length]);
-
-  useEffect(() => {
     onArriveRef.current = onArrive;
   }, [onArrive]);
 
