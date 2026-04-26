@@ -1,10 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
+import {
+  authBackdropGlowClass,
+  authCardClass,
+  authHelperTextClass,
+  authInnerShellClass,
+  authInputClass,
+  authLabelClass,
+  authNoticeClass,
+  authPageShellClass,
+  authPrimaryButtonClass,
+  authSecondaryButtonClass,
+  authTitleClass
+} from "../../components/authTheme";
 
 type Profile = {
   id: string;
@@ -24,7 +36,6 @@ export default function ProfileClient() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [walletLoading, setWalletLoading] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -87,14 +98,12 @@ export default function ProfileClient() {
         payload.currentPassword = currentPassword.trim();
         payload.newPassword = newPassword.trim();
       }
-      const response = await fetch(`${apiUrl}/users/${encodeURIComponent(profile.id)}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          credentials: "include"
-        }
-      );
+      const response = await fetch(`${apiUrl}/users/${encodeURIComponent(profile.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include"
+      });
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || "Не удалось сохранить профиль");
@@ -114,187 +123,197 @@ export default function ProfileClient() {
     }
   };
 
-  const handleTopUp = async () => {
-    if (!profile) {
-      setError("Сначала загрузите профиль");
-      return;
-    }
-    setWalletLoading(true);
+  const handleLogout = async () => {
+    await fetch(`${apiUrl}/auth/logout`, {
+      method: "POST",
+      credentials: "include"
+    });
+    setProfile(null);
+    setLogin("");
+    setEmail("");
+    router.replace("/auth");
+  };
+
+  const handleCancelEditing = () => {
+    setEditing(false);
+    setLogin(profile?.login ?? "");
+    setEmail(profile?.email ?? "");
+    setCurrentPassword("");
+    setNewPassword("");
     setError(null);
-    setNotice(null);
-    try {
-      const response = await fetch(`${apiUrl}/wallet/top-up`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: profile.id, amount: 100 }),
-        credentials: "include"
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Ошибка пополнения");
-      }
-      const data = (await response.json()) as { coinBalance: number };
-      setProfile((prev) => (prev ? { ...prev, coinBalance: data.coinBalance } : prev));
-      setNotice("Баланс пополнен (+100)");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка пополнения");
-    } finally {
-      setWalletLoading(false);
-    }
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      <div className="flex flex-col gap-2" />
+    <div className={`${authPageShellClass} px-6 py-10`}>
+      <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
+      <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-      <section className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-4">
-            {loadingProfile ? (
-              <p className="text-sm text-slate-500">Загружаем профиль...</p>
-            ) : null}
-            <label className="grid gap-1 text-sm text-slate-700">
-              Логин
-              <input
-                className="rounded-2xl border border-slate-200 px-4 py-2"
-                value={login}
-                onChange={(event) => setLogin(event.target.value)}
-                placeholder="login"
-                disabled={!profile || !editing}
-              />
-              <span className="text-xs text-slate-500">
-                Можно менять. Допустимы a-z, 0-9 и подчёркивание.
-              </span>
-            </label>
+      <div className="relative z-10 mx-auto w-full max-w-5xl">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.85fr)]">
+          <div className={authCardClass}>
+            <div className={authInnerShellClass}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
+                    Профиль
+                  </p>
+                  <h1 className={`mt-2 ${authTitleClass}`}>Настройки аккаунта</h1>
+                  <p className={`mt-3 max-w-2xl ${authHelperTextClass}`}>
+                    Здесь можно изменить логин, email и пароль аккаунта.
+                  </p>
+                </div>
+                <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                  {loadingProfile ? "Загрузка" : editing ? "Редактирование" : "Просмотр"}
+                </div>
+              </div>
 
-            <label className="grid gap-1 text-sm text-slate-700">
-              Email
-              <input
-                className="rounded-2xl border border-slate-200 px-4 py-2"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="user@example.com"
-                disabled={!profile || !editing}
-              />
-            </label>
+              <div className="mt-6 grid gap-4">
+                {loadingProfile ? (
+                  <div className="rounded-[24px] border-[3px] border-white bg-[#f8f9fa] px-5 py-4 text-sm font-semibold text-[#8d6e63] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
+                    Загружаем профиль...
+                  </div>
+                ) : null}
 
-            {editing ? (
-              <>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Текущий пароль
+                <label className={authLabelClass}>
+                  Логин
                   <input
-                    type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={currentPassword}
-                    onChange={(event) => setCurrentPassword(event.target.value)}
-                    placeholder="••••••"
-                    disabled={!profile}
+                    className={authInputClass}
+                    value={login}
+                    onChange={(event) => setLogin(event.target.value)}
+                    placeholder="login"
+                    disabled={!profile || !editing}
+                  />
+                  <span className={authHelperTextClass}>
+                    Можно менять. Допустимы a-z, 0-9 и подчёркивание.
+                  </span>
+                </label>
+
+                <label className={authLabelClass}>
+                  Email
+                  <input
+                    className={authInputClass}
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="user@example.com"
+                    disabled={!profile || !editing}
                   />
                 </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Новый пароль
-                  <input
-                    type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    placeholder="••••••"
-                    disabled={!profile}
-                  />
-                </label>
-              </>
-            ) : null}
 
-            <div className="flex flex-wrap gap-2">
-              {!editing ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (profile) {
-                      setEditing(true);
-                      setError(null);
-                      setNotice(null);
-                    }
-                  }}
-                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-                  disabled={!profile}
-                >
-                  Редактировать профиль
-                </button>
-              ) : (
-                <>
+                {editing ? (
+                  <>
+                    <label className={authLabelClass}>
+                      Текущий пароль
+                      <input
+                        type="password"
+                        className={authInputClass}
+                        value={currentPassword}
+                        onChange={(event) => setCurrentPassword(event.target.value)}
+                        placeholder="••••••"
+                        disabled={!profile}
+                      />
+                    </label>
+                    <label className={authLabelClass}>
+                      Новый пароль
+                      <input
+                        type="password"
+                        className={authInputClass}
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                        placeholder="••••••"
+                        disabled={!profile}
+                      />
+                    </label>
+                  </>
+                ) : null}
+
+                {notice ? <div className={authNoticeClass}>{notice}</div> : null}
+                <ErrorToast message={error} onClose={() => setError(null)} />
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {!editing ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (profile) {
+                          setEditing(true);
+                          setError(null);
+                          setNotice(null);
+                        }
+                      }}
+                      className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                      disabled={!profile}
+                    >
+                      Редактировать профиль
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleSave}
+                        className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                        disabled={!profile || saving}
+                      >
+                        {saving ? "Сохранение..." : "Сохранить изменения"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelEditing}
+                        className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-all hover:bg-[#fff7f1]"
+                        disabled={!profile || saving}
+                      >
+                        Отменить
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside className={authCardClass}>
+            <div className={authInnerShellClass}>
+              <div className="rounded-[28px] border-[4px] border-white bg-[#fff7f1] p-5 shadow-[0_18px_32px_-24px_rgba(93,64,55,0.5)]">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
+                  Аккаунт
+                </p>
+                <div className="mt-3 rounded-[24px] border-[3px] border-white bg-white px-4 py-4 shadow-[inset_0_2px_6px_rgba(93,64,55,0.05)]">
+                  <div className="text-sm font-black text-[#5d4037]">
+                    {profile?.login?.trim() || "Без логина"}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-[#8d6e63]">
+                    {profile?.email || "Email не указан"}
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3">
                   <button
                     type="button"
-                    onClick={handleSave}
-                    className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-                    disabled={!profile || saving}
+                    onClick={() => router.push("/my-pets")}
+                    className={authSecondaryButtonClass}
                   >
-                    {saving ? "Сохранение..." : "Сохранить изменения"}
+                    Мои мемориалы
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setEditing(false);
-                      setLogin(profile?.login ?? "");
-                      setEmail(profile?.email ?? "");
-                      setCurrentPassword("");
-                      setNewPassword("");
-                    }}
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-                    disabled={!profile || saving}
+                    onClick={() => router.push("/create")}
+                    className={authSecondaryButtonClass}
                   >
-                    Отменить
+                    Создать мемориал
                   </button>
-                </>
-              )}
+                  {profile ? (
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="inline-flex w-full items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-all hover:bg-[#fff4f4]"
+                    >
+                      Выйти
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             </div>
-
-            {profile ? (
-              <button
-                type="button"
-                onClick={async () => {
-                  await fetch(`${apiUrl}/auth/logout`, {
-                    method: "POST",
-                    credentials: "include"
-                  });
-                  setProfile(null);
-                  setLogin("");
-                  setEmail("");
-                  router.replace("/auth");
-                }}
-                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-              >
-                Выйти
-              </button>
-            ) : null}
-
-            {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
-            <ErrorToast message={error} onClose={() => setError(null)} />
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-900">Баланс монет</p>
-              <span className="text-sm text-slate-700">
-                {profile ? `${profile.coinBalance} монет` : "—"}
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-slate-500">
-              Пока тестовое пополнение — позже подключим оплату.
-            </p>
-            <button
-              type="button"
-              onClick={handleTopUp}
-              className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-700"
-              disabled={!profile || walletLoading}
-            >
-              {walletLoading ? "Пополнение..." : "Пополнить +100 (тест)"}
-            </button>
-          </div>
-        </div>
-      </section>
+          </aside>
+        </section>
+      </div>
     </div>
   );
 }
