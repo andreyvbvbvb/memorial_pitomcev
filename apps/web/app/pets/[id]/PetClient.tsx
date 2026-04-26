@@ -2450,7 +2450,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   <div className="grid gap-2">
                     <button
                       type="button"
-                      onClick={() => router.push(`/edit?id=${id}`)}
+                      onClick={() => router.push(`/create?edit=${id}`)}
                       className={secondaryActionClass}
                     >
                       Редактировать домик

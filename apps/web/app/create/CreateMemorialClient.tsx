@@ -118,6 +118,32 @@ type PhotoDraft = {
   url: string;
 };
 
+type EditMemorialPet = {
+  id: string;
+  ownerId: string;
+  name: string;
+  species?: string | null;
+  birthDate: string | null;
+  deathDate: string | null;
+  epitaph: string | null;
+  story: string | null;
+  isPublic: boolean;
+  marker?: {
+    lat: number;
+    lng: number;
+    markerStyle?: string | null;
+  } | null;
+  memorial?: {
+    environmentId: string | null;
+    houseId: string | null;
+    sceneJson: Record<string, unknown> | null;
+  } | null;
+};
+
+type CreateMemorialClientProps = {
+  editId?: string | null;
+};
+
 const MEMORIAL_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
@@ -321,12 +347,107 @@ const initialState: FormState = {
   bowlWaterColor: colorPalette[7] ?? "#8ECAE6"
 };
 
-export default function CreateMemorialClient() {
-  const [step, setStep] = useState<Step>(0);
+const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
+
+const parseEnvironmentDraft = (
+  rawEnvironmentId?: string | null
+): {
+  environmentId: string;
+  environmentSeason: SeasonKey;
+  environmentSeasonAuto: boolean;
+} => {
+  const value = rawEnvironmentId?.trim() || initialState.environmentId;
+  const normalized = value.toLowerCase();
+  for (const season of SEASON_SUFFIXES) {
+    const suffix = `_${season}`;
+    if (normalized.endsWith(suffix)) {
+      const baseId = value.slice(0, -suffix.length) || value;
+      return {
+        environmentId: baseId,
+        environmentSeason: season,
+        environmentSeasonAuto: false
+      };
+    }
+  }
+  return {
+    environmentId: value,
+    environmentSeason: getSeasonForDate(),
+    environmentSeasonAuto: true
+  };
+};
+
+const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState => {
+  const memorial = pet.memorial;
+  const marker = pet.marker;
+  const sceneJson =
+    memorial?.sceneJson && typeof memorial.sceneJson === "object" && !Array.isArray(memorial.sceneJson)
+      ? memorial.sceneJson
+      : {};
+  const parts =
+    sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
+      ? (sceneJson.parts as Record<string, unknown>)
+      : {};
+  const colors =
+    sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
+      ? (sceneJson.colors as Record<string, unknown>)
+      : {};
+  const environmentDraft = parseEnvironmentDraft(memorial?.environmentId ?? null);
+  const pickId = (key: string, fallback: string) =>
+    typeof parts[key] === "string" && parts[key] ? String(parts[key]) : fallback;
+  const pickColor = (key: string, fallback: string) =>
+    typeof colors[key] === "string" && colors[key] ? String(colors[key]) : fallback;
+
+  return {
+    ownerId,
+    name: pet.name ?? "",
+    species: pet.species ?? initialState.species,
+    birthDate: pet.birthDate ? pet.birthDate.slice(0, 10) : "",
+    deathDate: pet.deathDate ? pet.deathDate.slice(0, 10) : "",
+    epitaph: pet.epitaph ?? "",
+    story: pet.story ?? "",
+    isPublic: pet.isPublic,
+    lat:
+      typeof marker?.lat === "number" && !Number.isNaN(marker.lat)
+        ? marker.lat.toFixed(6)
+        : "",
+    lng:
+      typeof marker?.lng === "number" && !Number.isNaN(marker.lng)
+        ? marker.lng.toFixed(6)
+        : "",
+    markerStyle: marker?.markerStyle ?? firstMarkerVariantId(pet.species ?? initialState.species),
+    environmentId: environmentDraft.environmentId,
+    environmentSeason: environmentDraft.environmentSeason,
+    environmentSeasonAuto: environmentDraft.environmentSeasonAuto,
+    houseId: memorial?.houseId ?? initialState.houseId,
+    roofId: pickId("roof", initialState.roofId),
+    wallId: pickId("wall", initialState.wallId),
+    signId: pickId("sign", initialState.signId),
+    frameLeftId: pickId("frameLeft", initialState.frameLeftId),
+    frameRightId: pickId("frameRight", initialState.frameRightId),
+    matId: pickId("mat", initialState.matId),
+    bowlFoodId: pickId("bowlFood", initialState.bowlFoodId),
+    bowlWaterId: pickId("bowlWater", initialState.bowlWaterId),
+    roofColor: pickColor("roof_paint", initialState.roofColor),
+    wallColor: pickColor("wall_paint", initialState.wallColor),
+    signColor: pickColor("sign_paint", initialState.signColor),
+    frameLeftColor: pickColor("frame_left_paint", initialState.frameLeftColor),
+    frameRightColor: pickColor("frame_right_paint", initialState.frameRightColor),
+    matColor: pickColor("mat_paint", initialState.matColor),
+    bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
+    bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor)
+  };
+};
+
+export default function CreateMemorialClient({
+  editId = null
+}: CreateMemorialClientProps) {
+  const isEditMode = Boolean(editId);
+  const [step, setStep] = useState<Step>(isEditMode ? 1 : 0);
   const [form, setForm] = useState<FormState>(initialState);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [editReady, setEditReady] = useState(!isEditMode);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
   const [currentUserLogin, setCurrentUserLogin] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -983,6 +1104,9 @@ export default function CreateMemorialClient() {
   };
 
   const handleStep3TabSelect = (tab: Step3Tab) => {
+    if (isEditMode && tab.id === "environment") {
+      return;
+    }
     setActiveStep3Tab(tab.id);
     requestFocus(tab.focusSlot ?? null);
   };
@@ -997,6 +1121,9 @@ export default function CreateMemorialClient() {
       }
     }
     if (detail.area === "environment") {
+      if (isEditMode) {
+        return;
+      }
       setActiveStep3Tab("environment");
       requestFocus("dom_slot");
       return;
@@ -1048,17 +1175,56 @@ export default function CreateMemorialClient() {
           login?: string | null;
           accessLevel?: AccessLevel;
         };
-        setForm((prev) => (prev.ownerId ? prev : { ...prev, ownerId: data.id }));
+        if (isEditMode && editId) {
+          const petResponse = await fetch(`${apiUrl}/pets/${editId}`, {
+            credentials: "include"
+          });
+          if (!petResponse.ok) {
+            router.replace(`/pets/${editId}`);
+            return;
+          }
+          const pet = (await petResponse.json()) as EditMemorialPet;
+          if (pet.ownerId !== data.id) {
+            router.replace(`/pets/${editId}`);
+            return;
+          }
+          if (!pet.memorial) {
+            router.replace(`/pets/${editId}`);
+            return;
+          }
+          setForm(buildEditFormState(pet, data.id));
+          setStep(1);
+          setActiveStep3Tab("house");
+          requestFocus("dom_slot");
+          setVisitedOverlays({
+            marker: true,
+            photos: true,
+            story: true,
+            base: true
+          });
+          setEditReady(true);
+        } else {
+          setForm((prev) => (prev.ownerId ? prev : { ...prev, ownerId: data.id }));
+        }
         setCurrentUserLogin(data.login ?? null);
         setAccessLevel(data.accessLevel ?? "USER");
       } catch {
-        router.replace("/auth");
+        if (!isEditMode) {
+          router.replace("/auth");
+        } else if (editId) {
+          router.replace(`/pets/${editId}`);
+        } else {
+          router.replace("/my-pets");
+        }
       } finally {
         setAuthReady(true);
+        if (!isEditMode) {
+          setEditReady(true);
+        }
       }
     };
     loadMe();
-  }, [apiUrl, router]);
+  }, [apiUrl, editId, isEditMode, router]);
 
   useEffect(() => {
     if (!form.ownerId) {
@@ -1120,6 +1286,9 @@ export default function CreateMemorialClient() {
   const todayInputValue = useMemo(() => today.toISOString().slice(0, 10), [today]);
 
   const validateStep = (current: Step) => {
+    if (isEditMode) {
+      return null;
+    }
     if (current === 0) {
       if (!authReady) {
         return "Проверяем авторизацию...";
@@ -1196,6 +1365,9 @@ export default function CreateMemorialClient() {
   );
 
   const handleNext = async () => {
+    if (isEditMode) {
+      return;
+    }
     const message = validateStep(step);
     if (message) {
       setError(message);
@@ -1414,6 +1586,58 @@ export default function CreateMemorialClient() {
   );
 
   const handleSubmit = async () => {
+    if (isEditMode && editId) {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${apiUrl}/pets/${editId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            houseId: form.houseId,
+            sceneJson: {
+              parts: {
+                roof: form.roofId,
+                wall: form.wallId,
+                sign: form.signId,
+                frameLeft: form.frameLeftId,
+                frameRight: form.frameRightId,
+                mat: form.matId,
+                bowlFood: form.bowlFoodId,
+                bowlWater: form.bowlWaterId
+              },
+              colors: {
+                roof_paint: form.roofColor,
+                wall_paint: form.wallColor,
+                sign_paint: form.signColor,
+                frame_left_paint: form.frameLeftColor,
+                frame_right_paint: form.frameRightColor,
+                mat_paint: form.matColor,
+                bowl_food_paint: form.bowlFoodColor,
+                bowl_water_paint: form.bowlWaterColor
+              },
+              version: 3
+            }
+          })
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Ошибка сохранения");
+        }
+        try {
+          await uploadMapPreview(editId);
+        } catch (err) {
+          console.warn("Не удалось обновить превью для карты", err);
+        }
+        router.push(`/pets/${editId}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Ошибка сохранения");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     setReviewAttempted(true);
     const step0Message = validateStep(0);
     const step1Message = validateStep(1);
@@ -1558,11 +1782,20 @@ export default function CreateMemorialClient() {
   };
 
   const toggleOverlay = (panel: "marker" | "photos" | "story" | "base") => {
+    if (isEditMode) {
+      return;
+    }
     setVisitedOverlays((prev) => ({ ...prev, [panel]: true }));
     setActiveOverlay((prev) => (prev === panel ? null : panel));
   };
 
   const openReview = () => {
+    if (isEditMode) {
+      setError(null);
+      setReviewOpen(true);
+      requestAnimationFrame(() => setReviewVisible(true));
+      return;
+    }
     setReviewAttempted(true);
     const message = validateStep(0) ?? validateStep(1);
     if (message) {
@@ -2656,6 +2889,19 @@ export default function CreateMemorialClient() {
         : `calc(${headerOffset} + 24px)`
   };
 
+  if (isEditMode && (!authReady || !editReady)) {
+    return (
+      <main className="min-h-[calc(100vh-var(--app-header-height,0px))] bg-[var(--bg)]">
+        <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+            Загружаем мемориал для редактирования...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main
       className={`relative bg-[var(--bg)] ${
@@ -2765,24 +3011,32 @@ export default function CreateMemorialClient() {
                     <h3 className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]">
                       Редактор мемориала
                     </h3>
-                    <label className="group relative z-[120] flex items-center gap-2 text-[10px] font-bold text-green-600">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-slate-300"
-                        checked={giftPreviewEnabled}
-                        onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
-                      />
-                      <span>Посмотреть</span>
-                      <span className="pointer-events-none absolute right-0 top-full z-[130] mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                        При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
-                      </span>
-                    </label>
+                    <div className="flex items-center gap-3">
+                      {isEditMode ? (
+                        <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]">
+                          Только оформление
+                        </span>
+                      ) : null}
+                      <label className="group relative z-[120] flex items-center gap-2 text-[10px] font-bold text-green-600">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300"
+                          checked={giftPreviewEnabled}
+                          onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
+                        />
+                        <span>Посмотреть</span>
+                        <span className="pointer-events-none absolute right-0 top-full z-[130] mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                          При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
+                        </span>
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3">
                   <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
                   {step3Tabs.map((tab) => {
                     const isActive = activeStep3Tab === tab.id;
+                    const isDisabled = isEditMode && tab.id === "environment";
                     const isTooltipVisible = tooltipTabId === tab.id;
                     const description = STEP3_TAB_DESCRIPTIONS[tab.id];
                     return (
@@ -2790,7 +3044,11 @@ export default function CreateMemorialClient() {
                         <button
                           type="button"
                           onClick={() => handleStep3TabSelect(tab)}
+                          disabled={isDisabled}
                           onMouseEnter={() => {
+                            if (isDisabled) {
+                              return;
+                            }
                             clearStep3TooltipTimer();
                             setTooltipTabId(null);
                             tooltipTimerRef.current = window.setTimeout(() => {
@@ -2802,6 +3060,9 @@ export default function CreateMemorialClient() {
                             setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                           }}
                           onFocus={() => {
+                            if (isDisabled) {
+                              return;
+                            }
                             clearStep3TooltipTimer();
                             setTooltipTabId(null);
                             tooltipTimerRef.current = window.setTimeout(() => {
@@ -2813,8 +3074,10 @@ export default function CreateMemorialClient() {
                             setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                           }}
                           aria-label={tab.label}
-                          className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
-                            isActive
+                            className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
+                            isDisabled
+                              ? "pointer-events-none cursor-not-allowed border-gray-100 bg-[#f3efec] text-[#c8beb8] opacity-55"
+                              : isActive
                               ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
                               : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
                           }`}
@@ -2860,17 +3123,18 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("base")}
                   aria-label="Основные данные"
-                  className={panelButtonClass(
+                  disabled={isEditMode}
+                  className={`${panelButtonClass(
                     activeOverlay === "base",
-                    isBuilderStep && !visitedOverlays.base
-                  )}
+                    !isEditMode && isBuilderStep && !visitedOverlays.base
+                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 >
                   <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 11v5" />
                     <circle cx="12" cy="8" r="1" />
                   </svg>
-                  {isBuilderStep && !visitedOverlays.base ? (
+                  {!isEditMode && isBuilderStep && !visitedOverlays.base ? (
                     <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
@@ -2880,16 +3144,17 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("story")}
                   aria-label="История"
-                  className={panelButtonClass(
+                  disabled={isEditMode}
+                  className={`${panelButtonClass(
                     activeOverlay === "story",
-                    isBuilderStep && !visitedOverlays.story
-                  )}
+                    !isEditMode && isBuilderStep && !visitedOverlays.story
+                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 >
                   <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M4 5h8a3 3 0 0 1 3 3v11" />
                     <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                   </svg>
-                  {isBuilderStep && !visitedOverlays.story ? (
+                  {!isEditMode && isBuilderStep && !visitedOverlays.story ? (
                     <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
@@ -2899,16 +3164,17 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("marker")}
                   aria-label="Маркер"
-                  className={panelButtonClass(
+                  disabled={isEditMode}
+                  className={`${panelButtonClass(
                     activeOverlay === "marker",
-                    isBuilderStep && !visitedOverlays.marker
-                  )}
+                    !isEditMode && isBuilderStep && !visitedOverlays.marker
+                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 >
                   <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
                     <circle cx="12" cy="10" r="2.5" />
                   </svg>
-                  {isBuilderStep && !visitedOverlays.marker ? (
+                  {!isEditMode && isBuilderStep && !visitedOverlays.marker ? (
                     <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
@@ -2918,17 +3184,18 @@ export default function CreateMemorialClient() {
                   type="button"
                   onClick={() => toggleOverlay("photos")}
                   aria-label="Фотографии"
-                  className={panelButtonClass(
+                  disabled={isEditMode}
+                  className={`${panelButtonClass(
                     activeOverlay === "photos",
-                    isBuilderStep && !visitedOverlays.photos
-                  )}
+                    !isEditMode && isBuilderStep && !visitedOverlays.photos
+                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                 >
                   <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="2" />
                     <circle cx="9" cy="11" r="2" />
                     <path d="M21 15l-4-4-4 4-3-3-5 5" />
                   </svg>
-                  {isBuilderStep && !visitedOverlays.photos ? (
+                  {!isEditMode && isBuilderStep && !visitedOverlays.photos ? (
                     <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
                       !
                     </span>
@@ -2938,16 +3205,27 @@ export default function CreateMemorialClient() {
             </div>
 
             <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6">
-              <button
-                type="button"
-                onClick={openReview}
-                className="group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
-              >
-                <span className="transition-transform duration-300 group-hover:-translate-x-1">
-                  Завершить
-                </span>
-                {renderArrowIcon()}
-              </button>
+              <div className="flex items-center gap-3">
+                {isEditMode && editId ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/pets/${editId}`)}
+                    className="inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]"
+                  >
+                    Отмена
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={openReview}
+                  className="group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                >
+                  <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                    {isEditMode ? "Сохранить" : "Завершить"}
+                  </span>
+                  {renderArrowIcon()}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -3022,30 +3300,40 @@ export default function CreateMemorialClient() {
                     />
                     <div className="rounded-2xl border border-slate-200 bg-white p-5">
                       <div className="grid gap-3 text-sm text-slate-700">
-                        <p className="font-semibold text-slate-900">Оплата мемориала</p>
-                        <p className="text-xs text-slate-500">
-                          Баланс: {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
+                        <p className="font-semibold text-slate-900">
+                          {isEditMode ? "Сохранение изменений" : "Оплата мемориала"}
                         </p>
-                        <div className="grid gap-2">
-                          {MEMORIAL_PLANS.map((plan) => {
-                            const isSelected = plan.id === memorialPlanId;
-                            return (
-                              <button
-                                key={plan.id}
-                                type="button"
-                                onClick={() => setMemorialPlanId(plan.id)}
-                                className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
-                                  isSelected
-                                    ? "border-sky-400 bg-sky-50 text-slate-900"
-                                    : "border-slate-200 text-slate-700 hover:border-slate-300"
-                                }`}
-                              >
-                                <span className="font-semibold">{plan.label}</span>
-                                <span className="text-slate-500">{plan.price} монет</span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                        {isEditMode ? (
+                          <p className="text-xs text-slate-500">
+                            Сохраним только домик и его детали. Остальные данные мемориала не изменятся.
+                          </p>
+                        ) : (
+                          <>
+                            <p className="text-xs text-slate-500">
+                              Баланс: {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
+                            </p>
+                            <div className="grid gap-2">
+                              {MEMORIAL_PLANS.map((plan) => {
+                                const isSelected = plan.id === memorialPlanId;
+                                return (
+                                  <button
+                                    key={plan.id}
+                                    type="button"
+                                    onClick={() => setMemorialPlanId(plan.id)}
+                                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+                                      isSelected
+                                        ? "border-sky-400 bg-sky-50 text-slate-900"
+                                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                                    }`}
+                                  >
+                                    <span className="font-semibold">{plan.label}</span>
+                                    <span className="text-slate-500">{plan.price} монет</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
                         <button
                           type="button"
                           onClick={handleSubmit}
@@ -3053,7 +3341,13 @@ export default function CreateMemorialClient() {
                           disabled={loading}
                         >
                           <span className="transition-transform duration-300 group-hover:-translate-x-1">
-                            {loading ? "Публикация..." : `Опубликовать мемориал • ${memorialPrice} монет`}
+                            {loading
+                              ? isEditMode
+                                ? "Сохранение..."
+                                : "Публикация..."
+                              : isEditMode
+                                ? "Сохранить"
+                                : `Опубликовать мемориал • ${memorialPrice} монет`}
                           </span>
                         </button>
                       </div>
