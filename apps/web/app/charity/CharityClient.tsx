@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../lib/config";
 import { canAccessAdmin, type AccessLevel } from "../../lib/access";
 import ErrorToast from "../../components/ErrorToast";
+import PhotoLightbox from "../../components/PhotoLightbox";
 
 type CharityTotals = {
   totalAccrued: number;
@@ -314,14 +315,16 @@ export default function CharityClient() {
                             key={photo}
                             type="button"
                             onClick={() => openPhotoViewer(report.photos, index, report.title)}
-                            className="group overflow-hidden rounded-[22px] border-[3px] border-white bg-[#f8f9fa] shadow-inner transition-transform duration-300 hover:scale-[1.02]"
+                            className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)]"
                           >
-                            <img
-                              src={photo}
-                              alt={report.title}
-                              className="h-40 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-                              loading="lazy"
-                            />
+                            <div className="overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
+                              <img
+                                src={photo}
+                                alt={report.title}
+                                className="h-40 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
+                                loading="lazy"
+                              />
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -418,53 +421,16 @@ export default function CharityClient() {
         ) : null}
       </div>
 
-      {photoViewer ? (
-        <div
-          className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
-          onClick={closePhotoViewer}
-        >
-          <div
-            className="relative w-full max-w-5xl rounded-[28px] border border-white/15 bg-slate-950/95 p-4 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            {activePhoto ? (
-              <img
-                src={activePhoto}
-                alt={photoViewer.title}
-                className="max-h-[72vh] w-full rounded-[20px] object-contain"
-              />
-            ) : (
-              <div className="py-16 text-center text-sm text-slate-200">Фото не найдено</div>
-            )}
-            <div className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-slate-200">
-              <button
-                type="button"
-                onClick={goPrevPhoto}
-                className="rounded-full border border-slate-600 px-4 py-2 transition hover:border-slate-300"
-              >
-                Назад
-              </button>
-              <span>
-                {Math.min(photoViewer.index + 1, photoViewer.photos.length)} / {photoViewer.photos.length}
-              </span>
-              <button
-                type="button"
-                onClick={goNextPhoto}
-                className="rounded-full border border-slate-600 px-4 py-2 transition hover:border-slate-300"
-              >
-                Вперёд
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={closePhotoViewer}
-              className="absolute right-4 top-4 rounded-full border border-slate-600 bg-slate-950/75 px-3 py-1.5 text-xs font-bold text-slate-200 transition hover:border-slate-300"
-            >
-              Закрыть
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <PhotoLightbox
+        open={Boolean(photoViewer)}
+        photoUrl={activePhoto}
+        title={photoViewer?.title ?? null}
+        index={photoViewer?.index ?? 0}
+        total={photoViewer?.photos.length ?? 0}
+        onPrev={goPrevPhoto}
+        onNext={goNextPhoto}
+        onClose={closePhotoViewer}
+      />
 
       <ErrorToast message={error} onClose={() => setError(null)} />
     </main>

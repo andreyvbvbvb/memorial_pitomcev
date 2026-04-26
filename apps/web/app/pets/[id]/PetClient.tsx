@@ -9,6 +9,7 @@ import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../
 import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
+import PhotoLightbox from "../../../components/PhotoLightbox";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -2276,20 +2277,22 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 <div className={panelSectionClass}>
                   <p className={panelLabelClass}>Фотографии</p>
                   {photos.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {photos.map((photo, index) => (
                         <button
                           key={photo.id}
                           type="button"
                           onClick={() => openLightbox(index)}
-                          className="group overflow-hidden rounded-[22px] border-[3px] border-white bg-[#f8f9fa] shadow-inner"
+                          className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)]"
                         >
-                          <img
-                            src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
-                            alt="Фото питомца"
-                            className="h-28 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-                            loading="lazy"
-                          />
+                          <div className="overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
+                            <img
+                              src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
+                              alt="Фото питомца"
+                              className="h-28 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
+                              loading="lazy"
+                            />
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -3306,108 +3309,22 @@ export default function PetClient({ id, mode = "view" }: Props) {
         </div>
       ) : null}
 
-      {mounted && lightboxIndex !== null ? (
-        <div
-          onClick={closeLightbox}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.75)",
-            padding: "24px"
-          }}
-        >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              width: "100%",
-              maxWidth: "900px",
-              background: "rgba(15,23,42,0.95)",
-              borderRadius: "24px",
-              padding: "16px",
-              position: "relative"
-            }}
-          >
-            {photos[lightboxIndex] ? (
-              <img
-                src={
-                  photos[lightboxIndex].url.startsWith("http")
-                    ? photos[lightboxIndex].url
-                    : `${apiUrl}${photos[lightboxIndex].url}`
-                }
-                alt="Фото питомца"
-                style={{
-                  width: "100%",
-                  maxHeight: "70vh",
-                  objectFit: "contain",
-                  borderRadius: "16px"
-                }}
-              />
-            ) : (
-              <div style={{ color: "#e2e8f0", textAlign: "center", padding: "40px 0" }}>
-                Фото не найдено
-              </div>
-            )}
-            <div
-              style={{
-                marginTop: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                color: "#e2e8f0",
-                fontSize: "14px"
-              }}
-            >
-              <button
-                type="button"
-                onClick={goPrev}
-                style={{
-                  border: "1px solid #475569",
-                  borderRadius: "999px",
-                  padding: "8px 16px",
-                  color: "#e2e8f0"
-                }}
-              >
-                Назад
-              </button>
-              <span>
-                {Math.min(lightboxIndex + 1, photos.length)} / {photos.length}
-              </span>
-              <button
-                type="button"
-                onClick={goNext}
-                style={{
-                  border: "1px solid #475569",
-                  borderRadius: "999px",
-                  padding: "8px 16px",
-                  color: "#e2e8f0"
-                }}
-              >
-                Вперёд
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={closeLightbox}
-              style={{
-                position: "absolute",
-                top: "12px",
-                right: "12px",
-                border: "1px solid #475569",
-                borderRadius: "999px",
-                padding: "6px 10px",
-                color: "#e2e8f0",
-                fontSize: "12px"
-              }}
-            >
-              Закрыть
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <PhotoLightbox
+        open={mounted && lightboxIndex !== null}
+        photoUrl={
+          mounted && lightboxIndex !== null && photos[lightboxIndex]
+            ? photos[lightboxIndex].url.startsWith("http")
+              ? photos[lightboxIndex].url
+              : `${apiUrl}${photos[lightboxIndex].url}`
+            : null
+        }
+        title={pet?.name ? `Фотографии: ${pet.name}` : "Фотографии"}
+        index={lightboxIndex ?? 0}
+        total={photos.length}
+        onPrev={goPrev}
+        onNext={goNext}
+        onClose={closeLightbox}
+      />
       <ErrorToast
         message={cleanSuccess}
         onClose={() => setCleanSuccess(null)}

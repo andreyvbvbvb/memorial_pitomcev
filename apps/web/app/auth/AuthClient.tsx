@@ -4,6 +4,31 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
+import {
+  authBackdropGlowClass,
+  authCardClass,
+  authCheckboxInputClass,
+  authCheckboxRowClass,
+  authCloseButtonClass,
+  authDialogCardClass,
+  authDialogInnerClass,
+  authDialogOverlayClass,
+  authErrorTextClass,
+  authHelperTextClass,
+  authInfoPanelClass,
+  authInnerShellClass,
+  authInputClass,
+  authLabelClass,
+  authLinkClass,
+  authNoticeClass,
+  authPageShellClass,
+  authPrimaryButtonClass,
+  authSecondaryButtonClass,
+  authTabClass,
+  authTabsRailClass,
+  authTextButtonClass,
+  authTitleClass
+} from "../../components/authTheme";
 
 export default function AuthClient() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -165,250 +190,251 @@ export default function AuthClient() {
     handleSubmit();
   };
 
-
   return (
-    <div className="flex min-h-[calc(100vh-120px)] items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md">
-        <form
-          className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-          onSubmit={handleSubmitEvent}
-        >
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setMode("login")}
-              className={`rounded-2xl px-4 py-2 text-sm ${
-                mode === "login" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-700"
-              }`}
-            >
-              Вход
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("register")}
-              className={`rounded-2xl px-4 py-2 text-sm ${
-                mode === "register" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-700"
-              }`}
-            >
-              Регистрация
-            </button>
-          </div>
+    <div className={authPageShellClass}>
+      <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
+      <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-          <div className="mt-4 grid gap-4">
-            {mode === "login" ? (
-              <>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Email или логин
-                  <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={identifier}
-                    onChange={(event) => {
-                      setIdentifier(event.target.value);
-                      setEmailError(null);
-                    }}
-                    placeholder="user@example.com"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Пароль
-                  <input
-                    type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••"
-                  />
-                </label>
-              </>
-            ) : (
-              <>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Логин
-                  <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={login}
-                    onChange={(event) => {
-                      setLogin(event.target.value);
-                      setLoginError(null);
-                    }}
-                    placeholder="pet_friend_01"
-                  />
-                  {loginError ? <span className="text-xs text-red-600">{loginError}</span> : null}
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Email
-                  <input
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      setEmailError(null);
-                    }}
-                    placeholder="user@example.com"
-                  />
-                  {emailError ? <span className="text-xs text-red-600">{emailError}</span> : null}
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Пароль
-                  <input
-                    type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm text-slate-700">
-                  Подтверждение пароля
-                  <input
-                    type="password"
-                    className="rounded-2xl border border-slate-200 px-4 py-2"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="••••••"
-                  />
-                </label>
-                <div className="grid gap-2 text-sm text-slate-700">
-                  <label className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4"
-                      checked={acceptTerms}
-                      onChange={(event) => setAcceptTerms(event.target.checked)}
-                    />
-                    <span>
-                      Я принимаю{" "}
-                      <a href="/about#agreement" className="text-slate-900 underline">
-                        пользовательское соглашение
-                      </a>
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4"
-                      checked={acceptOffer}
-                      onChange={(event) => setAcceptOffer(event.target.checked)}
-                    />
-                    <span>
-                      Я принимаю{" "}
-                      <a href="/about#offer" className="text-slate-900 underline">
-                        публичную оферту
-                      </a>
-                    </span>
-                  </label>
-                </div>
-              </>
-            )}
-
-            <button
-              type="submit"
-              className="w-full rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              disabled={loading}
-            >
-              {loading
-                ? "Подождите..."
-                : mode === "login"
-                  ? "Войти"
-                  : "Создать аккаунт"}
-            </button>
-
-            {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
-            <ErrorToast message={error} onClose={() => setError(null)} />
-          </div>
-
-          {mode === "login" ? (
-            <div className="mt-4 flex justify-center">
+      <div className="w-full max-w-[32rem]">
+        <form className={authCardClass} onSubmit={handleSubmitEvent}>
+          <div className={authInnerShellClass}>
+            <div className={authTabsRailClass}>
               <button
                 type="button"
-                onClick={() => setForgotPopupOpen(true)}
-                className="text-sm text-slate-600 underline-offset-4 hover:underline"
+                onClick={() => setMode("login")}
+                className={authTabClass(mode === "login")}
               >
-                Забыли пароль?
+                Вход
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("register")}
+                className={authTabClass(mode === "register")}
+              >
+                Регистрация
               </button>
             </div>
-          ) : null}
+
+            <div className="mt-5">
+              <h1 className={authTitleClass}>
+                {mode === "login" ? "Вход" : "Регистрация"}
+              </h1>
+            </div>
+
+            <div className="mt-5 grid gap-4">
+              {mode === "login" ? (
+                <>
+                  <label className={authLabelClass}>
+                    Email или логин
+                    <input
+                      className={authInputClass}
+                      value={identifier}
+                      onChange={(event) => {
+                        setIdentifier(event.target.value);
+                        setEmailError(null);
+                      }}
+                      placeholder="user@example.com"
+                    />
+                  </label>
+                  <label className={authLabelClass}>
+                    Пароль
+                    <input
+                      type="password"
+                      className={authInputClass}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="••••••"
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label className={authLabelClass}>
+                    Логин
+                    <input
+                      className={authInputClass}
+                      value={login}
+                      onChange={(event) => {
+                        setLogin(event.target.value);
+                        setLoginError(null);
+                      }}
+                      placeholder="pet_friend_01"
+                    />
+                    {loginError ? <span className={authErrorTextClass}>{loginError}</span> : null}
+                  </label>
+                  <label className={authLabelClass}>
+                    Email
+                    <input
+                      className={authInputClass}
+                      value={email}
+                      onChange={(event) => {
+                        setEmail(event.target.value);
+                        setEmailError(null);
+                      }}
+                      placeholder="user@example.com"
+                    />
+                    {emailError ? <span className={authErrorTextClass}>{emailError}</span> : null}
+                  </label>
+                  <label className={authLabelClass}>
+                    Пароль
+                    <input
+                      type="password"
+                      className={authInputClass}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="••••••"
+                    />
+                  </label>
+                  <label className={authLabelClass}>
+                    Подтверждение пароля
+                    <input
+                      type="password"
+                      className={authInputClass}
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      placeholder="••••••"
+                    />
+                  </label>
+                  <div className="grid gap-3">
+                    <label className={authCheckboxRowClass}>
+                      <input
+                        type="checkbox"
+                        className={authCheckboxInputClass}
+                        checked={acceptTerms}
+                        onChange={(event) => setAcceptTerms(event.target.checked)}
+                      />
+                      <span>
+                        Я принимаю{" "}
+                        <a href="/about#agreement" className={authLinkClass}>
+                          пользовательское соглашение
+                        </a>
+                      </span>
+                    </label>
+                    <label className={authCheckboxRowClass}>
+                      <input
+                        type="checkbox"
+                        className={authCheckboxInputClass}
+                        checked={acceptOffer}
+                        onChange={(event) => setAcceptOffer(event.target.checked)}
+                      />
+                      <span>
+                        Я принимаю{" "}
+                        <a href="/about#offer" className={authLinkClass}>
+                          публичную оферту
+                        </a>
+                      </span>
+                    </label>
+                  </div>
+                </>
+              )}
+
+              <button type="submit" className={authPrimaryButtonClass} disabled={loading}>
+                {loading
+                  ? "Подождите..."
+                  : mode === "login"
+                    ? "Войти"
+                    : "Создать аккаунт"}
+              </button>
+
+              {notice ? <div className={authNoticeClass}>{notice}</div> : null}
+              <ErrorToast message={error} onClose={() => setError(null)} />
+            </div>
+
+            {mode === "login" ? (
+              <div className="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setForgotPopupOpen(true)}
+                  className={authTextButtonClass}
+                >
+                  Забыли пароль?
+                </button>
+              </div>
+            ) : null}
+          </div>
         </form>
       </div>
+
       {forgotPopupOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900">Восстановление пароля</h3>
+        <div className={authDialogOverlayClass}>
+          <div className={authDialogCardClass}>
+            <div className={authDialogInnerClass}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className={authTitleClass}>Восстановление пароля</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForgotPopupOpen(false)}
+                  className={authCloseButtonClass}
+                  aria-label="Закрыть"
+                >
+                  ×
+                </button>
+              </div>
+              <div className={`mt-4 ${authInfoPanelClass}`}>
+                Напишите на почту memorial@gamil.com письмо с адресом почты, на который был
+                зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
+              </div>
               <button
                 type="button"
                 onClick={() => setForgotPopupOpen(false)}
-                className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600"
-                aria-label="Закрыть"
+                className={`mt-5 ${authSecondaryButtonClass}`}
               >
-                ✕
+                Понятно
               </button>
             </div>
-            <p className="mt-3 text-sm text-slate-600">
-              Напишите на почту memorial@gamil.com письмо с адресом почты, на который был
-              зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
-            </p>
-            <button
-              type="button"
-              onClick={() => setForgotPopupOpen(false)}
-              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-            >
-              Понятно
-            </button>
           </div>
         </div>
       ) : null}
+
       {consentOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
-            <h3 className="text-base font-semibold text-slate-900">
-              Подтвердите согласие с условиями
-            </h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Чтобы продолжить, примите пользовательское соглашение и публичную оферту.
-            </p>
-            <div className="mt-4 grid gap-3 text-sm text-slate-700">
-              <label className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4"
-                  checked={consentTerms}
-                  onChange={(event) => setConsentTerms(event.target.checked)}
-                />
-                <span>
-                  Я принимаю{" "}
-                  <a href="/about#agreement" className="text-slate-900 underline">
-                    пользовательское соглашение
-                  </a>
-                </span>
-              </label>
-              <label className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4"
-                  checked={consentOffer}
-                  onChange={(event) => setConsentOffer(event.target.checked)}
-                />
-                <span>
-                  Я принимаю{" "}
-                  <a href="/about#offer" className="text-slate-900 underline">
-                    публичную оферту
-                  </a>
-                </span>
-              </label>
+        <div className={authDialogOverlayClass}>
+          <div className={authDialogCardClass}>
+            <div className={authDialogInnerClass}>
+              <h3 className={authTitleClass}>Подтвердите согласие с условиями</h3>
+              <p className={`mt-3 ${authHelperTextClass}`}>
+                Чтобы продолжить, примите пользовательское соглашение и публичную оферту.
+              </p>
+              <div className="mt-4 grid gap-3">
+                <label className={authCheckboxRowClass}>
+                  <input
+                    type="checkbox"
+                    className={authCheckboxInputClass}
+                    checked={consentTerms}
+                    onChange={(event) => setConsentTerms(event.target.checked)}
+                  />
+                  <span>
+                    Я принимаю{" "}
+                    <a href="/about#agreement" className={authLinkClass}>
+                      пользовательское соглашение
+                    </a>
+                  </span>
+                </label>
+                <label className={authCheckboxRowClass}>
+                  <input
+                    type="checkbox"
+                    className={authCheckboxInputClass}
+                    checked={consentOffer}
+                    onChange={(event) => setConsentOffer(event.target.checked)}
+                  />
+                  <span>
+                    Я принимаю{" "}
+                    <a href="/about#offer" className={authLinkClass}>
+                      публичную оферту
+                    </a>
+                  </span>
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={handleAcceptTerms}
+                disabled={consentLoading || !consentTerms || !consentOffer}
+                className={`mt-5 ${authPrimaryButtonClass}`}
+              >
+                {consentLoading ? "Подождите..." : "Согласен"}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleAcceptTerms}
-              disabled={consentLoading || !consentTerms || !consentOffer}
-              className={`mt-5 w-full rounded-2xl px-4 py-2 text-sm font-semibold ${
-                consentLoading || !consentTerms || !consentOffer
-                  ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                  : "bg-slate-900 text-white"
-              }`}
-            >
-              {consentLoading ? "Подождите..." : "Согласен"}
-            </button>
           </div>
         </div>
       ) : null}
