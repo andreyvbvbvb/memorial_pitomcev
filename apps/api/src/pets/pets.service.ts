@@ -277,7 +277,9 @@ export class PetsService {
       include: {
         memorial: true,
         marker: true,
-        photos: true,
+        photos: {
+          orderBy: { sortOrder: "asc" }
+        },
         owner: {
           select: {
             id: true,
@@ -531,6 +533,41 @@ export class PetsService {
         sortOrder: count
       }
     });
+  }
+
+  async removePhoto(petId: string, photoId: string) {
+    await this.findOne(petId);
+    const photo = await this.prisma.petPhoto.findUnique({ where: { id: photoId } });
+    if (!photo || photo.petId !== petId) {
+      throw new BadRequestException("Фото не найдено для этого мемориала");
+    }
+
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.petPhoto.delete({ where: { id: photoId } });
+      const remaining = await tx.petPhoto.findMany({
+        where: { petId },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+      });
+      await Promise.all(
+        remaining.map((item: { id: string; sortOrder: number }, index: number) =>
+          item.sortOrder === index
+            ? Promise.resolve()
+            : tx.petPhoto.update({
+                where: { id: item.id },
+                data: { sortOrder: index }
+              })
+        )
+      );
+      const marker = await tx.mapMarker.findUnique({ where: { petId } });
+      if (marker?.previewPhotoId === photoId) {
+        await tx.mapMarker.update({
+          where: { petId },
+          data: { previewPhotoId: remaining[0]?.id ?? null }
+        });
+      }
+    });
+
+    return { ok: true };
   }
 
   async setMapPreview(petId: string, file: { originalname: string; buffer: Buffer }) {

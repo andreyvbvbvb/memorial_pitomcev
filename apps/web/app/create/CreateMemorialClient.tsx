@@ -114,7 +114,9 @@ type FormState = {
 
 type PhotoDraft = {
   id: string;
-  file: File;
+  file: File | null;
+  persistedId: string | null;
+  isObjectUrl: boolean;
   url: string;
 };
 
@@ -132,7 +134,12 @@ type EditMemorialPet = {
     lat: number;
     lng: number;
     markerStyle?: string | null;
+    previewPhotoId?: string | null;
   } | null;
+  photos: {
+    id: string;
+    url: string;
+  }[];
   memorial?: {
     environmentId: string | null;
     houseId: string | null;
@@ -176,6 +183,9 @@ type CameraOffset = {
   y: number;
   z: number;
 };
+
+const MAX_PHOTOS = 10;
+const MAX_PHOTO_SIZE_BYTES = 6 * 1024 * 1024;
 
 const SEASON_LABELS: Record<SeasonKey, string> = {
   spring: "Весна",
@@ -459,6 +469,7 @@ export default function CreateMemorialClient({
   const [memorialPlanId, setMemorialPlanId] = useState<MemorialPlanId>("1y");
   const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
+  const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
   const photosRef = useRef<PhotoDraft[]>([]);
   const birthDateInputRef = useRef<HTMLInputElement | null>(null);
@@ -515,6 +526,19 @@ export default function CreateMemorialClient({
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: apiKey });
+  const makeLocalPhotoId = useCallback(
+    () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    []
+  );
+  const normalizePhotoUrl = useCallback(
+    (url: string) => (url.startsWith("http") ? url : `${apiUrl}${url}`),
+    [apiUrl]
+  );
+  const revokePhotoUrl = useCallback((photo: PhotoDraft) => {
+    if (photo.isObjectUrl) {
+      URL.revokeObjectURL(photo.url);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1192,7 +1216,23 @@ export default function CreateMemorialClient({
             router.replace(`/pets/${editId}`);
             return;
           }
+          const nextPhotos = Array.isArray(pet.photos)
+            ? pet.photos.map((photo) => ({
+                id: photo.id,
+                file: null,
+                persistedId: photo.id,
+                isObjectUrl: false,
+                url: normalizePhotoUrl(photo.url)
+              }))
+            : [];
           setForm(buildEditFormState(pet, data.id));
+          setPhotos(nextPhotos);
+          setRemovedPhotoIds([]);
+          setPreviewPhotoId(
+            pet.marker?.previewPhotoId && nextPhotos.some((photo) => photo.id === pet.marker?.previewPhotoId)
+              ? pet.marker.previewPhotoId
+              : nextPhotos[0]?.id ?? null
+          );
           setStep(1);
           setActiveStep3Tab("house");
           requestFocus("dom_slot");
@@ -1224,7 +1264,7 @@ export default function CreateMemorialClient({
       }
     };
     loadMe();
-  }, [apiUrl, editId, isEditMode, router]);
+  }, [apiUrl, editId, isEditMode, normalizePhotoUrl, router]);
 
   useEffect(() => {
     if (!form.ownerId) {
@@ -1235,15 +1275,27 @@ export default function CreateMemorialClient({
 
   useEffect(() => {
     return () => {
-      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.url));
+      photosRef.current.forEach((photo) => revokePhotoUrl(photo));
     };
-  }, []);
+  }, [revokePhotoUrl]);
 
   useEffect(() => {
     if (step !== 1) {
       setFocusSlot(null);
     }
   }, [step]);
+
+  useEffect(() => {
+    if (photos.length === 0) {
+      if (previewPhotoId !== null) {
+        setPreviewPhotoId(null);
+      }
+      return;
+    }
+    if (!previewPhotoId || !photos.some((photo) => photo.id === previewPhotoId)) {
+      setPreviewPhotoId(photos[0]?.id ?? null);
+    }
+  }, [photos, previewPhotoId]);
 
   useEffect(() => {
     if (step === 0) {
@@ -1415,21 +1467,23 @@ export default function CreateMemorialClient({
     if (!files) {
       return;
     }
-    const maxPhotos = 10;
-    const maxSize = 6 * 1024 * 1024;
-    const available = Math.max(0, maxPhotos - photos.length);
+    const available = Math.max(0, MAX_PHOTOS - photos.length);
     const picked = Array.from(files);
-    const oversized = picked.some((file) => file.size > maxSize);
+    const oversized = picked.some((file) => file.size > MAX_PHOTO_SIZE_BYTES);
     if (oversized) {
       setError("Максимальный размер фото — 6 МБ");
     }
-    const selected = picked.filter((file) => file.size <= maxSize).slice(0, available);
+    const selected = picked
+      .filter((file) => file.size <= MAX_PHOTO_SIZE_BYTES)
+      .slice(0, available);
     if (selected.length === 0) {
       return;
     }
     const mapped = selected.map((file) => ({
-      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: makeLocalPhotoId(),
       file,
+      persistedId: null,
+      isObjectUrl: true,
       url: URL.createObjectURL(file)
     }));
     setPhotos((prev) => [...prev, ...mapped]);
@@ -1443,7 +1497,13 @@ export default function CreateMemorialClient({
       const next = prev.filter((photo) => photo.id !== id);
       const removed = prev.find((photo) => photo.id === id);
       if (removed) {
-        URL.revokeObjectURL(removed.url);
+        revokePhotoUrl(removed);
+        const removedPersistedId = removed.persistedId;
+        if (removedPersistedId) {
+          setRemovedPhotoIds((current) =>
+            current.includes(removedPersistedId) ? current : [...current, removedPersistedId]
+          );
+        }
       }
       if (previewPhotoId === id) {
         setPreviewPhotoId(next[0]?.id ?? null);
@@ -1585,6 +1645,103 @@ export default function CreateMemorialClient({
     [apiUrl, capturePreviewImage]
   );
 
+  const syncEditedPhotos = useCallback(
+    async (petId: string) => {
+      const deletedPhotoIds: string[] = [];
+      for (const photoId of removedPhotoIds) {
+        const response = await fetch(`${apiUrl}/pets/${petId}/photos/${photoId}`, {
+          method: "DELETE"
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Ошибка удаления фото");
+        }
+        deletedPhotoIds.push(photoId);
+      }
+
+      const uploaded: { localId: string; id: string; url: string }[] = [];
+      for (const photo of photos) {
+        if (!photo.file) {
+          continue;
+        }
+        const formData = new FormData();
+        formData.append("file", photo.file);
+        const uploadResponse = await fetch(`${apiUrl}/pets/${petId}/photos`, {
+          method: "POST",
+          body: formData
+        });
+        if (!uploadResponse.ok) {
+          const text = await uploadResponse.text();
+          throw new Error(text || "Ошибка загрузки фото");
+        }
+        const saved = (await uploadResponse.json()) as { id: string; url: string };
+        uploaded.push({
+          localId: photo.id,
+          id: saved.id,
+          url: normalizePhotoUrl(saved.url)
+        });
+      }
+
+      if (deletedPhotoIds.length > 0) {
+        setRemovedPhotoIds((current) =>
+          current.filter((photoId) => !deletedPhotoIds.includes(photoId))
+        );
+      }
+
+      let nextPreviewPersistedId = previewPhotoId;
+      if (uploaded.length > 0) {
+        const uploadedByLocalId = new Map(uploaded.map((item) => [item.localId, item]));
+        setPhotos((current) =>
+          current.map((photo) => {
+            const saved = uploadedByLocalId.get(photo.id);
+            if (!saved) {
+              return photo;
+            }
+            revokePhotoUrl(photo);
+            return {
+              id: saved.id,
+              file: null,
+              persistedId: saved.id,
+              isObjectUrl: false,
+              url: saved.url
+            };
+          })
+        );
+        if (previewPhotoId) {
+          const uploadedPreview = uploadedByLocalId.get(previewPhotoId);
+          if (uploadedPreview) {
+            nextPreviewPersistedId = uploadedPreview.id;
+            setPreviewPhotoId(uploadedPreview.id);
+          }
+        }
+      }
+
+      if (nextPreviewPersistedId) {
+        const existingPreviewPhoto = photos.find(
+          (photo) =>
+            photo.persistedId === nextPreviewPersistedId ||
+            (photo.id === nextPreviewPersistedId && photo.persistedId)
+        );
+        const existingPreviewId = existingPreviewPhoto?.persistedId ?? null;
+        const uploadedPreviewId =
+          uploaded.find((item) => item.id === nextPreviewPersistedId)?.id ?? null;
+        const resolvedPreviewId = uploadedPreviewId ?? existingPreviewId ?? null;
+        if (resolvedPreviewId) {
+          const previewResponse = await fetch(`${apiUrl}/pets/${petId}/preview-photo`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ photoId: resolvedPreviewId })
+          });
+          if (!previewResponse.ok) {
+            const text = await previewResponse.text();
+            throw new Error(text || "Ошибка выбора превью");
+          }
+        }
+      }
+    },
+    [apiUrl, normalizePhotoUrl, photos, previewPhotoId, removedPhotoIds, revokePhotoUrl]
+  );
+
   const handleSubmit = async () => {
     if (isEditMode && editId) {
       setLoading(true);
@@ -1624,6 +1781,7 @@ export default function CreateMemorialClient({
           const text = await response.text();
           throw new Error(text || "Ошибка сохранения");
         }
+        await syncEditedPhotos(editId);
         try {
           await uploadMapPreview(editId);
         } catch (err) {
@@ -1734,6 +1892,9 @@ export default function CreateMemorialClient({
       if (photos.length > 0) {
         const uploaded: { localId: string; id: string }[] = [];
         for (const photo of photos) {
+          if (!photo.file) {
+            continue;
+          }
           const formData = new FormData();
           formData.append("file", photo.file);
           const uploadResponse = await fetch(`${apiUrl}/pets/${created.id}/photos`, {
@@ -1782,7 +1943,7 @@ export default function CreateMemorialClient({
   };
 
   const toggleOverlay = (panel: "marker" | "photos" | "story" | "base") => {
-    if (isEditMode) {
+    if (isEditMode && panel !== "photos") {
       return;
     }
     setVisitedOverlays((prev) => ({ ...prev, [panel]: true }));
@@ -2780,8 +2941,12 @@ export default function CreateMemorialClient({
         Фотографии
       </h3>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">Фотографии (до 10)</h3>
-        <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">{photos.length}/10</span>
+        <h3 className="text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+          Фотографии (до {MAX_PHOTOS})
+        </h3>
+        <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
+          {photos.length}/{MAX_PHOTOS}
+        </span>
       </div>
       <input
         type="file"
@@ -2793,7 +2958,7 @@ export default function CreateMemorialClient({
           event.currentTarget.value = "";
         }}
       />
-      <p className="text-xs text-slate-500">Максимум 10 фото, до 6 МБ каждое.</p>
+      <p className="text-xs text-slate-500">Максимум {MAX_PHOTOS} фото, до 6 МБ каждое.</p>
       {photos.length > 0 ? (
         <div
           className="grid gap-2"
@@ -3184,11 +3349,10 @@ export default function CreateMemorialClient({
                   type="button"
                   onClick={() => toggleOverlay("photos")}
                   aria-label="Фотографии"
-                  disabled={isEditMode}
                   className={`${panelButtonClass(
                     activeOverlay === "photos",
                     !isEditMode && isBuilderStep && !visitedOverlays.photos
-                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                  )}`}
                 >
                   <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="5" width="18" height="14" rx="2" />

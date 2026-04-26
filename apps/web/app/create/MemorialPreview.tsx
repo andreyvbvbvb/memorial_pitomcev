@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ensureDracoLoader } from "../../lib/draco";
 import {
   getGiftCodeFromUrl,
@@ -203,6 +203,11 @@ const isDescendantOf = (object: THREE.Object3D | null, ancestor: THREE.Object3D)
     current = current.parent;
   }
   return false;
+};
+
+const resolveHouseBaseId = (houseId?: string | null) => {
+  const parsed = splitHouseVariantId(houseId ?? "");
+  return parsed.baseId || houseId || "";
 };
 
 const collectGiftSlots = (target: THREE.Object3D) => {
@@ -890,7 +895,7 @@ function TerrainWithHouse({
   const offsetZ = houseOffsetZ ?? defaultHouseTransform.offsetZ;
   const rotationY = houseRotationY ?? defaultHouseTransform.rotationY;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     applyHousePlacement(house, houseBaseId, terrainId, {
       offsetX,
       offsetZ,
@@ -980,7 +985,7 @@ function TerrainWithHouse({
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
     if (!domSlot) {
       console.warn("[MemorialPreview] slot 'dom_slot' не найден на поверхности");
@@ -1456,11 +1461,14 @@ export default function MemorialPreview({
     [cameraAdjustmentKey, focusDirection, focusPosition, focusSlot]
   );
 
-  const houseBaseId = useMemo(() => {
-    const resolvedHouseId = activeAssets.houseId ?? houseId ?? "";
-    const parsed = splitHouseVariantId(resolvedHouseId);
-    return parsed.baseId || resolvedHouseId || "";
-  }, [activeAssets.houseId, houseId]);
+  const activeHouseBaseId = useMemo(
+    () => resolveHouseBaseId(activeAssets.houseId ?? houseId ?? ""),
+    [activeAssets.houseId, houseId]
+  );
+  const pendingHouseBaseId = useMemo(
+    () => resolveHouseBaseId(pendingAssets?.houseId ?? ""),
+    [pendingAssets?.houseId]
+  );
 
   const allowFocus = useMemo(() => {
     if (typeof focusRequestId !== "number") {
@@ -1667,7 +1675,7 @@ export default function MemorialPreview({
               enableHoverHighlight={enableHoverHighlight}
               allowFocus={allowFocus}
               terrainId={terrainId}
-              houseBaseId={houseBaseId}
+              houseBaseId={activeHouseBaseId}
               houseOffsetX={houseOffsetX}
               houseOffsetZ={houseOffsetZ}
               houseRotationY={houseRotationY}
@@ -1728,7 +1736,7 @@ export default function MemorialPreview({
                   enableHoverHighlight={false}
                   allowFocus={false}
                   terrainId={terrainId}
-                  houseBaseId={houseBaseId}
+                  houseBaseId={pendingHouseBaseId}
                   houseOffsetX={houseOffsetX}
                   houseOffsetZ={houseOffsetZ}
                   houseRotationY={houseRotationY}

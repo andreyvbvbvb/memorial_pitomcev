@@ -80,6 +80,11 @@ export class PetsController {
     return this.petsService.setPreviewPhoto(id, dto.photoId);
   }
 
+  @Delete(":id/photos/:photoId")
+  removePhoto(@Param("id") id: string, @Param("photoId") photoId: string) {
+    return this.petsService.removePhoto(id, photoId);
+  }
+
   @Patch(":id")
   update(@Param("id") id: string, @Body() dto: UpdatePetDto) {
     return this.petsService.update(id, dto);
