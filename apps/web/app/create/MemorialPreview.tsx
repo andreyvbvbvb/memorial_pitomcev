@@ -106,6 +106,14 @@ type SceneAssets = {
   colors?: Record<string, string>;
 };
 
+type HousePresentation = {
+  terrainId?: string | null;
+  houseOffsetX?: number;
+  houseOffsetZ?: number;
+  houseRotationY?: number;
+  houseScaleMultiplier?: number;
+};
+
 const buildSceneSignature = (assets: SceneAssets) => {
   const parts = assets.parts ?? [];
   const gifts = assets.gifts ?? [];
@@ -209,6 +217,16 @@ const resolveHouseBaseId = (houseId?: string | null) => {
   const parsed = splitHouseVariantId(houseId ?? "");
   return parsed.baseId || houseId || "";
 };
+
+const sameHousePresentation = (
+  left: HousePresentation | null | undefined,
+  right: HousePresentation | null | undefined
+) =>
+  (left?.terrainId ?? null) === (right?.terrainId ?? null) &&
+  (left?.houseOffsetX ?? null) === (right?.houseOffsetX ?? null) &&
+  (left?.houseOffsetZ ?? null) === (right?.houseOffsetZ ?? null) &&
+  (left?.houseRotationY ?? null) === (right?.houseRotationY ?? null) &&
+  (left?.houseScaleMultiplier ?? null) === (right?.houseScaleMultiplier ?? null);
 
 const collectGiftSlots = (target: THREE.Object3D) => {
   const found = new Set<string>();
@@ -1378,10 +1396,25 @@ export default function MemorialPreview({
     () => buildSceneSignature(currentAssets),
     [currentAssets]
   );
+  const currentHousePresentation = useMemo<HousePresentation>(
+    () => ({
+      terrainId,
+      houseOffsetX,
+      houseOffsetZ,
+      houseRotationY,
+      houseScaleMultiplier
+    }),
+    [terrainId, houseOffsetX, houseOffsetZ, houseRotationY, houseScaleMultiplier]
+  );
   const [activeAssets, setActiveAssets] = useState<SceneAssets>(currentAssets);
   const [activeSignature, setActiveSignature] = useState(currentSignature);
+  const [activeHousePresentation, setActiveHousePresentation] =
+    useState<HousePresentation>(currentHousePresentation);
   const [pendingAssets, setPendingAssets] = useState<SceneAssets | null>(null);
+  const [pendingHousePresentation, setPendingHousePresentation] =
+    useState<HousePresentation | null>(null);
   const pendingRef = useRef<{ signature: string; assets: SceneAssets } | null>(null);
+  const pendingHousePresentationRef = useRef<HousePresentation | null>(null);
   const pendingSignature = useMemo(
     () => (pendingAssets ? buildSceneSignature(pendingAssets) : null),
     [pendingAssets]
@@ -1396,16 +1429,26 @@ export default function MemorialPreview({
     if (currentSignature === activeSignature) {
       if (pendingRef.current) {
         pendingRef.current = null;
+        pendingHousePresentationRef.current = null;
         setPendingAssets(null);
+        setPendingHousePresentation(null);
       }
+      setActiveHousePresentation((prev) =>
+        sameHousePresentation(prev, currentHousePresentation) ? prev : currentHousePresentation
+      );
       return;
     }
-    if (pendingRef.current?.signature === currentSignature) {
+    if (
+      pendingRef.current?.signature === currentSignature &&
+      sameHousePresentation(pendingHousePresentationRef.current, currentHousePresentation)
+    ) {
       return;
     }
     pendingRef.current = { signature: currentSignature, assets: currentAssets };
+    pendingHousePresentationRef.current = currentHousePresentation;
     setPendingAssets(currentAssets);
-  }, [activeSignature, currentAssets, currentSignature]);
+    setPendingHousePresentation(currentHousePresentation);
+  }, [activeSignature, currentAssets, currentHousePresentation, currentSignature]);
 
   const handlePendingReady = useCallback(
     (signature: string) => {
@@ -1413,13 +1456,18 @@ export default function MemorialPreview({
         return;
       }
       const nextAssets = pendingRef.current.assets;
+      const nextHousePresentation =
+        pendingHousePresentationRef.current ?? currentHousePresentation;
       pendingRef.current = null;
+      pendingHousePresentationRef.current = null;
       setPendingAssets(null);
+      setPendingHousePresentation(null);
       setActiveAssets(nextAssets);
       setActiveSignature(signature);
+      setActiveHousePresentation(nextHousePresentation);
       setSceneReady(true);
     },
-    []
+    [currentHousePresentation]
   );
 
   const offsetAdjustment = useMemo(() => {
@@ -1674,12 +1722,12 @@ export default function MemorialPreview({
               orbitLastChangeRef={orbitLastChangeRef}
               enableHoverHighlight={enableHoverHighlight}
               allowFocus={allowFocus}
-              terrainId={terrainId}
+              terrainId={activeHousePresentation.terrainId}
               houseBaseId={activeHouseBaseId}
-              houseOffsetX={houseOffsetX}
-              houseOffsetZ={houseOffsetZ}
-              houseRotationY={houseRotationY}
-              houseScaleMultiplier={houseScaleMultiplier}
+              houseOffsetX={activeHousePresentation.houseOffsetX}
+              houseOffsetZ={activeHousePresentation.houseOffsetZ}
+              houseRotationY={activeHousePresentation.houseRotationY}
+              houseScaleMultiplier={activeHousePresentation.houseScaleMultiplier}
               onReady={() => setSceneReady(true)}
             />
           ) : null}
@@ -1735,12 +1783,12 @@ export default function MemorialPreview({
                   orbitLastChangeRef={orbitLastChangeRef}
                   enableHoverHighlight={false}
                   allowFocus={false}
-                  terrainId={terrainId}
+                  terrainId={pendingHousePresentation?.terrainId}
                   houseBaseId={pendingHouseBaseId}
-                  houseOffsetX={houseOffsetX}
-                  houseOffsetZ={houseOffsetZ}
-                  houseRotationY={houseRotationY}
-                  houseScaleMultiplier={houseScaleMultiplier}
+                  houseOffsetX={pendingHousePresentation?.houseOffsetX}
+                  houseOffsetZ={pendingHousePresentation?.houseOffsetZ}
+                  houseRotationY={pendingHousePresentation?.houseRotationY}
+                  houseScaleMultiplier={pendingHousePresentation?.houseScaleMultiplier}
                   onReady={() => handlePendingReady(pendingSignature)}
                 />
               ) : pendingAssets.houseUrl ? (
