@@ -1,5 +1,5 @@
 export const authPageShellClass =
-  "relative flex min-h-[calc(100vh-120px)] items-center justify-center overflow-hidden bg-[#cfe9ff] px-6 py-12";
+  "relative flex min-h-[calc(100vh-120px)] items-center justify-center overflow-hidden bg-[#fcf8f5] px-6 py-12";
 
 export const authBackdropGlowClass =
   "pointer-events-none absolute rounded-full blur-[100px]";

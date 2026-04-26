@@ -1,6 +1,6 @@
 export default function AboutPage() {
   return (
-    <main className="min-h-[calc(100vh-var(--app-header-height,0px))] bg-[#f4f6fb] px-6 py-10">
+    <main className="min-h-[calc(100vh-var(--app-header-height,0px))] bg-[#fcf8f5] px-6 py-10">
       <div className="mx-auto w-full max-w-3xl">
         <h1 className="text-2xl font-semibold text-slate-900">Документы</h1>
         <p className="mt-2 text-sm text-slate-600">

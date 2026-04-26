@@ -13,8 +13,6 @@ import {
   authLabelClass,
   authNoticeClass,
   authPageShellClass,
-  authPrimaryButtonClass,
-  authSecondaryButtonClass,
   authTitleClass
 } from "../../components/authTheme";
 
@@ -148,8 +146,8 @@ export default function ProfileClient() {
       <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
       <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl">
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.85fr)]">
+      <div className="relative z-10 mx-auto w-full max-w-3xl">
+        <section>
           <div className={authCardClass}>
             <div className={authInnerShellClass}>
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -231,20 +229,31 @@ export default function ProfileClient() {
 
                 <div className="flex flex-wrap gap-3 pt-2">
                   {!editing ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (profile) {
-                          setEditing(true);
-                          setError(null);
-                          setNotice(null);
-                        }
-                      }}
-                      className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
-                      disabled={!profile}
-                    >
-                      Редактировать профиль
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (profile) {
+                            setEditing(true);
+                            setError(null);
+                            setNotice(null);
+                          }
+                        }}
+                        className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                        disabled={!profile}
+                      >
+                        Редактировать профиль
+                      </button>
+                      {profile ? (
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-all hover:bg-[#fff4f4]"
+                        >
+                          Выйти
+                        </button>
+                      ) : null}
+                    </>
                   ) : (
                     <>
                       <button
@@ -269,49 +278,6 @@ export default function ProfileClient() {
               </div>
             </div>
           </div>
-
-          <aside className={authCardClass}>
-            <div className={authInnerShellClass}>
-              <div className="rounded-[28px] border-[4px] border-white bg-[#fff7f1] p-5 shadow-[0_18px_32px_-24px_rgba(93,64,55,0.5)]">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
-                  Аккаунт
-                </p>
-                <div className="mt-3 rounded-[24px] border-[3px] border-white bg-white px-4 py-4 shadow-[inset_0_2px_6px_rgba(93,64,55,0.05)]">
-                  <div className="text-sm font-black text-[#5d4037]">
-                    {profile?.login?.trim() || "Без логина"}
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-[#8d6e63]">
-                    {profile?.email || "Email не указан"}
-                  </div>
-                </div>
-                <div className="mt-5 grid gap-3">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/my-pets")}
-                    className={authSecondaryButtonClass}
-                  >
-                    Мои мемориалы
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/create")}
-                    className={authSecondaryButtonClass}
-                  >
-                    Создать мемориал
-                  </button>
-                  {profile ? (
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="inline-flex w-full items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-all hover:bg-[#fff4f4]"
-                    >
-                      Выйти
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </aside>
         </section>
       </div>
     </div>

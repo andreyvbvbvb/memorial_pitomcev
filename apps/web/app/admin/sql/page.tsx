@@ -1004,7 +1004,7 @@ export default function AdminSqlPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-var(--app-header-height,56px))] bg-slate-50 px-6 py-10">
+    <main className="min-h-[calc(100vh-var(--app-header-height,56px))] bg-[#fcf8f5] px-6 py-10">
       <div className="mx-auto w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">Админ · SQL консоль</h1>
         <p className="mt-2 text-sm text-slate-600">

@@ -1805,7 +1805,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-16">
+      <main className="min-h-screen bg-[#fcf8f5] px-6 py-16">
         <div className="mx-auto max-w-6xl space-y-6">
           <div className="animate-pulse rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <div className="h-5 w-32 rounded-full bg-slate-200" />
@@ -1835,7 +1835,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   if (error || !pet) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-16">
+      <main className="min-h-screen bg-[#fcf8f5] px-6 py-16">
         <div className="mx-auto max-w-6xl text-center">
           <h1 className="text-2xl font-semibold text-slate-900">Мемориал не найден</h1>
           <p className="mt-3 text-slate-600">{error ?? "Проверь ссылку"}</p>

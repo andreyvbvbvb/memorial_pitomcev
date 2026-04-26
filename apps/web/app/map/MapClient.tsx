@@ -1832,7 +1832,7 @@ export default function MapClient() {
   if (isMobile) {
     return (
       <main
-        className="relative flex w-screen overflow-hidden bg-[#cfe9ff]"
+        className="relative flex w-screen overflow-hidden bg-[#fcf8f5]"
         style={mapViewportStyle}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.6),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,206,172,0.14),_transparent_30%)]" />
@@ -2078,7 +2078,7 @@ export default function MapClient() {
 
   return (
     <main
-      className="relative w-screen overflow-hidden bg-[#cfe9ff]"
+      className="relative w-screen overflow-hidden bg-[#fcf8f5]"
       style={mapViewportStyle}
     >
       <div className="absolute inset-0">
