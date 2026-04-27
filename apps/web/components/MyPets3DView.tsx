@@ -6,6 +6,7 @@ import { OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ensureDracoLoader } from "../lib/draco";
+import usePortraitLayout from "./usePortraitLayout";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -480,6 +481,7 @@ export default function MyPets3DView({
   loading?: boolean;
   fullScreen?: boolean;
 }) {
+  const isPortraitLayout = usePortraitLayout();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasArrowNavigation, setHasArrowNavigation] = useState(false);
   const controlsRef = useRef<any>(null);
@@ -609,7 +611,13 @@ export default function MyPets3DView({
       </Canvas>
 
       {selectedItem ? (
-        <aside className="absolute right-6 top-1/2 z-20 w-[340px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+        <aside
+          className={`absolute z-20 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur ${
+            isPortraitLayout
+              ? "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-3 right-3"
+              : "right-6 top-1/2 w-[340px] -translate-y-1/2"
+          }`}
+        >
           <button
             type="button"
             onClick={() => setSelectedId(null)}
@@ -687,7 +695,9 @@ export default function MyPets3DView({
             type="button"
             onClick={() => navigateMemorial(-1)}
             aria-label="Предыдущий мемориал"
-            className="group absolute bottom-0 left-0 top-0 z-10 flex w-28 items-center justify-start px-4"
+            className={`group absolute bottom-0 left-0 top-0 z-10 flex items-center justify-start ${
+              isPortraitLayout ? "w-20 px-2" : "w-28 px-4"
+            }`}
           >
             <span
               className={`flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
@@ -712,7 +722,9 @@ export default function MyPets3DView({
             type="button"
             onClick={() => navigateMemorial(1)}
             aria-label="Следующий мемориал"
-            className="group absolute bottom-0 right-0 top-0 z-10 flex w-28 items-center justify-end px-4"
+            className={`group absolute bottom-0 right-0 top-0 z-10 flex items-center justify-end ${
+              isPortraitLayout ? "w-20 px-2" : "w-28 px-4"
+            }`}
           >
             <span
               className={`flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${

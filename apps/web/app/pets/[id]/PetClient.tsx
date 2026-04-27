@@ -10,6 +10,7 @@ import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
 import PhotoLightbox from "../../../components/PhotoLightbox";
+import usePortraitLayout from "../../../components/usePortraitLayout";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -219,6 +220,7 @@ type Props = {
 
 export default function PetClient({ id, mode = "view" }: Props) {
   const isEditMode = mode === "edit";
+  const isPortraitLayout = usePortraitLayout();
   const [pet, setPet] = useState<Pet | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1958,13 +1960,19 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
   const panelBaseClass =
-    "w-[290px] max-w-[82vw] rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur sm:w-[340px]";
+    isPortraitLayout
+      ? "w-[min(560px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] rounded-[30px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur"
+      : "w-[290px] max-w-[82vw] rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur sm:w-[340px]";
   const panelSectionClass =
     "grid gap-3 rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]";
   const panelLabelClass =
     "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
-    `group relative flex h-14 w-14 items-center justify-center rounded-[24px] border-[3px] shadow-md transition-all sm:h-16 sm:w-16 ${
+    `group relative flex items-center justify-center border-[3px] shadow-md transition-all ${
+      isPortraitLayout
+        ? "h-12 w-12 rounded-[18px]"
+        : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
+    } ${
       active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -1973,13 +1981,32 @@ export default function PetClient({ id, mode = "view" }: Props) {
     "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
-  const sidePanelAnchorClass = "absolute bottom-0 left-[4.5rem] sm:left-20";
+  const sidePanelAnchorClass = isPortraitLayout
+    ? "fixed left-1/2 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] -translate-x-1/2"
+    : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
-    "pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]";
+    isPortraitLayout
+      ? "pointer-events-auto absolute left-3 right-3 bottom-[calc(6.8rem+env(safe-area-inset-bottom))] flex h-[min(46vh,430px)] flex-col rounded-[30px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)]"
+      : "pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]";
   const editFinishButtonClass =
     "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
   const editCancelButtonClass =
     "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
+  const memorialControlsWrapClass = isPortraitLayout
+    ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-3 right-[4.75rem]"
+    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4";
+  const memorialControlsClass = isPortraitLayout
+    ? "flex flex-row flex-wrap items-center gap-2"
+    : "flex flex-col gap-2";
+  const giftButtonWrapClass = isPortraitLayout
+    ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3"
+    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4";
+  const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-all ${
+    isPortraitLayout ? "h-12 w-12 rounded-[18px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
+  }`;
+  const giftPanelClass = isPortraitLayout
+    ? `fixed left-3 right-3 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-40 ${panelBaseClass} flex h-[min(48vh,460px)] flex-col overflow-hidden`
+    : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`;
   const appearanceOptionImage = (category: string, optionId: string) =>
     optionId === "none" ? null : `/memorial/options/${category}/${optionId}.png`;
   const appearanceColorField =
@@ -2166,9 +2193,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
           </div>
         </div>
 
-        <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4">
+        <div className={memorialControlsWrapClass}>
           <div className="relative">
-            <div className="flex flex-col gap-2">
+            <div className={memorialControlsClass}>
               <button
                 type="button"
                 onClick={() => togglePanel("info")}
@@ -2481,13 +2508,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
           </div>
         </div>
 
-        <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4">
+        <div className={giftButtonWrapClass}>
           <div className="relative">
             <button
               type="button"
               onClick={toggleGiftPanel}
               aria-label="Подарки"
-              className={`flex h-14 w-14 items-center justify-center rounded-[24px] border-[3px] shadow-md transition-all sm:h-16 sm:w-16 ${
+              className={`${giftButtonClass} ${
                 giftPanelOpen
                   ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
                   : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -2502,9 +2529,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
               </svg>
             </button>
             {giftPanelOpen ? (
-              <div
-                className={`fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`}
-              >
+              <div className={giftPanelClass}>
                 <div className={`flex min-h-0 flex-1 flex-col ${panelSectionClass}`}>
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -2950,12 +2975,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
               </div>
             </div>
 
-            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6">
+            <div className={`${isPortraitLayout ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1.5rem)] max-w-[560px] -translate-x-1/2" : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6"}`}>
               <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
                 Отмена
               </button>
             </div>
-            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6">
+            <div className={`${isPortraitLayout ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1.5rem)] max-w-[560px] -translate-x-1/2 text-right" : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6"}`}>
               <button
                 type="button"
                 onClick={openAppearanceReview}

@@ -14,6 +14,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
+import usePortraitLayout from "../../components/usePortraitLayout";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 import {
   resolveEnvironmentModel,
@@ -1150,6 +1151,7 @@ const matchesFilters = (marker: MarkerDto, typeFilter: string, nameFilter: strin
 };
 
 export default function MapClient() {
+  const isPortraitLayout = usePortraitLayout();
   const [markers, setMarkers] = useState<MarkerDto[]>([]);
   const [visibleMarkers, setVisibleMarkers] = useState<MarkerDto[]>([]);
   const [boundsReady, setBoundsReady] = useState(false);
@@ -1852,7 +1854,7 @@ export default function MapClient() {
           </div>
           {mapMode === "map" ? (
             <>
-              <div className={`relative h-[42vh] w-full overflow-hidden ${simsPanelClass}`}>
+              <div className={`relative ${isPortraitLayout ? "h-[36vh]" : "h-[42vh]"} w-full overflow-hidden ${simsPanelClass}`}>
                 {!apiKey ? (
                   <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
                     Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -1961,7 +1963,7 @@ export default function MapClient() {
             </>
           ) : (
             <>
-              <div className={`relative h-[42vh] w-full overflow-hidden ${simsPanelClass}`}>
+              <div className={`relative ${isPortraitLayout ? "h-[38vh]" : "h-[42vh]"} w-full overflow-hidden ${simsPanelClass}`}>
                 <CarouselScene
                   items={carouselItems}
                   activeIndex={carouselIndex}

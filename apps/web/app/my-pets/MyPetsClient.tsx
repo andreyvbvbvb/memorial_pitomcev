@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import MyPets3DView from "../../components/MyPets3DView";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
+import usePortraitLayout from "../../components/usePortraitLayout";
 
 type PetPhoto = {
   id: string;
@@ -37,6 +38,7 @@ type PetWithPreview = Pet & {
 };
 
 export default function MyPetsClient() {
+  const isPortraitLayout = usePortraitLayout();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +143,7 @@ export default function MyPetsClient() {
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
       <div className="pointer-events-none fixed bottom-0 left-0 h-80 w-80 rounded-full bg-[#d3a27f]/12 blur-[120px]" />
       {viewMode === 5 ? <MyPets3DView pets={petsWithPreview} loading={loading} fullScreen /> : null}
-      <div className="relative z-10 mx-auto max-w-6xl px-6 py-12 pointer-events-none">
+      <div className={`relative z-10 mx-auto max-w-6xl pointer-events-none ${isPortraitLayout ? "px-4 pb-24 pt-8" : "px-6 py-12"}`}>
         <div className="pointer-events-auto">
           {viewMode === 4 ? (
             <section className="rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6">
@@ -286,7 +288,7 @@ export default function MyPetsClient() {
         </div>
       </div>
 
-      <div className="pointer-events-auto fixed bottom-6 left-6 z-20">
+      <div className={`pointer-events-auto fixed z-20 ${isPortraitLayout ? "bottom-4 left-1/2 -translate-x-1/2" : "bottom-6 left-6"}`}>
         <div className="flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur">
           {[
             { mode: 4 as const, label: "Карточки" },

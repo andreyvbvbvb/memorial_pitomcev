@@ -50,6 +50,20 @@ const LOAD_TEST_PRESETS = [
   { label: "Тяжёлый", totalRequests: 250, concurrency: 20 }
 ] as const;
 
+const SYNTHETIC_USER_PRESETS = [
+  { label: "20 VU", virtualUsers: 20, durationMs: 25_000 },
+  { label: "50 VU", virtualUsers: 50, durationMs: 35_000 },
+  { label: "100 VU", virtualUsers: 100, durationMs: 45_000 }
+] as const;
+
+const SYNTHETIC_SCENARIOS = [
+  { id: "map", label: "Карта", weight: 40 },
+  { id: "myPets", label: "Мои питомцы", weight: 25 },
+  { id: "memorial", label: "Страница мемориала", weight: 20 },
+  { id: "gift", label: "Дарение подарка", weight: 10 },
+  { id: "edit", label: "Редактирование", weight: 5 }
+] as const;
+
 type SqlResult = {
   type: "select" | "delete" | "update";
   rowCount?: number;
@@ -115,6 +129,48 @@ type LoadTestSummary = LoadTestProgress & {
   wasAborted: boolean;
 };
 
+type SyntheticScenarioId = (typeof SYNTHETIC_SCENARIOS)[number]["id"];
+
+type SyntheticScenarioCounts = Record<SyntheticScenarioId, number>;
+
+type SyntheticAuthUser = {
+  id: string;
+};
+
+type SyntheticMarker = {
+  petId: string;
+};
+
+type SyntheticPetRecord = {
+  id: string;
+  ownerId?: string | null;
+};
+
+type SyntheticRunProgress = {
+  label: string;
+  virtualUsers: number;
+  durationMs: number;
+  elapsedMs: number;
+  activeUsers: number;
+  completedFlows: number;
+  totalRequests: number;
+  okCount: number;
+  failCount: number;
+  scenarioCounts: SyntheticScenarioCounts;
+};
+
+type SyntheticRunSummary = Omit<SyntheticRunProgress, "elapsedMs" | "activeUsers"> & {
+  actualDurationMs: number;
+  avgRequestMs: number;
+  p95RequestMs: number;
+  maxRequestMs: number;
+  avgFlowMs: number;
+  p95FlowMs: number;
+  flowsPerMinute: number;
+  requestsPerSecond: number;
+  wasAborted: boolean;
+};
+
 const buildSelectQuery = (tableName: string, limit = 50) =>
   `SELECT * FROM "${tableName}" LIMIT ${limit};`;
 
@@ -144,6 +200,53 @@ const getPercentile = (values: number[], percentile: number) => {
 const formatMs = (value: number | null) =>
   value === null ? "—" : `${value.toFixed(value >= 100 ? 0 : 1)} мс`;
 
+const isAbortError = (value: unknown) =>
+  value instanceof DOMException && value.name === "AbortError";
+
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      window.clearTimeout(timeout);
+      cleanup();
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    const cleanup = () => {
+      signal.removeEventListener("abort", onAbort);
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+
+const createEmptySyntheticScenarioCounts = (): SyntheticScenarioCounts => ({
+  map: 0,
+  myPets: 0,
+  memorial: 0,
+  gift: 0,
+  edit: 0
+});
+
+const chooseWeightedScenario = () => {
+  const totalWeight = SYNTHETIC_SCENARIOS.reduce((sum, item) => sum + item.weight, 0);
+  let point = Math.random() * totalWeight;
+  for (const item of SYNTHETIC_SCENARIOS) {
+    point -= item.weight;
+    if (point <= 0) {
+      return item;
+    }
+  }
+  return SYNTHETIC_SCENARIOS[SYNTHETIC_SCENARIOS.length - 1] ?? SYNTHETIC_SCENARIOS[0]!;
+};
+
+const pickRandom = <T,>(items: T[]) =>
+  items.length > 0 ? items[Math.floor(Math.random() * items.length)] ?? null : null;
+
 const describeLoadSummary = (summary: LoadTestSummary) => {
   if (summary.wasAborted) {
     return "Прогон остановлен вручную. Метрики ниже относятся только к уже завершённым запросам.";
@@ -160,10 +263,27 @@ const describeLoadSummary = (summary: LoadTestSummary) => {
   return "Прогон завершился без падения, но задержка высокая. Здесь уже есть смысл профилировать API и базу.";
 };
 
+const describeSyntheticSummary = (summary: SyntheticRunSummary) => {
+  if (summary.wasAborted) {
+    return "Сценарий остановлен вручную. Метрики относятся только к уже завершённым действиям виртуальных пользователей.";
+  }
+  if (summary.failCount > 0) {
+    return "Есть ошибки ответов. Это уже похоже на перегрузку части сценариев или проблемы с таймингами под текущим числом виртуальных пользователей.";
+  }
+  if (summary.p95RequestMs <= 400 && summary.p95FlowMs <= 1800) {
+    return "Сервис уверенно выдержал этот профиль синтетических пользователей. Для такого VU уровня запас ещё есть.";
+  }
+  if (summary.p95RequestMs <= 900 && summary.p95FlowMs <= 3500) {
+    return "Сервис справился, но задержка уже заметна. Это рабочая, но не совсем комфортная нагрузка.";
+  }
+  return "Сценарий проходит тяжело: пользователи ещё не отваливаются массово, но задержка уже высокая. Имеет смысл профилировать web, API и базу.";
+};
+
 export default function AdminSqlPage() {
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
   const loadTestAbortRef = useRef<AbortController | null>(null);
+  const syntheticAbortRef = useRef<AbortController | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
@@ -202,6 +322,10 @@ export default function AdminSqlPage() {
   const [loadTestError, setLoadTestError] = useState<string | null>(null);
   const [loadTestProgress, setLoadTestProgress] = useState<LoadTestProgress | null>(null);
   const [loadTestSummary, setLoadTestSummary] = useState<LoadTestSummary | null>(null);
+  const [syntheticRunning, setSyntheticRunning] = useState(false);
+  const [syntheticError, setSyntheticError] = useState<string | null>(null);
+  const [syntheticProgress, setSyntheticProgress] = useState<SyntheticRunProgress | null>(null);
+  const [syntheticSummary, setSyntheticSummary] = useState<SyntheticRunSummary | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -278,6 +402,7 @@ export default function AdminSqlPage() {
   useEffect(() => {
     return () => {
       loadTestAbortRef.current?.abort();
+      syntheticAbortRef.current?.abort();
     };
   }, []);
 
@@ -779,6 +904,281 @@ export default function AdminSqlPage() {
     }
   };
 
+  const stopSyntheticRun = () => {
+    syntheticAbortRef.current?.abort();
+  };
+
+  const runSyntheticUsers = async (preset: (typeof SYNTHETIC_USER_PRESETS)[number]) => {
+    if (syntheticRunning) {
+      return;
+    }
+    const controller = new AbortController();
+    syntheticAbortRef.current = controller;
+    setSyntheticRunning(true);
+    setSyntheticError(null);
+    setSyntheticSummary(null);
+
+    const scenarioCounts = createEmptySyntheticScenarioCounts();
+    const requestLatencies: number[] = [];
+    const flowLatencies: number[] = [];
+    let totalRequests = 0;
+    let okCount = 0;
+    let failCount = 0;
+    let completedFlows = 0;
+    let activeUsers = 0;
+    const startedAt = performance.now();
+    const runUntil = startedAt + preset.durationMs;
+    let lastProgressCommit = 0;
+
+    const commitProgress = (force = false) => {
+      const now = performance.now();
+      if (!force && now - lastProgressCommit < 180) {
+        return;
+      }
+      lastProgressCommit = now;
+      setSyntheticProgress({
+        label: preset.label,
+        virtualUsers: preset.virtualUsers,
+        durationMs: preset.durationMs,
+        elapsedMs: Math.min(preset.durationMs, now - startedAt),
+        activeUsers,
+        completedFlows,
+        totalRequests,
+        okCount,
+        failCount,
+        scenarioCounts: { ...scenarioCounts }
+      });
+    };
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const uniqueSuffix = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const withSyntheticQuery = (path: string) =>
+      `${origin}${path}${path.includes("?") ? "&" : "?"}synthetic=${uniqueSuffix()}`;
+
+    const requestText = async (url: string, init?: RequestInit) => {
+      const requestStartedAt = performance.now();
+      try {
+        const response = await fetch(url, {
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+          ...init
+        });
+        const duration = performance.now() - requestStartedAt;
+        requestLatencies.push(duration);
+        totalRequests += 1;
+        if (!response.ok) {
+          failCount += 1;
+          commitProgress();
+          return null;
+        }
+        okCount += 1;
+        commitProgress();
+        return response;
+      } catch (err) {
+        if (isAbortError(err) || controller.signal.aborted) {
+          throw err;
+        }
+        requestLatencies.push(performance.now() - requestStartedAt);
+        totalRequests += 1;
+        failCount += 1;
+        commitProgress();
+        return null;
+      }
+    };
+
+    const requestJson = async <T,>(url: string, init?: RequestInit) => {
+      const response = await requestText(url, init);
+      if (!response) {
+        return null;
+      }
+      try {
+        return (await response.json()) as T;
+      } catch {
+        failCount += 1;
+        return null;
+      }
+    };
+
+    const me = await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
+    if (!me?.id) {
+      setSyntheticRunning(false);
+      setSyntheticError("Не удалось подготовить сценарий: auth/me не вернул пользователя");
+      syntheticAbortRef.current = null;
+      return;
+    }
+    const ownerPets =
+      (await requestJson<SyntheticPetRecord[]>(
+        `${apiUrl}/pets?ownerId=${encodeURIComponent(me.id)}`
+      )) ?? [];
+    const publicMarkers =
+      (await requestJson<SyntheticMarker[]>(`${apiUrl}/map/markers`)) ?? [];
+
+    const ownerPetIds = ownerPets.map((item) => item.id).filter(Boolean);
+    const publicPetIds = Array.from(
+      new Set(publicMarkers.map((item) => item.petId).filter(Boolean))
+    );
+
+    const pickOwnerPetId = () => pickRandom(ownerPetIds) ?? pickRandom(publicPetIds);
+    const pickPublicPetId = () => pickRandom(publicPetIds) ?? pickRandom(ownerPetIds);
+
+    const runScenario = async (scenarioId: SyntheticScenarioId) => {
+      switch (scenarioId) {
+        case "map": {
+          const pageResponse = await requestText(withSyntheticQuery("/map"));
+          await pageResponse?.text().catch(() => null);
+          await requestJson<SyntheticMarker[]>(`${apiUrl}/map/markers`);
+          const petId = pickPublicPetId();
+          if (petId) {
+            await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
+          }
+          return;
+        }
+        case "myPets": {
+          const pageResponse = await requestText(withSyntheticQuery("/my-pets"));
+          await pageResponse?.text().catch(() => null);
+          await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
+          await requestJson<SyntheticPetRecord[]>(
+            `${apiUrl}/pets?ownerId=${encodeURIComponent(me.id)}`
+          );
+          return;
+        }
+        case "memorial": {
+          const petId = pickPublicPetId();
+          if (!petId) {
+            return runScenario("map");
+          }
+          const pageResponse = await requestText(withSyntheticQuery(`/pets/${petId}`));
+          await pageResponse?.text().catch(() => null);
+          const pet = await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
+          await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
+          if (pet?.ownerId) {
+            await requestJson<SyntheticPetRecord[]>(
+              `${apiUrl}/pets?ownerId=${encodeURIComponent(pet.ownerId)}`
+            );
+          }
+          return;
+        }
+        case "gift": {
+          const petId = pickPublicPetId();
+          if (!petId) {
+            return runScenario("memorial");
+          }
+          const pageResponse = await requestText(withSyntheticQuery(`/pets/${petId}`));
+          await pageResponse?.text().catch(() => null);
+          await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
+          await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
+          await requestJson<unknown[]>(`${apiUrl}/gifts`);
+          await requestJson<unknown>(`${apiUrl}/wallet/${encodeURIComponent(me.id)}`);
+          return;
+        }
+        case "edit": {
+          const petId = pickOwnerPetId();
+          if (!petId) {
+            return runScenario("myPets");
+          }
+          const pageResponse = await requestText(withSyntheticQuery(`/create?edit=${petId}`));
+          await pageResponse?.text().catch(() => null);
+          await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
+          await requestJson<unknown[]>(`${apiUrl}/content/loading-tips`);
+          await requestJson<unknown>(`${apiUrl}/wallet/${encodeURIComponent(me.id)}`);
+          await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
+          return;
+        }
+      }
+    };
+
+    const worker = async () => {
+      while (!controller.signal.aborted && performance.now() < runUntil) {
+        const scenario = chooseWeightedScenario();
+        activeUsers += 1;
+        commitProgress();
+        const flowStartedAt = performance.now();
+        try {
+          await runScenario(scenario.id);
+        } catch (err) {
+          if (isAbortError(err) || controller.signal.aborted) {
+            return;
+          }
+          failCount += 1;
+        } finally {
+          flowLatencies.push(performance.now() - flowStartedAt);
+          completedFlows += 1;
+          scenarioCounts[scenario.id] += 1;
+          activeUsers = Math.max(0, activeUsers - 1);
+          commitProgress();
+        }
+        if (performance.now() >= runUntil || controller.signal.aborted) {
+          return;
+        }
+        await sleep(1800 + Math.random() * 3400, controller.signal);
+      }
+    };
+
+    setSyntheticProgress({
+      label: preset.label,
+      virtualUsers: preset.virtualUsers,
+      durationMs: preset.durationMs,
+      elapsedMs: 0,
+      activeUsers: 0,
+      completedFlows: 0,
+      totalRequests,
+      okCount,
+      failCount,
+      scenarioCounts: { ...scenarioCounts }
+    });
+
+    try {
+      await Promise.all(
+        Array.from({ length: preset.virtualUsers }, () => worker())
+      );
+    } catch (err) {
+      if (!isAbortError(err) && !controller.signal.aborted) {
+        setSyntheticError(err instanceof Error ? err.message : "Ошибка синтетического прогона");
+      }
+    } finally {
+      const actualDurationMs = performance.now() - startedAt;
+      const wasAborted = controller.signal.aborted;
+      const summary: SyntheticRunSummary = {
+        label: preset.label,
+        virtualUsers: preset.virtualUsers,
+        durationMs: preset.durationMs,
+        completedFlows,
+        totalRequests,
+        okCount,
+        failCount,
+        scenarioCounts: { ...scenarioCounts },
+        actualDurationMs,
+        avgRequestMs: getAverage(requestLatencies),
+        p95RequestMs: getPercentile(requestLatencies, 95),
+        maxRequestMs: requestLatencies.length > 0 ? Math.max(...requestLatencies) : 0,
+        avgFlowMs: getAverage(flowLatencies),
+        p95FlowMs: getPercentile(flowLatencies, 95),
+        flowsPerMinute: actualDurationMs > 0 ? completedFlows / (actualDurationMs / 60000) : 0,
+        requestsPerSecond: actualDurationMs > 0 ? totalRequests / (actualDurationMs / 1000) : 0,
+        wasAborted
+      };
+      setSyntheticSummary(summary);
+      setSyntheticProgress({
+        label: preset.label,
+        virtualUsers: preset.virtualUsers,
+        durationMs: preset.durationMs,
+        elapsedMs: Math.min(preset.durationMs, actualDurationMs),
+        activeUsers: 0,
+        completedFlows,
+        totalRequests,
+        okCount,
+        failCount,
+        scenarioCounts: { ...scenarioCounts }
+      });
+      if (wasAborted) {
+        setSyntheticError("Синтетический прогон остановлен вручную");
+      }
+      syntheticAbortRef.current = null;
+      setSyntheticRunning(false);
+    }
+  };
+
   const normalizedFilter = schemaFilter.trim().toLowerCase();
   const filteredTables = normalizedFilter
     ? schema.filter((table) => {
@@ -1181,6 +1581,114 @@ export default function AdminSqlPage() {
             {loadTestError ? (
               <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
                 {loadTestError}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Синтетические пользователи
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Это приближённая симуляция онлайн-пользователей: виртуальные пользователи
+              крутят реальные сценарии проекта с паузами между действиями. Профиль:
+              карта 40%, мои питомцы 25%, мемориал 20%, подарок 10%, редактирование 5%.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {SYNTHETIC_USER_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => runSyntheticUsers(preset)}
+                  disabled={syntheticRunning}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                >
+                  <div>{preset.label}</div>
+                  <div className="mt-1 text-[10px] font-normal text-slate-500">
+                    {Math.round(preset.durationMs / 1000)} сек, до {preset.virtualUsers} VU
+                  </div>
+                </button>
+              ))}
+            </div>
+            {syntheticRunning ? (
+              <button
+                type="button"
+                onClick={stopSyntheticRun}
+                className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 text-left text-xs font-semibold text-red-700 hover:border-red-300"
+              >
+                Остановить сценарий
+              </button>
+            ) : null}
+            {syntheticProgress ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs font-semibold text-slate-800">
+                    {syntheticProgress.label}: {Math.round(syntheticProgress.elapsedMs / 1000)} / {Math.round(syntheticProgress.durationMs / 1000)} сек
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    active {syntheticProgress.activeUsers} · flows {syntheticProgress.completedFlows} · req {syntheticProgress.totalRequests}
+                  </div>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-slate-900 transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        syntheticProgress.durationMs > 0
+                          ? (syntheticProgress.elapsedMs / syntheticProgress.durationMs) * 100
+                          : 0
+                      )}%`
+                    }}
+                  />
+                </div>
+                <div className="mt-3 grid gap-2 text-[11px] text-slate-600 sm:grid-cols-2">
+                  <div>ok {syntheticProgress.okCount} · fail {syntheticProgress.failCount}</div>
+                  <div>виртуальных пользователей: {syntheticProgress.virtualUsers}</div>
+                  {SYNTHETIC_SCENARIOS.map((scenario) => (
+                    <div key={scenario.id}>
+                      {scenario.label}: {syntheticProgress.scenarioCounts[scenario.id]}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {syntheticSummary ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                <div className="grid gap-2 text-[11px] text-slate-600 sm:grid-cols-2">
+                  <div>
+                    Длительность: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.actualDurationMs)}</span>
+                  </div>
+                  <div>
+                    Скорость: <span className="font-semibold text-slate-800">{syntheticSummary.requestsPerSecond.toFixed(1)} req/s</span>
+                  </div>
+                  <div>
+                    Средний request: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.avgRequestMs)}</span>
+                  </div>
+                  <div>
+                    P95 request: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.p95RequestMs)}</span>
+                  </div>
+                  <div>
+                    Средний flow: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.avgFlowMs)}</span>
+                  </div>
+                  <div>
+                    P95 flow: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.p95FlowMs)}</span>
+                  </div>
+                  <div>
+                    Max request: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.maxRequestMs)}</span>
+                  </div>
+                  <div>
+                    Flow/min: <span className="font-semibold text-slate-800">{syntheticSummary.flowsPerMinute.toFixed(1)}</span>
+                  </div>
+                </div>
+                <p className="mt-3 text-[11px] text-slate-500">
+                  {describeSyntheticSummary(syntheticSummary)}
+                </p>
+              </div>
+            ) : null}
+            {syntheticError ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+                {syntheticError}
               </div>
             ) : null}
           </div>

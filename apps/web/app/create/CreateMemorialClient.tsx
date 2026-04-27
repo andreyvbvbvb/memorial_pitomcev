@@ -43,6 +43,7 @@ import {
 } from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
+import usePortraitLayout from "../../components/usePortraitLayout";
 import { getConfiguredHouseSlots, getTerrainGiftSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
 import {
@@ -451,6 +452,7 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
 export default function CreateMemorialClient({
   editId = null
 }: CreateMemorialClientProps) {
+  const isPortraitLayout = usePortraitLayout();
   const isEditMode = Boolean(editId);
   const [step, setStep] = useState<Step>(isEditMode ? 1 : 0);
   const [form, setForm] = useState<FormState>(initialState);
@@ -3025,15 +3027,25 @@ export default function CreateMemorialClient({
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
-    "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
+    isPortraitLayout
+      ? "pointer-events-auto absolute left-3 right-3 bottom-[calc(8rem+env(safe-area-inset-bottom))] overflow-hidden rounded-[28px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur"
+      : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
-        ? "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)]"
-        : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
+        ? isPortraitLayout
+          ? "w-auto max-h-[min(50vh,460px)]"
+          : "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)]"
+        : isPortraitLayout
+          ? "w-auto max-h-[min(44vh,420px)] overflow-y-auto"
+          : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
-    `group relative flex h-14 w-14 items-center justify-center rounded-[22px] border-2 shadow-md transition-all sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem] ${
+    `group relative flex items-center justify-center border-2 shadow-md transition-all ${
+      isPortraitLayout
+        ? "h-12 w-12 rounded-[18px]"
+        : "h-14 w-14 rounded-[22px] sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem]"
+    } ${
       active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
@@ -3042,6 +3054,22 @@ export default function CreateMemorialClient({
         ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.18)]"
         : ""
       }`;
+  const builderEditorPanelClass = `${
+    activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
+  } ${
+    isPortraitLayout
+      ? "absolute left-3 right-3 bottom-[calc(8rem+env(safe-area-inset-bottom))] flex h-[min(44vh,430px)] flex-col rounded-[30px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)]"
+      : "absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]"
+  }`;
+  const builderOverlayButtonsWrapClass = isPortraitLayout
+    ? "pointer-events-auto absolute bottom-[calc(5.2rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
+    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6";
+  const builderOverlayButtonsClass = isPortraitLayout
+    ? "flex flex-row items-center justify-center gap-2"
+    : "flex flex-col gap-2";
+  const builderActionBarClass = isPortraitLayout
+    ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1.5rem)] max-w-[560px] -translate-x-1/2"
+    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6";
   const loadingMessage =
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
   const mainStyle: CSSProperties = {
@@ -3169,7 +3197,7 @@ export default function CreateMemorialClient({
 
           <div className="pointer-events-none fixed inset-0 z-10">
 
-            <div className="pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]">
+            <div className={builderEditorPanelClass}>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]">
                 <div className="border-b border-[#eadfd9] px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
@@ -3282,8 +3310,8 @@ export default function CreateMemorialClient({
               </div>
             ) : null}
 
-            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6">
-              <div className="flex flex-col gap-2">
+            <div className={builderOverlayButtonsWrapClass}>
+              <div className={builderOverlayButtonsClass}>
                 <button
                   type="button"
                   onClick={() => toggleOverlay("base")}
@@ -3368,8 +3396,8 @@ export default function CreateMemorialClient({
               </div>
             </div>
 
-            <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6">
-              <div className="flex items-center gap-3">
+            <div className={builderActionBarClass}>
+              <div className={`flex items-center gap-3 ${isPortraitLayout ? (isEditMode ? "justify-between" : "justify-end") : ""}`}>
                 {isEditMode && editId ? (
                   <button
                     type="button"
