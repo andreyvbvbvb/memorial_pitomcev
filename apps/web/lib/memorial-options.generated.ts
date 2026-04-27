@@ -455,5 +455,13 @@ export const bowlWaterOptionsGenerated = [
     "id": "bowl_water_8",
     "name": "Миска воды 8",
     "description": "Вариант 8"
+  },
+  {
+    "id": "bowl_water_9",
+    "name": "Миска воды 9",
+    "description": "Вариант 9",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
   }
 ] as const;

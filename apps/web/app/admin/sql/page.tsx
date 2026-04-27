@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
 import { canAccessAdmin, canManageAdmins, type AccessLevel } from "../../../lib/access";
@@ -44,6 +44,12 @@ const QUICK_QUERIES = [
   }
 ] as const;
 
+const LOAD_TEST_PRESETS = [
+  { label: "Лёгкий", totalRequests: 30, concurrency: 5 },
+  { label: "Средний", totalRequests: 100, concurrency: 10 },
+  { label: "Тяжёлый", totalRequests: 250, concurrency: 20 }
+] as const;
+
 type SqlResult = {
   type: "select" | "delete" | "update";
   rowCount?: number;
@@ -81,6 +87,34 @@ type AccessUser = {
   createdAt?: string;
 };
 
+type LoadProbeResponse = {
+  ok: boolean;
+  dbMs: number;
+  serverMs: number;
+  at: string;
+};
+
+type LoadTestProgress = {
+  label: string;
+  totalRequests: number;
+  concurrency: number;
+  completed: number;
+  okCount: number;
+  failCount: number;
+};
+
+type LoadTestSummary = LoadTestProgress & {
+  totalDurationMs: number;
+  avgMs: number;
+  p95Ms: number;
+  maxMs: number;
+  minMs: number;
+  requestsPerSecond: number;
+  avgServerMs: number | null;
+  p95ServerMs: number | null;
+  wasAborted: boolean;
+};
+
 const buildSelectQuery = (tableName: string, limit = 50) =>
   `SELECT * FROM "${tableName}" LIMIT ${limit};`;
 
@@ -88,9 +122,48 @@ const buildCountQuery = (tableName: string) =>
   `SELECT count(*) FROM "${tableName}";`;
 const escapeSqlLiteral = (value: string) => value.replace(/'/g, "''");
 
+const getAverage = (values: number[]) => {
+  if (values.length === 0) {
+    return 0;
+  }
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+};
+
+const getPercentile = (values: number[], percentile: number) => {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.ceil((percentile / 100) * sorted.length) - 1)
+  );
+  return sorted[index] ?? 0;
+};
+
+const formatMs = (value: number | null) =>
+  value === null ? "—" : `${value.toFixed(value >= 100 ? 0 : 1)} мс`;
+
+const describeLoadSummary = (summary: LoadTestSummary) => {
+  if (summary.wasAborted) {
+    return "Прогон остановлен вручную. Метрики ниже относятся только к уже завершённым запросам.";
+  }
+  if (summary.failCount > 0) {
+    return "Есть ошибки ответов. На этой нагрузке сервис уже начал давать сбои или упёрся в лимиты.";
+  }
+  if (summary.p95Ms <= 250) {
+    return "Прогон прошёл без ошибок и с низкой задержкой. Для такого профиля нагрузка лёгкая.";
+  }
+  if (summary.p95Ms <= 800) {
+    return "Прогон прошёл без ошибок, но задержка уже заметна. Нагрузка умеренная.";
+  }
+  return "Прогон завершился без падения, но задержка высокая. Здесь уже есть смысл профилировать API и базу.";
+};
+
 export default function AdminSqlPage() {
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
+  const loadTestAbortRef = useRef<AbortController | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
@@ -125,6 +198,10 @@ export default function AdminSqlPage() {
   const [limitValue, setLimitValue] = useState("5");
   const [limitSaving, setLimitSaving] = useState(false);
   const [limitNotice, setLimitNotice] = useState<string | null>(null);
+  const [loadTestRunning, setLoadTestRunning] = useState(false);
+  const [loadTestError, setLoadTestError] = useState<string | null>(null);
+  const [loadTestProgress, setLoadTestProgress] = useState<LoadTestProgress | null>(null);
+  const [loadTestSummary, setLoadTestSummary] = useState<LoadTestSummary | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -197,6 +274,12 @@ export default function AdminSqlPage() {
       isMounted = false;
     };
   }, [apiUrl, authChecked, isAdmin]);
+
+  useEffect(() => {
+    return () => {
+      loadTestAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!authChecked || !isAdmin) {
@@ -576,6 +659,126 @@ export default function AdminSqlPage() {
     }));
   };
 
+  const stopLoadTest = () => {
+    loadTestAbortRef.current?.abort();
+  };
+
+  const runLoadTest = async (preset: (typeof LOAD_TEST_PRESETS)[number]) => {
+    if (loadTestRunning) {
+      return;
+    }
+    const controller = new AbortController();
+    loadTestAbortRef.current = controller;
+    setLoadTestRunning(true);
+    setLoadTestError(null);
+    setLoadTestSummary(null);
+    setLoadTestProgress({
+      label: preset.label,
+      totalRequests: preset.totalRequests,
+      concurrency: preset.concurrency,
+      completed: 0,
+      okCount: 0,
+      failCount: 0
+    });
+
+    const latencies: number[] = [];
+    const serverLatencies: number[] = [];
+    let nextRequestIndex = 0;
+    let completed = 0;
+    let okCount = 0;
+    let failCount = 0;
+    const startedAt = performance.now();
+
+    const updateProgress = () => {
+      setLoadTestProgress({
+        label: preset.label,
+        totalRequests: preset.totalRequests,
+        concurrency: preset.concurrency,
+        completed,
+        okCount,
+        failCount
+      });
+    };
+
+    const worker = async () => {
+      while (true) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        const currentIndex = nextRequestIndex;
+        nextRequestIndex += 1;
+        if (currentIndex >= preset.totalRequests) {
+          return;
+        }
+        const requestStartedAt = performance.now();
+        try {
+          const response = await fetch(`${apiUrl}/admin/load-probe`, {
+            credentials: "include",
+            cache: "no-store",
+            signal: controller.signal
+          });
+          const duration = performance.now() - requestStartedAt;
+          latencies.push(duration);
+          if (!response.ok) {
+            failCount += 1;
+          } else {
+            okCount += 1;
+            const data = (await response.json()) as LoadProbeResponse;
+            if (typeof data.serverMs === "number") {
+              serverLatencies.push(data.serverMs);
+            }
+          }
+        } catch (err) {
+          if (controller.signal.aborted) {
+            return;
+          }
+          latencies.push(performance.now() - requestStartedAt);
+          failCount += 1;
+        } finally {
+          if (!controller.signal.aborted) {
+            completed += 1;
+            updateProgress();
+          }
+        }
+      }
+    };
+
+    try {
+      await Promise.all(
+        Array.from({ length: preset.concurrency }, () => worker())
+      );
+    } finally {
+      const totalDurationMs = performance.now() - startedAt;
+      const wasAborted = controller.signal.aborted;
+      const summary: LoadTestSummary = {
+        label: preset.label,
+        totalRequests: preset.totalRequests,
+        concurrency: preset.concurrency,
+        completed,
+        okCount,
+        failCount,
+        totalDurationMs,
+        avgMs: getAverage(latencies),
+        p95Ms: getPercentile(latencies, 95),
+        maxMs: latencies.length > 0 ? Math.max(...latencies) : 0,
+        minMs: latencies.length > 0 ? Math.min(...latencies) : 0,
+        requestsPerSecond:
+          totalDurationMs > 0 ? completed / (totalDurationMs / 1000) : 0,
+        avgServerMs: serverLatencies.length > 0 ? getAverage(serverLatencies) : null,
+        p95ServerMs:
+          serverLatencies.length > 0 ? getPercentile(serverLatencies, 95) : null,
+        wasAborted
+      };
+      setLoadTestSummary(summary);
+      updateProgress();
+      if (wasAborted) {
+        setLoadTestError("Прогон остановлен вручную");
+      }
+      loadTestAbortRef.current = null;
+      setLoadTestRunning(false);
+    }
+  };
+
   const normalizedFilter = schemaFilter.trim().toLowerCase();
   const filteredTables = normalizedFilter
     ? schema.filter((table) => {
@@ -888,6 +1091,98 @@ export default function AdminSqlPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Нагрузочный прогон
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Браузер запускает серию параллельных admin-only запросов к API с DB probe.
+              Это удобный smoke-тест под реальной HTTP-нагрузкой, но не полноценный benchmark.
+            </p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {LOAD_TEST_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => runLoadTest(preset)}
+                  disabled={loadTestRunning}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                >
+                  <div>{preset.label}</div>
+                  <div className="mt-1 text-[10px] font-normal text-slate-500">
+                    {preset.totalRequests} запросов, concurrency {preset.concurrency}
+                  </div>
+                </button>
+              ))}
+            </div>
+            {loadTestRunning ? (
+              <button
+                type="button"
+                onClick={stopLoadTest}
+                className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2 text-left text-xs font-semibold text-red-700 hover:border-red-300"
+              >
+                Остановить прогон
+              </button>
+            ) : null}
+            {loadTestProgress ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs font-semibold text-slate-800">
+                    {loadTestProgress.label}: {loadTestProgress.completed}/{loadTestProgress.totalRequests}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    ok {loadTestProgress.okCount} · fail {loadTestProgress.failCount} · concurrency {loadTestProgress.concurrency}
+                  </div>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-slate-900 transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        loadTestProgress.totalRequests > 0
+                          ? (loadTestProgress.completed / loadTestProgress.totalRequests) * 100
+                          : 0
+                      )}%`
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
+            {loadTestSummary ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                <div className="grid gap-2 text-[11px] text-slate-600 sm:grid-cols-2">
+                  <div>
+                    Всего времени: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.totalDurationMs)}</span>
+                  </div>
+                  <div>
+                    Скорость: <span className="font-semibold text-slate-800">{loadTestSummary.requestsPerSecond.toFixed(1)} req/s</span>
+                  </div>
+                  <div>
+                    Средняя задержка: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.avgMs)}</span>
+                  </div>
+                  <div>
+                    P95: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.p95Ms)}</span>
+                  </div>
+                  <div>
+                    Max: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.maxMs)}</span>
+                  </div>
+                  <div>
+                    Server P95: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.p95ServerMs)}</span>
+                  </div>
+                </div>
+                <p className="mt-3 text-[11px] text-slate-500">
+                  {describeLoadSummary(loadTestSummary)}
+                </p>
+              </div>
+            ) : null}
+            {loadTestError ? (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+                {loadTestError}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">

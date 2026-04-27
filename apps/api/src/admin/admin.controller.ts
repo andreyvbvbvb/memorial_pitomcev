@@ -182,6 +182,22 @@ export class AdminController {
     return { tables };
   }
 
+  @Get("load-probe")
+  async loadProbe(@Req() req: Request) {
+    const startedAt = Date.now();
+    await this.ensureAdmin(req);
+    const dbStartedAt = Date.now();
+    await this.prisma.$queryRawUnsafe("SELECT 1 AS ok");
+    const dbMs = Date.now() - dbStartedAt;
+    const serverMs = Date.now() - startedAt;
+    return {
+      ok: true,
+      dbMs,
+      serverMs,
+      at: new Date().toISOString()
+    };
+  }
+
   @Get("access/users")
   async listAccessUsers(@Req() req: Request) {
     await this.ensureAdmin(req);
