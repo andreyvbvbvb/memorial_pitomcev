@@ -1320,6 +1320,21 @@ export default function MapClient() {
     "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-sm font-extrabold text-[#5d4037] outline-none transition focus:ring-2 focus:ring-[#d3a27f]/35";
   const simsResetButtonClass =
     "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
+  const mobileContentClass = isPortraitLayout
+    ? "relative z-10 flex h-full w-full flex-col gap-3 px-2.5 pb-3"
+    : "relative z-10 flex h-full flex-col gap-4 px-4 pb-4";
+  const mobileTopBarClass = isPortraitLayout
+    ? "flex items-center justify-between gap-2"
+    : "flex items-center justify-between gap-3";
+  const mobilePanelClass = isPortraitLayout
+    ? "rounded-[24px] border-[3px] border-white bg-white/90 p-2.5 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.4)] backdrop-blur-md transition-all duration-300"
+    : simsPanelClass;
+  const mobileSidebarClass = isPortraitLayout
+    ? "flex-1 overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md"
+    : `flex-1 overflow-y-auto p-4 ${simsSidebarClass}`;
+  const mobileSceneHeightClass = isPortraitLayout
+    ? "h-[34dvh] min-h-[210px] max-h-[320px]"
+    : "h-[42vh]";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
   const modeToggleButtonClass = (active: boolean) =>
@@ -1839,10 +1854,10 @@ export default function MapClient() {
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.6),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,206,172,0.14),_transparent_30%)]" />
         <div
-          className="relative z-10 flex h-full flex-col gap-4 px-4 pb-4"
-          style={{ paddingTop: "calc(var(--app-header-height, 56px) + 16px)" }}
+          className={mobileContentClass}
+          style={{ paddingTop: isPortraitLayout ? "calc(var(--app-header-height, 56px) + 10px)" : "calc(var(--app-header-height, 56px) + 16px)" }}
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className={mobileTopBarClass}>
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
@@ -1854,7 +1869,7 @@ export default function MapClient() {
           </div>
           {mapMode === "map" ? (
             <>
-              <div className={`relative ${isPortraitLayout ? "h-[36vh]" : "h-[42vh]"} w-full overflow-hidden ${simsPanelClass}`}>
+              <div className={`relative ${mobileSceneHeightClass} w-full overflow-hidden ${mobilePanelClass}`}>
                 {!apiKey ? (
                   <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
                     Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -1957,13 +1972,13 @@ export default function MapClient() {
                   {listMarkers.length}
                 </span>
               </div>
-              <div className={`flex-1 overflow-y-auto p-4 ${simsSidebarClass}`}>
+              <div className={mobileSidebarClass}>
                 {memorialListContent}
               </div>
             </>
           ) : (
             <>
-              <div className={`relative ${isPortraitLayout ? "h-[38vh]" : "h-[42vh]"} w-full overflow-hidden ${simsPanelClass}`}>
+              <div className={`relative ${mobileSceneHeightClass} w-full overflow-hidden ${mobilePanelClass}`}>
                 <CarouselScene
                   items={carouselItems}
                   activeIndex={carouselIndex}
@@ -2008,7 +2023,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className="mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+              <div className={isPortraitLayout ? "rounded-[24px] border-[3px] border-white bg-[#f7f1ee]/95 p-2.5 shadow-[0_20px_48px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
                 {activeCarouselInfoContent}
               </div>
             </>

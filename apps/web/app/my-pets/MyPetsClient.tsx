@@ -114,6 +114,21 @@ export default function MyPetsClient() {
     }
     return "Без дат";
   };
+  const pageContentClass = isPortraitLayout
+    ? "relative z-10 mx-auto max-w-6xl pointer-events-none px-3 pb-20 pt-3"
+    : "relative z-10 mx-auto max-w-6xl pointer-events-none px-6 py-12";
+  const cardsSectionClass = isPortraitLayout
+    ? "rounded-[24px] border-[3px] border-white bg-white/82 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md"
+    : "rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6";
+  const petCardClass = isPortraitLayout
+    ? "group relative rounded-[24px] border-[3px] border-[#fdf2e9] bg-white p-2.5 shadow-[0_6px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_9px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_4px_0_0_#f0e1d1]"
+    : "group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]";
+  const viewToggleWrapClass = isPortraitLayout
+    ? "pointer-events-auto fixed bottom-3 left-1/2 z-20 -translate-x-1/2"
+    : "pointer-events-auto fixed bottom-6 left-6 z-20";
+  const viewToggleShellClass = isPortraitLayout
+    ? "flex items-center gap-1 rounded-[22px] border-[3px] border-[#fdf2e9] bg-white/95 p-1 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur"
+    : "flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur";
 
   const handleDeletePet = async (pet: PetWithPreview) => {
     if (!window.confirm(`Удалить мемориал "${pet.name}"? Он исчезнет из списков, но данные сохранятся в базе.`)) {
@@ -143,10 +158,10 @@ export default function MyPetsClient() {
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
       <div className="pointer-events-none fixed bottom-0 left-0 h-80 w-80 rounded-full bg-[#d3a27f]/12 blur-[120px]" />
       {viewMode === 5 ? <MyPets3DView pets={petsWithPreview} loading={loading} fullScreen /> : null}
-      <div className={`relative z-10 mx-auto max-w-6xl pointer-events-none ${isPortraitLayout ? "px-4 pb-24 pt-8" : "px-6 py-12"}`}>
+      <div className={pageContentClass}>
         <div className="pointer-events-auto">
           {viewMode === 4 ? (
-            <section className="rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6">
+            <section className={cardsSectionClass}>
               {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
 
               {petsWithPreview.length === 0 && !loading ? (
@@ -157,7 +172,7 @@ export default function MyPetsClient() {
                 {petsWithPreview.map((pet) => (
                   <div
                     key={pet.id}
-                    className="group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]"
+                    className={petCardClass}
                   >
                     <Link href={`/pets/${pet.id}`} className="block">
                       <div className="relative aspect-square overflow-hidden rounded-[24px] border-2 border-white bg-[#efedeb]">
@@ -288,8 +303,8 @@ export default function MyPetsClient() {
         </div>
       </div>
 
-      <div className={`pointer-events-auto fixed z-20 ${isPortraitLayout ? "bottom-4 left-1/2 -translate-x-1/2" : "bottom-6 left-6"}`}>
-        <div className="flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur">
+      <div className={viewToggleWrapClass}>
+        <div className={viewToggleShellClass}>
           {[
             { mode: 4 as const, label: "Карточки" },
             { mode: 5 as const, label: "3D" }

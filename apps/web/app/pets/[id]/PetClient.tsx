@@ -1961,16 +1961,18 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const panelBaseClass =
     isPortraitLayout
-      ? "w-[min(560px,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)] rounded-[30px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur"
+      ? "w-[min(540px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] max-h-[min(54vh,420px)] overflow-y-auto rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_50px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
       : "w-[290px] max-w-[82vw] rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur sm:w-[340px]";
   const panelSectionClass =
-    "grid gap-3 rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]";
+    isPortraitLayout
+      ? "grid max-h-full gap-2 overflow-y-auto rounded-[20px] border border-white/70 bg-[#f7f1ee]/95 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
+      : "grid gap-3 rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]";
   const panelLabelClass =
     "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
     `group relative flex items-center justify-center border-[3px] shadow-md transition-all ${
       isPortraitLayout
-        ? "h-12 w-12 rounded-[18px]"
+        ? "h-11 w-11 rounded-[16px]"
         : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
     } ${
       active
@@ -1982,31 +1984,67 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = isPortraitLayout
-    ? "fixed left-1/2 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] -translate-x-1/2"
+    ? "fixed left-1/2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] -translate-x-1/2"
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-3 right-3 bottom-[calc(6.8rem+env(safe-area-inset-bottom))] flex h-[min(46vh,430px)] flex-col rounded-[30px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)]"
+      ? "pointer-events-auto absolute left-2 right-2 bottom-[calc(4.95rem+env(safe-area-inset-bottom))] flex h-[min(39vh,350px)] flex-col rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_56px_-24px_rgba(0,0,0,0.3)]"
       : "pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]";
   const editFinishButtonClass =
-    "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+    isPortraitLayout
+      ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+      : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
   const editCancelButtonClass =
-    "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
+    isPortraitLayout
+      ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+      : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
   const memorialControlsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-3 right-[4.75rem]"
+    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-2 right-[4.1rem]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4";
   const memorialControlsClass = isPortraitLayout
     ? "flex flex-row flex-wrap items-center gap-2"
     : "flex flex-col gap-2";
   const giftButtonWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3"
+    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-2"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4";
   const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-all ${
-    isPortraitLayout ? "h-12 w-12 rounded-[18px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
+    isPortraitLayout ? "h-11 w-11 rounded-[16px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-3 right-3 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-40 ${panelBaseClass} flex h-[min(48vh,460px)] flex-col overflow-hidden`
+    ? "fixed left-2 right-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex h-[min(56vh,430px)] flex-col overflow-hidden rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_50px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`;
+  const editEditorBodyClass = isPortraitLayout
+    ? "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-2 py-2"
+    : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
+  const editTabRailClass = isPortraitLayout
+    ? "flex w-full shrink-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden pb-1"
+    : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
+  const editTabButtonClass = (active: boolean) =>
+    `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
+      isPortraitLayout ? "h-10 w-10 rounded-[15px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
+    } ${
+      active
+        ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+        : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
+    }`;
+  const editActionBarClass = isPortraitLayout
+    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-1rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
+    : "";
+  const floatingTitleWrapClass = isPortraitLayout
+    ? "pointer-events-none absolute left-1/2 z-10 w-[min(18rem,calc(100vw-1rem))] -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.35rem)]"
+    : "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]";
+  const floatingTitleCardClass = isPortraitLayout
+    ? "rounded-[20px] border-[3px] border-white bg-[#efe6e2]/92 px-3 py-2 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.42)] backdrop-blur"
+    : "rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur";
+  const floatingTitleKickerClass = isPortraitLayout
+    ? "text-[9px] font-black uppercase tracking-[0.16em] text-[#d3a27f]"
+    : "text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]";
+  const floatingTitleNameClass = isPortraitLayout
+    ? "mt-0.5 truncate text-base font-black text-[#5d4037]"
+    : "mt-1 text-lg font-black text-[#5d4037]";
+  const floatingTitleMetaClass = isPortraitLayout
+    ? "truncate text-[11px] font-semibold text-[#8d6e63]"
+    : "text-xs font-semibold text-[#8d6e63]";
   const appearanceOptionImage = (category: string, optionId: string) =>
     optionId === "none" ? null : `/memorial/options/${category}/${optionId}.png`;
   const appearanceColorField =
@@ -2183,13 +2221,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
       <div className="fixed inset-0 z-10 pointer-events-none">
         {!editDialogOpen && !isEditMode ? (
           <>
-        <div className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]">
-          <div className="rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur">
-            <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
+        <div className={floatingTitleWrapClass}>
+          <div className={floatingTitleCardClass}>
+            <div className={floatingTitleKickerClass}>
               Мемориал
             </div>
-            <div className="mt-1 text-lg font-black text-[#5d4037]">{pet.name}</div>
-            <div className="text-xs font-semibold text-[#8d6e63]">{dateRange}</div>
+            <div className={floatingTitleNameClass}>{pet.name}</div>
+            <div className={floatingTitleMetaClass}>{dateRange}</div>
           </div>
         </div>
 
@@ -2739,13 +2777,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
             }`}
           >
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),transparent_35%,rgba(214,190,176,0.14)_100%)]" />
-            <div className="pointer-events-none absolute left-1/2 top-[calc(var(--app-header-height,0px)+0.75rem)] z-10 -translate-x-1/2 text-center">
-              <div className="rounded-[28px] border-[4px] border-white bg-[#efe6e2]/95 px-4 py-3 shadow-[0_16px_38px_-20px_rgba(93,64,55,0.42)] backdrop-blur">
-                <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
+            <div className={floatingTitleWrapClass}>
+              <div className={floatingTitleCardClass}>
+                <div className={floatingTitleKickerClass}>
                   Редактирование
                 </div>
-                <div className="mt-1 text-lg font-black text-[#5d4037]">{pet.name}</div>
-                <div className="text-xs font-semibold text-[#8d6e63]">
+                <div className={floatingTitleNameClass}>{pet.name}</div>
+                <div className={floatingTitleMetaClass}>
                   Меняется только домик и его детали
                 </div>
               </div>
@@ -2763,8 +2801,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     </span>
                   </div>
                 </div>
-                <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3">
-                  <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
+                <div className={editEditorBodyClass}>
+                  <div className={editTabRailClass}>
                     {appearanceTabs.map((tab) => {
                       const isActive = appearanceTab === tab.id;
                       const isTooltipVisible = appearanceTooltipTabId === tab.id;
@@ -2805,16 +2843,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             }}
                             aria-label={tab.label}
                             title={tab.label}
-                            className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
-                              isActive
-                                ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-                                : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
-                            }`}
+                            className={editTabButtonClass(isActive)}
                           >
                             {renderAppearanceTabIcon(tab.id)}
                             <span className="sr-only">{tab.label}</span>
                           </button>
-                          {isTooltipVisible ? (
+                          {isTooltipVisible && !isPortraitLayout ? (
                             <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
                               <div className="font-semibold text-slate-900">{tab.label}</div>
                               <div className="mt-1 text-slate-500">{description}</div>
@@ -2975,20 +3009,37 @@ export default function PetClient({ id, mode = "view" }: Props) {
               </div>
             </div>
 
-            <div className={`${isPortraitLayout ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1.5rem)] max-w-[560px] -translate-x-1/2" : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6"}`}>
-              <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
-                Отмена
-              </button>
-            </div>
-            <div className={`${isPortraitLayout ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1.5rem)] max-w-[560px] -translate-x-1/2 text-right" : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6"}`}>
-              <button
-                type="button"
-                onClick={openAppearanceReview}
-                className={editFinishButtonClass}
-              >
-                Завершить
-              </button>
-            </div>
+            {isPortraitLayout ? (
+              <div className={editActionBarClass}>
+                <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={openAppearanceReview}
+                  className={editFinishButtonClass}
+                >
+                  Завершить
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6">
+                  <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
+                    Отмена
+                  </button>
+                </div>
+                <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6">
+                  <button
+                    type="button"
+                    onClick={openAppearanceReview}
+                    className={editFinishButtonClass}
+                  >
+                    Завершить
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {appearanceReviewOpen ? (

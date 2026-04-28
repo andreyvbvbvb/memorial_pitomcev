@@ -509,6 +509,25 @@ export default function MyPets3DView({
   const containerClassName = fullScreen
     ? "fixed inset-0 z-0 h-screen w-screen overflow-hidden bg-slate-50"
     : "relative h-[calc(100vh-220px)] min-h-[520px] w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm";
+  const infoAsideClass = isPortraitLayout
+    ? "absolute bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 rounded-[24px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_22px_52px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
+    : "absolute right-6 top-1/2 z-20 w-[340px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
+  const infoCardClass = isPortraitLayout
+    ? "rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
+    : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
+  const infoImageClass = isPortraitLayout
+    ? "h-20 w-20 rounded-[18px] object-cover"
+    : "h-24 w-24 rounded-[22px] object-cover";
+  const infoImageFallbackClass = isPortraitLayout
+    ? "h-20 w-20 rounded-[18px] bg-slate-200"
+    : "h-24 w-24 rounded-[22px] bg-slate-200";
+  const sideNavButtonClass = (side: "left" | "right") =>
+    `group absolute bottom-0 top-0 z-10 flex items-center ${
+      side === "left" ? "left-0 justify-start" : "right-0 justify-end"
+    } ${isPortraitLayout ? "w-16 px-1.5" : "w-28 px-4"}`;
+  const sideNavIconClass = `flex items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:opacity-100 ${
+    isPortraitLayout ? "h-11 w-11" : "h-14 w-14"
+  }`;
 
   useEffect(() => {
     return () => {
@@ -611,13 +630,7 @@ export default function MyPets3DView({
       </Canvas>
 
       {selectedItem ? (
-        <aside
-          className={`absolute z-20 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur ${
-            isPortraitLayout
-              ? "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-3 right-3"
-              : "right-6 top-1/2 w-[340px] -translate-y-1/2"
-          }`}
-        >
+        <aside className={infoAsideClass}>
           <button
             type="button"
             onClick={() => setSelectedId(null)}
@@ -626,18 +639,18 @@ export default function MyPets3DView({
           >
             ×
           </button>
-          <div className="rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
+          <div className={infoCardClass}>
             <div className="flex items-start gap-4">
               <div className="relative">
                 {selectedItem.pet.previewUrl ? (
                   <img
                     src={selectedItem.pet.previewUrl}
                     alt={`Фото ${selectedItem.pet.name}`}
-                    className="h-24 w-24 rounded-[22px] object-cover"
+                    className={infoImageClass}
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-24 w-24 rounded-[22px] bg-slate-200" />
+                  <div className={infoImageFallbackClass} />
                 )}
                 <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
                   <span
@@ -695,12 +708,10 @@ export default function MyPets3DView({
             type="button"
             onClick={() => navigateMemorial(-1)}
             aria-label="Предыдущий мемориал"
-            className={`group absolute bottom-0 left-0 top-0 z-10 flex items-center justify-start ${
-              isPortraitLayout ? "w-20 px-2" : "w-28 px-4"
-            }`}
+            className={sideNavButtonClass("left")}
           >
             <span
-              className={`flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+              className={`${sideNavIconClass} group-hover:translate-x-1 ${
                 hasArrowNavigation ? "opacity-0" : "opacity-100"
               }`}
             >
@@ -722,12 +733,10 @@ export default function MyPets3DView({
             type="button"
             onClick={() => navigateMemorial(1)}
             aria-label="Следующий мемориал"
-            className={`group absolute bottom-0 right-0 top-0 z-10 flex items-center justify-end ${
-              isPortraitLayout ? "w-20 px-2" : "w-28 px-4"
-            }`}
+            className={sideNavButtonClass("right")}
           >
             <span
-              className={`flex h-14 w-14 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+              className={`${sideNavIconClass} group-hover:-translate-x-1 ${
                 hasArrowNavigation ? "opacity-0" : "opacity-100"
               }`}
             >

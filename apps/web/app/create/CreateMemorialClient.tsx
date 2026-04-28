@@ -3028,22 +3028,22 @@ export default function CreateMemorialClient({
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-3 right-3 bottom-[calc(8rem+env(safe-area-inset-bottom))] overflow-hidden rounded-[28px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur"
+      ? "pointer-events-auto absolute left-2 right-2 bottom-[calc(6.15rem+env(safe-area-inset-bottom))] overflow-hidden rounded-[22px] border-[3px] border-white bg-white/95 p-2 shadow-[0_18px_42px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
       : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
         ? isPortraitLayout
-          ? "w-auto max-h-[min(50vh,460px)]"
+          ? "w-auto max-h-[min(54vh,420px)]"
           : "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)]"
         : isPortraitLayout
-          ? "w-auto max-h-[min(44vh,420px)] overflow-y-auto"
+          ? "w-auto max-h-[min(48vh,380px)] overflow-y-auto"
           : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
     `group relative flex items-center justify-center border-2 shadow-md transition-all ${
       isPortraitLayout
-        ? "h-12 w-12 rounded-[18px]"
+        ? "h-10 w-10 rounded-[15px]"
         : "h-14 w-14 rounded-[22px] sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem]"
     } ${
       active
@@ -3058,18 +3058,40 @@ export default function CreateMemorialClient({
     activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
   } ${
     isPortraitLayout
-      ? "absolute left-3 right-3 bottom-[calc(8rem+env(safe-area-inset-bottom))] flex h-[min(44vh,430px)] flex-col rounded-[30px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)]"
+      ? "absolute left-2 right-2 bottom-[calc(6.15rem+env(safe-area-inset-bottom))] flex h-[min(39vh,350px)] flex-col rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_56px_-24px_rgba(0,0,0,0.3)]"
       : "absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]"
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(5.2rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
+    ? "pointer-events-auto absolute bottom-[calc(3.75rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6";
   const builderOverlayButtonsClass = isPortraitLayout
-    ? "flex flex-row items-center justify-center gap-2"
+    ? "flex flex-row items-center justify-center gap-1.5 rounded-[22px] border-[3px] border-white bg-white/72 p-1.5 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.32)] backdrop-blur"
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1.5rem)] max-w-[560px] -translate-x-1/2"
+    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1rem)] max-w-[520px] -translate-x-1/2"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6";
+  const builderEditorBodyClass = isPortraitLayout
+    ? "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-2 py-2"
+    : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
+  const builderTabRailClass = isPortraitLayout
+    ? "flex w-full shrink-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden pb-1"
+    : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
+  const builderTabButtonClass = (isActive: boolean, isDisabled: boolean) =>
+    `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
+      isPortraitLayout ? "h-10 w-10 rounded-[15px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
+    } ${
+      isDisabled
+        ? "pointer-events-none cursor-not-allowed border-gray-100 bg-[#f3efec] text-[#c8beb8] opacity-55"
+        : isActive
+          ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+          : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
+    }`;
+  const builderCancelButtonClass = isPortraitLayout
+    ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+    : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
+  const builderFinishButtonClass = isPortraitLayout
+    ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+    : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
   const loadingMessage =
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
   const mainStyle: CSSProperties = {
@@ -3225,8 +3247,8 @@ export default function CreateMemorialClient({
                     </div>
                   </div>
                 </div>
-                <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3">
-                  <div className="flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5">
+                <div className={builderEditorBodyClass}>
+                  <div className={builderTabRailClass}>
                   {step3Tabs.map((tab) => {
                     const isActive = activeStep3Tab === tab.id;
                     const isDisabled = isEditMode && tab.id === "environment";
@@ -3267,18 +3289,13 @@ export default function CreateMemorialClient({
                             setTooltipTabId((prev) => (prev === tab.id ? null : prev));
                           }}
                           aria-label={tab.label}
-                            className={`flex h-12 w-12 items-center justify-center rounded-[18px] border-2 text-sm shadow-sm transition-all sm:h-14 sm:w-14 ${
-                            isDisabled
-                              ? "pointer-events-none cursor-not-allowed border-gray-100 bg-[#f3efec] text-[#c8beb8] opacity-55"
-                              : isActive
-                              ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-                              : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
-                          }`}
+                          title={tab.label}
+                          className={builderTabButtonClass(isActive, isDisabled)}
                         >
                           <Step3TabIcon id={tab.id} />
                           <span className="sr-only">{tab.label}</span>
                         </button>
-                        {isTooltipVisible ? (
+                        {isTooltipVisible && !isPortraitLayout ? (
                           <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
                             <div className="font-semibold text-slate-900">{tab.label}</div>
                             <div className="mt-1 text-slate-500">{description}</div>
@@ -3397,12 +3414,12 @@ export default function CreateMemorialClient({
             </div>
 
             <div className={builderActionBarClass}>
-              <div className={`flex items-center gap-3 ${isPortraitLayout ? (isEditMode ? "justify-between" : "justify-end") : ""}`}>
+              <div className={isPortraitLayout ? `flex items-center gap-2 ${isEditMode ? "justify-between" : "justify-end"}` : "flex items-center gap-3"}>
                 {isEditMode && editId ? (
                   <button
                     type="button"
                     onClick={() => router.push(`/pets/${editId}`)}
-                    className="inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]"
+                    className={builderCancelButtonClass}
                   >
                     Отмена
                   </button>
@@ -3410,7 +3427,7 @@ export default function CreateMemorialClient({
                 <button
                   type="button"
                   onClick={openReview}
-                  className="group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                  className={builderFinishButtonClass}
                 >
                   <span className="transition-transform duration-300 group-hover:-translate-x-1">
                     {isEditMode ? "Сохранить" : "Завершить"}

@@ -6,8 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { API_BASE } from "../lib/config";
 import { canAccessAdmin, type AuthUser } from "../lib/access";
 import AuthModal from "./AuthModal";
+import usePortraitLayout from "./usePortraitLayout";
 
 export default function AppHeader() {
+  const isPortraitLayout = usePortraitLayout();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
@@ -65,7 +67,7 @@ export default function AppHeader() {
     return () => {
       window.removeEventListener("resize", updateHeaderHeight);
     };
-  }, []);
+  }, [isPortraitLayout, user]);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -187,16 +189,29 @@ export default function AppHeader() {
     { coins: 1000, rub: 1000, usd: 10 }
   ];
 
+  const headerInnerClass = isPortraitLayout
+    ? "mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2"
+    : "mx-auto flex max-w-6xl items-center justify-between px-6 py-3";
+  const brandClass = isPortraitLayout
+    ? "inline-flex h-[34px] shrink-0 items-center rounded-[14px] border border-white/80 bg-white/75 px-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#7c6b63] shadow-[0_10px_22px_-15px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:bg-white/90"
+    : "rounded-[24px] border border-white/80 bg-white/75 px-6 py-2 text-sm font-semibold uppercase tracking-[0.22em] text-[#7c6b63] shadow-[0_12px_26px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:bg-white/90";
+  const navWrapClass = isPortraitLayout
+    ? "flex min-w-0 items-center gap-1.5"
+    : "flex items-center gap-3";
   const pillClass =
-    "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 px-4 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+    isPortraitLayout
+      ? "group relative inline-flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white"
+      : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 px-4 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
     "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const createButtonClass =
-    "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none";
+    isPortraitLayout
+      ? "inline-flex h-[34px] shrink-0 items-center gap-1 rounded-[10px] bg-[#111827] px-2.5 text-[9px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none"
+      : "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none";
   const authButtonClass =
     "rounded-[24px] border border-[#e7dbd3] bg-[#f6efea] px-5 py-2 text-sm font-semibold text-[#5d4037] shadow-[0_12px_24px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-[#fff7f2]";
   const menuPanelClass =
-    `absolute right-0 mt-3 w-72 overflow-hidden rounded-[32px] border-[4px] border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
+    `absolute right-0 ${isPortraitLayout ? "mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-[24px] border-[3px]" : "mt-3 w-72 rounded-[32px] border-[4px]"} overflow-hidden border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
       menuVisible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-95 opacity-0"
     }`;
   const menuItemClass =
@@ -210,13 +225,28 @@ export default function AppHeader() {
     setBalanceSpin((prev) => ({ key: prev.key + 1, reverse }));
   };
 
-  const renderMenuIcon = (kind: "profile" | "about" | "charity" | "admin" | "logout") => {
+  const renderMenuIcon = (kind: "profile" | "pets" | "map" | "about" | "charity" | "admin" | "logout") => {
     switch (kind) {
       case "profile":
         return (
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21a8 8 0 0 0-16 0" />
             <circle cx="12" cy="8" r="4" />
+          </svg>
+        );
+      case "pets":
+        return (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 11.5c0-3.6 2.9-6.5 6.5-6.5H12c4.4 0 8 3.6 8 8v3.5A2.5 2.5 0 0 1 17.5 19h-9A4.5 4.5 0 0 1 4 14.5v-3Z" />
+            <path d="M8 10h.01M15 10h.01" />
+            <path d="M10 14c.7.5 1.3.5 2 0" />
+          </svg>
+        );
+      case "map":
+        return (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3Z" />
+            <path d="M9 3v15M15 6v15" />
           </svg>
         );
       case "about":
@@ -256,14 +286,14 @@ export default function AppHeader() {
         ref={headerRef}
         className="sticky top-0 z-40 bg-transparent"
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        <div className={headerInnerClass}>
           <Link
             href="/"
-            className="rounded-[24px] border border-white/80 bg-white/75 px-6 py-2 text-sm font-semibold uppercase tracking-[0.22em] text-[#7c6b63] shadow-[0_12px_26px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:bg-white/90"
+            className={brandClass}
           >
             МяуГав
           </Link>
-          <div className="flex items-center gap-3">
+          <div className={navWrapClass}>
             {user ? (
               <>
                 <button
@@ -287,11 +317,21 @@ export default function AppHeader() {
                   </span>
                   <span>{createChecking ? "проверка" : "создать"}</span>
                 </button>
-                <Link className={pillClass} href="/my-pets">
-                  Мои питомцы
+                <Link
+                  className={pillClass}
+                  href="/my-pets"
+                  aria-label="Мои питомцы"
+                  title="Мои питомцы"
+                >
+                  {isPortraitLayout ? renderMenuIcon("pets") : "Мои питомцы"}
                 </Link>
-                <Link className={pillClass} href="/map">
-                  Карта
+                <Link
+                  className={pillClass}
+                  href="/map"
+                  aria-label="Карта"
+                  title="Карта"
+                >
+                  {isPortraitLayout ? renderMenuIcon("map") : "Карта"}
                 </Link>
                 <div className="relative" ref={menuRef}>
                   <button
@@ -397,8 +437,10 @@ export default function AppHeader() {
                 <Link
                   className={pillClass}
                   href="/about"
+                  aria-label="О проекте"
+                  title="О проекте"
                 >
-                  О проекте
+                  {isPortraitLayout ? renderMenuIcon("about") : "О проекте"}
                 </Link>
                 {pathname === "/auth" ? null : (
                   <button
