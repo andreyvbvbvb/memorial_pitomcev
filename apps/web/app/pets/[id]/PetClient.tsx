@@ -2031,7 +2031,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
     : "";
   const memorialSceneFrameClass = isPortraitLayout
-    ? "fixed left-0 right-0 top-0 z-0 h-[72dvh] overflow-hidden"
+    ? "fixed inset-0 z-0 overflow-hidden"
     : "fixed inset-0 z-0";
   const giftPanelInnerClass = isPortraitLayout
     ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
@@ -2039,6 +2039,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const giftFlowClass = isPortraitLayout
     ? "mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
     : "mt-4 flex min-h-0 flex-1 flex-col gap-3";
+  const giftCatalogSectionClass = isPortraitLayout
+    ? "flex shrink-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]"
+    : "flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
   const giftCatalogGridClass = isPortraitLayout
     ? "grid h-[clamp(136px,20dvh,190px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(72px,9dvh,86px)] content-start gap-1.5 overflow-y-auto overscroll-contain pr-1"
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1";
@@ -2607,7 +2610,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   </div>
                 {currentUser ? (
                   <div className={giftFlowClass}>
-                    <div className="flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]">
+                    <div className={giftCatalogSectionClass}>
                       <span>Подарок</span>
                       <div className={giftCatalogGridClass}>
                         {giftCatalogLoading ? (
