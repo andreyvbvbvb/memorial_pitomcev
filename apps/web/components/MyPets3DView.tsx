@@ -509,8 +509,11 @@ export default function MyPets3DView({
   const containerClassName = fullScreen
     ? "fixed inset-0 z-0 h-screen w-screen overflow-hidden bg-slate-50"
     : "relative h-[calc(100vh-220px)] min-h-[520px] w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-sm";
+  const canvasFrameClass = fullScreen && isPortraitLayout
+    ? "absolute left-0 right-0 top-0 h-[60dvh] overflow-hidden"
+    : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
-    ? "absolute bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 rounded-[24px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_22px_52px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
+    ? "absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
     : "absolute right-6 top-1/2 z-20 w-[340px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
   const infoCardClass = isPortraitLayout
     ? "rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
@@ -522,11 +525,11 @@ export default function MyPets3DView({
     ? "h-20 w-20 rounded-[18px] bg-slate-200"
     : "h-24 w-24 rounded-[22px] bg-slate-200";
   const sideNavButtonClass = (side: "left" | "right") =>
-    `group absolute bottom-0 top-0 z-10 flex items-center ${
+    `group absolute z-10 flex items-center ${
       side === "left" ? "left-0 justify-start" : "right-0 justify-end"
-    } ${isPortraitLayout ? "w-16 px-1.5" : "w-28 px-4"}`;
+    } ${fullScreen && isPortraitLayout ? "top-0 h-[60dvh] w-14 px-1" : "bottom-0 top-0 w-28 px-4"}`;
   const sideNavIconClass = `flex items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur transition-all duration-200 group-hover:opacity-100 ${
-    isPortraitLayout ? "h-11 w-11" : "h-14 w-14"
+    fullScreen && isPortraitLayout ? "h-10 w-10" : "h-14 w-14"
   }`;
 
   useEffect(() => {
@@ -578,56 +581,58 @@ export default function MyPets3DView({
         </div>
       ) : null}
 
-      <Canvas
-        className="h-full w-full"
-        dpr={1}
-        camera={{ position: [DEFAULT_CAMERA.x, DEFAULT_CAMERA.y, DEFAULT_CAMERA.z], fov: 45 }}
-      >
-        <SkyBackground />
-        <AmbientLight intensity={0.8} />
-        <DirectionalLight intensity={1.15} position={[7, 10, 6]} />
-        <Suspense fallback={null}>
-          {items.map((item) => (
-            <MemorialInstance
-              key={item.pet.id}
-              item={item}
-              isActive={selectedId === item.pet.id}
-              onSelect={() => setSelectedId(item.pet.id)}
-              orbitMovedRef={orbitMovedRef}
-            />
-          ))}
-        </Suspense>
-        <OrbitControls
-          ref={controlsRef}
-          enablePan={false}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI / 2}
-          minDistance={6}
-          maxDistance={40}
-          onStart={() => {
-            if (orbitEndTimeoutRef.current !== null) {
-              window.clearTimeout(orbitEndTimeoutRef.current);
-            }
-            orbitingRef.current = true;
-            orbitMovedRef.current = false;
-          }}
-          onChange={() => {
-            if (orbitingRef.current) {
-              orbitMovedRef.current = true;
-            }
-          }}
-          onEnd={() => {
-            if (orbitEndTimeoutRef.current !== null) {
-              window.clearTimeout(orbitEndTimeoutRef.current);
-            }
-            orbitEndTimeoutRef.current = window.setTimeout(() => {
-              orbitingRef.current = false;
+      <div className={canvasFrameClass}>
+        <Canvas
+          className="h-full w-full"
+          dpr={1}
+          camera={{ position: [DEFAULT_CAMERA.x, DEFAULT_CAMERA.y, DEFAULT_CAMERA.z], fov: 45 }}
+        >
+          <SkyBackground />
+          <AmbientLight intensity={0.8} />
+          <DirectionalLight intensity={1.15} position={[7, 10, 6]} />
+          <Suspense fallback={null}>
+            {items.map((item) => (
+              <MemorialInstance
+                key={item.pet.id}
+                item={item}
+                isActive={selectedId === item.pet.id}
+                onSelect={() => setSelectedId(item.pet.id)}
+                orbitMovedRef={orbitMovedRef}
+              />
+            ))}
+          </Suspense>
+          <OrbitControls
+            ref={controlsRef}
+            enablePan={false}
+            minPolarAngle={0}
+            maxPolarAngle={Math.PI / 2}
+            minDistance={6}
+            maxDistance={40}
+            onStart={() => {
+              if (orbitEndTimeoutRef.current !== null) {
+                window.clearTimeout(orbitEndTimeoutRef.current);
+              }
+              orbitingRef.current = true;
               orbitMovedRef.current = false;
-            }, 200);
-          }}
-        />
-        <SceneCameraRig focus={focusPosition} controlsRef={controlsRef} />
-      </Canvas>
+            }}
+            onChange={() => {
+              if (orbitingRef.current) {
+                orbitMovedRef.current = true;
+              }
+            }}
+            onEnd={() => {
+              if (orbitEndTimeoutRef.current !== null) {
+                window.clearTimeout(orbitEndTimeoutRef.current);
+              }
+              orbitEndTimeoutRef.current = window.setTimeout(() => {
+                orbitingRef.current = false;
+                orbitMovedRef.current = false;
+              }, 200);
+            }}
+          />
+          <SceneCameraRig focus={focusPosition} controlsRef={controlsRef} />
+        </Canvas>
+      </div>
 
       {selectedItem ? (
         <aside className={infoAsideClass}>

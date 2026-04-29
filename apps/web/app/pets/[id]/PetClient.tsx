@@ -1961,18 +1961,18 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const panelBaseClass =
     isPortraitLayout
-      ? "w-[min(540px,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] max-h-[min(54vh,420px)] overflow-y-auto rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_50px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
+      ? "w-[min(540px,calc(100vw-0.75rem))] max-w-[calc(100vw-0.75rem)] max-h-[min(50dvh,390px)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
       : "w-[290px] max-w-[82vw] rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur sm:w-[340px]";
   const panelSectionClass =
     isPortraitLayout
-      ? "grid max-h-full gap-2 overflow-y-auto rounded-[20px] border border-white/70 bg-[#f7f1ee]/95 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
+      ? "grid max-h-full gap-2 overflow-y-auto rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
       : "grid gap-3 rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]";
   const panelLabelClass =
     "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
     `group relative flex items-center justify-center border-[3px] shadow-md transition-all ${
       isPortraitLayout
-        ? "h-11 w-11 rounded-[16px]"
+        ? "h-10 w-10 rounded-[14px]"
         : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
     } ${
       active
@@ -1984,11 +1984,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = isPortraitLayout
-    ? "fixed left-1/2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] -translate-x-1/2"
+    ? "fixed left-1/2 bottom-[calc(3.95rem+env(safe-area-inset-bottom))] -translate-x-1/2"
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-2 right-2 bottom-[calc(4.95rem+env(safe-area-inset-bottom))] flex h-[min(39vh,350px)] flex-col rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_56px_-24px_rgba(0,0,0,0.3)]"
+      ? "pointer-events-auto absolute left-1.5 right-1.5 bottom-[calc(4.1rem+env(safe-area-inset-bottom))] flex h-[min(33dvh,300px)] flex-col rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_46px_-24px_rgba(0,0,0,0.3)]"
       : "pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]";
   const editFinishButtonClass =
     isPortraitLayout
@@ -1999,37 +1999,60 @@ export default function PetClient({ id, mode = "view" }: Props) {
       ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
       : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
   const memorialControlsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-2 right-[4.1rem]"
+    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1.5 right-[3.7rem]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4";
   const memorialControlsClass = isPortraitLayout
-    ? "flex flex-row flex-wrap items-center gap-2"
+    ? "flex flex-row flex-wrap items-center gap-1.5"
     : "flex flex-col gap-2";
   const giftButtonWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-2"
+    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] right-1.5"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4";
   const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-all ${
-    isPortraitLayout ? "h-11 w-11 rounded-[16px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
+    isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? "fixed left-2 right-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex h-[min(56vh,430px)] flex-col overflow-hidden rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_50px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
+    ? "fixed left-1.5 right-1.5 top-[calc(40dvh+0.35rem)] bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`;
   const editEditorBodyClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-2 py-2"
+    ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const editTabRailClass = isPortraitLayout
-    ? "flex w-full shrink-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden pb-1"
+    ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
     : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
   const editTabButtonClass = (active: boolean) =>
     `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
-      isPortraitLayout ? "h-10 w-10 rounded-[15px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
+      isPortraitLayout ? "h-9 w-9 rounded-[13px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
     } ${
       active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
     }`;
   const editActionBarClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-1rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
+    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
     : "";
+  const memorialSceneFrameClass = isPortraitLayout
+    ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
+    : "fixed inset-0 z-0";
+  const giftPanelInnerClass = isPortraitLayout
+    ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
+    : `flex min-h-0 flex-1 flex-col ${panelSectionClass}`;
+  const giftFlowClass = isPortraitLayout
+    ? "mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1"
+    : "mt-4 flex min-h-0 flex-1 flex-col gap-3";
+  const giftCatalogGridClass = isPortraitLayout
+    ? "grid max-h-[22dvh] min-h-[92px] shrink-0 grid-cols-4 content-start gap-1.5 overflow-y-auto pr-1"
+    : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1";
+  const giftCardClass = (selected: boolean) =>
+    `relative flex w-full items-center justify-center overflow-hidden border transition ${
+      isPortraitLayout ? "h-20 rounded-[16px] border-2" : "h-28 rounded-[22px] border-[3px]"
+    } ${
+      selected
+        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-sm"
+        : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/50"
+    }`;
+  const giftSkeletonClass = isPortraitLayout
+    ? "relative h-20 w-full animate-pulse overflow-hidden rounded-[16px] border border-white bg-white"
+    : "relative h-28 w-full animate-pulse overflow-hidden rounded-[22px] border border-white bg-white";
   const floatingTitleWrapClass = isPortraitLayout
     ? "pointer-events-none absolute left-1/2 z-10 w-[min(18rem,calc(100vw-1rem))] -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.35rem)]"
     : "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]";
@@ -2177,7 +2200,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   return (
     <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#fcf8f5]">
-      <div className="fixed inset-0 z-0">
+      <div className={memorialSceneFrameClass}>
         <MemorialPreview
           className="h-full w-full rounded-none border-transparent bg-transparent"
           terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
@@ -2568,11 +2591,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
             </button>
             {giftPanelOpen ? (
               <div className={giftPanelClass}>
-                <div className={`flex min-h-0 flex-1 flex-col ${panelSectionClass}`}>
-                  <div className="flex items-center justify-between gap-3">
+                <div className={giftPanelInnerClass}>
+                  <div className="flex shrink-0 items-center justify-between gap-2">
                     <div>
                       <p className={panelLabelClass}>Подарки</p>
-                      <p className="text-sm font-black text-[#5d4037]">Сделать подарок</p>
+                      <p className={isPortraitLayout ? "text-xs font-black text-[#5d4037]" : "text-sm font-black text-[#5d4037]"}>Сделать подарок</p>
                     </div>
                     <button
                       type="button"
@@ -2583,15 +2606,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     </button>
                   </div>
                 {currentUser ? (
-                  <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3">
-                    <div className="flex min-h-0 flex-1 flex-col gap-2 text-sm font-semibold text-[#6f6360]">
+                  <div className={giftFlowClass}>
+                    <div className="flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]">
                       <span>Подарок</span>
-                      <div className="grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1">
+                      <div className={giftCatalogGridClass}>
                         {giftCatalogLoading ? (
                           Array.from({ length: 8 }).map((_, index) => (
                             <div
                               key={`gift-skeleton-${index}`}
-                              className="relative h-28 w-full animate-pulse overflow-hidden rounded-[22px] border border-white bg-white"
+                              className={giftSkeletonClass}
                             >
                               <div className="absolute inset-0 bg-slate-100" />
                               <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-slate-200" />
@@ -2609,11 +2632,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
-                                className={`relative flex h-28 w-full items-center justify-center overflow-hidden rounded-[22px] border-[3px] transition ${
-                                  selectedGiftId === gift.id
-                                    ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-sm"
-                                    : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/50"
-                                }`}
+                                className={giftCardClass(selectedGiftId === gift.id)}
                               >
                                 {iconUrl ? (
                                   <img
@@ -2790,13 +2809,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
             </div>
 
             <div className={editEditorPanelClass}>
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]">
-                <div className="border-b border-[#eadfd9] px-4 py-3">
+              <div className={isPortraitLayout ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]" : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"}>
+                <div className={isPortraitLayout ? "border-b border-[#eadfd9] px-2.5 py-2" : "border-b border-[#eadfd9] px-4 py-3"}>
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]">
+                    <h3 className={isPortraitLayout ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]" : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"}>
                       Редактор мемориала
                     </h3>
-                    <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]">
+                    <span className={isPortraitLayout ? "rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
                       Только оформление
                     </span>
                   </div>

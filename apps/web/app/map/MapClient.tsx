@@ -1321,7 +1321,7 @@ export default function MapClient() {
   const simsResetButtonClass =
     "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const mobileContentClass = isPortraitLayout
-    ? "relative z-10 flex h-full w-full flex-col gap-3 px-2.5 pb-3"
+    ? "relative z-10 flex h-full w-full flex-col gap-3 overflow-hidden px-2.5 pb-3"
     : "relative z-10 flex h-full flex-col gap-4 px-4 pb-4";
   const mobileTopBarClass = isPortraitLayout
     ? "flex items-center justify-between gap-2"
@@ -1332,8 +1332,11 @@ export default function MapClient() {
   const mobileSidebarClass = isPortraitLayout
     ? "flex-1 overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md"
     : `flex-1 overflow-y-auto p-4 ${simsSidebarClass}`;
-  const mobileSceneHeightClass = isPortraitLayout
+  const mobileMapSceneHeightClass = isPortraitLayout
     ? "h-[34dvh] min-h-[210px] max-h-[320px]"
+    : "h-[42vh]";
+  const mobileCarouselSceneHeightClass = isPortraitLayout
+    ? "h-[58dvh] min-h-[320px]"
     : "h-[42vh]";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
@@ -1685,18 +1688,18 @@ export default function MapClient() {
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
   const activePreviewSrc = resolvePreviewSrc(getMarkerPreviewSrc(activeCarouselMarker));
   const activeCarouselInfoContent = activeCarouselMarker ? (
-    <div className="rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
-      <div className="flex items-start gap-4">
+    <div className={isPortraitLayout ? "rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
+      <div className={isPortraitLayout ? "flex items-start gap-3" : "flex items-start gap-4"}>
         <div className="relative">
           {activePreviewSrc ? (
             <img
               src={activePreviewSrc}
               alt={`Фото ${activeCarouselMarker.name}`}
-              className="h-24 w-24 rounded-[22px] object-cover"
+              className={isPortraitLayout ? "h-16 w-16 rounded-[16px] object-cover" : "h-24 w-24 rounded-[22px] object-cover"}
               loading="lazy"
             />
           ) : (
-            <div className="h-24 w-24 rounded-[22px] bg-slate-200" />
+            <div className={isPortraitLayout ? "h-16 w-16 rounded-[16px] bg-slate-200" : "h-24 w-24 rounded-[22px] bg-slate-200"} />
           )}
           <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
@@ -1706,24 +1709,24 @@ export default function MapClient() {
           </div>
         </div>
         <div className="min-w-0 flex-1 pt-1">
-          <h3 className="text-xl font-black uppercase tracking-tight text-[#5d4037]">
+          <h3 className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
             {activeCarouselMarker.name}
           </h3>
-          <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
+          <p className={isPortraitLayout ? "mt-0.5 text-xs font-semibold text-[#8d6e63]" : "mt-1 text-sm font-semibold text-[#8d6e63]"}>
             {formatYearRange(activeCarouselMarker.birthDate, activeCarouselMarker.deathDate)}
           </p>
         </div>
       </div>
-      <p className="mt-4 text-[15px] italic leading-relaxed text-[#6f6360]">
+      <p className={isPortraitLayout ? "mt-2 line-clamp-2 text-sm italic leading-snug text-[#6f6360]" : "mt-4 text-[15px] italic leading-relaxed text-[#6f6360]"}>
         &ldquo;{activeCarouselMarker.epitaph ?? "Без эпитафии"}&rdquo;
       </p>
       {activeCarouselPet?.story ? (
-        <p className="mt-4 max-h-28 overflow-y-auto text-sm leading-relaxed text-[#7b6b65]">
+        <p className={isPortraitLayout ? "mt-2 max-h-12 overflow-y-auto text-xs leading-snug text-[#7b6b65]" : "mt-4 max-h-28 overflow-y-auto text-sm leading-relaxed text-[#7b6b65]"}>
           {activeCarouselPet.story}
         </p>
       ) : null}
       <a
-        className="group mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+        className={isPortraitLayout ? "group mt-3 inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "group mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
         href={`/pets/${activeCarouselMarker.petId}`}
       >
         <span className="transition-transform duration-300 group-hover:-translate-x-1">
@@ -1869,7 +1872,7 @@ export default function MapClient() {
           </div>
           {mapMode === "map" ? (
             <>
-              <div className={`relative ${mobileSceneHeightClass} w-full overflow-hidden ${mobilePanelClass}`}>
+              <div className={`relative ${mobileMapSceneHeightClass} w-full overflow-hidden ${mobilePanelClass}`}>
                 {!apiKey ? (
                   <div className="flex h-full items-center justify-center bg-slate-50 text-sm text-slate-500">
                     Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -1978,7 +1981,7 @@ export default function MapClient() {
             </>
           ) : (
             <>
-              <div className={`relative ${mobileSceneHeightClass} w-full overflow-hidden ${mobilePanelClass}`}>
+              <div className={`relative ${mobileCarouselSceneHeightClass} w-full overflow-hidden ${mobilePanelClass}`}>
                 <CarouselScene
                   items={carouselItems}
                   activeIndex={carouselIndex}
@@ -2023,7 +2026,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={isPortraitLayout ? "rounded-[24px] border-[3px] border-white bg-[#f7f1ee]/95 p-2.5 shadow-[0_20px_48px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
+              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-1.5 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
                 {activeCarouselInfoContent}
               </div>
             </>

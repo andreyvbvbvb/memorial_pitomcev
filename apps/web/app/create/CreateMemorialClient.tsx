@@ -2600,7 +2600,16 @@ export default function CreateMemorialClient({
   const overlayTextareaClass =
     "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
-    "grid gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] sm:p-5";
+    isPortraitLayout
+      ? "grid gap-2 rounded-[18px] border-2 border-white bg-white/95 p-2 shadow-[0_16px_44px_-20px_rgba(0,0,0,0.16)]"
+      : "grid gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] sm:p-5";
+
+  const centeredFieldClass =
+    "w-full rounded-2xl border border-slate-200 bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
+  const centeredDateFieldClass = (hasError: boolean) =>
+    `w-full rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
+      hasError ? "border-red-400" : "border-slate-200"
+    } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`;
 
   const renderBaseInfoForm = (centered = false) => (
     <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
@@ -2609,7 +2618,7 @@ export default function CreateMemorialClient({
         {centered ? "Имя питомца" : null}
         <input
           className={centered
-            ? `rounded-2xl border border-slate-200 px-4 py-2 min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+            ? `${centeredFieldClass} min-h-[52px]`
             : overlayInputClass}
           value={form.name}
           onChange={(event) => handleChange("name", event.target.value)}
@@ -2624,7 +2633,7 @@ export default function CreateMemorialClient({
         {centered ? "Вид питомца" : null}
         <select
           className={centered
-            ? `rounded-2xl border border-slate-200 px-4 py-2 min-h-[52px] bg-[#fbf7f4] text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+            ? `${centeredFieldClass} min-h-[52px]`
             : overlayInputClass}
           value={form.species}
           onChange={(event) => handleSpeciesChange(event.target.value)}
@@ -2640,7 +2649,7 @@ export default function CreateMemorialClient({
       </label>
       <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
         <label
-          className={`grid gap-2 cursor-pointer ${centered ? "text-center text-sm text-slate-700" : ""}`}
+          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}
           onClick={() => openDatePicker(birthDateInputRef.current)}
         >
           {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
@@ -2649,9 +2658,7 @@ export default function CreateMemorialClient({
             ref={birthDateInputRef}
             type="date"
             className={centered
-              ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
-                  hasDateFieldError ? "border-red-400" : "border-slate-200"
-                } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+              ? centeredDateFieldClass(hasDateFieldError)
               : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
             value={form.birthDate}
             onChange={(event) => handleChange("birthDate", event.target.value)}
@@ -2660,7 +2667,7 @@ export default function CreateMemorialClient({
           />
         </label>
         <label
-          className={`grid gap-2 cursor-pointer ${centered ? "text-center text-sm text-slate-700" : ""}`}
+          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}
           onClick={() => openDatePicker(deathDateInputRef.current)}
         >
           {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
@@ -2669,9 +2676,7 @@ export default function CreateMemorialClient({
             ref={deathDateInputRef}
             type="date"
             className={centered
-              ? `rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
-                  hasDateFieldError ? "border-red-400" : "border-slate-200"
-                } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`
+              ? centeredDateFieldClass(hasDateFieldError)
               : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
             value={form.deathDate}
             onChange={(event) => handleChange("deathDate", event.target.value)}
@@ -2718,7 +2723,7 @@ export default function CreateMemorialClient({
               <GoogleMap
                 mapContainerStyle={{
                   width: "100%",
-                  height: "clamp(230px, 34vh, 340px)"
+                  height: markerMapHeight
                 }}
                 center={mapCenter}
                 zoom={canShowMarker ? 12 : 3}
@@ -3028,22 +3033,22 @@ export default function CreateMemorialClient({
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-2 right-2 bottom-[calc(6.15rem+env(safe-area-inset-bottom))] overflow-hidden rounded-[22px] border-[3px] border-white bg-white/95 p-2 shadow-[0_18px_42px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
+      ? "pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] overflow-hidden rounded-[18px] border-2 border-white bg-white/95 p-1.5 shadow-[0_16px_36px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
       : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
         ? isPortraitLayout
-          ? "w-auto max-h-[min(54vh,420px)]"
+          ? "w-auto max-h-[min(52vh,420px)] overflow-y-auto"
           : "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)]"
         : isPortraitLayout
-          ? "w-auto max-h-[min(48vh,380px)] overflow-y-auto"
+          ? "w-auto max-h-[min(44vh,360px)] overflow-y-auto"
           : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
     `group relative flex items-center justify-center border-2 shadow-md transition-all ${
       isPortraitLayout
-        ? "h-10 w-10 rounded-[15px]"
+        ? "h-9 w-9 rounded-[13px]"
         : "h-14 w-14 rounded-[22px] sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem]"
     } ${
       active
@@ -3058,27 +3063,27 @@ export default function CreateMemorialClient({
     activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
   } ${
     isPortraitLayout
-      ? "absolute left-2 right-2 bottom-[calc(6.15rem+env(safe-area-inset-bottom))] flex h-[min(39vh,350px)] flex-col rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_22px_56px_-24px_rgba(0,0,0,0.3)]"
+      ? "absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] flex h-[min(35vh,315px)] flex-col rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_46px_-24px_rgba(0,0,0,0.3)]"
       : "absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]"
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(3.75rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2"
+    ? "pointer-events-auto absolute bottom-[calc(4.35rem+env(safe-area-inset-bottom))] left-1.5"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6";
   const builderOverlayButtonsClass = isPortraitLayout
-    ? "flex flex-row items-center justify-center gap-1.5 rounded-[22px] border-[3px] border-white bg-white/72 p-1.5 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.32)] backdrop-blur"
+    ? "flex flex-col items-center justify-center gap-1.5 rounded-[18px] border-2 border-white bg-white/72 p-1.5 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.32)] backdrop-blur"
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-1rem)] max-w-[520px] -translate-x-1/2"
+    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6";
   const builderEditorBodyClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-2 py-2"
+    ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const builderTabRailClass = isPortraitLayout
-    ? "flex w-full shrink-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden pb-1"
+    ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
     : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
   const builderTabButtonClass = (isActive: boolean, isDisabled: boolean) =>
     `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
-      isPortraitLayout ? "h-10 w-10 rounded-[15px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
+      isPortraitLayout ? "h-9 w-9 rounded-[13px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
     } ${
       isDisabled
         ? "pointer-events-none cursor-not-allowed border-gray-100 bg-[#f3efec] text-[#c8beb8] opacity-55"
@@ -3092,6 +3097,18 @@ export default function CreateMemorialClient({
   const builderFinishButtonClass = isPortraitLayout
     ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
     : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+  const builderSceneFrameClass = isPortraitLayout
+    ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
+    : "fixed inset-0 z-0";
+  const builderPanelInnerClass = isPortraitLayout
+    ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"
+    : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]";
+  const builderPanelHeaderClass = isPortraitLayout
+    ? "border-b border-[#eadfd9] px-2.5 py-2"
+    : "border-b border-[#eadfd9] px-4 py-3";
+  const markerMapHeight = isPortraitLayout
+    ? "clamp(160px, 24dvh, 230px)"
+    : "clamp(230px, 34vh, 340px)";
   const loadingMessage =
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
   const mainStyle: CSSProperties = {
@@ -3167,7 +3184,7 @@ export default function CreateMemorialClient({
         </div>
       ) : (
         <>
-          <div className="fixed inset-0 z-0">
+          <div className={builderSceneFrameClass}>
               <MemorialPreview
                 className="h-full w-full rounded-none border-transparent bg-transparent"
                 terrainUrl={environmentUrl}
@@ -3220,15 +3237,15 @@ export default function CreateMemorialClient({
           <div className="pointer-events-none fixed inset-0 z-10">
 
             <div className={builderEditorPanelClass}>
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]">
-                <div className="border-b border-[#eadfd9] px-4 py-3">
+              <div className={builderPanelInnerClass}>
+                <div className={builderPanelHeaderClass}>
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]">
+                    <h3 className={isPortraitLayout ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]" : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"}>
                       Редактор мемориала
                     </h3>
-                    <div className="flex items-center gap-3">
+                    <div className={isPortraitLayout ? "flex items-center gap-2" : "flex items-center gap-3"}>
                       {isEditMode ? (
-                        <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]">
+                        <span className={isPortraitLayout ? "rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
                           Только оформление
                         </span>
                       ) : null}
