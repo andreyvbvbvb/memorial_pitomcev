@@ -2607,9 +2607,17 @@ export default function CreateMemorialClient({
   const centeredFieldClass =
     "w-full rounded-2xl border border-slate-200 bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
   const centeredDateFieldClass = (hasError: boolean) =>
-    `w-full rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
+    `block w-full min-w-0 max-w-full appearance-none rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
       hasError ? "border-red-400" : "border-slate-200"
     } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`;
+  const centeredDateFieldStyle: CSSProperties = {
+    width: "100%",
+    minWidth: 0,
+    maxWidth: "100%",
+    display: "block",
+    WebkitAppearance: "none",
+    appearance: "none"
+  };
 
   const renderBaseInfoForm = (centered = false) => (
     <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
@@ -2664,6 +2672,7 @@ export default function CreateMemorialClient({
             onChange={(event) => handleChange("birthDate", event.target.value)}
             max={form.deathDate || todayInputValue}
             aria-invalid={hasDateFieldError}
+            style={centered ? centeredDateFieldStyle : undefined}
           />
         </label>
         <label
@@ -2683,6 +2692,7 @@ export default function CreateMemorialClient({
             min={form.birthDate || undefined}
             max={todayInputValue}
             aria-invalid={hasDateFieldError}
+            style={centered ? centeredDateFieldStyle : undefined}
           />
         </label>
       </div>

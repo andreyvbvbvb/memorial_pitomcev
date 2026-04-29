@@ -2011,7 +2011,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? "fixed left-1.5 right-1.5 top-[calc(40dvh+0.35rem)] bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
+    ? "fixed left-1.5 right-1.5 top-[calc(33dvh+0.35rem)] bottom-[calc(3.45rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
@@ -2031,27 +2031,27 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
     : "";
   const memorialSceneFrameClass = isPortraitLayout
-    ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
+    ? "fixed left-0 right-0 top-0 z-0 h-[72dvh] overflow-hidden"
     : "fixed inset-0 z-0";
   const giftPanelInnerClass = isPortraitLayout
     ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
     : `flex min-h-0 flex-1 flex-col ${panelSectionClass}`;
   const giftFlowClass = isPortraitLayout
-    ? "mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1"
+    ? "mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
     : "mt-4 flex min-h-0 flex-1 flex-col gap-3";
   const giftCatalogGridClass = isPortraitLayout
-    ? "grid max-h-[22dvh] min-h-[92px] shrink-0 grid-cols-4 content-start gap-1.5 overflow-y-auto pr-1"
+    ? "grid h-[clamp(136px,20dvh,190px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(72px,9dvh,86px)] content-start gap-1.5 overflow-y-auto overscroll-contain pr-1"
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1";
   const giftCardClass = (selected: boolean) =>
     `relative flex w-full items-center justify-center overflow-hidden border transition ${
-      isPortraitLayout ? "h-20 rounded-[16px] border-2" : "h-28 rounded-[22px] border-[3px]"
+      isPortraitLayout ? "h-full min-h-0 rounded-[16px] border-2" : "h-28 rounded-[22px] border-[3px]"
     } ${
       selected
         ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-sm"
         : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/50"
     }`;
   const giftSkeletonClass = isPortraitLayout
-    ? "relative h-20 w-full animate-pulse overflow-hidden rounded-[16px] border border-white bg-white"
+    ? "relative h-full min-h-0 w-full animate-pulse overflow-hidden rounded-[16px] border border-white bg-white"
     : "relative h-28 w-full animate-pulse overflow-hidden rounded-[22px] border border-white bg-white";
   const floatingTitleWrapClass = isPortraitLayout
     ? "pointer-events-none absolute left-1/2 z-10 w-[min(18rem,calc(100vw-1rem))] -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.35rem)]"
