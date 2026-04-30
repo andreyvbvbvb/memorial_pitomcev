@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, useTexture } from "@react-three/drei";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ensureDracoLoader } from "../lib/draco";
 import usePortraitLayout from "./usePortraitLayout";
@@ -472,6 +472,27 @@ function buildGridPositions(count: number) {
   return positions;
 }
 
+function SceneLoadingOverlay({ label }: { label: string }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#fcf8f5]/86 backdrop-blur-sm">
+      <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
+        <span>{label}</span>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
+          <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SceneReady({ onReady }: { onReady: () => void }) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return null;
+}
+
 export default function MyPets3DView({
   pets,
   loading,
@@ -484,6 +505,7 @@ export default function MyPets3DView({
   const isPortraitLayout = usePortraitLayout();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasArrowNavigation, setHasArrowNavigation] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   const controlsRef = useRef<any>(null);
   const orbitMovedRef = useRef(false);
   const orbitingRef = useRef(false);
@@ -505,6 +527,7 @@ export default function MyPets3DView({
     : -1;
   const focusPosition = selectedItem ? selectedItem.position : null;
   const petsSignature = useMemo(() => pets.map((pet) => pet.id).join("|"), [pets]);
+  const handleSceneReady = useCallback(() => setSceneReady(true), []);
 
   const containerClassName = fullScreen
     ? "fixed inset-0 z-0 h-screen w-screen overflow-hidden bg-slate-50"
@@ -513,17 +536,17 @@ export default function MyPets3DView({
     ? "absolute left-0 right-0 top-0 h-[60dvh] overflow-hidden"
     : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
-    ? "absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
+    ? "absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 max-h-[min(38dvh,21rem)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
     : "absolute right-6 top-1/2 z-20 w-[340px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
   const infoCardClass = isPortraitLayout
     ? "rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
     : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
   const infoImageClass = isPortraitLayout
-    ? "h-20 w-20 rounded-[18px] object-cover"
-    : "h-24 w-24 rounded-[22px] object-cover";
+    ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] object-cover"
+    : "h-28 w-28 rounded-[24px] object-cover";
   const infoImageFallbackClass = isPortraitLayout
-    ? "h-20 w-20 rounded-[18px] bg-slate-200"
-    : "h-24 w-24 rounded-[22px] bg-slate-200";
+    ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] bg-slate-200"
+    : "h-28 w-28 rounded-[24px] bg-slate-200";
   const sideNavButtonClass = (side: "left" | "right") =>
     `group absolute z-10 flex items-center ${
       side === "left" ? "left-0 justify-start" : "right-0 justify-end"
@@ -558,6 +581,10 @@ export default function MyPets3DView({
     }
   }, [pets, petsSignature, selectedId]);
 
+  useEffect(() => {
+    setSceneReady(false);
+  }, [loading, petsSignature]);
+
   const navigateMemorial = (direction: -1 | 1) => {
     if (items.length === 0) {
       return;
@@ -571,9 +598,10 @@ export default function MyPets3DView({
   return (
     <div className={containerClassName}>
       {loading ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 text-sm text-slate-500">
-          Загрузка...
-        </div>
+        <SceneLoadingOverlay label="Загружаем ваши мемориалы..." />
+      ) : null}
+      {!loading && items.length > 0 && !sceneReady ? (
+        <SceneLoadingOverlay label="Загружаем 3D-превью..." />
       ) : null}
       {pets.length === 0 && !loading ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-500">
@@ -600,6 +628,7 @@ export default function MyPets3DView({
                 orbitMovedRef={orbitMovedRef}
               />
             ))}
+            {items.length > 0 ? <SceneReady onReady={handleSceneReady} /> : null}
           </Suspense>
           <OrbitControls
             ref={controlsRef}

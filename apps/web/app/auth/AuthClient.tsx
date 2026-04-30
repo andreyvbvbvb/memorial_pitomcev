@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
@@ -49,9 +49,17 @@ export default function AuthClient() {
   const [consentTerms, setConsentTerms] = useState(false);
   const [consentOffer, setConsentOffer] = useState(false);
   const [consentLoading, setConsentLoading] = useState(false);
+  const [redirectPath, setRedirectPath] = useState("/profile");
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      setRedirectPath(next);
+    }
+  }, []);
 
   const handleSubmit = async () => {
     setError(null);
@@ -149,7 +157,7 @@ export default function AuthClient() {
         return;
       }
       setNotice("Готово! Перенаправляем...");
-      router.push("/profile");
+      router.push(redirectPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка авторизации");
     } finally {
@@ -177,7 +185,7 @@ export default function AuthClient() {
       }
       setConsentOpen(false);
       setNotice("Готово! Перенаправляем...");
-      router.push("/profile");
+      router.push(redirectPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка подтверждения");
     } finally {

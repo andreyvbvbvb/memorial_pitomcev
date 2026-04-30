@@ -65,6 +65,9 @@ type Props = {
   }) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
+  defaultCameraPosition?: [number, number, number];
+  defaultTarget?: [number, number, number];
+  loadingLabel?: string;
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
@@ -158,8 +161,10 @@ const CLICK_DRAG_THRESHOLD = 5;
 const HOVER_EMISSIVE_INTENSITY = 0.03;
 const HOVER_COLOR_LERP = 0.012;
 
-const buildFocusTarget = (focus: [number, number, number] | null) =>
-  focus ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2]) : DEFAULT_TARGET.clone();
+const buildFocusTarget = (
+  focus: [number, number, number] | null,
+  defaultTarget = DEFAULT_TARGET
+) => (focus ? new THREE.Vector3(focus[0], focus[1] + 0.6, focus[2]) : defaultTarget.clone());
 
 const getBaseFocusOffset = ({
   focus,
@@ -415,12 +420,16 @@ function SceneCameraRig({
   direction,
   focusSlot,
   offsetAdjustment,
+  defaultCameraPosition,
+  defaultTarget,
   controlsRef
 }: {
   focus: [number, number, number] | null;
   direction: [number, number, number] | null;
   focusSlot?: string | null;
   offsetAdjustment?: [number, number, number] | null;
+  defaultCameraPosition: THREE.Vector3;
+  defaultTarget: THREE.Vector3;
   controlsRef: React.MutableRefObject<any>;
 }) {
   const { camera } = useThree();
@@ -435,15 +444,15 @@ function SceneCameraRig({
 
   useEffect(() => {
     const controls = controlsRef.current;
-    const currentTarget = controls ? controls.target.clone() : DEFAULT_TARGET.clone();
+    const currentTarget = controls ? controls.target.clone() : defaultTarget.clone();
     const startPos = camera.position.clone();
     const startTarget = currentTarget;
-    const endTarget = buildFocusTarget(focus);
+    const endTarget = buildFocusTarget(focus, defaultTarget);
     let offset = getBaseFocusOffset({ focus, direction, focusSlot });
     if (offsetAdjustment) {
       offset.add(new THREE.Vector3(offsetAdjustment[0], offsetAdjustment[1], offsetAdjustment[2]));
     }
-    const endPos = focus ? endTarget.clone().add(offset) : DEFAULT_CAMERA.clone();
+    const endPos = focus ? endTarget.clone().add(offset) : defaultCameraPosition.clone();
     animationRef.current = {
       elapsed: 0,
       duration: 0.9,
@@ -452,7 +461,7 @@ function SceneCameraRig({
       endPos,
       endTarget
     };
-  }, [focus, direction, focusSlot, offsetAdjustment, camera, controlsRef]);
+  }, [focus, direction, focusSlot, offsetAdjustment, defaultCameraPosition, defaultTarget, camera, controlsRef]);
 
   useFrame((_, delta) => {
     const anim = animationRef.current;
@@ -1353,6 +1362,9 @@ export default function MemorialPreview({
   onRenderContextReady,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
+  defaultCameraPosition,
+  defaultTarget,
+  loadingLabel = "Загружаем 3D-превью...",
   houseOffsetX,
   houseOffsetZ,
   houseRotationY,
@@ -1424,6 +1436,20 @@ export default function MemorialPreview({
   const orbitMovedRef = useRef(false);
   const orbitLastChangeRef = useRef<number | null>(null);
   const orbitEndTimeoutRef = useRef<number | null>(null);
+  const defaultCameraVector = useMemo(
+    () =>
+      defaultCameraPosition
+        ? new THREE.Vector3(defaultCameraPosition[0], defaultCameraPosition[1], defaultCameraPosition[2])
+        : DEFAULT_CAMERA.clone(),
+    [defaultCameraPosition?.[0], defaultCameraPosition?.[1], defaultCameraPosition?.[2]]
+  );
+  const defaultTargetVector = useMemo(
+    () =>
+      defaultTarget
+        ? new THREE.Vector3(defaultTarget[0], defaultTarget[1], defaultTarget[2])
+        : DEFAULT_TARGET.clone(),
+    [defaultTarget?.[0], defaultTarget?.[1], defaultTarget?.[2]]
+  );
 
   useEffect(() => {
     if (currentSignature === activeSignature) {
@@ -1639,11 +1665,13 @@ export default function MemorialPreview({
         </>
       ) : null}
       {!sceneReady && !suppressLoadingOverlay ? (
-        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl bg-white/70">
-          <div className="w-3/4 max-w-md animate-pulse space-y-4">
-            <div className="h-4 w-1/2 rounded-full bg-slate-200" />
-            <div className="h-3 w-3/4 rounded-full bg-slate-200" />
-            <div className="h-64 w-full rounded-2xl bg-slate-200" />
+        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl bg-[#fcf8f5]/86 backdrop-blur-sm">
+          <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
+            <span>{loadingLabel}</span>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
+              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
+            </div>
           </div>
         </div>
       ) : null}
@@ -1849,6 +1877,8 @@ export default function MemorialPreview({
           direction={focusDirection}
           focusSlot={focusSlot}
           offsetAdjustment={offsetAdjustment}
+          defaultCameraPosition={defaultCameraVector}
+          defaultTarget={defaultTargetVector}
           controlsRef={controlsRef}
         />
       </Canvas>

@@ -644,6 +644,27 @@ function MemorialCardPreview({
   );
 }
 
+function SceneLoadingOverlay({ label }: { label: string }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#fcf8f5]/86 backdrop-blur-sm">
+      <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
+        <span>{label}</span>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
+          <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SceneReady({ onReady }: { onReady: () => void }) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return null;
+}
+
 type CarouselCameraSettings = { distanceOffset: number; height: number; tiltDeg: number };
 
 const CAROUSEL_DESIRED_SPACING = 20;
@@ -1105,6 +1126,12 @@ function CarouselScene({
   cameraSettings: CarouselCameraSettings;
   enableHoverHighlight?: boolean;
 }) {
+  const [sceneReady, setSceneReady] = useState(false);
+  const itemsSignature = useMemo(
+    () => items.map((item) => `${item.id}:${item.data ? "ready" : "empty"}`).join("|"),
+    [items]
+  );
+  const handleSceneReady = useCallback(() => setSceneReady(true), []);
   const initialCameraPosition = useMemo(() => {
     const count = Math.max(1, items.length);
     const radius = getCarouselRadius(count);
@@ -1117,24 +1144,38 @@ function CarouselScene({
       Math.sin(centerAngle) * cameraRadius
     ] as [number, number, number];
   }, [activeIndex, items.length, cameraSettings]);
+
+  useEffect(() => {
+    setSceneReady(false);
+  }, [itemsSignature]);
+
   return (
-    <Canvas
-      dpr={1}
-      camera={{ position: initialCameraPosition, fov: 45 }}
-      onCreated={({ camera }) => {
-        applyCarouselCamera(camera, items.length, activeIndex, cameraSettings);
-      }}
-    >
-      <RowCarouselStage
-        items={items}
-        activeIndex={activeIndex}
-        targetIndex={targetIndex}
-        onArrive={onArrive}
-        onAnimationEnd={onAnimationEnd}
-        cameraSettings={cameraSettings}
-        enableHoverHighlight={enableHoverHighlight}
-      />
-    </Canvas>
+    <div className="relative h-full w-full">
+      <Canvas
+        className="h-full w-full"
+        dpr={1}
+        camera={{ position: initialCameraPosition, fov: 45 }}
+        onCreated={({ camera }) => {
+          applyCarouselCamera(camera, items.length, activeIndex, cameraSettings);
+        }}
+      >
+        <Suspense fallback={null}>
+          <RowCarouselStage
+            items={items}
+            activeIndex={activeIndex}
+            targetIndex={targetIndex}
+            onArrive={onArrive}
+            onAnimationEnd={onAnimationEnd}
+            cameraSettings={cameraSettings}
+            enableHoverHighlight={enableHoverHighlight}
+          />
+          {items.length > 0 ? <SceneReady onReady={handleSceneReady} /> : null}
+        </Suspense>
+      </Canvas>
+      {items.length > 0 && !sceneReady ? (
+        <SceneLoadingOverlay label="Загружаем 3D-мемориалы..." />
+      ) : null}
+    </div>
   );
 }
 
@@ -1333,10 +1374,10 @@ export default function MapClient() {
     ? "flex-1 overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md"
     : `flex-1 overflow-y-auto p-4 ${simsSidebarClass}`;
   const mobileMapSceneHeightClass = isPortraitLayout
-    ? "h-[34dvh] min-h-[210px] max-h-[320px]"
+    ? "h-[clamp(13rem,32dvh,20rem)] shrink-0"
     : "h-[42vh]";
   const mobileCarouselSceneHeightClass = isPortraitLayout
-    ? "h-[58dvh] min-h-[320px]"
+    ? "h-[clamp(18rem,54dvh,32rem)] shrink-0"
     : "h-[42vh]";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
@@ -1695,11 +1736,11 @@ export default function MapClient() {
             <img
               src={activePreviewSrc}
               alt={`Фото ${activeCarouselMarker.name}`}
-              className={isPortraitLayout ? "h-16 w-16 rounded-[16px] object-cover" : "h-24 w-24 rounded-[22px] object-cover"}
+              className={isPortraitLayout ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] object-cover" : "h-28 w-28 rounded-[24px] object-cover"}
               loading="lazy"
             />
           ) : (
-            <div className={isPortraitLayout ? "h-16 w-16 rounded-[16px] bg-slate-200" : "h-24 w-24 rounded-[22px] bg-slate-200"} />
+            <div className={isPortraitLayout ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] bg-slate-200" : "h-28 w-28 rounded-[24px] bg-slate-200"} />
           )}
           <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
