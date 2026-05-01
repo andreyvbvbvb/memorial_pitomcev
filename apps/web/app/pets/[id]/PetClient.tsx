@@ -3332,7 +3332,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           <button
             type="button"
             aria-label="Закрыть"
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
             onClick={closeTopUp}
           />
           <div

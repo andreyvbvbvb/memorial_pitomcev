@@ -23,6 +23,7 @@ type Pet = {
   birthDate: string | null;
   deathDate: string | null;
   epitaph: string | null;
+  story?: string | null;
   isPublic: boolean;
   photos: PetPhoto[];
   marker: PetMarker | null;
@@ -43,7 +44,6 @@ export default function MyPetsClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<4 | 5>(4);
-  const [deletingPetId, setDeletingPetId] = useState<string | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -130,29 +130,6 @@ export default function MyPetsClient() {
     ? "flex items-center gap-1 rounded-[22px] border-[3px] border-[#fdf2e9] bg-white/95 p-1 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur"
     : "flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur";
 
-  const handleDeletePet = async (pet: PetWithPreview) => {
-    if (!window.confirm(`Удалить мемориал "${pet.name}"? Он исчезнет из списков, но данные сохранятся в базе.`)) {
-      return;
-    }
-    setDeletingPetId(pet.id);
-    setError(null);
-    try {
-      const response = await fetch(`${apiUrl}/pets/${pet.id}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Не удалось удалить мемориал");
-      }
-      setPets((prev) => prev.filter((item) => item.id !== pet.id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка удаления");
-    } finally {
-      setDeletingPetId(null);
-    }
-  };
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fcf8f5]">
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
@@ -223,19 +200,6 @@ export default function MyPetsClient() {
                         <h3 className="truncate text-lg font-black uppercase tracking-tight text-[#5d4037]">
                           {pet.name}
                         </h3>
-                        <span className="rounded-full px-1 text-[#adb5bd] transition group-hover:text-[#d3a27f]">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          >
-                            <path d="M5 12h14" />
-                            <path d="m12 5 7 7-7 7" />
-                          </svg>
-                        </span>
                       </div>
 
                       <p className="mb-3 line-clamp-1 text-xs font-bold italic text-[#8d6e63]/70">
@@ -261,10 +225,10 @@ export default function MyPetsClient() {
                             {formatLifeRange(pet)}
                           </span>
                         </div>
-                        <span className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63] transition-all group-hover:translate-y-[1px] group-hover:shadow-[0_2px_0_0_#1e7a63]">
+                        <span className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-1 group-hover:shadow-[0_5px_0_0_#1e7a63]">
                           <svg
                             viewBox="0 0 24 24"
-                            className="h-4 w-4"
+                            className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
@@ -279,21 +243,6 @@ export default function MyPetsClient() {
                       </div>
                       </div>
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => void handleDeletePet(pet)}
-                      disabled={deletingPetId === pet.id}
-                      className="absolute right-5 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-white/90 text-red-500 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label="Удалить мемориал"
-                      title="Удалить мемориал"
-                    >
-                      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M3 6h18" />
-                        <path d="M8 6V4h8v2" />
-                        <path d="M19 6l-1 14H6L5 6" />
-                        <path d="M10 11v5M14 11v5" />
-                      </svg>
-                    </button>
                   </div>
                 ))}
               </div>

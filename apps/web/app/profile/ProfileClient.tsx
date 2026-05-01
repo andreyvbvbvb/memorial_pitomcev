@@ -7,7 +7,6 @@ import ErrorToast from "../../components/ErrorToast";
 import {
   authBackdropGlowClass,
   authCardClass,
-  authHelperTextClass,
   authInnerShellClass,
   authInputClass,
   authLabelClass,
@@ -22,6 +21,21 @@ type Profile = {
   email: string | null;
   coinBalance: number;
 };
+
+function HelpHint({ text, className = "" }: { text: string; className?: string }) {
+  return (
+    <span
+      className={`group/hint relative inline-flex h-8 w-8 items-center justify-center rounded-full border-[3px] border-white bg-[#f1e7e0] text-xs font-black text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] outline-none transition hover:bg-white hover:text-[#5d4037] focus:bg-white focus:text-[#5d4037] ${className}`}
+      tabIndex={0}
+      aria-label={text}
+    >
+      ?
+      <span className="pointer-events-none absolute right-0 top-[calc(100%+0.55rem)] z-30 w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200 group-hover/hint:opacity-100 group-focus/hint:opacity-100">
+        {text}
+      </span>
+    </span>
+  );
+}
 
 export default function ProfileClient() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -149,20 +163,22 @@ export default function ProfileClient() {
       <div className="relative z-10 mx-auto w-full max-w-3xl">
         <section>
           <div className={authCardClass}>
-            <div className={authInnerShellClass}>
+            <div className={`${authInnerShellClass} relative`}>
+              <span className="absolute right-4 top-4">
+                <HelpHint text="Здесь можно изменить логин, email и пароль аккаунта." />
+              </span>
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
+                <div className="pr-12">
                   <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
                     Профиль
                   </p>
                   <h1 className={`mt-2 ${authTitleClass}`}>Настройки аккаунта</h1>
-                  <p className={`mt-3 max-w-2xl ${authHelperTextClass}`}>
-                    Здесь можно изменить логин, email и пароль аккаунта.
-                  </p>
                 </div>
-                <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                  {loadingProfile ? "Загрузка" : editing ? "Редактирование" : "Просмотр"}
-                </div>
+                {loadingProfile || editing ? (
+                  <div className="mr-11 rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                    {loadingProfile ? "Загрузка" : "Редактирование"}
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-6 grid gap-4">
@@ -173,7 +189,13 @@ export default function ProfileClient() {
                 ) : null}
 
                 <label className={authLabelClass}>
-                  Логин
+                  <span className="flex items-center justify-between gap-3">
+                    <span>Логин</span>
+                    <HelpHint
+                      text="Можно менять. Допустимы a-z, 0-9 и подчёркивание."
+                      className="h-7 w-7 text-[11px]"
+                    />
+                  </span>
                   <input
                     className={authInputClass}
                     value={login}
@@ -181,9 +203,6 @@ export default function ProfileClient() {
                     placeholder="login"
                     disabled={!profile || !editing}
                   />
-                  <span className={authHelperTextClass}>
-                    Можно менять. Допустимы a-z, 0-9 и подчёркивание.
-                  </span>
                 </label>
 
                 <label className={authLabelClass}>

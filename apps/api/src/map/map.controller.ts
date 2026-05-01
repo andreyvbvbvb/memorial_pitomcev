@@ -98,7 +98,8 @@ export class MapController {
         lng: marker.lng,
         markerStyle: marker.markerStyle ?? null,
         previewPhotoUrl: previewPhoto?.url ?? null,
-        previewImageUrl
+        previewImageUrl,
+        isPublic: marker.pet.isPublic
       };
     });
   }

@@ -63,7 +63,7 @@ export default function HomePage() {
             {steps.map((step, index) => (
               <article
                 key={step.title}
-                className="rounded-[28px] border-[3px] border-white bg-white/[0.82] p-5 shadow-[0_18px_42px_-28px_rgba(93,64,55,0.42)] backdrop-blur"
+                className="rounded-[28px] border-[3px] border-white bg-white/[0.82] p-5 shadow-[0_18px_42px_-28px_rgba(93,64,55,0.42)] backdrop-blur transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02]"
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
@@ -106,7 +106,7 @@ export default function HomePage() {
             {features.map((feature) => (
               <article
                 key={feature.title}
-                className="grid min-h-[15rem] content-between overflow-hidden rounded-[28px] border-[3px] border-white bg-white/[0.84] p-5 shadow-[0_18px_42px_-28px_rgba(93,64,55,0.42)]"
+                className="grid min-h-[15rem] content-between overflow-hidden rounded-[28px] border-[3px] border-white bg-white/[0.84] p-5 shadow-[0_18px_42px_-28px_rgba(93,64,55,0.42)] transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02]"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="grid gap-2">

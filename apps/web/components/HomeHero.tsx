@@ -16,21 +16,9 @@ export default function HomeHero() {
         />
       </div>
 
-      <div className="hero-stagger relative z-10 flex w-full max-w-[46rem] flex-col items-center gap-5">
-        <div
-          className="animate-fade-up rounded-full border border-white/80 bg-white/70 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-[#8d6e63] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.5)] backdrop-blur"
-          style={{ "--delay": "0.02s" } as CSSProperties}
-        >
-          3D-мемориалы для питомцев
-        </div>
-        <h1
-          className="animate-fade-up text-[clamp(3.4rem,11vw,7.25rem)] font-black uppercase leading-[0.9] tracking-normal text-[#5d4037] drop-shadow-[0_10px_24px_rgba(255,255,255,0.55)]"
-          style={{ "--delay": "0.05s" } as CSSProperties}
-        >
-          МяуГав
-        </h1>
+      <div className="hero-stagger relative z-10 flex w-full max-w-[52rem] flex-col items-center gap-7">
         <p
-          className="animate-fade-up max-w-2xl text-base font-semibold leading-relaxed text-[#6f6360] sm:text-lg"
+          className="animate-fade-up max-w-3xl text-[clamp(1.65rem,6vw,3.5rem)] font-black leading-tight text-[#5d4037] drop-shadow-[0_10px_24px_rgba(255,255,255,0.7)]"
           style={{ "--delay": "0.11s" } as CSSProperties}
         >
           Создавайте тёплые 3D-мемориалы, сохраняйте фотографии и истории, отмечайте

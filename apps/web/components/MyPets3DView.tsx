@@ -24,6 +24,7 @@ ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
 import { applyHousePlacement, getHouseTransform } from "../lib/house-layout";
+import VisibilityIndicator from "./VisibilityIndicator";
 
 type SceneParts = {
   roof?: string;
@@ -48,6 +49,7 @@ export type MyPets3DViewPet = {
   birthDate: string | null;
   deathDate: string | null;
   epitaph: string | null;
+  story?: string | null;
   isPublic: boolean;
   previewUrl: string | null;
   memorial?: MemorialScene | null;
@@ -475,9 +477,9 @@ function buildGridPositions(count: number) {
 function SceneLoadingOverlay({ label }: { label: string }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#fcf8f5]/86 backdrop-blur-sm">
-      <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
+      <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold leading-tight text-[#6f6360]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
-        <span>{label}</span>
+        <span className="block w-full text-center">{label}</span>
         <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
           <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
         </div>
@@ -536,11 +538,11 @@ export default function MyPets3DView({
     ? "absolute left-0 right-0 top-0 h-[60dvh] overflow-hidden"
     : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
-    ? "absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 max-h-[min(38dvh,21rem)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
-    : "absolute right-6 top-1/2 z-20 w-[340px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
+    ? "absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 h-[min(47dvh,27rem)] overflow-hidden rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
+    : "absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[380px] -translate-y-1/2 flex-col overflow-y-auto rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
   const infoCardClass = isPortraitLayout
-    ? "rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
-    : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
+    ? "flex h-full min-h-full flex-col rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
+    : "flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
   const infoImageClass = isPortraitLayout
     ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] object-cover"
     : "h-36 w-36 rounded-[28px] object-cover";
@@ -674,7 +676,7 @@ export default function MyPets3DView({
             ×
           </button>
           <div className={infoCardClass}>
-            <div className="flex items-start gap-4">
+            <div className="flex shrink-0 items-start gap-4">
               <div className="relative">
                 {selectedItem.pet.previewUrl ? (
                   <img
@@ -686,16 +688,10 @@ export default function MyPets3DView({
                 ) : (
                   <div className={infoImageFallbackClass} />
                 )}
-                <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
-                  <span
-                    className={`h-2 w-2 rounded-full ${
-                      selectedItem.pet.isPublic ? "bg-[#3bceac]" : "bg-[#adb5bd]"
-                    }`}
-                  />
-                  <span className="text-[9px] font-black uppercase text-[#5d4037]">
-                    {selectedItem.pet.isPublic ? "Публичный" : "Приватный"}
-                  </span>
-                </div>
+                <VisibilityIndicator
+                  isPublic={selectedItem.pet.isPublic}
+                  className="absolute left-3 top-3"
+                />
               </div>
               <div className="min-w-0 flex-1 pt-1">
                 <h3 className="text-xl font-black uppercase tracking-tight text-[#5d4037]">
@@ -706,10 +702,17 @@ export default function MyPets3DView({
                 </p>
               </div>
             </div>
-            <p className="mt-4 text-[15px] italic leading-relaxed text-[#6f6360]">
-              &ldquo;{selectedItem.pet.epitaph ?? "Без эпитафии"}&rdquo;
-            </p>
-            <div className="mt-5">
+            <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
+              <p className={isPortraitLayout ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
+                &ldquo;{selectedItem.pet.epitaph ?? "Без эпитафии"}&rdquo;
+              </p>
+            </div>
+            <div className={isPortraitLayout ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
+              <p className={isPortraitLayout ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
+                {selectedItem.pet.story || "История пока не добавлена."}
+              </p>
+            </div>
+            <div className="mt-5 shrink-0">
               <Link
                 href={`/pets/${selectedItem.pet.id}`}
                 className="group inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-[1rem] font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"

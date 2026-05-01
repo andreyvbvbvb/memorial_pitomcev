@@ -3607,80 +3607,93 @@ export default function CreateMemorialClient({
           <button
             type="button"
             aria-label="Закрыть"
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
             onClick={closeTopUp}
           />
           <div
-            className={`relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+            className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
               topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Пополнение баланса</h3>
-              <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeTopUp}>
-                Закрыть
+            <div className="rounded-[28px] border border-white/80 bg-white/[0.86] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
+                    Баланс
+                  </p>
+                  <h3 className="mt-1 text-lg font-black text-[#5d4037]">
+                    Пополнение баланса
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-[16px] border-[3px] border-white bg-[#f1e7e0] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white"
+                  onClick={closeTopUp}
+                >
+                  Закрыть
+                </button>
+              </div>
+              <p className="mt-3 rounded-[18px] bg-[#f7f1ee] px-4 py-3 text-sm font-semibold text-[#8d6e63]">
+                Баланс:{" "}
+                {walletLoading
+                  ? "Загрузка..."
+                  : walletBalance !== null
+                    ? `${walletBalance} монет`
+                    : "—"}
+              </p>
+              <div className="mt-4 flex gap-2 rounded-[20px] bg-[#f1e7e0] p-1.5">
+                {(["RUB", "USD"] as const).map((currency) => {
+                  const isActive = topUpCurrency === currency;
+                  return (
+                    <button
+                      key={currency}
+                      type="button"
+                      onClick={() => setTopUpCurrency(currency)}
+                      className={`flex-1 rounded-[15px] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition ${
+                        isActive ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]" : "text-[#8d6e63] hover:bg-white/70"
+                      }`}
+                    >
+                      {currency}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-4 grid gap-2">
+                {topUpOptions.map((option) => {
+                  const isSelected = topUpPlan === option.coins;
+                  const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
+                  return (
+                    <button
+                      key={option.coins}
+                      type="button"
+                      onClick={() => setTopUpPlan(option.coins)}
+                      className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
+                        isSelected
+                          ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-[0_10px_24px_-18px_rgba(59,206,172,0.55)]"
+                          : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
+                      }`}
+                    >
+                      <span className="font-black">{option.coins} монет</span>
+                      <span className="font-semibold text-[#8d6e63]">{price}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
+                onClick={() => {
+                  if (!topUpPlan) {
+                    return;
+                  }
+                  router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
+                  closeTopUp();
+                }}
+                disabled={!topUpPlan}
+              >
+                Продолжить
               </button>
             </div>
-            <p className="mt-1 text-sm text-slate-600">
-              Баланс:{" "}
-              {walletLoading
-                ? "Загрузка..."
-                : walletBalance !== null
-                  ? `${walletBalance} монет`
-                  : "—"}
-            </p>
-            <div className="mt-4 flex gap-2 rounded-full bg-slate-100 p-1">
-              {(["RUB", "USD"] as const).map((currency) => {
-                const isActive = topUpCurrency === currency;
-                return (
-                  <button
-                    key={currency}
-                    type="button"
-                    onClick={() => setTopUpCurrency(currency)}
-                    className={`flex-1 rounded-full px-4 py-2 text-xs font-semibold ${
-                      isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-                    }`}
-                  >
-                    {currency}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-4 grid gap-2">
-              {topUpOptions.map((option) => {
-                const isSelected = topUpPlan === option.coins;
-                const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
-                return (
-                  <button
-                    key={option.coins}
-                    type="button"
-                    onClick={() => setTopUpPlan(option.coins)}
-                    className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
-                      isSelected
-                        ? "border-sky-400 bg-sky-50 text-slate-900"
-                        : "border-slate-200 text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    <span className="font-semibold">{option.coins} монет</span>
-                    <span className="text-slate-500">{price}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              className="mt-5 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-              onClick={() => {
-                if (!topUpPlan) {
-                  return;
-                }
-                router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
-                closeTopUp();
-              }}
-              disabled={!topUpPlan}
-            >
-              Продолжить
-            </button>
           </div>
         </div>
       ) : null}

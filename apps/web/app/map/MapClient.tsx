@@ -15,6 +15,7 @@ import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
+import VisibilityIndicator from "../../components/VisibilityIndicator";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 import {
   resolveEnvironmentModel,
@@ -52,6 +53,7 @@ type MarkerDto = {
   markerStyle?: string | null;
   previewPhotoUrl?: string | null;
   previewImageUrl?: string | null;
+  isPublic?: boolean | null;
 };
 
 type PetDetail = {
@@ -650,9 +652,9 @@ function MemorialCardPreview({
 function SceneLoadingOverlay({ label }: { label: string }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#fcf8f5]/86 backdrop-blur-sm">
-      <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
+      <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold leading-tight text-[#6f6360]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
-        <span>{label}</span>
+        <span className="block w-full text-center">{label}</span>
         <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
           <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
         </div>
@@ -1731,9 +1733,10 @@ export default function MapClient() {
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
   const activePreviewSrc = resolvePreviewSrc(getMarkerCoverSrc(activeCarouselMarker));
+  const activeCarouselIsPublic = activeCarouselMarker?.isPublic ?? true;
   const activeCarouselInfoContent = activeCarouselMarker ? (
-    <div className={isPortraitLayout ? "rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
-      <div className={isPortraitLayout ? "flex items-start gap-3" : "flex items-start gap-4"}>
+    <div className={isPortraitLayout ? "flex h-full min-h-full flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
+      <div className={isPortraitLayout ? "flex shrink-0 items-start gap-3" : "flex shrink-0 items-start gap-4"}>
         <div className="relative">
           {activePreviewSrc ? (
             <img
@@ -1745,12 +1748,10 @@ export default function MapClient() {
           ) : (
             <div className={isPortraitLayout ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] bg-slate-200" : "h-36 w-36 rounded-[28px] bg-slate-200"} />
           )}
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
-            <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
-            <span className="text-[9px] font-black uppercase text-[#5d4037]">
-              Публичный
-            </span>
-          </div>
+          <VisibilityIndicator
+            isPublic={activeCarouselIsPublic}
+            className="absolute left-3 top-3"
+          />
         </div>
         <div className="min-w-0 flex-1 pt-1">
           <h3 className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
@@ -1761,16 +1762,18 @@ export default function MapClient() {
           </p>
         </div>
       </div>
-      <p className={isPortraitLayout ? "mt-2 line-clamp-2 text-sm italic leading-snug text-[#6f6360]" : "mt-4 text-[15px] italic leading-relaxed text-[#6f6360]"}>
-        &ldquo;{activeCarouselMarker.epitaph ?? "Без эпитафии"}&rdquo;
-      </p>
-      {activeCarouselPet?.story ? (
-        <p className={isPortraitLayout ? "mt-2 max-h-12 overflow-y-auto text-xs leading-snug text-[#7b6b65]" : "mt-4 max-h-28 overflow-y-auto text-sm leading-relaxed text-[#7b6b65]"}>
-          {activeCarouselPet.story}
+      <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
+        <p className={isPortraitLayout ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
+          &ldquo;{activeCarouselMarker.epitaph ?? "Без эпитафии"}&rdquo;
         </p>
-      ) : null}
+      </div>
+      <div className={isPortraitLayout ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
+        <p className={isPortraitLayout ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
+          {activeCarouselPet?.story || "История пока не добавлена."}
+        </p>
+      </div>
       <a
-        className={isPortraitLayout ? "group mt-3 inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "group mt-5 inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
+        className={isPortraitLayout ? "group mt-3 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "group mt-5 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
         href={`/pets/${activeCarouselMarker.petId}`}
       >
         <span className="transition-transform duration-300 group-hover:-translate-x-1">
