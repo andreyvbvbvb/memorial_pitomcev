@@ -542,11 +542,11 @@ export default function MyPets3DView({
     ? "rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
     : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
   const infoImageClass = isPortraitLayout
-    ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] object-cover"
-    : "h-28 w-28 rounded-[24px] object-cover";
+    ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] object-cover"
+    : "h-36 w-36 rounded-[28px] object-cover";
   const infoImageFallbackClass = isPortraitLayout
-    ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] bg-slate-200"
-    : "h-28 w-28 rounded-[24px] bg-slate-200";
+    ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] bg-slate-200"
+    : "h-36 w-36 rounded-[28px] bg-slate-200";
   const sideNavButtonClass = (side: "left" | "right") =>
     `group absolute z-10 flex items-center ${
       side === "left" ? "left-0 justify-start" : "right-0 justify-end"

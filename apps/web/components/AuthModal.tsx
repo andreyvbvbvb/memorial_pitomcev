@@ -265,7 +265,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
       <button
         type="button"
         aria-label="Закрыть"
-        className="absolute inset-0 cursor-default bg-[#cfe9ff]/70 backdrop-blur-md"
+        className="absolute inset-0 cursor-default bg-[#111827]/30 backdrop-blur-md"
         onClick={handleClose}
       />
       <div
@@ -469,7 +469,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
         </div>
       </div>
       {consentOpen ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#cfe9ff]/78 px-4 py-6 backdrop-blur-md">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#111827]/30 px-4 py-6 backdrop-blur-md">
           <div className={authDialogCardClass}>
             <div className={authDialogInnerClass}>
               <h3 className={authTitleClass}>Подтвердите согласие с условиями</h3>

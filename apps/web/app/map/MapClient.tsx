@@ -142,6 +142,9 @@ const formatYearRange = (birthDate?: string | null, deathDate?: string | null) =
 const getMarkerPreviewSrc = (marker: MarkerDto | null | undefined) =>
   marker?.previewImageUrl ?? marker?.previewPhotoUrl ?? null;
 
+const getMarkerCoverSrc = (marker: MarkerDto | null | undefined) =>
+  marker?.previewPhotoUrl ?? marker?.previewImageUrl ?? null;
+
 const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, string>) => {
   if (!colors) {
     return;
@@ -1377,7 +1380,7 @@ export default function MapClient() {
     ? "h-[clamp(13rem,32dvh,20rem)] shrink-0"
     : "h-[42vh]";
   const mobileCarouselSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(18rem,54dvh,32rem)] shrink-0"
+    ? "h-[clamp(11rem,28dvh,16rem)] shrink-0"
     : "h-[42vh]";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
@@ -1727,7 +1730,7 @@ export default function MapClient() {
   }, [carouselTargetIndex, carouselQueue, carouselIndex, carouselOrder.length]);
 
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
-  const activePreviewSrc = resolvePreviewSrc(getMarkerPreviewSrc(activeCarouselMarker));
+  const activePreviewSrc = resolvePreviewSrc(getMarkerCoverSrc(activeCarouselMarker));
   const activeCarouselInfoContent = activeCarouselMarker ? (
     <div className={isPortraitLayout ? "rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
       <div className={isPortraitLayout ? "flex items-start gap-3" : "flex items-start gap-4"}>
@@ -1736,11 +1739,11 @@ export default function MapClient() {
             <img
               src={activePreviewSrc}
               alt={`Фото ${activeCarouselMarker.name}`}
-              className={isPortraitLayout ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] object-cover" : "h-28 w-28 rounded-[24px] object-cover"}
+              className={isPortraitLayout ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] object-cover" : "h-36 w-36 rounded-[28px] object-cover"}
               loading="lazy"
             />
           ) : (
-            <div className={isPortraitLayout ? "h-[clamp(6rem,15dvh,7.5rem)] w-[clamp(6rem,15dvh,7.5rem)] rounded-[20px] bg-slate-200" : "h-28 w-28 rounded-[24px] bg-slate-200"} />
+            <div className={isPortraitLayout ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] bg-slate-200" : "h-36 w-36 rounded-[28px] bg-slate-200"} />
           )}
           <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-white bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
@@ -2067,7 +2070,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-1.5 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
+              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-y-auto rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
                 {activeCarouselInfoContent}
               </div>
             </>
@@ -2306,7 +2309,7 @@ export default function MapClient() {
               </div>
             </div>
             {desktopFilterPanel}
-            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 w-[24%] max-w-[360px] min-w-[260px] -translate-y-1/2 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[27%] max-w-[400px] min-w-[300px] -translate-y-1/2 flex-col overflow-y-auto rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
               {activeCarouselInfoContent}
             </div>
           </div>
