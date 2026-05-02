@@ -313,7 +313,7 @@ export default function AuthClient() {
                       />
                       <span>
                         Я принимаю{" "}
-                        <a href="/about#agreement" className={authLinkClass}>
+                        <a href="/terms" className={authLinkClass}>
                           пользовательское соглашение
                         </a>
                       </span>
@@ -327,7 +327,7 @@ export default function AuthClient() {
                       />
                       <span>
                         Я принимаю{" "}
-                        <a href="/about#offer" className={authLinkClass}>
+                        <a href="/offer" className={authLinkClass}>
                           публичную оферту
                         </a>
                       </span>
@@ -414,7 +414,7 @@ export default function AuthClient() {
                   />
                   <span>
                     Я принимаю{" "}
-                    <a href="/about#agreement" className={authLinkClass}>
+                    <a href="/terms" className={authLinkClass}>
                       пользовательское соглашение
                     </a>
                   </span>
@@ -428,7 +428,7 @@ export default function AuthClient() {
                   />
                   <span>
                     Я принимаю{" "}
-                    <a href="/about#offer" className={authLinkClass}>
+                    <a href="/offer" className={authLinkClass}>
                       публичную оферту
                     </a>
                   </span>
