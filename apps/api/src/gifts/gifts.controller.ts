@@ -1,4 +1,7 @@
-import { Body, Controller, Get, Inject, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Post, UseGuards } from "@nestjs/common";
+import { CurrentUser } from "../auth/current-user.decorator";
+import { AuthGuard } from "../auth/auth.guard";
+import type { AuthenticatedUser } from "../auth/authenticated-user";
 import { GiftsService } from "./gifts.service";
 import { CreateGiftPlacementDto } from "./dto/create-gift-placement.dto";
 
@@ -16,10 +19,15 @@ export class GiftsController {
   }
 
   @Post("pets/:id/gifts")
-  placeGift(@Param("id") petId: string, @Body() dto: CreateGiftPlacementDto) {
+  @UseGuards(AuthGuard)
+  placeGift(
+    @Param("id") petId: string,
+    @Body() dto: CreateGiftPlacementDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
     return this.giftsService.placeGift({
       petId,
-      ownerId: dto.ownerId,
+      ownerId: user.id,
       giftId: dto.giftId,
       slotName: dto.slotName,
       months: dto.months,

@@ -1,8 +1,9 @@
 import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CreateGiftPlacementDto {
+  @IsOptional()
   @IsString()
-  ownerId!: string;
+  ownerId?: string;
 
   @IsString()
   giftId!: string;

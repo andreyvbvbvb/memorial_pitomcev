@@ -11,6 +11,7 @@ import { StorageModule } from "./storage/storage.module";
 import { AdminModule } from "./admin/admin.module";
 import { CharityModule } from "./charity/charity.module";
 import { ContentModule } from "./content/content.module";
+import { MaintenanceModule } from "./maintenance/maintenance.module";
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { ContentModule } from "./content/content.module";
     StorageModule,
     AdminModule,
     CharityModule,
-    ContentModule
+    ContentModule,
+    MaintenanceModule
   ],
   controllers: [HealthController]
 })

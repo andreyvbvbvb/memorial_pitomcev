@@ -40,7 +40,6 @@ export class GiftsService {
         where: { code: gift.code },
         update: {
           name: gift.name,
-          price: gift.price,
           modelUrl: gift.modelUrl
         },
         create: gift
@@ -106,7 +105,6 @@ export class GiftsService {
         where: { code: gift.code },
         update: {
           name: gift.name,
-          price: gift.price,
           modelUrl: gift.modelUrl
         },
         create: {

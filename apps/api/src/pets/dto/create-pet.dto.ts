@@ -53,8 +53,9 @@ export class CreatePetDto {
   @IsBoolean()
   isPublic?: boolean;
 
+  @IsOptional()
   @IsString()
-  ownerId!: string;
+  ownerId?: string;
 
   @IsOptional()
   @IsString()

@@ -1,18 +1,22 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException
+} from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { extname } from "path";
-import { isOwnerUser } from "../auth/access-level";
+import { canAccessAdmin, isOwnerUser } from "../auth/access-level";
+import type { AuthenticatedUser } from "../auth/authenticated-user";
+import { MaintenanceService } from "../maintenance/maintenance.service";
+import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { S3Service } from "../storage/s3.service";
 import { CreatePetDto } from "./dto/create-pet.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 
-const MEMORIAL_PLAN_PRICES = new Map<number, number>([
-  [1, 100],
-  [2, 200],
-  [5, 500],
-  [0, 1500]
-]);
 const DUST_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
 const MAX_DUST_STAGE = 4;
 const DEFAULT_MAX_MEMORIALS = 5;
@@ -22,7 +26,9 @@ const OWNER_MAX_MEMORIALS = 10000;
 export class PetsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(S3Service) private readonly s3: S3Service
+    @Inject(S3Service) private readonly s3: S3Service,
+    @Inject(MaintenanceService) private readonly maintenance: MaintenanceService,
+    @Inject(PricingService) private readonly pricing: PricingService
   ) {}
 
   private async ensureOwner(ownerId: string) {
@@ -77,74 +83,32 @@ export class PetsService {
     };
   }
 
-  private async deactivateExpiredMemorials(now = new Date()) {
-    const expired = await this.prisma.memorial.findMany({
-      where: {
-        deactivatedAt: null,
-        activeUntil: { lte: now },
-        pet: { isActive: true }
-      },
-      select: { id: true, petId: true }
-    });
-    if (expired.length === 0) {
-      return 0;
-    }
-    const memorialIds = expired.map((item: { id: string; petId: string }) => item.id);
-    const petIds = expired.map((item: { id: string; petId: string }) => item.petId);
-    await this.prisma.$transaction([
-      this.prisma.memorial.updateMany({
-        where: { id: { in: memorialIds } },
-        data: {
-          deactivatedAt: now,
-          deactivationReason: "expired"
-        }
-      }),
-      this.prisma.pet.updateMany({
-        where: { id: { in: petIds } },
-        data: {
-          isActive: false,
-          deactivatedAt: now,
-          deactivationReason: "expired"
-        }
-      })
-    ]);
-    return expired.length;
+  private canManagePet(
+    user: AuthenticatedUser | null | undefined,
+    pet: { ownerId: string }
+  ) {
+    return Boolean(user && (user.id === pet.ownerId || canAccessAdmin(user)));
   }
 
-  private async deactivateExpiredGifts(petId?: string, now = new Date()) {
-    const expired = await this.prisma.giftPlacement.findMany({
-      where: {
-        ...(petId ? { petId } : {}),
-        isActive: true,
-        expiresAt: { lte: now }
-      },
-      select: { id: true, petId: true }
-    });
-    if (expired.length === 0) {
-      return 0;
+  private assertAuthenticated(user?: AuthenticatedUser | null) {
+    if (!user) {
+      throw new UnauthorizedException("Не авторизован");
     }
-    const giftIds = expired.map((gift: { id: string; petId: string }) => gift.id);
-    const petIds = [...new Set(expired.map((gift: { id: string; petId: string }) => gift.petId))];
-    await this.prisma.$transaction([
-      this.prisma.giftPlacement.updateMany({
-        where: { id: { in: giftIds } },
-        data: {
-          isActive: false,
-          deactivatedAt: now,
-          deactivationReason: "expired"
-        }
-      }),
-      this.prisma.memorial.updateMany({
-        where: { petId: { in: petIds }, deactivatedAt: null },
-        data: { needsPreviewRefresh: true }
-      })
-    ]);
-    return expired.length;
+  }
+
+  private assertCanManagePet(
+    user: AuthenticatedUser | null | undefined,
+    pet: { ownerId: string }
+  ) {
+    this.assertAuthenticated(user);
+    if (!this.canManagePet(user, pet)) {
+      throw new ForbiddenException("Можно управлять только своим мемориалом");
+    }
   }
 
   async getCreationLimit(ownerId: string) {
     const owner = await this.ensureOwner(ownerId);
-    await this.deactivateExpiredMemorials();
+    await this.maintenance.deactivateExpiredMemorials();
     const maxMemorials = this.resolveMaxMemorials(owner);
     const currentCount = await this.prisma.pet.count({
       where: { ownerId: owner.id, ...this.activePetWhere() }
@@ -157,9 +121,9 @@ export class PetsService {
     };
   }
 
-  async create(dto: CreatePetDto) {
+  async create(dto: CreatePetDto & { ownerId: string }) {
     const owner = await this.ensureOwner(dto.ownerId);
-    await this.deactivateExpiredMemorials();
+    await this.maintenance.deactivateExpiredMemorials();
     const name = typeof dto.name === "string" ? dto.name.trim() : "";
     if (!name) {
       throw new BadRequestException("Имя питомца обязательно");
@@ -175,10 +139,7 @@ export class PetsService {
     }
     const planYears =
       typeof dto.memorialPlanYears === "number" ? dto.memorialPlanYears : 1;
-    const planPrice = MEMORIAL_PLAN_PRICES.get(planYears);
-    if (planPrice === undefined) {
-      throw new BadRequestException("Неверный тариф оплаты мемориала");
-    }
+    const planPrice = await this.pricing.getMemorialPlanPrice(planYears);
     if (owner.coinBalance < planPrice) {
       throw new BadRequestException("Недостаточно монет для создания мемориала");
     }
@@ -244,15 +205,28 @@ export class PetsService {
     return pet;
   }
 
-  async findAll(ownerId?: string, visibility?: string) {
-    await this.deactivateExpiredMemorials();
+  async findAll(
+    ownerId?: string,
+    visibility?: string,
+    viewer?: AuthenticatedUser | null
+  ) {
+    await this.maintenance.deactivateExpiredMemorials();
     const where: Prisma.PetWhereInput = this.activePetWhere();
     if (ownerId) {
+      const publicOnly = visibility === "public";
+      if (!publicOnly) {
+        this.assertAuthenticated(viewer);
+      }
+      if (!publicOnly && viewer?.id !== ownerId && !canAccessAdmin(viewer)) {
+        throw new ForbiddenException("Можно смотреть только свои мемориалы");
+      }
       where.ownerId = ownerId;
+    } else if (!viewer || !canAccessAdmin(viewer)) {
+      where.isPublic = true;
     }
     if (visibility === "public") {
       where.isPublic = true;
-    } else if (visibility === "private") {
+    } else if (visibility === "private" && ownerId) {
       where.isPublic = false;
     }
 
@@ -269,9 +243,9 @@ export class PetsService {
     });
   }
 
-  async findOne(id: string) {
-    await this.deactivateExpiredMemorials();
-    await this.deactivateExpiredGifts(id);
+  async findOne(id: string, viewer?: AuthenticatedUser | null) {
+    await this.maintenance.deactivateExpiredMemorials();
+    await this.maintenance.deactivateExpiredGifts(id);
     const pet = await this.prisma.pet.findUnique({
       where: { id },
       include: {
@@ -315,6 +289,9 @@ export class PetsService {
     ) {
       throw new NotFoundException("Memorial not found");
     }
+    if (!pet.isPublic && !this.canManagePet(viewer, pet)) {
+      throw new NotFoundException("Memorial not found");
+    }
     if (pet.memorial) {
       const nextStage = this.calculateDustStage(pet.memorial, now);
       if (nextStage !== pet.memorial.dustStage) {
@@ -328,7 +305,7 @@ export class PetsService {
     return pet;
   }
 
-  async cleanMemorial(id: string) {
+  async cleanMemorial(id: string, viewer: AuthenticatedUser) {
     const pet = await this.prisma.pet.findUnique({
       where: { id },
       include: { memorial: true }
@@ -336,6 +313,7 @@ export class PetsService {
     if (!pet?.memorial) {
       throw new NotFoundException("Memorial not found");
     }
+    this.assertCanManagePet(viewer, pet);
     const now = new Date();
     const memorial = await this.prisma.memorial.update({
       where: { id: pet.memorial.id },
@@ -347,8 +325,9 @@ export class PetsService {
     return { dustStage: memorial.dustStage, dustUpdatedAt: memorial.dustUpdatedAt };
   }
 
-  async update(id: string, dto: UpdatePetDto) {
-    const pet = await this.findOne(id);
+  async update(id: string, dto: UpdatePetDto, viewer: AuthenticatedUser) {
+    const pet = await this.findOne(id, viewer);
+    this.assertCanManagePet(viewer, pet);
     const shouldUpdateMemorial =
       typeof dto.houseId !== "undefined" || typeof dto.sceneJson !== "undefined";
     let memorialUpdate:
@@ -429,7 +408,7 @@ export class PetsService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, viewer: AuthenticatedUser) {
     const pet = await this.prisma.pet.findUnique({
       where: { id },
       include: { memorial: true }
@@ -437,6 +416,7 @@ export class PetsService {
     if (!pet) {
       throw new NotFoundException("Pet not found");
     }
+    this.assertCanManagePet(viewer, pet);
     const now = new Date();
     return this.prisma.pet.update({
       where: { id },
@@ -458,12 +438,14 @@ export class PetsService {
     });
   }
 
-  async extendMemorial(id: string, ownerId: string, years: number) {
-    if (!MEMORIAL_PLAN_PRICES.has(years)) {
-      throw new BadRequestException("Неверный срок продления");
-    }
-    const pet = await this.findOne(id);
-    if (pet.ownerId !== ownerId) {
+  async extendMemorial(
+    id: string,
+    ownerId: string,
+    years: number,
+    viewer: AuthenticatedUser
+  ) {
+    const pet = await this.findOne(id, viewer);
+    if (pet.ownerId !== ownerId || viewer.id !== ownerId) {
       throw new BadRequestException("Продлить мемориал может только владелец");
     }
     if (!pet.memorial) {
@@ -473,7 +455,7 @@ export class PetsService {
     if (!user) {
       throw new BadRequestException("Пользователь не найден");
     }
-    const price = MEMORIAL_PLAN_PRICES.get(years)!;
+    const price = await this.pricing.getMemorialPlanPrice(years);
     if (user.coinBalance < price) {
       throw new BadRequestException("Недостаточно монет для продления мемориала");
     }
@@ -513,8 +495,13 @@ export class PetsService {
     };
   }
 
-  async addPhoto(petId: string, file: { originalname: string; buffer: Buffer }) {
-    await this.findOne(petId);
+  async addPhoto(
+    petId: string,
+    file: { originalname: string; buffer: Buffer },
+    viewer: AuthenticatedUser
+  ) {
+    const pet = await this.findOne(petId, viewer);
+    this.assertCanManagePet(viewer, pet);
     const count = await this.prisma.petPhoto.count({ where: { petId } });
     if (count >= 10) {
       throw new BadRequestException("Можно добавить максимум 10 фото");
@@ -535,8 +522,9 @@ export class PetsService {
     });
   }
 
-  async removePhoto(petId: string, photoId: string) {
-    await this.findOne(petId);
+  async removePhoto(petId: string, photoId: string, viewer: AuthenticatedUser) {
+    const pet = await this.findOne(petId, viewer);
+    this.assertCanManagePet(viewer, pet);
     const photo = await this.prisma.petPhoto.findUnique({ where: { id: photoId } });
     if (!photo || photo.petId !== petId) {
       throw new BadRequestException("Фото не найдено для этого мемориала");
@@ -570,8 +558,13 @@ export class PetsService {
     return { ok: true };
   }
 
-  async setMapPreview(petId: string, file: { originalname: string; buffer: Buffer }) {
-    await this.findOne(petId);
+  async setMapPreview(
+    petId: string,
+    file: { originalname: string; buffer: Buffer },
+    viewer: AuthenticatedUser
+  ) {
+    const pet = await this.findOne(petId, viewer);
+    this.assertCanManagePet(viewer, pet);
     const memorial = await this.prisma.memorial.findUnique({ where: { petId } });
     if (!memorial) {
       throw new BadRequestException("Мемориал не найден");
@@ -602,7 +595,9 @@ export class PetsService {
     return { url };
   }
 
-  async setPreviewPhoto(petId: string, photoId: string) {
+  async setPreviewPhoto(petId: string, photoId: string, viewer: AuthenticatedUser) {
+    const pet = await this.findOne(petId, viewer);
+    this.assertCanManagePet(viewer, pet);
     const photo = await this.prisma.petPhoto.findUnique({ where: { id: photoId } });
     if (!photo || photo.petId !== petId) {
       throw new BadRequestException("Фото не найдено для этого мемориала");

@@ -1,5 +1,19 @@
-import { BadRequestException, Body, Controller, Get, Inject, Param, Patch } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  UseGuards
+} from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
+import { canAccessAdmin } from "../auth/access-level";
+import { AuthGuard } from "../auth/auth.guard";
+import type { AuthenticatedUser } from "../auth/authenticated-user";
+import { CurrentUser } from "../auth/current-user.decorator";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
 
@@ -27,18 +41,30 @@ export class UsersController {
   }
 
   @Get(":id")
-  async getProfile(@Param("id") id: string) {
-    const user = await this.ensureOwner(id);
+  @UseGuards(AuthGuard)
+  async getProfile(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    if (id !== user.id && !canAccessAdmin(user)) {
+      throw new ForbiddenException("Можно смотреть только свой профиль");
+    }
+    const profile = await this.ensureOwner(id);
     return {
-      id: user.id,
-      login: user.login,
-      email: user.email,
-      coinBalance: user.coinBalance
+      id: profile.id,
+      login: profile.login,
+      email: profile.email,
+      coinBalance: profile.coinBalance
     };
   }
 
   @Patch(":id")
-  async updateProfile(@Param("id") id: string, @Body() dto: UpdateUserDto) {
+  @UseGuards(AuthGuard)
+  async updateProfile(
+    @Param("id") id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    if (id !== user.id && !canAccessAdmin(user)) {
+      throw new ForbiddenException("Можно менять только свой профиль");
+    }
     const currentUser = await this.ensureOwner(id);
     if (dto.login) {
       const existing = await this.prisma.user.findUnique({

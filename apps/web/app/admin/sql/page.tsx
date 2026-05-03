@@ -89,6 +89,20 @@ type LoadingTip = {
   createdAt?: string;
 };
 
+type MemorialPlanPrice = {
+  years: number;
+  price: number;
+  updatedAt?: string;
+};
+
+type GiftPrice = {
+  id: string;
+  code: string;
+  name: string;
+  price: number;
+  modelUrl: string;
+};
+
 type AccessUser = {
   id: string;
   email: string;
@@ -200,6 +214,16 @@ const getPercentile = (values: number[], percentile: number) => {
 const formatMs = (value: number | null) =>
   value === null ? "—" : `${value.toFixed(value >= 100 ? 0 : 1)} мс`;
 
+const formatPlanYears = (years: number) => {
+  if (years === 0) {
+    return "Навсегда";
+  }
+  if (years === 1) {
+    return "1 год";
+  }
+  return `${years} года`;
+};
+
 const isAbortError = (value: unknown) =>
   value instanceof DOMException && value.name === "AbortError";
 
@@ -308,6 +332,14 @@ export default function AdminSqlPage() {
   const [savingTipId, setSavingTipId] = useState<string | null>(null);
   const [deletingTipId, setDeletingTipId] = useState<string | null>(null);
   const [creatingTip, setCreatingTip] = useState(false);
+  const [memorialPlanPrices, setMemorialPlanPrices] = useState<MemorialPlanPrice[]>([]);
+  const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [pricingNotice, setPricingNotice] = useState<string | null>(null);
+  const [savingPlanYears, setSavingPlanYears] = useState<number | null>(null);
+  const [savingGiftId, setSavingGiftId] = useState<string | null>(null);
+  const [giftPriceFilter, setGiftPriceFilter] = useState("");
   const [accessUsers, setAccessUsers] = useState<AccessUser[]>([]);
   const [accessUsersLoading, setAccessUsersLoading] = useState(false);
   const [accessUsersError, setAccessUsersError] = useState<string | null>(null);
@@ -394,6 +426,49 @@ export default function AdminSqlPage() {
       }
     };
     void loadSchema();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl, authChecked, isAdmin]);
+
+  useEffect(() => {
+    if (!authChecked || !isAdmin) {
+      return;
+    }
+    let isMounted = true;
+    const loadPricing = async () => {
+      setPricingLoading(true);
+      setPricingError(null);
+      try {
+        const response = await fetch(`${apiUrl}/admin/pricing`, {
+          credentials: "include"
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось загрузить цены");
+        }
+        const data = (await response.json()) as {
+          memorialPlanPrices?: MemorialPlanPrice[];
+          gifts?: GiftPrice[];
+        };
+        if (!isMounted) {
+          return;
+        }
+        setMemorialPlanPrices(
+          Array.isArray(data.memorialPlanPrices) ? data.memorialPlanPrices : []
+        );
+        setGiftPrices(Array.isArray(data.gifts) ? data.gifts : []);
+      } catch (err) {
+        if (isMounted) {
+          setPricingError(err instanceof Error ? err.message : "Ошибка загрузки цен");
+        }
+      } finally {
+        if (isMounted) {
+          setPricingLoading(false);
+        }
+      }
+    };
+    void loadPricing();
     return () => {
       isMounted = false;
     };
@@ -575,6 +650,86 @@ export default function AdminSqlPage() {
     setLoadingTips((prev) =>
       prev.map((tip) => (tip.id === id ? { ...tip, ...patch } : tip))
     );
+  };
+
+  const updateMemorialPlanPriceDraft = (years: number, price: number) => {
+    setMemorialPlanPrices((prev) =>
+      prev.map((plan) => (plan.years === years ? { ...plan, price } : plan))
+    );
+  };
+
+  const saveMemorialPlanPrice = async (plan: MemorialPlanPrice) => {
+    if (!Number.isInteger(plan.price) || plan.price < 0) {
+      setPricingError("Цена тарифа должна быть целым числом от 0");
+      return;
+    }
+    setSavingPlanYears(plan.years);
+    setPricingError(null);
+    setPricingNotice(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/pricing/memorial-plan`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ years: plan.years, price: plan.price })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить тариф");
+      }
+      const data = (await response.json()) as { plan?: MemorialPlanPrice };
+      if (data.plan) {
+        setMemorialPlanPrices((prev) =>
+          prev.map((item) => (item.years === data.plan?.years ? data.plan : item))
+        );
+      }
+      setPricingNotice("Тариф аренды обновлён");
+    } catch (err) {
+      setPricingError(err instanceof Error ? err.message : "Ошибка сохранения тарифа");
+    } finally {
+      setSavingPlanYears(null);
+    }
+  };
+
+  const updateGiftPriceDraft = (id: string, price: number) => {
+    setGiftPrices((prev) =>
+      prev.map((gift) => (gift.id === id ? { ...gift, price } : gift))
+    );
+  };
+
+  const saveGiftPrice = async (gift: GiftPrice) => {
+    if (!Number.isInteger(gift.price) || gift.price < 0) {
+      setPricingError("Цена подарка должна быть целым числом от 0");
+      return;
+    }
+    setSavingGiftId(gift.id);
+    setPricingError(null);
+    setPricingNotice(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/pricing/gifts/${gift.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ price: gift.price })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить цену подарка");
+      }
+      const data = (await response.json()) as { gift?: GiftPrice };
+      if (data.gift) {
+        setGiftPrices((prev) =>
+          prev.map((item) => (item.id === data.gift?.id ? data.gift : item))
+        );
+      }
+      setPricingNotice("Цена подарка обновлена");
+    } catch (err) {
+      setPricingError(
+        err instanceof Error ? err.message : "Ошибка сохранения цены подарка"
+      );
+    } finally {
+      setSavingGiftId(null);
+    }
   };
 
   const saveLoadingTip = async (tip: LoadingTip) => {
@@ -1191,6 +1346,13 @@ export default function AdminSqlPage() {
         );
       })
     : schema;
+  const normalizedGiftPriceFilter = giftPriceFilter.trim().toLowerCase();
+  const filteredGiftPrices = normalizedGiftPriceFilter
+    ? giftPrices.filter((gift) => {
+        const haystack = `${gift.name} ${gift.code}`.toLowerCase();
+        return haystack.includes(normalizedGiftPriceFilter);
+      })
+    : giftPrices;
 
   let content: ReactNode = null;
   if (!authChecked) {
@@ -1275,6 +1437,118 @@ export default function AdminSqlPage() {
                   {limitNotice}
                 </div>
               ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Тарифы и подарки
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Цены указываются в монетах. Тарифы применяются при создании и продлении
+              мемориалов, цены подарков — при дарении.
+            </p>
+            {pricingLoading && memorialPlanPrices.length === 0 && giftPrices.length === 0 ? (
+              <div className="mt-3 text-xs text-slate-500">Загрузка...</div>
+            ) : null}
+            {pricingError ? (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                {pricingError}
+              </div>
+            ) : null}
+            {pricingNotice ? (
+              <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                {pricingNotice}
+              </div>
+            ) : null}
+            <div className="mt-3 grid gap-2">
+              <div className="text-[11px] font-semibold uppercase text-slate-500">
+                Аренда мемориала
+              </div>
+              {memorialPlanPrices.map((plan) => (
+                <div
+                  key={plan.years}
+                  className="grid grid-cols-[1fr_88px] items-center gap-2 rounded-lg border border-slate-200 bg-white p-2"
+                >
+                  <div className="text-xs font-semibold text-slate-700">
+                    {formatPlanYears(plan.years)}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      value={plan.price}
+                      onChange={(event) =>
+                        updateMemorialPlanPriceDraft(
+                          plan.years,
+                          Number(event.target.value)
+                        )
+                      }
+                      className="min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-700"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => saveMemorialPlanPrice(plan)}
+                      disabled={savingPlanYears === plan.years}
+                      className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-60"
+                    >
+                      {savingPlanYears === plan.years ? "..." : "OK"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2">
+              <div className="text-[11px] font-semibold uppercase text-slate-500">
+                Цены подарков
+              </div>
+              <input
+                value={giftPriceFilter}
+                onChange={(event) => setGiftPriceFilter(event.target.value)}
+                placeholder="Фильтр по названию или code"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <div className="max-h-[300px] space-y-2 overflow-auto pr-1">
+                {filteredGiftPrices.length === 0 && !pricingLoading ? (
+                  <div className="text-xs text-slate-500">Подарки не найдены</div>
+                ) : null}
+                {filteredGiftPrices.map((gift) => (
+                  <div
+                    key={gift.id}
+                    className="rounded-lg border border-slate-200 bg-white p-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-xs font-semibold text-slate-800">
+                          {gift.name}
+                        </div>
+                        <div className="truncate text-[10px] text-slate-500">
+                          {gift.code}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        value={gift.price}
+                        onChange={(event) =>
+                          updateGiftPriceDraft(gift.id, Number(event.target.value))
+                        }
+                        className="min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => saveGiftPrice(gift)}
+                        disabled={savingGiftId === gift.id}
+                        className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-60"
+                      >
+                        {savingGiftId === gift.id ? "Сохраняем..." : "Сохранить"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

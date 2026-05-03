@@ -159,6 +159,12 @@ const MEMORIAL_PLANS = [
   { id: "lifetime", years: 0, label: "Бессрочно", price: 1500 }
 ] as const;
 type MemorialPlanId = (typeof MEMORIAL_PLANS)[number]["id"];
+type MemorialPlan = {
+  id: MemorialPlanId;
+  years: number;
+  label: string;
+  price: number;
+};
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 
 type Step3TabId =
@@ -469,6 +475,9 @@ export default function CreateMemorialClient({
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [memorialPlanId, setMemorialPlanId] = useState<MemorialPlanId>("1y");
+  const [memorialPlans, setMemorialPlans] = useState<MemorialPlan[]>(() =>
+    MEMORIAL_PLANS.map((plan) => ({ ...plan }))
+  );
   const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
@@ -541,6 +550,42 @@ export default function CreateMemorialClient({
       URL.revokeObjectURL(photo.url);
     }
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMemorialPlans = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/pricing/memorial-plans`);
+        if (!response.ok) {
+          return;
+        }
+        const rows = (await response.json()) as { years?: number; price?: number }[];
+        const priceByYears = new Map(
+          rows
+            .filter(
+              (row) =>
+                typeof row.years === "number" && typeof row.price === "number"
+            )
+            .map((row) => [row.years as number, row.price as number])
+        );
+        if (!isMounted || priceByYears.size === 0) {
+          return;
+        }
+        setMemorialPlans((prev) =>
+          prev.map((plan) => ({
+            ...plan,
+            price: priceByYears.get(plan.years) ?? plan.price
+          }))
+        );
+      } catch {
+        // Keep bundled fallback prices when pricing endpoint is unavailable.
+      }
+    };
+    void loadMemorialPlans();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl]);
 
   useEffect(() => {
     let isMounted = true;
@@ -654,8 +699,11 @@ export default function CreateMemorialClient({
     [currentUserLogin]
   );
   const memorialPlan = useMemo(
-    () => MEMORIAL_PLANS.find((plan) => plan.id === memorialPlanId) ?? MEMORIAL_PLANS[0],
-    [memorialPlanId]
+    () =>
+      memorialPlans.find((plan) => plan.id === memorialPlanId) ??
+      memorialPlans[0] ??
+      MEMORIAL_PLANS[0],
+    [memorialPlanId, memorialPlans]
   );
   const memorialPrice = memorialPlan.price;
   const environmentSeasons = useMemo(
@@ -1175,7 +1223,9 @@ export default function CreateMemorialClient({
     }
     setWalletLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/wallet/${form.ownerId}`);
+      const response = await fetch(`${apiUrl}/wallet/${form.ownerId}`, {
+        credentials: "include"
+      });
       if (!response.ok) {
         throw new Error("Не удалось загрузить баланс");
       }
@@ -1641,6 +1691,7 @@ export default function CreateMemorialClient({
       formData.append("file", snapshot, "map-preview.png");
       await fetch(`${apiUrl}/pets/${petId}/map-preview`, {
         method: "POST",
+        credentials: "include",
         body: formData
       });
     },
@@ -1652,7 +1703,8 @@ export default function CreateMemorialClient({
       const deletedPhotoIds: string[] = [];
       for (const photoId of removedPhotoIds) {
         const response = await fetch(`${apiUrl}/pets/${petId}/photos/${photoId}`, {
-          method: "DELETE"
+          method: "DELETE",
+          credentials: "include"
         });
         if (!response.ok) {
           const text = await response.text();
@@ -1670,6 +1722,7 @@ export default function CreateMemorialClient({
         formData.append("file", photo.file);
         const uploadResponse = await fetch(`${apiUrl}/pets/${petId}/photos`, {
           method: "POST",
+          credentials: "include",
           body: formData
         });
         if (!uploadResponse.ok) {
@@ -1732,6 +1785,7 @@ export default function CreateMemorialClient({
           const previewResponse = await fetch(`${apiUrl}/pets/${petId}/preview-photo`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify({ photoId: resolvedPreviewId })
           });
           if (!previewResponse.ok) {
@@ -1752,6 +1806,7 @@ export default function CreateMemorialClient({
         const response = await fetch(`${apiUrl}/pets/${editId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             houseId: form.houseId,
             sceneJson: {
@@ -1884,6 +1939,7 @@ export default function CreateMemorialClient({
       const response = await fetch(`${apiUrl}/pets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
@@ -1901,6 +1957,7 @@ export default function CreateMemorialClient({
           formData.append("file", photo.file);
           const uploadResponse = await fetch(`${apiUrl}/pets/${created.id}/photos`, {
             method: "POST",
+            credentials: "include",
             body: formData
           });
           if (!uploadResponse.ok) {
@@ -1918,6 +1975,7 @@ export default function CreateMemorialClient({
               {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ photoId: previewMatch.id })
               }
             );
@@ -3549,7 +3607,7 @@ export default function CreateMemorialClient({
                               Баланс: {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
                             </p>
                             <div className="grid gap-2">
-                              {MEMORIAL_PLANS.map((plan) => {
+                              {memorialPlans.map((plan) => {
                                 const isSelected = plan.id === memorialPlanId;
                                 return (
                                   <button

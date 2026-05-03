@@ -1,5 +1,6 @@
 import { Controller, Get, Inject } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
+import { MaintenanceService } from "../maintenance/maintenance.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 type MarkerWithPet = Prisma.MapMarkerGetPayload<{
@@ -15,38 +16,15 @@ type MarkerWithPet = Prisma.MapMarkerGetPayload<{
 
 @Controller("map")
 export class MapController {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(MaintenanceService) private readonly maintenance: MaintenanceService
+  ) {}
 
   @Get("markers")
   async getMarkers() {
     const now = new Date();
-    const expired = await this.prisma.memorial.findMany({
-      where: {
-        deactivatedAt: null,
-        activeUntil: { lte: now },
-        pet: { isActive: true }
-      },
-      select: { id: true, petId: true }
-    });
-    if (expired.length > 0) {
-      await this.prisma.$transaction([
-        this.prisma.memorial.updateMany({
-          where: { id: { in: expired.map((item: { id: string; petId: string }) => item.id) } },
-          data: {
-            deactivatedAt: now,
-            deactivationReason: "expired"
-          }
-        }),
-        this.prisma.pet.updateMany({
-          where: { id: { in: expired.map((item: { id: string; petId: string }) => item.petId) } },
-          data: {
-            isActive: false,
-            deactivatedAt: now,
-            deactivationReason: "expired"
-          }
-        })
-      ]);
-    }
+    await this.maintenance.deactivateExpiredMemorials(now);
     const markers: MarkerWithPet[] = await this.prisma.mapMarker.findMany({
       where: {
         pet: {

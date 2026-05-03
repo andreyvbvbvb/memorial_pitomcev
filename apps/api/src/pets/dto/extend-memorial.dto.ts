@@ -1,9 +1,10 @@
 import { Type } from "class-transformer";
-import { IsNumber, IsString, Max, Min } from "class-validator";
+import { IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class ExtendMemorialDto {
+  @IsOptional()
   @IsString()
-  ownerId!: string;
+  ownerId?: string;
 
   @Type(() => Number)
   @IsNumber()

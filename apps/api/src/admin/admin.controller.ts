@@ -15,6 +15,8 @@ import { Request } from "express";
 import { canAccessAdmin, canManageAdmins, getAccessLevel, isOwnerUser } from "../auth/access-level";
 import * as bcrypt from "bcryptjs";
 import { AuthService } from "../auth/auth.service";
+import { GiftsService } from "../gifts/gifts.service";
+import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
 import {
@@ -24,6 +26,10 @@ import {
 import { AdminUpdateMemorialLimitDto } from "./dto/admin-update-memorial-limit.dto";
 import { AdminUpdateUserRoleDto } from "./dto/admin-update-user-role.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
+import {
+  AdminUpdateGiftPriceDto,
+  AdminUpdateMemorialPlanPriceDto
+} from "./dto/admin-pricing.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
 
 const toSafeJson = (value: unknown): unknown => {
@@ -60,7 +66,9 @@ const isSingleStatement = (query: string) => {
 export class AdminController {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(AuthService) private readonly authService: AuthService
+    @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(GiftsService) private readonly giftsService: GiftsService,
+    @Inject(PricingService) private readonly pricingService: PricingService
   ) {}
 
   private async ensureAdmin(req: Request) {
@@ -344,6 +352,43 @@ export class AdminController {
           )
       )
     };
+  }
+
+  @Get("pricing")
+  async getPricing(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const [memorialPlanPrices, gifts] = await Promise.all([
+      this.pricingService.listMemorialPlanPrices(),
+      this.giftsService.listCatalog()
+    ]);
+    return { memorialPlanPrices, gifts };
+  }
+
+  @Patch("pricing/memorial-plan")
+  async updateMemorialPlanPrice(
+    @Req() req: Request,
+    @Body() dto: AdminUpdateMemorialPlanPriceDto
+  ) {
+    await this.ensureAdmin(req);
+    const plan = await this.pricingService.updateMemorialPlanPrice(
+      dto.years,
+      dto.price
+    );
+    return { plan };
+  }
+
+  @Patch("pricing/gifts/:id")
+  async updateGiftPrice(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() dto: AdminUpdateGiftPriceDto
+  ) {
+    await this.ensureAdmin(req);
+    const gift = await this.prisma.giftCatalog.update({
+      where: { id },
+      data: { price: dto.price }
+    });
+    return { gift };
   }
 
   @Post("reset-password")

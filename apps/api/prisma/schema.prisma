@@ -119,6 +119,13 @@ model GiftCatalog {
   placements GiftPlacement[]
 }
 
+model MemorialPlanPrice {
+  years     Int      @id
+  price     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model GiftPlacement {
   id        String   @id @default(cuid())
   petId     String

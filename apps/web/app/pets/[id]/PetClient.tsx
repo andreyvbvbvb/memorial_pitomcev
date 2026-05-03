@@ -61,6 +61,12 @@ const MEMORIAL_EXTENSION_PLANS = [
   { id: "2y", years: 2, label: "2 года", price: 200 },
   { id: "5y", years: 5, label: "5 лет", price: 500 }
 ] as const;
+type MemorialExtensionPlan = {
+  id: (typeof MEMORIAL_EXTENSION_PLANS)[number]["id"];
+  years: 1 | 2 | 5;
+  label: string;
+  price: number;
+};
 
 const buildDirtModelUrls = (houseId?: string | null): string[] => {
   const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
@@ -264,6 +270,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
   const [extensionDialogVisible, setExtensionDialogVisible] = useState(false);
   const [selectedExtensionYears, setSelectedExtensionYears] = useState<1 | 2 | 5>(1);
+  const [extensionPlans, setExtensionPlans] = useState<MemorialExtensionPlan[]>(() =>
+    MEMORIAL_EXTENSION_PLANS.map((plan) => ({ ...plan }))
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [deleteConfirmationName, setDeleteConfirmationName] = useState("");
@@ -306,7 +315,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
     try {
       setCleanSuccess(null);
       const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
-        method: "PATCH"
+        method: "PATCH",
+        credentials: "include"
       });
       if (!response.ok) {
         throw new Error("Не удалось очистить мемориал");
@@ -348,7 +358,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/pets/${id}`);
+      const response = await fetch(`${apiUrl}/pets/${id}`, {
+        credentials: "include"
+      });
       if (!response.ok) {
         if (response.status === 404) {
           setError("Мемориал не найден или недоступен");
@@ -393,7 +405,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     async (ownerId: string) => {
       setWalletLoading(true);
       try {
-        const response = await fetch(`${apiUrl}/wallet/${ownerId}`);
+        const response = await fetch(`${apiUrl}/wallet/${ownerId}`, {
+          credentials: "include"
+        });
         if (!response.ok) {
           throw new Error("Не удалось загрузить баланс");
         }
@@ -411,6 +425,42 @@ export default function PetClient({ id, mode = "view" }: Props) {
   useEffect(() => {
     loadCurrentUser();
   }, [loadCurrentUser]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadExtensionPlans = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/pricing/memorial-plans`);
+        if (!response.ok) {
+          return;
+        }
+        const rows = (await response.json()) as { years?: number; price?: number }[];
+        const priceByYears = new Map(
+          rows
+            .filter(
+              (row) =>
+                typeof row.years === "number" && typeof row.price === "number"
+            )
+            .map((row) => [row.years as number, row.price as number])
+        );
+        if (!isMounted || priceByYears.size === 0) {
+          return;
+        }
+        setExtensionPlans((prev) =>
+          prev.map((plan) => ({
+            ...plan,
+            price: priceByYears.get(plan.years) ?? plan.price
+          }))
+        );
+      } catch {
+        // Keep bundled fallback prices when pricing endpoint is unavailable.
+      }
+    };
+    void loadExtensionPlans();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl]);
 
   useEffect(() => {
     setDirtLevel(pet?.memorial?.dustStage ?? 0);
@@ -452,7 +502,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
     const loadOwnerMemorials = async () => {
       try {
-        const response = await fetch(`${apiUrl}/pets?ownerId=${pet.ownerId}`);
+        const visibilityQuery =
+          currentUser?.id === pet.ownerId ? "" : "&visibility=public";
+        const response = await fetch(
+          `${apiUrl}/pets?ownerId=${pet.ownerId}${visibilityQuery}`,
+          { credentials: "include" }
+        );
         if (!response.ok) {
           throw new Error("Не удалось загрузить мемориалы владельца");
         }
@@ -463,7 +518,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
     };
     loadOwnerMemorials();
-  }, [apiUrl, pet?.ownerId]);
+  }, [apiUrl, currentUser?.id, pet?.ownerId]);
 
   useEffect(() => {
     if (!topUpOpen) {
@@ -1223,6 +1278,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       formData.append("file", snapshot, "map-preview.png");
       const response = await fetch(`${apiUrl}/pets/${id}/map-preview`, {
         method: "POST",
+        credentials: "include",
         body: formData
       });
       if (!response.ok) {
@@ -1269,6 +1325,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const response = await fetch(`${apiUrl}/pets/${id}/gifts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           ownerId: currentUser.id,
           giftId: selectedGiftId,
@@ -1399,6 +1456,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const response = await fetch(`${apiUrl}/pets/${id}/memorial/extend`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ ownerId: currentUser.id, years })
       });
       if (!response.ok) {
@@ -1449,7 +1507,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setLifecycleError(null);
     setDeletingMemorial(true);
     try {
-      const response = await fetch(`${apiUrl}/pets/${id}`, { method: "DELETE" });
+      const response = await fetch(`${apiUrl}/pets/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || "Не удалось удалить мемориал");
@@ -1630,6 +1691,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const response = await fetch(`${apiUrl}/pets/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           houseId: appearanceDraft.houseId,
           sceneJson: nextSceneJson
@@ -1952,7 +2014,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Бессрочно";
   const canExtendMemorial = Boolean(activeUntil);
   const selectedExtensionPlan =
-    MEMORIAL_EXTENSION_PLANS.find((plan) => plan.years === selectedExtensionYears) ??
+    extensionPlans.find((plan) => plan.years === selectedExtensionYears) ??
+    extensionPlans[0] ??
     MEMORIAL_EXTENSION_PLANS[0];
   const canConfirmDelete =
     deleteConfirmationName.trim() === pet.name.trim() && !deletingMemorial;
@@ -3213,7 +3276,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
               {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
             </p>
             <div className="mt-4 grid gap-2">
-              {MEMORIAL_EXTENSION_PLANS.map((plan) => {
+              {extensionPlans.map((plan) => {
                 const isSelected = plan.years === selectedExtensionYears;
                 return (
                   <button

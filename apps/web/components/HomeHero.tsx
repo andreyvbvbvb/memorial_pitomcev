@@ -16,9 +16,9 @@ export default function HomeHero() {
         />
       </div>
 
-      <div className="hero-stagger relative z-10 flex w-full max-w-[52rem] flex-col items-center gap-7">
+      <div className="hero-stagger relative z-10 flex w-full max-w-[66rem] flex-col items-center gap-7">
         <p
-          className="animate-fade-up max-w-3xl text-[clamp(1.65rem,6vw,3.5rem)] font-black leading-tight text-[#5d4037] drop-shadow-[0_10px_24px_rgba(255,255,255,0.7)]"
+          className="animate-fade-up max-w-5xl text-[clamp(1.32rem,4.8vw,2.8rem)] font-black leading-[1.12] text-[#5d4037] drop-shadow-[0_10px_24px_rgba(255,255,255,0.7)]"
           style={{ "--delay": "0.11s" } as CSSProperties}
         >
           Создавайте тёплые 3D-мемориалы, сохраняйте фотографии и истории, отмечайте

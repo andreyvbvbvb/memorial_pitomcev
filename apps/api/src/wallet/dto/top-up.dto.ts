@@ -1,8 +1,9 @@
-import { IsInt, IsString, Max, Min } from "class-validator";
+import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class TopUpDto {
+  @IsOptional()
   @IsString()
-  ownerId!: string;
+  ownerId?: string;
 
   @IsInt()
   @Min(1)

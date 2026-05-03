@@ -1,4 +1,17 @@
-import { Controller, Get, Inject, Param, Post, Body } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+  Post,
+  UseGuards
+} from "@nestjs/common";
+import { canAccessAdmin } from "../auth/access-level";
+import { AuthGuard } from "../auth/auth.guard";
+import type { AuthenticatedUser } from "../auth/authenticated-user";
+import { CurrentUser } from "../auth/current-user.decorator";
 import { PrismaService } from "../prisma/prisma.service";
 import { TopUpDto } from "./dto/top-up.dto";
 
@@ -26,18 +39,30 @@ export class WalletController {
   }
 
   @Get(":ownerId")
-  async getBalance(@Param("ownerId") ownerId: string) {
-    const user = await this.ensureOwner(ownerId);
-    return { ownerId: user.id, coinBalance: user.coinBalance };
+  @UseGuards(AuthGuard)
+  async getBalance(
+    @Param("ownerId") ownerId: string,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    if (ownerId !== user.id && !canAccessAdmin(user)) {
+      throw new ForbiddenException("Можно смотреть только свой баланс");
+    }
+    const owner = await this.ensureOwner(ownerId);
+    return { ownerId: owner.id, coinBalance: owner.coinBalance };
   }
 
   @Post("top-up")
-  async topUp(@Body() dto: TopUpDto) {
-    await this.ensureOwner(dto.ownerId);
+  @UseGuards(AuthGuard)
+  async topUp(@Body() dto: TopUpDto, @CurrentUser() user: AuthenticatedUser) {
+    const ownerId = canAccessAdmin(user) && dto.ownerId ? dto.ownerId : user.id;
+    if (dto.ownerId && dto.ownerId !== user.id && !canAccessAdmin(user)) {
+      throw new ForbiddenException("Можно пополнять только свой баланс");
+    }
+    await this.ensureOwner(ownerId);
     const charityAmount = Math.floor(dto.amount * 0.2);
     const [updated] = await this.prisma.$transaction([
       this.prisma.user.update({
-        where: { id: dto.ownerId },
+        where: { id: ownerId },
         data: {
           coinBalance: { increment: dto.amount }
         }
