@@ -539,7 +539,7 @@ export default function MyPets3DView({
     : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
     ? "absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom))] left-2 right-2 z-20 h-[min(47dvh,27rem)] overflow-visible rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
-    : "absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[380px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
+    : "absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[420px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
   const infoCardClass = isPortraitLayout
     ? "relative flex h-full min-h-full flex-col rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
     : "relative flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
@@ -705,7 +705,7 @@ export default function MyPets3DView({
             ×
           </button>
           <div className={infoCardClass}>
-            <div className="flex shrink-0 items-start gap-4">
+            <div className="flex shrink-0 items-start gap-4 pr-8">
               <div className="relative">
                 {selectedItem.pet.previewUrl ? (
                   <img
@@ -719,18 +719,22 @@ export default function MyPets3DView({
                 )}
               </div>
               <div className="min-w-0 flex-1 pt-1">
-                <h3 className="text-xl font-black uppercase tracking-tight text-[#5d4037]">
-                  {selectedItem.pet.name}
-                </h3>
-                <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
-                  {formatYearRange(selectedItem.pet.birthDate, selectedItem.pet.deathDate)}
-                </p>
+                <div className="flex min-w-0 items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "truncate text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
+                      {selectedItem.pet.name}
+                    </h3>
+                    <p className={isPortraitLayout ? "mt-0.5 whitespace-nowrap text-xs font-semibold text-[#8d6e63]" : "mt-1 whitespace-nowrap text-sm font-semibold text-[#8d6e63]"}>
+                      {formatYearRange(selectedItem.pet.birthDate, selectedItem.pet.deathDate)}
+                    </p>
+                  </div>
+                  <VisibilityIndicator
+                    isPublic={selectedItem.pet.isPublic}
+                    className="mt-1 shrink-0"
+                    tooltipAlign="right"
+                  />
+                </div>
               </div>
-              <VisibilityIndicator
-                isPublic={selectedItem.pet.isPublic}
-                className="mr-10 mt-1 shrink-0"
-                tooltipAlign="right"
-              />
             </div>
             <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
               <p className={isPortraitLayout ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>

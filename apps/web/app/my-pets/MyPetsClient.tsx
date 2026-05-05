@@ -225,7 +225,7 @@ export default function MyPetsClient() {
                             <rect x="3" y="5" width="18" height="16" rx="2" />
                             <path d="M16 3v4M8 3v4M3 11h18" />
                           </svg>
-                          <span className="text-[10px] font-black text-[#8d6e63]">
+                          <span className="whitespace-nowrap text-[10px] font-black text-[#8d6e63]">
                             {formatLifeRange(pet)}
                           </span>
                         </div>

@@ -2,7 +2,6 @@
 
 import {
   GoogleMap,
-  InfoWindow,
   Marker,
   MarkerClusterer,
   useJsApiLoader
@@ -140,9 +139,6 @@ const formatYearRange = (birthDate?: string | null, deathDate?: string | null) =
   }
   return "Без дат";
 };
-
-const getMarkerPreviewSrc = (marker: MarkerDto | null | undefined) =>
-  marker?.previewImageUrl ?? marker?.previewPhotoUrl ?? null;
 
 const getMarkerCoverSrc = (marker: MarkerDto | null | undefined) =>
   marker?.previewPhotoUrl ?? marker?.previewImageUrl ?? null;
@@ -1566,6 +1562,13 @@ export default function MapClient() {
     });
   }, [mapMode, isMobile, listMarkers]);
 
+  useEffect(() => {
+    if (!active?.petId) {
+      return;
+    }
+    void loadPetDetail(active.petId);
+  }, [active?.petId]);
+
   const buildMemorialSceneData = useCallback((marker: MarkerDto | null): MemorialSceneData | null => {
     if (!marker) {
       return null;
@@ -1731,124 +1734,102 @@ export default function MapClient() {
     setCarouselQueue((prev) => prev - step);
   }, [carouselTargetIndex, carouselQueue, carouselIndex, carouselOrder.length]);
 
-  const getMarkerPopupOptions = (marker: MarkerDto) => {
-    const size = markerSize(marker.markerStyle ?? "other", 43);
-    return {
-      maxWidth: isPortraitLayout ? 238 : 320,
-      pixelOffset:
-        typeof window !== "undefined" && window.google
-          ? new window.google.maps.Size(0, -size.height - 16)
-          : undefined
-    };
-  };
-
-  const renderMarkerPopupContent = (marker: MarkerDto) => {
-    const previewSrc = resolvePreviewSrc(getMarkerPreviewSrc(marker));
+  const renderMemorialInfoContent = (
+    marker: MarkerDto,
+    options?: { onClose?: () => void; compact?: boolean }
+  ) => {
+    const pet = petCache[marker.petId];
+    const previewSrc = resolvePreviewSrc(getMarkerCoverSrc(marker));
+    const compact = options?.compact ?? isPortraitLayout;
     return (
-      <div className={isPortraitLayout ? "w-[218px] overflow-hidden rounded-[22px] bg-[#fffcf9] text-[#5d4037]" : "w-[300px] overflow-hidden rounded-[26px] bg-[#fffcf9] text-[#5d4037]"}>
-        {previewSrc ? (
-          <img
-            src={previewSrc}
-            alt={`Фото ${marker.name}`}
-            className={isPortraitLayout ? "h-24 w-full object-cover" : "h-36 w-full object-cover"}
-            loading="lazy"
-          />
-        ) : (
-          <div className={isPortraitLayout ? "h-20 w-full bg-[#efe6e2]" : "h-28 w-full bg-[#efe6e2]"} />
-        )}
-        <div className={isPortraitLayout ? "p-3" : "p-4"}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight" : "truncate text-xl font-black uppercase tracking-tight"}>
-                {marker.name}
-              </p>
-              <p className={isPortraitLayout ? "mt-0.5 text-[11px] font-bold text-[#8d6e63]" : "mt-1 text-sm font-bold text-[#8d6e63]"}>
-                {formatYearRange(marker.birthDate, marker.deathDate)}
-              </p>
-            </div>
-            <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-[#3bceac] shadow-[0_0_0_4px_rgba(59,206,172,0.14)]" />
-          </div>
-          <p className={isPortraitLayout ? "mt-2 line-clamp-2 text-xs font-semibold leading-snug text-[#7b6b65]" : "mt-3 line-clamp-3 text-sm font-semibold leading-relaxed text-[#7b6b65]"}>
-            {marker.epitaph ?? "Без эпитафии"}
-          </p>
-          <a
-            className={isPortraitLayout ? "mt-3 inline-flex w-full items-center justify-center rounded-[16px] bg-[#c8d8cf] px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "mt-4 inline-flex w-full items-center justify-center rounded-[18px] bg-[#c8d8cf] px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
-            href={`/pets/${marker.petId}`}
+      <div className={compact ? "relative flex h-full min-h-full flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "relative flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
+        {options?.onClose ? (
+          <button
+            type="button"
+            onClick={options.onClose}
+            className={compact ? "absolute right-2 top-2 z-20 h-8 w-8 rounded-full border-2 border-[#fdf2e9] bg-white text-lg font-black text-[#8d6e63] shadow-sm transition hover:text-[#5d4037]" : "absolute right-3 top-3 z-20 h-9 w-9 rounded-full border-2 border-[#fdf2e9] bg-white text-xl font-black text-[#8d6e63] shadow-sm transition hover:text-[#5d4037]"}
+            aria-label="Вернуться к списку"
           >
-            Открыть мемориал
-          </a>
+            ×
+          </button>
+        ) : null}
+        <div className={compact ? "flex shrink-0 items-start gap-3 pr-8" : "flex shrink-0 items-start gap-4 pr-9"}>
+          <div className="relative shrink-0">
+            {previewSrc ? (
+              <img
+                src={previewSrc}
+                alt={`Фото ${marker.name}`}
+                className={compact ? "h-[clamp(7rem,17dvh,9rem)] w-[clamp(7rem,17dvh,9rem)] rounded-[22px] object-cover" : "h-36 w-36 rounded-[28px] object-cover"}
+                loading="lazy"
+              />
+            ) : (
+              <div className={compact ? "h-[clamp(7rem,17dvh,9rem)] w-[clamp(7rem,17dvh,9rem)] rounded-[22px] bg-slate-200" : "h-36 w-36 rounded-[28px] bg-slate-200"} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1 pt-1">
+            <div className="flex min-w-0 items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <h3 className={compact ? "truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "truncate text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
+                  {marker.name}
+                </h3>
+                <p className={compact ? "mt-0.5 whitespace-nowrap text-xs font-semibold text-[#8d6e63]" : "mt-1 whitespace-nowrap text-sm font-semibold text-[#8d6e63]"}>
+                  {formatYearRange(marker.birthDate, marker.deathDate)}
+                </p>
+              </div>
+              <VisibilityIndicator
+                isPublic={marker.isPublic ?? true}
+                className="mt-1 shrink-0"
+                tooltipAlign="right"
+              />
+            </div>
+          </div>
         </div>
+        <div className={compact ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
+          <p className={compact ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
+            &ldquo;{marker.epitaph ?? "Без эпитафии"}&rdquo;
+          </p>
+        </div>
+        <div className={compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
+          <p className={compact ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
+            {pet?.story || "История пока не добавлена."}
+          </p>
+        </div>
+        <a
+          className={compact ? "group mt-3 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "group mt-5 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
+          href={`/pets/${marker.petId}`}
+        >
+          <span className="transition-transform duration-300 group-hover:-translate-x-1">
+            Открыть мемориал
+          </span>
+          <svg
+            viewBox="0 0 24 24"
+            className="ml-2 h-5 w-5 text-current transition-transform duration-300 group-hover:translate-x-1"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14" />
+            <path d="m13 5 7 7-7 7" />
+          </svg>
+        </a>
       </div>
     );
   };
 
-  const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
-  const activePreviewSrc = resolvePreviewSrc(getMarkerCoverSrc(activeCarouselMarker));
-  const activeCarouselIsPublic = activeCarouselMarker?.isPublic ?? true;
   const activeCarouselInfoContent = activeCarouselMarker ? (
-    <div className={isPortraitLayout ? "relative flex h-full min-h-full flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "relative flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
-      <div className={isPortraitLayout ? "flex shrink-0 items-start gap-3" : "flex shrink-0 items-start gap-4"}>
-        <div className="relative">
-          {activePreviewSrc ? (
-            <img
-              src={activePreviewSrc}
-              alt={`Фото ${activeCarouselMarker.name}`}
-              className={isPortraitLayout ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] object-cover" : "h-36 w-36 rounded-[28px] object-cover"}
-              loading="lazy"
-            />
-          ) : (
-            <div className={isPortraitLayout ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] bg-slate-200" : "h-36 w-36 rounded-[28px] bg-slate-200"} />
-          )}
-        </div>
-        <div className="min-w-0 flex-1 pt-1">
-          <h3 className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
-            {activeCarouselMarker.name}
-          </h3>
-          <p className={isPortraitLayout ? "mt-0.5 text-xs font-semibold text-[#8d6e63]" : "mt-1 text-sm font-semibold text-[#8d6e63]"}>
-            {formatYearRange(activeCarouselMarker.birthDate, activeCarouselMarker.deathDate)}
-          </p>
-        </div>
-        <VisibilityIndicator
-          isPublic={activeCarouselIsPublic}
-          className="mt-1 shrink-0"
-          tooltipAlign="right"
-        />
-      </div>
-      <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
-        <p className={isPortraitLayout ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
-          &ldquo;{activeCarouselMarker.epitaph ?? "Без эпитафии"}&rdquo;
-        </p>
-      </div>
-      <div className={isPortraitLayout ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
-        <p className={isPortraitLayout ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
-          {activeCarouselPet?.story || "История пока не добавлена."}
-        </p>
-      </div>
-      <a
-        className={isPortraitLayout ? "group mt-3 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "group mt-5 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
-        href={`/pets/${activeCarouselMarker.petId}`}
-      >
-        <span className="transition-transform duration-300 group-hover:-translate-x-1">
-          Открыть мемориал
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          className="ml-2 h-5 w-5 text-current transition-transform duration-300 group-hover:translate-x-1"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M5 12h14" />
-          <path d="m13 5 7 7-7 7" />
-        </svg>
-      </a>
-    </div>
+    renderMemorialInfoContent(activeCarouselMarker)
   ) : (
     <p className="text-sm text-slate-500">Нет мемориалов</p>
   );
+  const activeMarkerInfoContent = active
+    ? renderMemorialInfoContent(active, {
+        onClose: () => setActive(null),
+        compact: isPortraitLayout
+      })
+    : null;
 
   const memorialListContent = (
     <div className="grid grid-cols-1 gap-4">
@@ -1883,7 +1864,7 @@ export default function MapClient() {
               <MemorialCardPreview previewSrc={previewSrc} className="rounded-t-2xl" />
               <div className="border-t border-slate-200 bg-white/90 p-3">
                 <h3 className="text-sm font-semibold text-slate-900">{marker.name}</h3>
-                <p className="mt-1 text-xs text-slate-600">
+                <p className="mt-1 whitespace-nowrap text-xs text-slate-600">
                   {formatYearRange(marker.birthDate, marker.deathDate)}
                 </p>
               </div>
@@ -2018,7 +1999,7 @@ export default function MapClient() {
                               position={{ lat: marker.lat, lng: marker.lng }}
                               clusterer={clusterer}
                               animation={
-                                hoveredMarkerId === marker.id &&
+                                (hoveredMarkerId === marker.id || active?.id === marker.id) &&
                                 typeof window !== "undefined" &&
                                 window.google
                                   ? window.google.maps.Animation.BOUNCE
@@ -2041,26 +2022,21 @@ export default function MapClient() {
                         </>
                       )}
                     </MarkerClusterer>
-                    {active ? (
-                      <InfoWindow
-                        position={{ lat: active.lat, lng: active.lng }}
-                        onCloseClick={() => setActive(null)}
-                        options={getMarkerPopupOptions(active)}
-                      >
-                        {renderMarkerPopupContent(active)}
-                      </InfoWindow>
-                    ) : null}
                   </GoogleMap>
                 )}
               </div>
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-base font-black uppercase tracking-tight text-[#5d4037]">Мемориалы</h2>
-                <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
-                  {listMarkers.length}
-                </span>
+                <h2 className="text-base font-black uppercase tracking-tight text-[#5d4037]">
+                  {active ? "Мемориал" : "Мемориалы"}
+                </h2>
+                {!active ? (
+                  <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
+                    {listMarkers.length}
+                  </span>
+                ) : null}
               </div>
               <div className={mobileSidebarClass}>
-                {memorialListContent}
+                {activeMarkerInfoContent ?? memorialListContent}
               </div>
             </>
           ) : (
@@ -2233,7 +2209,7 @@ export default function MapClient() {
                         position={{ lat: marker.lat, lng: marker.lng }}
                         clusterer={clusterer}
                         animation={
-                          hoveredMarkerId === marker.id && typeof window !== "undefined" && window.google
+                          (hoveredMarkerId === marker.id || active?.id === marker.id) && typeof window !== "undefined" && window.google
                             ? window.google.maps.Animation.BOUNCE
                             : undefined
                         }
@@ -2254,15 +2230,6 @@ export default function MapClient() {
                   </>
                 )}
               </MarkerClusterer>
-              {active ? (
-                <InfoWindow
-                  position={{ lat: active.lat, lng: active.lng }}
-                  onCloseClick={() => setActive(null)}
-                  options={getMarkerPopupOptions(active)}
-                >
-                  {renderMarkerPopupContent(active)}
-                </InfoWindow>
-              ) : null}
             </GoogleMap>
           )
         ) : (
@@ -2275,16 +2242,22 @@ export default function MapClient() {
           <div className="relative h-full w-full">
             {desktopFilterPanel}
             <div
-              className={`pointer-events-auto absolute right-6 z-20 flex max-h-[78vh] w-[320px] max-w-[360px] flex-col p-5 ${simsSidebarClass}`}
+              className={`pointer-events-auto absolute right-6 z-20 flex max-h-[78vh] w-[360px] max-w-[400px] flex-col p-5 ${simsSidebarClass}`}
               style={{ top: overlayTop }}
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-black uppercase tracking-tight text-[#5d4037]">Мемориалы</h2>
-                <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
-                  {listMarkers.length}
-                </span>
+                <h2 className="text-sm font-black uppercase tracking-tight text-[#5d4037]">
+                  {active ? "Мемориал" : "Мемориалы"}
+                </h2>
+                {!active ? (
+                  <span className="rounded-full bg-[#d3a27f]/10 px-3 py-1 text-[10px] font-black text-[#d3a27f]">
+                    {listMarkers.length}
+                  </span>
+                ) : null}
               </div>
-              <div className="mt-4 flex-1 overflow-y-auto pr-1">{memorialListContent}</div>
+              <div className="mt-4 flex-1 overflow-visible pr-1">
+                {activeMarkerInfoContent ?? memorialListContent}
+              </div>
             </div>
           </div>
         ) : (
@@ -2334,7 +2307,7 @@ export default function MapClient() {
               </div>
             </div>
             {desktopFilterPanel}
-            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[27%] max-w-[400px] min-w-[300px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[30%] max-w-[440px] min-w-[340px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
               {activeCarouselInfoContent}
             </div>
           </div>
