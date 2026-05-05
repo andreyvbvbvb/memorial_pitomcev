@@ -30,7 +30,7 @@ function HelpHint({ text, className = "" }: { text: string; className?: string }
       aria-label={text}
     >
       ?
-      <span className="pointer-events-none absolute right-0 top-[calc(100%+0.55rem)] z-30 w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200 group-hover/hint:opacity-100 group-focus/hint:opacity-100">
+      <span className="pointer-events-none absolute right-0 top-[calc(100%+0.55rem)] z-[1000] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200 group-hover/hint:opacity-100 group-focus/hint:opacity-100">
         {text}
       </span>
     </span>
@@ -155,6 +155,15 @@ export default function ProfileClient() {
     setError(null);
   };
 
+  if (loadingProfile) {
+    return (
+      <div className={`${authPageShellClass} px-6 py-10`}>
+        <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
+        <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
+      </div>
+    );
+  }
+
   return (
     <div className={`${authPageShellClass} px-6 py-10`}>
       <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
@@ -174,20 +183,14 @@ export default function ProfileClient() {
                   </p>
                   <h1 className={`mt-2 ${authTitleClass}`}>Настройки аккаунта</h1>
                 </div>
-                {loadingProfile || editing ? (
+                {editing ? (
                   <div className="mr-11 rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                    {loadingProfile ? "Загрузка" : "Редактирование"}
+                    Редактирование
                   </div>
                 ) : null}
               </div>
 
               <div className="mt-6 grid gap-4">
-                {loadingProfile ? (
-                  <div className="rounded-[24px] border-[3px] border-white bg-[#f8f9fa] px-5 py-4 text-sm font-semibold text-[#8d6e63] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
-                    Загружаем профиль...
-                  </div>
-                ) : null}
-
                 <label className={authLabelClass}>
                   <span className="flex items-center justify-between gap-3">
                     <span>Логин</span>

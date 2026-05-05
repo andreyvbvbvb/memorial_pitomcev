@@ -517,9 +517,10 @@ export default function CreateMemorialClient({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(isEditMode);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingProgressRef = useRef<number | null>(null);
+  const editInitialPreloadDoneRef = useRef(false);
   const [loadingTips, setLoadingTips] = useState<string[]>(DEFAULT_LOADING_TIPS);
   const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const loadingTipTimerRef = useRef<number | null>(null);
@@ -2299,10 +2300,21 @@ export default function CreateMemorialClient({
   ]);
 
   useEffect(() => {
-    if (step >= 1) {
-      void preloadAssets();
+    if (step < 1) {
+      return;
     }
-  }, [step, preloadAssets]);
+    if (isEditMode && !editInitialPreloadDoneRef.current) {
+      editInitialPreloadDoneRef.current = true;
+      setIsTransitioning(true);
+      startLoadingProgress();
+      void preloadAssets().finally(() => {
+        stopLoadingProgress();
+        window.setTimeout(() => setIsTransitioning(false), 160);
+      });
+      return;
+    }
+    void preloadAssets();
+  }, [isEditMode, preloadAssets, startLoadingProgress, step, stopLoadingProgress]);
 
   const preloadOptionModel = useCallback(
     async (category: string, id: string) => {
@@ -3211,6 +3223,20 @@ export default function CreateMemorialClient({
       }`}
       style={mainStyle}
     >
+      {isTransitioning ? (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--bg)]">
+          <div className="flex flex-col items-center gap-3 text-center text-sm text-slate-600">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+            {loadingMessage}
+            <div className="h-2 w-48 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full bg-slate-600 transition-[width] duration-200"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
       {!isBuilderStep ? (
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
@@ -3235,20 +3261,6 @@ export default function CreateMemorialClient({
             ) : null}
           </section>
 
-          {isTransitioning ? (
-            <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--bg)]">
-              <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                {loadingMessage}
-                <div className="h-2 w-48 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full bg-slate-600 transition-[width] duration-200"
-                    style={{ width: `${loadingProgress}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
       ) : (
         <>
@@ -3307,25 +3319,25 @@ export default function CreateMemorialClient({
             <div className={builderEditorPanelClass}>
               <div className={builderPanelInnerClass}>
                 <div className={builderPanelHeaderClass}>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <h3 className={isPortraitLayout ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]" : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"}>
                       Редактор мемориала
                     </h3>
-                    <div className={isPortraitLayout ? "flex items-center gap-2" : "flex items-center gap-3"}>
+                    <div className={isPortraitLayout ? "flex min-w-0 flex-wrap items-center justify-end gap-1.5" : "flex min-w-0 flex-wrap items-center justify-end gap-3"}>
                       {isEditMode ? (
                         <span className={isPortraitLayout ? "rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
                           Только оформление
                         </span>
                       ) : null}
-                      <label className="group relative z-[120] flex items-center gap-2 text-[10px] font-bold text-green-600">
+                      <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300"
+                          className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-slate-300" : "h-4 w-4 shrink-0 rounded border-slate-300"}
                           checked={giftPreviewEnabled}
                           onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
                         />
-                        <span>Посмотреть</span>
-                        <span className="pointer-events-none absolute right-0 top-full z-[130] mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        <span className="truncate">Посмотреть</span>
+                        <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                           При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
                         </span>
                       </label>

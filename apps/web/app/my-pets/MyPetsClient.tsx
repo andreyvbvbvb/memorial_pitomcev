@@ -9,12 +9,7 @@ import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
 
 const MyPets3DView = dynamic(() => import("../../components/MyPets3DView"), {
-  ssr: false,
-  loading: () => (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-[#fcf8f5] text-center text-sm font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-      Загружаем 3D-режим...
-    </div>
-  )
+  ssr: false
 });
 
 type PetPhoto = {

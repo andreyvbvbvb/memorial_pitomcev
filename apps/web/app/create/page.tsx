@@ -11,5 +11,5 @@ export default async function CreateMemorialPage({ searchParams }: CreatePagePro
   const rawEditId = resolved.edit;
   const editId = Array.isArray(rawEditId) ? rawEditId[0] : rawEditId;
 
-  return <CreateMemorialClient editId={editId ?? null} />;
+  return <CreateMemorialClient key={editId ?? "new"} editId={editId ?? null} />;
 }

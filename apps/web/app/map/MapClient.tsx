@@ -1731,11 +1731,62 @@ export default function MapClient() {
     setCarouselQueue((prev) => prev - step);
   }, [carouselTargetIndex, carouselQueue, carouselIndex, carouselOrder.length]);
 
+  const getMarkerPopupOptions = (marker: MarkerDto) => {
+    const size = markerSize(marker.markerStyle ?? "other", 43);
+    return {
+      maxWidth: isPortraitLayout ? 238 : 320,
+      pixelOffset:
+        typeof window !== "undefined" && window.google
+          ? new window.google.maps.Size(0, -size.height - 16)
+          : undefined
+    };
+  };
+
+  const renderMarkerPopupContent = (marker: MarkerDto) => {
+    const previewSrc = resolvePreviewSrc(getMarkerPreviewSrc(marker));
+    return (
+      <div className={isPortraitLayout ? "w-[218px] overflow-hidden rounded-[22px] bg-[#fffcf9] text-[#5d4037]" : "w-[300px] overflow-hidden rounded-[26px] bg-[#fffcf9] text-[#5d4037]"}>
+        {previewSrc ? (
+          <img
+            src={previewSrc}
+            alt={`Фото ${marker.name}`}
+            className={isPortraitLayout ? "h-24 w-full object-cover" : "h-36 w-full object-cover"}
+            loading="lazy"
+          />
+        ) : (
+          <div className={isPortraitLayout ? "h-20 w-full bg-[#efe6e2]" : "h-28 w-full bg-[#efe6e2]"} />
+        )}
+        <div className={isPortraitLayout ? "p-3" : "p-4"}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight" : "truncate text-xl font-black uppercase tracking-tight"}>
+                {marker.name}
+              </p>
+              <p className={isPortraitLayout ? "mt-0.5 text-[11px] font-bold text-[#8d6e63]" : "mt-1 text-sm font-bold text-[#8d6e63]"}>
+                {formatYearRange(marker.birthDate, marker.deathDate)}
+              </p>
+            </div>
+            <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-[#3bceac] shadow-[0_0_0_4px_rgba(59,206,172,0.14)]" />
+          </div>
+          <p className={isPortraitLayout ? "mt-2 line-clamp-2 text-xs font-semibold leading-snug text-[#7b6b65]" : "mt-3 line-clamp-3 text-sm font-semibold leading-relaxed text-[#7b6b65]"}>
+            {marker.epitaph ?? "Без эпитафии"}
+          </p>
+          <a
+            className={isPortraitLayout ? "mt-3 inline-flex w-full items-center justify-center rounded-[16px] bg-[#c8d8cf] px-4 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "mt-4 inline-flex w-full items-center justify-center rounded-[18px] bg-[#c8d8cf] px-5 py-2.5 text-xs font-black uppercase tracking-[0.14em] text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
+            href={`/pets/${marker.petId}`}
+          >
+            Открыть мемориал
+          </a>
+        </div>
+      </div>
+    );
+  };
+
   const activeCarouselPet = activeCarouselMarker ? petCache[activeCarouselMarker.petId] : null;
   const activePreviewSrc = resolvePreviewSrc(getMarkerCoverSrc(activeCarouselMarker));
   const activeCarouselIsPublic = activeCarouselMarker?.isPublic ?? true;
   const activeCarouselInfoContent = activeCarouselMarker ? (
-    <div className={isPortraitLayout ? "flex h-full min-h-full flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
+    <div className={isPortraitLayout ? "relative flex h-full min-h-full flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "relative flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
       <div className={isPortraitLayout ? "flex shrink-0 items-start gap-3" : "flex shrink-0 items-start gap-4"}>
         <div className="relative">
           {activePreviewSrc ? (
@@ -1748,10 +1799,6 @@ export default function MapClient() {
           ) : (
             <div className={isPortraitLayout ? "h-[clamp(7.5rem,18dvh,9.5rem)] w-[clamp(7.5rem,18dvh,9.5rem)] rounded-[24px] bg-slate-200" : "h-36 w-36 rounded-[28px] bg-slate-200"} />
           )}
-          <VisibilityIndicator
-            isPublic={activeCarouselIsPublic}
-            className="absolute left-3 top-3"
-          />
         </div>
         <div className="min-w-0 flex-1 pt-1">
           <h3 className={isPortraitLayout ? "truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
@@ -1761,6 +1808,11 @@ export default function MapClient() {
             {formatYearRange(activeCarouselMarker.birthDate, activeCarouselMarker.deathDate)}
           </p>
         </div>
+        <VisibilityIndicator
+          isPublic={activeCarouselIsPublic}
+          className="mt-1 shrink-0"
+          tooltipAlign="right"
+        />
       </div>
       <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
         <p className={isPortraitLayout ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
@@ -1993,24 +2045,9 @@ export default function MapClient() {
                       <InfoWindow
                         position={{ lat: active.lat, lng: active.lng }}
                         onCloseClick={() => setActive(null)}
-                        options={{ maxWidth: 260 }}
+                        options={getMarkerPopupOptions(active)}
                       >
-                        <div className="max-w-[240px] text-sm">
-                          {resolvePreviewSrc(getMarkerPreviewSrc(active)) ? (
-                            <img
-                              src={resolvePreviewSrc(getMarkerPreviewSrc(active))!}
-                              alt="Фото питомца"
-                              className="mb-2 w-full rounded-md object-contain"
-                              style={{ maxHeight: 160 }}
-                              loading="lazy"
-                            />
-                          ) : null}
-                          <p className="font-semibold text-slate-900">{active.name}</p>
-                          <p className="text-slate-600">{active.epitaph ?? "Без эпитафии"}</p>
-                          <a className="mt-2 inline-block text-slate-900 underline" href={`/pets/${active.petId}`}>
-                            Открыть мемориал
-                          </a>
-                        </div>
+                        {renderMarkerPopupContent(active)}
                       </InfoWindow>
                     ) : null}
                   </GoogleMap>
@@ -2073,7 +2110,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-y-auto rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
+              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-visible rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
                 {activeCarouselInfoContent}
               </div>
             </>
@@ -2221,24 +2258,9 @@ export default function MapClient() {
                 <InfoWindow
                   position={{ lat: active.lat, lng: active.lng }}
                   onCloseClick={() => setActive(null)}
-                  options={{ maxWidth: 260 }}
+                  options={getMarkerPopupOptions(active)}
                 >
-                  <div className="max-w-[240px] text-sm">
-                    {resolvePreviewSrc(getMarkerPreviewSrc(active)) ? (
-                      <img
-                        src={resolvePreviewSrc(getMarkerPreviewSrc(active))!}
-                        alt="Фото питомца"
-                        className="mb-2 w-full rounded-md object-contain"
-                        style={{ maxHeight: 160 }}
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <p className="font-semibold text-slate-900">{active.name}</p>
-                    <p className="text-slate-600">{active.epitaph ?? "Без эпитафии"}</p>
-                    <a className="mt-2 inline-block text-slate-900 underline" href={`/pets/${active.petId}`}>
-                      Открыть мемориал
-                    </a>
-                  </div>
+                  {renderMarkerPopupContent(active)}
                 </InfoWindow>
               ) : null}
             </GoogleMap>
@@ -2312,7 +2334,7 @@ export default function MapClient() {
               </div>
             </div>
             {desktopFilterPanel}
-            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[27%] max-w-[400px] min-w-[300px] -translate-y-1/2 flex-col overflow-y-auto rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
+            <div className="pointer-events-auto absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[27%] max-w-[400px] min-w-[300px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur">
               {activeCarouselInfoContent}
             </div>
           </div>
