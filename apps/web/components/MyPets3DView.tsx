@@ -538,7 +538,7 @@ export default function MyPets3DView({
     ? "absolute left-0 right-0 top-0 h-[60dvh] overflow-hidden"
     : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
-    ? "absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-2 right-2 z-10 h-[min(48dvh,28rem)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
+    ? "absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-2 right-2 z-30 h-[min(48dvh,28rem)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
     : "absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[420px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
   const infoCardClass = isPortraitLayout
     ? "relative flex min-h-full flex-col rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
@@ -723,11 +723,12 @@ export default function MyPets3DView({
                   <h3 className={isPortraitLayout ? "truncate text-center text-base font-black uppercase tracking-tight text-[#5d4037]" : "truncate text-center text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
                     {selectedItem.pet.name}
                   </h3>
-                  <VisibilityIndicator
-                    isPublic={selectedItem.pet.isPublic}
-                    className="absolute right-0 top-1/2 -translate-y-1/2"
-                    tooltipAlign="right"
-                  />
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                    <VisibilityIndicator
+                      isPublic={selectedItem.pet.isPublic}
+                      tooltipAlign="right"
+                    />
+                  </span>
                 </div>
                 <p className={isPortraitLayout ? "mt-0.5 whitespace-nowrap text-center text-xs font-semibold text-[#8d6e63]" : "mt-1 whitespace-nowrap text-center text-sm font-semibold text-[#8d6e63]"}>
                   {formatYearRange(selectedItem.pet.birthDate, selectedItem.pet.deathDate)}

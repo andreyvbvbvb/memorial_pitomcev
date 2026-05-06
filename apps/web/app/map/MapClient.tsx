@@ -1773,11 +1773,12 @@ export default function MapClient() {
                 <h3 className={compact ? "truncate text-center text-base font-black uppercase tracking-tight text-[#5d4037]" : "truncate text-center text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
                   {marker.name}
                 </h3>
-                <VisibilityIndicator
-                  isPublic={marker.isPublic ?? true}
-                  className="absolute right-0 top-1/2 -translate-y-1/2"
-                  tooltipAlign="right"
-                />
+                <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                  <VisibilityIndicator
+                    isPublic={marker.isPublic ?? true}
+                    tooltipAlign="right"
+                  />
+                </span>
               </div>
               <p className={compact ? "mt-0.5 whitespace-nowrap text-center text-xs font-semibold text-[#8d6e63]" : "mt-1 whitespace-nowrap text-center text-sm font-semibold text-[#8d6e63]"}>
                 {formatYearRange(marker.birthDate, marker.deathDate)}
