@@ -1768,18 +1768,18 @@ export default function MapClient() {
                 <div className={compact ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] bg-slate-200" : "mx-auto h-48 w-48 rounded-[28px] bg-slate-200"} />
               )}
             </div>
-            <div className="mt-3 min-w-0">
-              <div className="flex min-w-0 items-start gap-2">
-                <h3 className={compact ? "min-w-0 flex-1 truncate text-base font-black uppercase tracking-tight text-[#5d4037]" : "min-w-0 flex-1 truncate text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
+            <div className="mt-3 min-w-0 text-center">
+              <div className="relative min-w-0 px-7">
+                <h3 className={compact ? "truncate text-center text-base font-black uppercase tracking-tight text-[#5d4037]" : "truncate text-center text-xl font-black uppercase tracking-tight text-[#5d4037]"}>
                   {marker.name}
                 </h3>
                 <VisibilityIndicator
                   isPublic={marker.isPublic ?? true}
-                  className="mt-1 shrink-0"
+                  className="absolute right-0 top-1/2 -translate-y-1/2"
                   tooltipAlign="right"
                 />
               </div>
-              <p className={compact ? "mt-0.5 whitespace-nowrap text-xs font-semibold text-[#8d6e63]" : "mt-1 whitespace-nowrap text-sm font-semibold text-[#8d6e63]"}>
+              <p className={compact ? "mt-0.5 whitespace-nowrap text-center text-xs font-semibold text-[#8d6e63]" : "mt-1 whitespace-nowrap text-center text-sm font-semibold text-[#8d6e63]"}>
                 {formatYearRange(marker.birthDate, marker.deathDate)}
               </p>
             </div>
