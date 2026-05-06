@@ -2042,6 +2042,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
         : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
     }`;
+  const memorialControlTooltipClass = isPortraitLayout
+    ? "pointer-events-none absolute bottom-full left-1/2 z-[120] mb-2 w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100"
+    : "pointer-events-none absolute left-full top-1/2 z-[120] ml-3 w-max max-w-[13rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
+  const memorialGiftTooltipClass = isPortraitLayout
+    ? memorialControlTooltipClass
+    : "pointer-events-none absolute right-full top-1/2 z-[120] mr-3 w-max max-w-[13rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
   const primaryActionClass =
     "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
   const secondaryActionClass =
@@ -2326,65 +2332,85 @@ export default function PetClient({ id, mode = "view" }: Props) {
         <div className={memorialControlsWrapClass}>
           <div className="relative">
             <div className={memorialControlsClass}>
-              <button
-                type="button"
-                onClick={() => togglePanel("info")}
-                aria-label="Информация"
-                className={panelButtonClass(activePanel === "info")}
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 11v5" />
-                  <circle cx="12" cy="8" r="1" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => togglePanel("photos")}
-                aria-label="Фотографии"
-                className={panelButtonClass(activePanel === "photos")}
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="5" width="18" height="14" rx="2" />
-                  <circle cx="9" cy="11" r="2" />
-                  <path d="M21 15l-4-4-4 4-3-3-5 5" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => togglePanel("gifts")}
-                aria-label="Подарки"
-                className={panelButtonClass(activePanel === "gifts")}
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => togglePanel("memorials")}
-                aria-label="Другие мемориалы"
-                className={panelButtonClass(activePanel === "memorials")}
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="8" cy="9" r="3" />
-                  <circle cx="16" cy="9" r="3" />
-                  <path d="M3 20c0-3 3-5 5-5" />
-                  <path d="M21 20c0-3-3-5-5-5" />
-                </svg>
-              </button>
-              {isOwner ? (
+              <div className="group/control relative">
                 <button
                   type="button"
-                  onClick={() => togglePanel("manage")}
-                  aria-label="Управление мемориалом"
-                  className={panelButtonClass(activePanel === "manage")}
+                  onClick={() => togglePanel("info")}
+                  aria-label="Информация"
+                  title="Информация"
+                  className={panelButtonClass(activePanel === "info")}
                 >
                   <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 11v5" />
+                    <circle cx="12" cy="8" r="1" />
                   </svg>
                 </button>
+                <span className={memorialControlTooltipClass}>Информация</span>
+              </div>
+              <div className="group/control relative">
+                <button
+                  type="button"
+                  onClick={() => togglePanel("photos")}
+                  aria-label="Фотографии"
+                  title="Фотографии"
+                  className={panelButtonClass(activePanel === "photos")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <circle cx="9" cy="11" r="2" />
+                    <path d="M21 15l-4-4-4 4-3-3-5 5" />
+                  </svg>
+                </button>
+                <span className={memorialControlTooltipClass}>Фотографии</span>
+              </div>
+              <div className="group/control relative">
+                <button
+                  type="button"
+                  onClick={() => togglePanel("gifts")}
+                  aria-label="Подарки"
+                  title="Подарки"
+                  className={panelButtonClass(activePanel === "gifts")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" />
+                  </svg>
+                </button>
+                <span className={memorialControlTooltipClass}>Подарки</span>
+              </div>
+              <div className="group/control relative">
+                <button
+                  type="button"
+                  onClick={() => togglePanel("memorials")}
+                  aria-label="Другие мемориалы"
+                  title="Другие мемориалы"
+                  className={panelButtonClass(activePanel === "memorials")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8" cy="9" r="3" />
+                    <circle cx="16" cy="9" r="3" />
+                    <path d="M3 20c0-3 3-5 5-5" />
+                    <path d="M21 20c0-3-3-5-5-5" />
+                  </svg>
+                </button>
+                <span className={memorialControlTooltipClass}>Другие мемориалы</span>
+              </div>
+              {isOwner ? (
+                <div className="group/control relative">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel("manage")}
+                    aria-label="Управление мемориалом"
+                    title="Управление мемориалом"
+                    className={panelButtonClass(activePanel === "manage")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                    </svg>
+                  </button>
+                  <span className={memorialControlTooltipClass}>Управление</span>
+                </div>
               ) : null}
             </div>
 
@@ -2639,11 +2665,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
         </div>
 
         <div className={giftButtonWrapClass}>
-          <div className="relative">
+          <div className="group/control relative">
             <button
               type="button"
               onClick={toggleGiftPanel}
               aria-label="Подарки"
+              title="Подарки"
               className={`${giftButtonClass} ${
                 giftPanelOpen
                   ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
@@ -2658,6 +2685,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 <path d="M17 8c1.5 0 2.5-1 2.5-2s-1-2-2.5-2c-1.5 0-3 2-3 4" />
               </svg>
             </button>
+            <span className={memorialGiftTooltipClass}>Подарки</span>
             {giftPanelOpen ? (
               <div className={giftPanelClass}>
                 <div className={giftPanelInnerClass}>
@@ -2905,10 +2933,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             }}
                             onMouseEnter={() => {
                               clearAppearanceTooltipTimer();
-                              setAppearanceTooltipTabId(null);
-                              appearanceTooltipTimerRef.current = window.setTimeout(() => {
-                                setAppearanceTooltipTabId(tab.id);
-                              }, 500);
+                              setAppearanceTooltipTabId(tab.id);
                             }}
                             onMouseLeave={() => {
                               clearAppearanceTooltipTimer();
@@ -2918,10 +2943,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             }}
                             onFocus={() => {
                               clearAppearanceTooltipTimer();
-                              setAppearanceTooltipTabId(null);
-                              appearanceTooltipTimerRef.current = window.setTimeout(() => {
-                                setAppearanceTooltipTabId(tab.id);
-                              }, 500);
+                              setAppearanceTooltipTabId(tab.id);
                             }}
                             onBlur={() => {
                               clearAppearanceTooltipTimer();

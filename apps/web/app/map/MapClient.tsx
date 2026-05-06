@@ -1375,12 +1375,8 @@ export default function MapClient() {
     ? "min-h-0 flex-1 overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md"
     : `min-h-0 flex-1 overflow-y-auto p-4 ${simsSidebarClass}`;
   const mobileMapSceneHeightClass = isPortraitLayout
-    ? active
-      ? "h-[clamp(10rem,24dvh,16rem)] shrink-0"
-      : "h-[clamp(13rem,32dvh,20rem)] shrink-0"
-    : active
-      ? "h-[34vh]"
-      : "h-[42vh]";
+    ? "h-[clamp(13rem,32dvh,20rem)] shrink-0"
+    : "h-[42vh]";
   const mobileCarouselSceneHeightClass = isPortraitLayout
     ? "h-[clamp(14rem,42dvh,24rem)] shrink-0"
     : "h-[56vh]";
@@ -1747,7 +1743,7 @@ export default function MapClient() {
     const compact = options?.compact ?? isPortraitLayout;
     const stacked = options?.stacked ?? false;
     return (
-      <div className={compact ? "relative flex h-full min-h-0 flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "relative flex h-full min-h-0 flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
+      <div className={compact ? "relative flex min-h-full flex-col rounded-[18px] border border-white/80 bg-white/85 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]" : "relative flex h-full min-h-0 flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"}>
         {options?.onClose ? (
           <button
             type="button"
@@ -1826,7 +1822,7 @@ export default function MapClient() {
             &ldquo;{marker.epitaph ?? "Без эпитафии"}&rdquo;
           </p>
         </div>
-        <div className={stacked && compact ? "mt-2 h-[clamp(9rem,28dvh,15rem)] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
+        <div className={stacked && compact ? "mt-2 min-h-[9rem] max-h-[18rem] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
           <p className={compact ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
             {pet?.story || "История пока не добавлена."}
           </p>
@@ -2006,6 +2002,7 @@ export default function MapClient() {
                 ) : (
                   <GoogleMap
                     mapContainerStyle={containerStyle}
+                    onClick={() => setActive(null)}
                     onLoad={(loadedMap) => {
                       setMap(loadedMap);
                       loadedMap.setCenter(defaultCenter);
@@ -2216,6 +2213,7 @@ export default function MapClient() {
           ) : (
             <GoogleMap
               mapContainerStyle={containerStyle}
+              onClick={() => setActive(null)}
               onLoad={(loadedMap) => {
                 setMap(loadedMap);
                 loadedMap.setCenter(defaultCenter);

@@ -3139,6 +3139,8 @@ export default function CreateMemorialClient({
         ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.18)]"
         : ""
       }`;
+  const builderControlTooltipClass =
+    "pointer-events-none absolute left-full top-1/2 z-[140] ml-2 w-max max-w-[12rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
   const builderEditorPanelClass = `${
     activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
   } ${
@@ -3362,10 +3364,7 @@ export default function CreateMemorialClient({
                               return;
                             }
                             clearStep3TooltipTimer();
-                            setTooltipTabId(null);
-                            tooltipTimerRef.current = window.setTimeout(() => {
-                              setTooltipTabId(tab.id);
-                            }, 500);
+                            setTooltipTabId(tab.id);
                           }}
                           onMouseLeave={() => {
                             clearStep3TooltipTimer();
@@ -3376,10 +3375,7 @@ export default function CreateMemorialClient({
                               return;
                             }
                             clearStep3TooltipTimer();
-                            setTooltipTabId(null);
-                            tooltipTimerRef.current = window.setTimeout(() => {
-                              setTooltipTabId(tab.id);
-                            }, 500);
+                            setTooltipTabId(tab.id);
                           }}
                           onBlur={() => {
                             clearStep3TooltipTimer();
@@ -3426,87 +3422,103 @@ export default function CreateMemorialClient({
 
             <div className={builderOverlayButtonsWrapClass}>
               <div className={builderOverlayButtonsClass}>
-                <button
-                  type="button"
-                  onClick={() => toggleOverlay("base")}
-                  aria-label="Основные данные"
-                  disabled={isEditMode}
-                  className={`${panelButtonClass(
-                    activeOverlay === "base",
-                    !isEditMode && isBuilderStep && !visitedOverlays.base
-                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 11v5" />
-                    <circle cx="12" cy="8" r="1" />
-                  </svg>
-                  {!isEditMode && isBuilderStep && !visitedOverlays.base ? (
-                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
-                      !
-                    </span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleOverlay("story")}
-                  aria-label="История"
-                  disabled={isEditMode}
-                  className={`${panelButtonClass(
-                    activeOverlay === "story",
-                    !isEditMode && isBuilderStep && !visitedOverlays.story
-                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 5h8a3 3 0 0 1 3 3v11" />
-                    <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
-                  </svg>
-                  {!isEditMode && isBuilderStep && !visitedOverlays.story ? (
-                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
-                      !
-                    </span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleOverlay("marker")}
-                  aria-label="Маркер"
-                  disabled={isEditMode}
-                  className={`${panelButtonClass(
-                    activeOverlay === "marker",
-                    !isEditMode && isBuilderStep && !visitedOverlays.marker
-                  )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
-                    <circle cx="12" cy="10" r="2.5" />
-                  </svg>
-                  {!isEditMode && isBuilderStep && !visitedOverlays.marker ? (
-                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
-                      !
-                    </span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleOverlay("photos")}
-                  aria-label="Фотографии"
-                  className={`${panelButtonClass(
-                    activeOverlay === "photos",
-                    !isEditMode && isBuilderStep && !visitedOverlays.photos
-                  )}`}
-                >
-                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <circle cx="9" cy="11" r="2" />
-                    <path d="M21 15l-4-4-4 4-3-3-5 5" />
-                  </svg>
-                  {!isEditMode && isBuilderStep && !visitedOverlays.photos ? (
-                    <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
-                      !
-                    </span>
-                  ) : null}
-                </button>
+                <div className="group/control relative">
+                  <button
+                    type="button"
+                    onClick={() => toggleOverlay("base")}
+                    aria-label="Основные данные"
+                    title="Основные данные"
+                    disabled={isEditMode}
+                    className={`${panelButtonClass(
+                      activeOverlay === "base",
+                      !isEditMode && isBuilderStep && !visitedOverlays.base
+                    )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 11v5" />
+                      <circle cx="12" cy="8" r="1" />
+                    </svg>
+                    {!isEditMode && isBuilderStep && !visitedOverlays.base ? (
+                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                        !
+                      </span>
+                    ) : null}
+                  </button>
+                  <span className={builderControlTooltipClass}>Основные данные</span>
+                </div>
+                <div className="group/control relative">
+                  <button
+                    type="button"
+                    onClick={() => toggleOverlay("story")}
+                    aria-label="История"
+                    title="История"
+                    disabled={isEditMode}
+                    className={`${panelButtonClass(
+                      activeOverlay === "story",
+                      !isEditMode && isBuilderStep && !visitedOverlays.story
+                    )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 5h8a3 3 0 0 1 3 3v11" />
+                      <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
+                    </svg>
+                    {!isEditMode && isBuilderStep && !visitedOverlays.story ? (
+                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                        !
+                      </span>
+                    ) : null}
+                  </button>
+                  <span className={builderControlTooltipClass}>История</span>
+                </div>
+                <div className="group/control relative">
+                  <button
+                    type="button"
+                    onClick={() => toggleOverlay("marker")}
+                    aria-label="Маркер"
+                    title="Маркер"
+                    disabled={isEditMode}
+                    className={`${panelButtonClass(
+                      activeOverlay === "marker",
+                      !isEditMode && isBuilderStep && !visitedOverlays.marker
+                    )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
+                      <circle cx="12" cy="10" r="2.5" />
+                    </svg>
+                    {!isEditMode && isBuilderStep && !visitedOverlays.marker ? (
+                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                        !
+                      </span>
+                    ) : null}
+                  </button>
+                  <span className={builderControlTooltipClass}>Маркер на карте</span>
+                </div>
+                <div className="group/control relative">
+                  <button
+                    type="button"
+                    onClick={() => toggleOverlay("photos")}
+                    aria-label="Фотографии"
+                    title="Фотографии"
+                    className={`${panelButtonClass(
+                      activeOverlay === "photos",
+                      !isEditMode && isBuilderStep && !visitedOverlays.photos
+                    )}`}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <circle cx="9" cy="11" r="2" />
+                      <path d="M21 15l-4-4-4 4-3-3-5 5" />
+                    </svg>
+                    {!isEditMode && isBuilderStep && !visitedOverlays.photos ? (
+                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                        !
+                      </span>
+                    ) : null}
+                  </button>
+                  <span className={builderControlTooltipClass}>Фотографии</span>
+                </div>
               </div>
             </div>
 
