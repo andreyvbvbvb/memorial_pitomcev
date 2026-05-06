@@ -1761,11 +1761,11 @@ export default function MapClient() {
                 <img
                   src={previewSrc}
                   alt={`Фото ${marker.name}`}
-                  className={compact ? "h-[clamp(7.5rem,18dvh,10rem)] w-full rounded-[22px] object-cover" : "h-48 w-full rounded-[28px] object-cover"}
+                  className={compact ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] object-cover" : "mx-auto h-48 w-48 rounded-[28px] object-cover"}
                   loading="lazy"
                 />
               ) : (
-                <div className={compact ? "h-[clamp(7.5rem,18dvh,10rem)] w-full rounded-[22px] bg-slate-200" : "h-48 w-full rounded-[28px] bg-slate-200"} />
+                <div className={compact ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] bg-slate-200" : "mx-auto h-48 w-48 rounded-[28px] bg-slate-200"} />
               )}
             </div>
             <div className="mt-3 min-w-0">

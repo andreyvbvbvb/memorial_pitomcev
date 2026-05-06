@@ -544,11 +544,11 @@ export default function MyPets3DView({
     ? "relative flex min-h-full flex-col rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
     : "relative flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
   const infoImageClass = isPortraitLayout
-    ? "h-[clamp(7.5rem,18dvh,10rem)] w-full rounded-[22px] object-cover"
-    : "h-48 w-full rounded-[28px] object-cover";
+    ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] object-cover"
+    : "mx-auto h-48 w-48 rounded-[28px] object-cover";
   const infoImageFallbackClass = isPortraitLayout
-    ? "h-[clamp(7.5rem,18dvh,10rem)] w-full rounded-[22px] bg-slate-200"
-    : "h-48 w-full rounded-[28px] bg-slate-200";
+    ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] bg-slate-200"
+    : "mx-auto h-48 w-48 rounded-[28px] bg-slate-200";
   const sideNavButtonClass = (side: "left" | "right") =>
     `group absolute z-10 flex items-center ${
       side === "left" ? "left-0 justify-start" : "right-0 justify-end"
