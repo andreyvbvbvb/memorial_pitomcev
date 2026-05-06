@@ -1375,11 +1375,15 @@ export default function MapClient() {
     ? "min-h-0 flex-1 overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md"
     : `min-h-0 flex-1 overflow-y-auto p-4 ${simsSidebarClass}`;
   const mobileMapSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(13rem,32dvh,20rem)] shrink-0"
-    : "h-[42vh]";
+    ? active
+      ? "h-[clamp(10rem,24dvh,16rem)] shrink-0"
+      : "h-[clamp(13rem,32dvh,20rem)] shrink-0"
+    : active
+      ? "h-[34vh]"
+      : "h-[42vh]";
   const mobileCarouselSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(11rem,28dvh,16rem)] shrink-0"
-    : "h-[42vh]";
+    ? "h-[clamp(14rem,42dvh,24rem)] shrink-0"
+    : "h-[56vh]";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
   const modeToggleButtonClass = (active: boolean) =>
@@ -1761,11 +1765,11 @@ export default function MapClient() {
                 <img
                   src={previewSrc}
                   alt={`Фото ${marker.name}`}
-                  className={compact ? "h-[clamp(9.5rem,25dvh,13rem)] w-full rounded-[22px] object-cover" : "h-48 w-full rounded-[28px] object-cover"}
+                  className={compact ? "h-[clamp(7.5rem,18dvh,10rem)] w-full rounded-[22px] object-cover" : "h-48 w-full rounded-[28px] object-cover"}
                   loading="lazy"
                 />
               ) : (
-                <div className={compact ? "h-[clamp(9.5rem,25dvh,13rem)] w-full rounded-[22px] bg-slate-200" : "h-48 w-full rounded-[28px] bg-slate-200"} />
+                <div className={compact ? "h-[clamp(7.5rem,18dvh,10rem)] w-full rounded-[22px] bg-slate-200" : "h-48 w-full rounded-[28px] bg-slate-200"} />
               )}
             </div>
             <div className="mt-3 min-w-0">
@@ -1822,7 +1826,7 @@ export default function MapClient() {
             &ldquo;{marker.epitaph ?? "Без эпитафии"}&rdquo;
           </p>
         </div>
-        <div className={compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
+        <div className={stacked && compact ? "mt-2 h-[clamp(9rem,28dvh,15rem)] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
           <p className={compact ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
             {pet?.story || "История пока не добавлена."}
           </p>
@@ -1853,7 +1857,7 @@ export default function MapClient() {
   };
 
   const activeCarouselInfoContent = activeCarouselMarker ? (
-    renderMemorialInfoContent(activeCarouselMarker)
+    renderMemorialInfoContent(activeCarouselMarker, { stacked: true })
   ) : (
     <p className="text-sm text-slate-500">Нет мемориалов</p>
   );
@@ -2120,7 +2124,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-visible rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
+              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-y-auto rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 overflow-y-auto rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
                 {activeCarouselInfoContent}
               </div>
             </>
