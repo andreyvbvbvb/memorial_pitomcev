@@ -3136,8 +3136,8 @@ export default function CreateMemorialClient({
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] overflow-hidden rounded-[18px] border-2 border-white bg-white/95 p-1.5 shadow-[0_16px_36px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
-      : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
+      ? "pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] overflow-hidden rounded-[18px] border-2 border-white bg-white/95 p-1.5 shadow-[0_16px_36px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
+      : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
   const overlayPanelClass = (variant?: "marker") =>
     `${overlayPanelBase} ${
       variant === "marker"
@@ -3168,12 +3168,12 @@ export default function CreateMemorialClient({
     activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
   } ${
     isPortraitLayout
-      ? "absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] flex h-[min(35vh,315px)] flex-col rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_46px_-24px_rgba(0,0,0,0.3)]"
-      : "absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]"
+      ? "absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[20] flex h-[min(35vh,315px)] flex-col rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_46px_-24px_rgba(0,0,0,0.3)]"
+      : "absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] z-[20] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]"
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(4.35rem+env(safe-area-inset-bottom))] left-1.5"
-    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6";
+    ? "pointer-events-auto absolute bottom-[calc(4.35rem+env(safe-area-inset-bottom))] left-1.5 z-[90]"
+    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6 z-[90]";
   const builderOverlayButtonsClass = isPortraitLayout
     ? "flex flex-col items-center justify-center gap-1.5 rounded-[18px] border-2 border-white bg-white/72 p-1.5 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.32)] backdrop-blur"
     : "flex flex-col gap-2";
