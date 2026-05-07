@@ -194,6 +194,32 @@ type CameraOffset = {
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_SIZE_BYTES = 6 * 1024 * 1024;
 
+const parseDateInputValue = (value: string) => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+};
+
+const formatDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const SEASON_LABELS: Record<SeasonKey, string> = {
   spring: "Весна",
   summer: "Лето",
@@ -1365,12 +1391,12 @@ export default function CreateMemorialClient({
   }, []);
 
   const dateValidationMessage = useMemo(() => {
-    const birth = form.birthDate ? new Date(form.birthDate) : null;
-    const death = form.deathDate ? new Date(form.deathDate) : null;
-    if (birth && Number.isNaN(birth.getTime())) {
+    const birth = form.birthDate ? parseDateInputValue(form.birthDate) : null;
+    const death = form.deathDate ? parseDateInputValue(form.deathDate) : null;
+    if (form.birthDate && !birth) {
       return "Проверь дату рождения";
     }
-    if (death && Number.isNaN(death.getTime())) {
+    if (form.deathDate && !death) {
       return "Проверь дату ухода";
     }
     if (birth && birth > today) {
@@ -1380,7 +1406,7 @@ export default function CreateMemorialClient({
       return "Дата ухода не может быть позже текущей даты";
     }
     if (birth && death && birth > death) {
-      return "Дата рождения должна быть раньше даты ухода";
+      return "Дата рождения должна быть не позже даты ухода";
     }
     return null;
   }, [form.birthDate, form.deathDate, today]);
@@ -1388,7 +1414,7 @@ export default function CreateMemorialClient({
     reviewAttempted && (!form.birthDate.trim() || !form.deathDate.trim());
   const hasDateFieldError = hasRequiredDateError || Boolean(dateValidationMessage);
 
-  const todayInputValue = useMemo(() => today.toISOString().slice(0, 10), [today]);
+  const todayInputValue = useMemo(() => formatDateInputValue(today), [today]);
 
   const validateStep = (current: Step) => {
     if (isEditMode) {
