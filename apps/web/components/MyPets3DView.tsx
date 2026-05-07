@@ -539,16 +539,16 @@ export default function MyPets3DView({
     : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
     ? "absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-2 right-2 z-30 h-[min(48dvh,28rem)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur"
-    : "absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[420px] -translate-y-1/2 flex-col overflow-visible rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur";
+    : "absolute right-6 top-1/2 z-20 flex h-[min(70dvh,44rem)] max-h-[calc(100dvh-var(--app-header-height,56px)-1.5rem)] w-[min(420px,calc(100vw-2rem))] -translate-y-1/2 flex-col overflow-hidden rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur [@media(max-height:640px)]:right-4 [@media(max-height:640px)]:h-[calc(100dvh-var(--app-header-height,56px)-1rem)] [@media(max-height:640px)]:rounded-[24px] [@media(max-height:640px)]:p-2";
   const infoCardClass = isPortraitLayout
     ? "relative flex min-h-full flex-col rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]"
-    : "relative flex h-full min-h-full flex-col rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
+    : "relative flex h-full min-h-0 flex-col overflow-y-auto rounded-[26px] border border-white/80 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] [@media(max-height:640px)]:rounded-[20px] [@media(max-height:640px)]:p-3";
   const infoImageClass = isPortraitLayout
     ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] object-cover"
-    : "mx-auto h-48 w-48 rounded-[28px] object-cover";
+    : "mx-auto h-[clamp(7rem,24dvh,12rem)] w-[clamp(7rem,24dvh,12rem)] rounded-[28px] object-cover [@media(max-height:640px)]:h-[clamp(5.5rem,22dvh,8rem)] [@media(max-height:640px)]:w-[clamp(5.5rem,22dvh,8rem)] [@media(max-height:640px)]:rounded-[22px]";
   const infoImageFallbackClass = isPortraitLayout
     ? "mx-auto h-[clamp(7.5rem,18dvh,10rem)] w-[clamp(7.5rem,18dvh,10rem)] rounded-[22px] bg-slate-200"
-    : "mx-auto h-48 w-48 rounded-[28px] bg-slate-200";
+    : "mx-auto h-[clamp(7rem,24dvh,12rem)] w-[clamp(7rem,24dvh,12rem)] rounded-[28px] bg-slate-200 [@media(max-height:640px)]:h-[clamp(5.5rem,22dvh,8rem)] [@media(max-height:640px)]:w-[clamp(5.5rem,22dvh,8rem)] [@media(max-height:640px)]:rounded-[22px]";
   const sideNavButtonClass = (side: "left" | "right") =>
     `group absolute z-10 flex items-center ${
       side === "left" ? "left-0 justify-start" : "right-0 justify-end"
@@ -735,17 +735,17 @@ export default function MyPets3DView({
                 </p>
               </div>
             </div>
-            <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-4 h-28 shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3"}>
+            <div className={isPortraitLayout ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-3 h-[clamp(4rem,15dvh,7rem)] shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
               <p className={isPortraitLayout ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
                 &ldquo;{selectedItem.pet.epitaph ?? "Без эпитафии"}&rdquo;
               </p>
             </div>
-            <div className={isPortraitLayout ? "mt-2 min-h-[9rem] max-h-[18rem] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3"}>
+            <div className={isPortraitLayout ? "mt-2 min-h-[9rem] max-h-[18rem] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-3 min-h-[3.5rem] flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:min-h-[2.75rem] [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
               <p className={isPortraitLayout ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
                 {selectedItem.pet.story || "История пока не добавлена."}
               </p>
             </div>
-            <div className="mt-5 shrink-0">
+            <div className="mt-4 shrink-0 [@media(max-height:640px)]:mt-3">
               <Link
                 href={`/pets/${selectedItem.pet.id}`}
                 className="group inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-[1rem] font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"

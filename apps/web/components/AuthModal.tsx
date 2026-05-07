@@ -116,6 +116,9 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
   }, [open, consentOpen]);
 
   const handleSubmit = async () => {
+    if (loading) {
+      return;
+    }
     setError(null);
     setEmailError(null);
     setLoginError(null);
@@ -223,6 +226,11 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
     }
   };
 
+  const handleSubmitEvent = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSubmit();
+  };
+
   const handleAcceptTerms = async () => {
     if (!consentTerms || !consentOffer) {
       setError("Нужно принять пользовательское соглашение и публичную оферту");
@@ -317,7 +325,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
                   </button>
                 </div>
 
-                <div className="mt-5 grid gap-4">
+                <form className="mt-5 grid gap-4" onSubmit={handleSubmitEvent}>
                   {mode === "login" ? (
                     <>
                       <label className={authLabelClass}>
@@ -431,8 +439,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
                   )}
 
                   <button
-                    type="button"
-                    onClick={handleSubmit}
+                    type="submit"
                     className={authPrimaryButtonClass}
                     disabled={loading}
                   >
@@ -452,7 +459,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
                       Забыли пароль?
                     </button>
                   ) : null}
-                </div>
+                </form>
               </>
             ) : (
               <div className="mt-5 grid gap-4">
