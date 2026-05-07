@@ -1220,6 +1220,11 @@ export default function MapClient() {
     height: "100dvh",
     marginTop: "calc(-1 * var(--app-header-height, 56px))"
   } as const;
+  const mobileMapViewportStyle = {
+    height: "calc(100dvh - var(--app-header-height, 56px))",
+    minHeight: "calc(100dvh - var(--app-header-height, 56px))",
+    maxHeight: "calc(100dvh - var(--app-header-height, 56px))"
+  } as const;
   const cameraSettings = useMemo<CarouselCameraSettings>(() => ({
     distanceOffset: 16,
     height: 4.0,
@@ -1959,12 +1964,12 @@ export default function MapClient() {
     return (
       <main
         className="relative flex h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[#fcf8f5] overscroll-none"
-        style={mapViewportStyle}
+        style={mobileMapViewportStyle}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.6),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,206,172,0.14),_transparent_30%)]" />
         <div
           className={mobileContentClass}
-          style={{ paddingTop: isPortraitLayout ? "calc(var(--app-header-height, 56px) + 10px)" : "calc(var(--app-header-height, 56px) + 16px)" }}
+          style={{ paddingTop: isPortraitLayout ? "10px" : "16px" }}
         >
           <div className={mobileTopBarClass}>
             <button

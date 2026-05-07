@@ -538,7 +538,7 @@ export default function MyPets3DView({
     ? "absolute left-0 right-0 top-0 h-[55dvh] overflow-hidden"
     : "absolute inset-0";
   const infoAsideClass = isPortraitLayout
-    ? "absolute bottom-[calc(5dvh+env(safe-area-inset-bottom))] left-2 right-2 z-30 h-[min(55dvh,31rem)] overflow-hidden rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur overscroll-contain"
+    ? "absolute bottom-[calc(5dvh+env(safe-area-inset-bottom))] left-2 right-2 z-30 h-[min(45dvh,25rem)] overflow-hidden rounded-[20px] border-2 border-white bg-[#f7f1ee]/95 p-2 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.3)] backdrop-blur overscroll-contain"
     : "absolute right-6 top-1/2 z-20 flex h-[min(70dvh,44rem)] max-h-[calc(100dvh-var(--app-header-height,56px)-1.5rem)] w-[min(420px,calc(100vw-2rem))] -translate-y-1/2 flex-col overflow-hidden rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur [@media(max-height:640px)]:right-4 [@media(max-height:640px)]:h-[calc(100dvh-var(--app-header-height,56px)-1rem)] [@media(max-height:640px)]:rounded-[24px] [@media(max-height:640px)]:p-2";
   const infoCardClass = isPortraitLayout
     ? "relative flex h-full min-h-0 flex-col overflow-y-auto rounded-[20px] border border-white/80 bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] overscroll-contain"
