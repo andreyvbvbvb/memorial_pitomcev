@@ -135,7 +135,7 @@ export default function MyPetsClient() {
     : "flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#fcf8f5]">
+    <div className={viewMode === 5 ? "relative h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#fcf8f5] overscroll-none" : "relative min-h-screen overflow-hidden bg-[#fcf8f5]"}>
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
       <div className="pointer-events-none fixed bottom-0 left-0 h-80 w-80 rounded-full bg-[#d3a27f]/12 blur-[120px]" />
       {viewMode === 5 ? <MyPets3DView pets={petsWithPreview} loading={loading} fullScreen /> : null}

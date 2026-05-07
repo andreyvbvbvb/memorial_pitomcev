@@ -1367,8 +1367,8 @@ export default function MapClient() {
   const simsResetButtonClass =
     "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const mobileContentClass = isPortraitLayout
-    ? "relative z-10 flex h-full w-full flex-col gap-3 overflow-hidden px-2.5 pb-3"
-    : "relative z-10 flex h-full flex-col gap-4 px-4 pb-4";
+    ? "relative z-10 flex h-full min-h-0 w-full flex-col gap-2.5 overflow-hidden px-2.5 pb-3"
+    : "relative z-10 flex h-full min-h-0 flex-col gap-3 overflow-hidden px-4 pb-4";
   const mobileTopBarClass = isPortraitLayout
     ? "flex items-center justify-between gap-2"
     : "flex items-center justify-between gap-3";
@@ -1376,14 +1376,14 @@ export default function MapClient() {
     ? "rounded-[24px] border-[3px] border-white bg-white/90 p-2.5 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.4)] backdrop-blur-md transition-all duration-300"
     : simsPanelClass;
   const mobileSidebarClass = isPortraitLayout
-    ? "min-h-0 flex-1 overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md"
-    : `min-h-0 flex-1 overflow-y-auto p-4 ${simsSidebarClass}`;
+    ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[24px] border-[3px] border-[#f8f9fa] bg-white/92 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.38)] backdrop-blur-md overscroll-contain"
+    : `min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 overscroll-contain ${simsSidebarClass}`;
   const mobileMapSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(13rem,32dvh,20rem)] shrink-0"
-    : "h-[42vh]";
+    ? "h-[clamp(11rem,28dvh,17rem)] shrink-0"
+    : "h-[38dvh] shrink-0";
   const mobileCarouselSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(14rem,42dvh,24rem)] shrink-0"
-    : "h-[56vh]";
+    ? "h-[clamp(12rem,36dvh,20rem)] shrink-0"
+    : "h-[48dvh] shrink-0";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
   const modeToggleButtonClass = (active: boolean) =>
@@ -1958,7 +1958,7 @@ export default function MapClient() {
   if (isMobile) {
     return (
       <main
-        className="relative flex w-screen overflow-hidden bg-[#fcf8f5]"
+        className="relative flex h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[#fcf8f5] overscroll-none"
         style={mapViewportStyle}
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.6),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,206,172,0.14),_transparent_30%)]" />
@@ -2113,7 +2113,7 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-y-auto rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur" : "mt-4 overflow-y-auto rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur"}>
+              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[22px] border-[3px] border-white bg-[#f7f1ee]/95 p-2 shadow-[0_16px_38px_-24px_rgba(0,0,0,0.28)] backdrop-blur overscroll-contain" : "min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[32px] border-[4px] border-white bg-[#f7f1ee]/95 p-4 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.28)] backdrop-blur overscroll-contain"}>
                 {activeCarouselInfoContent}
               </div>
             </>
