@@ -2698,7 +2698,7 @@ export default function CreateMemorialClient({
   const overlayShellClass =
     isPortraitLayout
       ? "grid gap-2 rounded-[18px] border-2 border-white bg-white/95 p-2 shadow-[0_16px_44px_-20px_rgba(0,0,0,0.16)]"
-      : "grid gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] sm:p-5";
+      : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
     "w-full rounded-2xl border border-slate-200 bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
@@ -2810,9 +2810,9 @@ export default function CreateMemorialClient({
           <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
           Маркер и карта
         </h3>
-        <div className="grid h-full gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)]">
-        <div className="grid content-start gap-3">
-          <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner">
+        <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)] [@media(max-height:640px)]:!grid-cols-1 [@media(max-height:640px)]:gap-2">
+        <div className="grid content-start gap-3 [@media(max-height:640px)]:gap-2">
+          <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2">
             {!apiKey ? (
               <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
                 Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
@@ -2866,8 +2866,8 @@ export default function CreateMemorialClient({
             )}
           </div>
 
-          <div className="grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2">
+            <div className="grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1">
               <label className="grid gap-2">
                 <span className={overlayLabelClass}>Широта</span>
                 <input
@@ -2939,10 +2939,10 @@ export default function CreateMemorialClient({
           </div>
         </div>
 
-        <div className="grid min-w-0 content-start gap-2">
+        <div className="grid min-h-0 min-w-0 content-start gap-2">
           <p className="text-sm font-black uppercase tracking-[0.16em] text-[#5d4037]">Маркер на карте</p>
-          <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3">
-            <div className="flex w-14 flex-col items-center gap-2">
+          <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2">
+            <div className="flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1">
               {markerStyles.map((style) => {
                 const isActive = markerCategory === style.id;
                 const categoryIconUrl =
@@ -2958,7 +2958,7 @@ export default function CreateMemorialClient({
                           handleChange("markerStyle", firstMarkerVariantId(style.id));
                         }
                       }}
-                      className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border p-0 transition sm:h-14 sm:w-14 ${
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border p-0 transition sm:h-14 sm:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10 [@media(max-height:640px)]:rounded-xl ${
                         isActive
                           ? "border-slate-900 bg-slate-900 text-white"
                           : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
@@ -2982,7 +2982,7 @@ export default function CreateMemorialClient({
               <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
                 Маркеры выбранного вида
               </p>
-              <div className="flex w-full flex-wrap gap-1">
+              <div className="flex w-full flex-wrap gap-1 [@media(max-height:640px)]:max-h-32 [@media(max-height:640px)]:overflow-y-auto">
                 {markerDisplay.map((marker) => {
                   const markerName = markerStyleById(marker.baseId).name;
                   return (
@@ -2996,10 +2996,7 @@ export default function CreateMemorialClient({
                           : "border-slate-200 bg-white text-slate-700"
                       }`}
                     >
-                      <span
-                        className="overflow-hidden rounded-lg bg-slate-100"
-                        style={{ width: 56, height: 56 }}
-                      >
+                      <span className="h-14 w-14 overflow-hidden rounded-lg bg-slate-100 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10">
                         <img
                           src={marker.iconUrl}
                           alt={markerName}
@@ -3146,7 +3143,7 @@ export default function CreateMemorialClient({
       variant === "marker"
         ? isPortraitLayout
           ? "w-auto max-h-[min(52vh,420px)] overflow-y-auto"
-          : "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)]"
+          : "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)] overflow-x-hidden !overflow-y-auto [@media(max-height:640px)]:w-[min(720px,calc(100vw-8.75rem))] [@media(max-height:640px)]:max-h-[calc(100dvh-var(--app-header-height,56px)-5.5rem)] [@media(max-height:640px)]:rounded-[24px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-1.5"
         : isPortraitLayout
           ? "w-auto max-h-[min(44vh,360px)] overflow-y-auto"
           : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
@@ -3209,14 +3206,14 @@ export default function CreateMemorialClient({
     ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
     : "fixed inset-0 z-0";
   const builderPanelInnerClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"
-    : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]";
+    ? "flex min-h-0 flex-1 flex-col overflow-visible rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"
+    : "flex min-h-0 flex-1 flex-col overflow-visible rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]";
   const builderPanelHeaderClass = isPortraitLayout
     ? "border-b border-[#eadfd9] px-2.5 py-2"
     : "border-b border-[#eadfd9] px-4 py-3";
   const markerMapHeight = isPortraitLayout
     ? "clamp(160px, 24dvh, 230px)"
-    : "clamp(230px, 34vh, 340px)";
+    : "clamp(170px, 32dvh, 320px)";
   const loadingMessage =
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
   const mainStyle: CSSProperties = {
