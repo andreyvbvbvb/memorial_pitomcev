@@ -4,9 +4,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(3)
-  @MaxLength(20)
-  @Matches(/^[a-z0-9_]+$/, {
-    message: "Логин может содержать только a-z, 0-9 и подчёркивание"
+  @MaxLength(30)
+  @Matches(/^[A-Za-z0-9_]+$/, {
+    message: "Логин может содержать только A-Z, a-z, 0-9 и подчёркивание"
   })
   login?: string | null;
 

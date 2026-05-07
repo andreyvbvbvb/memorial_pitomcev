@@ -81,8 +81,8 @@ export default function ProfileClient() {
       return;
     }
     const trimmedLogin = login.trim();
-    if (trimmedLogin && !/^[a-z0-9_]+$/.test(trimmedLogin)) {
-      setError("Логин может содержать только a-z, 0-9 и подчёркивание");
+    if (trimmedLogin && !/^[A-Za-z0-9_]+$/.test(trimmedLogin)) {
+      setError("Логин может содержать только A-Z, a-z, 0-9 и подчёркивание");
       return;
     }
     if ((currentPassword.trim() || newPassword.trim()) && newPassword.trim().length < 6) {
@@ -195,7 +195,7 @@ export default function ProfileClient() {
                   <span className="flex items-center justify-between gap-3">
                     <span>Логин</span>
                     <HelpHint
-                      text="Можно менять. Допустимы a-z, 0-9 и подчёркивание."
+                      text="Можно менять. Допустимы латинские буквы A-Z и a-z, цифры 0-9 и подчёркивание."
                       className="h-7 w-7 text-[11px]"
                     />
                   </span>

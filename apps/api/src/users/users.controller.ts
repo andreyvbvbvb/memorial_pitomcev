@@ -67,8 +67,8 @@ export class UsersController {
     }
     const currentUser = await this.ensureOwner(id);
     if (dto.login) {
-      const existing = await this.prisma.user.findUnique({
-        where: { login: dto.login.toLowerCase() }
+      const existing = await this.prisma.user.findFirst({
+        where: { login: { equals: dto.login.trim(), mode: "insensitive" } }
       });
       if (existing && existing.id !== id) {
         throw new BadRequestException("Логин уже занят");
@@ -103,7 +103,7 @@ export class UsersController {
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
-        login: login ? login.toLowerCase() : undefined,
+        login: login || undefined,
         email: email || undefined,
         passwordHash
       }

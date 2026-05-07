@@ -11,7 +11,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(3)
   @MaxLength(30)
-  @Matches(/^[a-z0-9_]+$/, {
+  @Matches(/^[A-Za-z0-9_]+$/, {
     message: "Логин может содержать только латиницу, цифры и _"
   })
   login!: string;

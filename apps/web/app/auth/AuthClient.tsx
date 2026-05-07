@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
+import AuthHelpHint from "../../components/AuthHelpHint";
 import ErrorToast from "../../components/ErrorToast";
 import {
   authBackdropGlowClass,
@@ -80,8 +81,8 @@ export default function AuthClient() {
         setEmailError("Введите email");
         return;
       }
-      if (!/^[a-z0-9_]+$/.test(login.trim())) {
-        setLoginError("Логин: только a-z, 0-9 и _");
+      if (!/^[A-Za-z0-9_]+$/.test(login.trim())) {
+        setLoginError("Логин: только A-Z, a-z, 0-9 и _");
         return;
       }
       if (!email.includes("@")) {
@@ -112,7 +113,7 @@ export default function AuthClient() {
           body: JSON.stringify(
             mode === "register"
               ? {
-                  login: login.trim().toLowerCase(),
+                  login: login.trim(),
                   email: email.trim(),
                   password: password.trim(),
                   acceptTerms,
@@ -258,7 +259,10 @@ export default function AuthClient() {
               ) : (
                 <>
                   <label className={authLabelClass}>
-                    Логин
+                    <span className="flex items-center justify-between gap-3">
+                      <span>Логин</span>
+                      <AuthHelpHint text="От 3 до 30 символов. Можно использовать латинские буквы A-Z и a-z, цифры 0-9 и подчёркивание _." />
+                    </span>
                     <input
                       className={authInputClass}
                       value={login}
@@ -266,7 +270,7 @@ export default function AuthClient() {
                         setLogin(event.target.value);
                         setLoginError(null);
                       }}
-                      placeholder="pet_friend_01"
+                      placeholder="Pet_Friend_01"
                     />
                     {loginError ? <span className={authErrorTextClass}>{loginError}</span> : null}
                   </label>
@@ -284,7 +288,10 @@ export default function AuthClient() {
                     {emailError ? <span className={authErrorTextClass}>{emailError}</span> : null}
                   </label>
                   <label className={authLabelClass}>
-                    Пароль
+                    <span className="flex items-center justify-between gap-3">
+                      <span>Пароль</span>
+                      <AuthHelpHint text="Минимум 6 символов. Пароль чувствителен к регистру, поэтому заглавные и строчные буквы считаются разными." />
+                    </span>
                     <input
                       type="password"
                       className={authInputClass}

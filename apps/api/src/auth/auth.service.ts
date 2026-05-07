@@ -17,7 +17,7 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const email = dto.email.trim().toLowerCase();
-    const login = dto.login.trim().toLowerCase();
+    const login = dto.login.trim();
     if (!dto.acceptTerms || !dto.acceptOffer) {
       throw new BadRequestException("Нужно принять условия соглашения и оферты");
     }
@@ -25,7 +25,9 @@ export class AuthService {
     if (existing) {
       throw new BadRequestException("Пользователь с таким email уже существует");
     }
-    const existingLogin = await this.prisma.user.findUnique({ where: { login } });
+    const existingLogin = await this.prisma.user.findFirst({
+      where: { login: { equals: login, mode: "insensitive" } }
+    });
     if (existingLogin) {
       throw new BadRequestException("Логин уже занят");
     }
@@ -47,7 +49,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const identifier = dto.email.trim().toLowerCase();
+    const identifier = dto.email.trim();
     const user = await this.findUserByIdentifier(identifier);
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException("Неверный email или пароль");
@@ -76,7 +78,7 @@ export class AuthService {
   }
 
   async forgotPassword(identifier: string) {
-    const user = await this.findUserByIdentifier(identifier.trim().toLowerCase());
+    const user = await this.findUserByIdentifier(identifier.trim());
     if (!user) {
       return { ok: true };
     }
@@ -115,9 +117,11 @@ export class AuthService {
 
   private async findUserByIdentifier(identifier: string) {
     if (identifier.includes("@")) {
-      return this.prisma.user.findUnique({ where: { email: identifier } });
+      return this.prisma.user.findUnique({ where: { email: identifier.toLowerCase() } });
     }
-    return this.prisma.user.findUnique({ where: { login: identifier } });
+    return this.prisma.user.findFirst({
+      where: { login: { equals: identifier, mode: "insensitive" } }
+    });
   }
 
   private generateRandomPassword() {
