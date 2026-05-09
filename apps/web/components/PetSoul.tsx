@@ -1,8 +1,9 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
 import type { ComponentType } from "react";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 export type PetSoulMode = "preview" | "arrival" | "idle" | "farewell";
@@ -83,6 +84,42 @@ const PARTICLE_SEEDS = [
   { angle: 2.2, radius: 0.64, speed: 1.2, y: -0.25, size: 0.024 }
 ];
 
+const TRAIL_SEGMENTS = [
+  { x: -0.24, y: -0.01, z: 0.0, radius: 0.16, sx: 1.55, sy: 0.62, opacity: 0.34 },
+  { x: -0.52, y: -0.03, z: 0.02, radius: 0.14, sx: 1.85, sy: 0.52, opacity: 0.25 },
+  { x: -0.82, y: -0.04, z: -0.01, radius: 0.12, sx: 2.15, sy: 0.44, opacity: 0.18 },
+  { x: -1.12, y: -0.05, z: 0.02, radius: 0.1, sx: 2.45, sy: 0.36, opacity: 0.12 },
+  { x: -1.42, y: -0.06, z: -0.02, radius: 0.08, sx: 2.8, sy: 0.28, opacity: 0.08 },
+  { x: -1.72, y: -0.06, z: 0.01, radius: 0.06, sx: 3.05, sy: 0.22, opacity: 0.05 }
+];
+
+function SoulPreviewBackground() {
+  const texture = useTexture("/nebo.png");
+  const hasTexture = Boolean(texture?.image);
+
+  useEffect(() => {
+    if (!hasTexture) {
+      return;
+    }
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+  }, [hasTexture, texture]);
+
+  if (!hasTexture) {
+    return <Color attach="background" args={["#eef8ff"]} />;
+  }
+
+  return (
+    <>
+      <Color attach="background" args={["#eef8ff"]} />
+      <Mesh renderOrder={-10} raycast={() => null}>
+        <SphereGeometry args={[24, 48, 48]} />
+        <MeshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
+      </Mesh>
+    </>
+  );
+}
+
 function setMaterialOpacity(object: THREE.Object3D | null, opacity: number) {
   if (!object) {
     return;
@@ -130,12 +167,14 @@ export function PetSoul({
   const auraRef = useRef<THREE.Mesh>(null);
   const shellRef = useRef<THREE.Mesh>(null);
   const particleRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const trailRefs = useRef<(THREE.Mesh | null)[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const normalizedColor = normalizeSoulColor(color);
   const particleSeeds = quality === "light" ? PARTICLE_SEEDS.slice(0, 4) : PARTICLE_SEEDS;
+  const trailSegments = quality === "light" ? TRAIL_SEGMENTS.slice(0, 3) : TRAIL_SEGMENTS;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const lightColor = useMemo(
-    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.45),
+    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.22),
     [baseColor]
   );
 
@@ -186,6 +225,7 @@ export function PetSoul({
       groupRef.current.position.copy(target);
       groupRef.current.scale.setScalar(visualScale);
       groupRef.current.rotation.y = t * 0.38;
+      groupRef.current.rotation.z = Math.sin(t * 0.5) * 0.08;
       setMaterialOpacity(groupRef.current, opacity);
     }
     if (coreRef.current) {
@@ -200,6 +240,23 @@ export function PetSoul({
       const pulse = 1 + Math.sin(t * 1.1 + 1.6) * 0.18;
       shellRef.current.scale.setScalar(pulse);
     }
+    trailSegments.forEach((segment, index) => {
+      const trail = trailRefs.current[index];
+      if (!trail) {
+        return;
+      }
+      const wave = Math.sin(t * (1.1 + index * 0.18) + index * 0.72);
+      trail.position.set(
+        segment.x - Math.max(0, wave) * 0.04,
+        segment.y + wave * 0.045,
+        segment.z + Math.cos(t * 0.9 + index) * 0.045
+      );
+      trail.scale.set(
+        segment.sx * (1 + wave * 0.035),
+        segment.sy * (1 - wave * 0.025),
+        segment.sy * (1 + wave * 0.03)
+      );
+    });
     particleSeeds.forEach((seed, index) => {
       const particle = particleRefs.current[index];
       if (!particle) {
@@ -232,7 +289,7 @@ export function PetSoul({
         <MeshBasicMaterial
           color={normalizedColor}
           transparent
-          opacity={0.24}
+          opacity={0.28}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -247,6 +304,26 @@ export function PetSoul({
           blending={THREE.AdditiveBlending}
         />
       </Mesh>
+      {trailSegments.map((segment, index) => (
+        <Mesh
+          key={`${segment.x}-${segment.radius}`}
+          ref={(node: THREE.Mesh | null) => {
+            trailRefs.current[index] = node;
+          }}
+          position={[segment.x, segment.y, segment.z]}
+          scale={[segment.sx, segment.sy, segment.sy]}
+          raycast={() => null}
+        >
+          <SphereGeometry args={[segment.radius, 24, 24]} />
+          <MeshBasicMaterial
+            color={index < 2 ? lightColor : normalizedColor}
+            transparent
+            opacity={segment.opacity}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </Mesh>
+      ))}
       {particleSeeds.map((seed, index) => (
         <Mesh
           key={`${seed.angle}-${seed.radius}`}
@@ -279,11 +356,11 @@ export function PetSoulPreview({
   return (
     <div className={`relative overflow-hidden rounded-[22px] bg-[#eef8ff] ${className ?? ""}`}>
       <Canvas dpr={1} camera={{ position: [0, 0.35, 3.2], fov: 42 }}>
-        <Color attach="background" args={["#eef8ff"]} />
+        <SoulPreviewBackground />
         <AmbientLight intensity={0.8} />
-        <PetSoul color={color} mode="preview" position={[0, 0, 0]} scale={1.05} />
+        <PetSoul color={color} mode="preview" position={[0.42, 0, 0]} scale={1.05} />
       </Canvas>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05),rgba(255,255,255,0.55)_72%,rgba(255,255,255,0.9)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02),rgba(255,255,255,0.16)_60%,rgba(255,255,255,0.38)_100%)]" />
     </div>
   );
 }

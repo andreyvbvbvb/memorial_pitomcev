@@ -537,6 +537,7 @@ export default function CreateMemorialClient({
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("arrival");
+  const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
@@ -1150,6 +1151,7 @@ export default function CreateMemorialClient({
     bowl_food_paint: form.bowlFoodColor,
     bowl_water_paint: form.bowlWaterColor
   };
+  const soulPreviewColor = hoveredSoulColor ?? form.soulColor;
 
   useEffect(() => {
     photosRef.current = photos;
@@ -2735,6 +2737,58 @@ export default function CreateMemorialClient({
     appearance: "none"
   };
 
+  const renderSoulPicker = () => (
+    <div className="relative w-full overflow-hidden rounded-[34px] border-[3px] border-white bg-[#dfeef8] p-3 shadow-[0_28px_58px_rgba(89,71,65,0.18)] transition-transform duration-300 ease-out hover:scale-[1.01] sm:rounded-[40px] sm:p-4">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.68),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.28))]" />
+      <div className="relative z-10 grid gap-3">
+        <div>
+          <div className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8d6e63]">
+            Душа питомца
+          </div>
+          <p className="mt-1 text-sm font-semibold leading-snug text-[#6f6360]">
+            Выберите цвет светящегося спутника мемориала.
+          </p>
+        </div>
+        <PetSoulPreview
+          color={soulPreviewColor}
+          className="h-[clamp(12rem,38dvh,25rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
+        />
+        <div className="grid gap-2 rounded-[24px] border border-white/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]">
+            Цвет свечения
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {SOUL_COLOR_OPTIONS.map((option) => {
+              const isSelected = form.soulColor === option.color;
+              const isPreviewed = soulPreviewColor === option.color;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleChange("soulColor", option.color)}
+                  onMouseEnter={() => setHoveredSoulColor(option.color)}
+                  onMouseLeave={() => setHoveredSoulColor(null)}
+                  onFocus={() => setHoveredSoulColor(option.color)}
+                  onBlur={() => setHoveredSoulColor(null)}
+                  className={`h-9 w-9 rounded-full border transition ${
+                    isSelected
+                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                      : isPreviewed
+                        ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
+                        : "border-white hover:scale-105 hover:border-[#d3a27f]"
+                  }`}
+                  style={{ backgroundColor: option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderBaseInfoForm = (centered = false) => (
     <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
       <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}>
@@ -2771,32 +2825,6 @@ export default function CreateMemorialClient({
           <option value="other">Другое</option>
         </select>
       </label>
-      {centered ? (
-        <div className="grid w-full gap-2 rounded-[24px] border border-white/70 bg-white/55 p-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-          <div className="text-sm font-medium text-[#8a7c77]">Душа питомца</div>
-          <PetSoulPreview color={form.soulColor} className="mx-auto h-24 w-24 border border-white/80 shadow-inner" />
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {SOUL_COLOR_OPTIONS.map((option) => {
-              const isSelected = form.soulColor === option.color;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleChange("soulColor", option.color)}
-                  className={`h-8 w-8 rounded-full border transition ${
-                    isSelected
-                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/50"
-                      : "border-white/90 hover:scale-105 hover:border-[#d3a27f]"
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                />
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
       <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
         <label
           className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}
@@ -3288,8 +3316,10 @@ export default function CreateMemorialClient({
   return (
     <main
       className={`relative bg-[var(--bg)] ${
-        isBuilderStep || isInitialStep
+        isBuilderStep
           ? "h-[100dvh] overflow-hidden"
+          : isInitialStep
+            ? "h-[100dvh] overflow-y-auto overscroll-contain"
           : "px-4 pb-8"
       }`}
       style={mainStyle}
@@ -3312,12 +3342,13 @@ export default function CreateMemorialClient({
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-4 pt-[var(--app-header-height,56px)]">
+              <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
-                <div className="relative z-10 flex w-full max-w-[560px] flex-col items-center px-2 sm:px-0">
-                  <div className="relative w-full rounded-[36px] border border-white/70 bg-[#efe6e2] p-3 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.018] sm:rounded-[42px] sm:p-4">
-                    <div className="absolute left-1/2 top-0 h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)]" />
-                    <div className="relative min-h-[460px] rounded-[30px] border border-white/60 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
+                <div className="relative z-10 grid w-full max-w-[1080px] items-center gap-4 px-1 sm:px-0 md:grid-cols-[minmax(280px,0.85fr)_minmax(390px,1fr)] lg:gap-6">
+                  {renderSoulPicker()}
+                  <div className="relative w-full rounded-[36px] border border-white/70 bg-[#efe6e2] p-3 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.012] sm:rounded-[42px] sm:p-4">
+                    <div className="absolute left-1/2 top-0 hidden h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] sm:block" />
+                    <div className="relative rounded-[30px] border border-white/60 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
                       <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
                         {renderBaseInfoForm(true)}
                       </div>

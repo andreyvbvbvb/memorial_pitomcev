@@ -324,6 +324,10 @@ export default function AdminSqlPage() {
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [coinsEmail, setCoinsEmail] = useState("");
+  const [coinsAmount, setCoinsAmount] = useState("100");
+  const [coinsNotice, setCoinsNotice] = useState<string | null>(null);
+  const [coinsLoading, setCoinsLoading] = useState(false);
   const [petId, setPetId] = useState("");
   const [loadingTips, setLoadingTips] = useState<LoadingTip[]>([]);
   const [loadingTipsLoading, setLoadingTipsLoading] = useState(false);
@@ -643,6 +647,46 @@ export default function AdminSqlPage() {
       setError(err instanceof Error ? err.message : "Ошибка изменения пароля");
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const addCoinsByEmail = async () => {
+    const email = coinsEmail.trim().toLowerCase();
+    const amount = Number(coinsAmount);
+    if (!email) {
+      setError("Введите email пользователя");
+      return;
+    }
+    if (!Number.isInteger(amount) || amount <= 0 || amount > 1_000_000) {
+      setError("Количество монет должно быть целым числом от 1 до 1000000");
+      return;
+    }
+    setCoinsLoading(true);
+    setCoinsNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/wallet/add-coins`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, amount })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось добавить монеты");
+      }
+      const data = (await response.json()) as {
+        user?: { email: string; coinBalance: number };
+        amount?: number;
+      };
+      setCoinsNotice(
+        `${data.user?.email ?? email}: +${data.amount ?? amount} монет. Баланс: ${data.user?.coinBalance ?? "—"}`
+      );
+      setCoinsAmount("100");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка начисления монет");
+    } finally {
+      setCoinsLoading(false);
     }
   };
 
@@ -1396,6 +1440,45 @@ export default function AdminSqlPage() {
               {passwordNotice ? (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
                   {passwordNotice}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Начислить монеты
+            </div>
+            <div className="mt-3 grid gap-2">
+              <input
+                value={coinsEmail}
+                onChange={(event) => setCoinsEmail(event.target.value)}
+                placeholder="Email пользователя"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <input
+                type="number"
+                min={1}
+                max={1000000}
+                value={coinsAmount}
+                onChange={(event) => setCoinsAmount(event.target.value)}
+                placeholder="Сколько монет добавить"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <button
+                type="button"
+                onClick={addCoinsByEmail}
+                disabled={coinsLoading}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {coinsLoading ? "Начисляем..." : "Добавить монеты"}
+              </button>
+              <p className="text-[11px] text-slate-500">
+                Начисление идет напрямую на баланс пользователя. Это не считается оплатой и не увеличивает благотворительный фонд.
+              </p>
+              {coinsNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {coinsNotice}
                 </div>
               ) : null}
             </div>

@@ -19,6 +19,7 @@ import { GiftsService } from "../gifts/gifts.service";
 import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
+import { AdminAddCoinsDto } from "./dto/admin-add-coins.dto";
 import {
   AdminLoadingTipCreateDto,
   AdminLoadingTipUpdateDto
@@ -352,6 +353,28 @@ export class AdminController {
           )
       )
     };
+  }
+
+  @Patch("wallet/add-coins")
+  async addCoins(@Req() req: Request, @Body() dto: AdminAddCoinsDto) {
+    await this.ensureAdmin(req);
+    const email = dto.email.trim().toLowerCase();
+    if (!email) {
+      throw new BadRequestException("Email обязателен");
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, login: true, coinBalance: true }
+    });
+    if (!user) {
+      throw new BadRequestException("Пользователь не найден");
+    }
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { coinBalance: { increment: dto.amount } },
+      select: { id: true, email: true, login: true, coinBalance: true }
+    });
+    return { user: updated, amount: dto.amount };
   }
 
   @Get("pricing")
