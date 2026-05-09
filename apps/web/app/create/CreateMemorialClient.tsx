@@ -2738,9 +2738,9 @@ export default function CreateMemorialClient({
   };
 
   const renderSoulPicker = () => (
-    <div className="relative w-full overflow-hidden rounded-[34px] border-[3px] border-white bg-[#dfeef8] p-3 shadow-[0_28px_58px_rgba(89,71,65,0.18)] transition-transform duration-300 ease-out hover:scale-[1.01] sm:rounded-[40px] sm:p-4">
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[30px] border-2 border-white/80 bg-[#dfeef8] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:rounded-[34px] sm:p-4">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.68),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.28))]" />
-      <div className="relative z-10 grid gap-3">
+      <div className="relative z-10 grid h-full gap-3">
         <div>
           <div className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8d6e63]">
             Душа питомца
@@ -2751,7 +2751,7 @@ export default function CreateMemorialClient({
         </div>
         <PetSoulPreview
           color={soulPreviewColor}
-          className="h-[clamp(12rem,38dvh,25rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
+          className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
         <div className="grid gap-2 rounded-[24px] border border-white/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]">
@@ -3344,18 +3344,20 @@ export default function CreateMemorialClient({
             {step === 0 ? (
               <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
-                <div className="relative z-10 grid w-full max-w-[1080px] items-center gap-4 px-1 sm:px-0 md:grid-cols-[minmax(280px,0.85fr)_minmax(390px,1fr)] lg:gap-6">
-                  {renderSoulPicker()}
-                  <div className="relative w-full rounded-[36px] border border-white/70 bg-[#efe6e2] p-3 shadow-[0_32px_60px_rgba(89,71,65,0.22)] transition-transform duration-300 ease-out hover:scale-[1.012] sm:rounded-[42px] sm:p-4">
-                    <div className="absolute left-1/2 top-0 hidden h-20 w-[72%] -translate-x-1/2 -translate-y-[42%] rounded-t-[120px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] sm:block" />
-                    <div className="relative rounded-[30px] border border-white/60 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
-                      <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
-                        {renderBaseInfoForm(true)}
+                <div className="relative z-10 w-full max-w-[1120px] px-1 sm:px-0">
+                  <div className="relative overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[#efe6e2]/96 p-3 shadow-[0_32px_64px_rgba(89,71,65,0.2)] transition-transform duration-300 ease-out hover:scale-[1.006] sm:rounded-[46px] sm:p-4 lg:p-5">
+                    <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
+                    <div className="relative grid w-full items-stretch gap-4 md:grid-cols-[minmax(280px,0.9fr)_minmax(390px,1fr)] lg:gap-5">
+                      {renderSoulPicker()}
+                      <div className="relative w-full rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
+                        <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
+                          {renderBaseInfoForm(true)}
+                        </div>
+                        {renderNavButtons(
+                          "mt-6",
+                          "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
+                        )}
                       </div>
-                      {renderNavButtons(
-                        "mt-6",
-                        "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
-                      )}
                     </div>
                   </div>
                 </div>

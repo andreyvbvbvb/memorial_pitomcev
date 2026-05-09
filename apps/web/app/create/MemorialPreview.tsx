@@ -17,6 +17,7 @@ import { splitHouseVariantId } from "../../lib/house-variants";
 import { applyHousePlacement, getHouseTransform } from "../../lib/house-layout";
 import {
   PetSoul,
+  normalizeSoulColor,
   resolveSoulAnchorPosition,
   type PetSoulMode,
   type PetSoulQuality
@@ -860,7 +861,8 @@ function SoulAnchor({
 
   return (
     <PetSoul
-      color={color}
+      key={normalizeSoulColor(color)}
+      color={normalizeSoulColor(color)}
       position={position}
       mode={mode}
       quality={quality}
