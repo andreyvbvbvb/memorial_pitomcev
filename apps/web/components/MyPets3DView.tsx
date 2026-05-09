@@ -28,7 +28,8 @@ import VisibilityIndicator from "./VisibilityIndicator";
 import {
   PetSoul,
   readSoulSettings,
-  resolveSoulAnchorPosition
+  resolveSoulAnchorPosition,
+  resolveSoulObstacleCenterPosition
 } from "./PetSoul";
 
 type SceneParts = {
@@ -266,33 +267,44 @@ function SoulAnchor({
   terrain,
   house,
   color,
+  glowColor,
   enabled,
   active
 }: {
   terrain: THREE.Object3D;
   house: THREE.Object3D;
   color?: string | null;
+  glowColor?: string | null;
   enabled: boolean;
   active: boolean;
 }) {
-  const [position, setPosition] = useState<[number, number, number] | null>(null);
+  const [anchor, setAnchor] = useState<{
+    position: [number, number, number];
+    avoidCenter: [number, number, number];
+  } | null>(null);
 
   useEffect(() => {
     if (!enabled) {
-      setPosition(null);
+      setAnchor(null);
       return;
     }
-    setPosition(resolveSoulAnchorPosition(terrain, house));
+    setAnchor({
+      position: resolveSoulAnchorPosition(terrain, house),
+      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house)
+    });
   }, [enabled, terrain, house]);
 
-  if (!enabled || !position) {
+  if (!enabled || !anchor) {
     return null;
   }
 
   return (
     <PetSoul
       color={color}
-      position={position}
+      glowColor={glowColor}
+      position={anchor.position}
+      avoidCenter={anchor.avoidCenter}
+      avoidRadius={0.96}
       mode="idle"
       quality={active ? "full" : "light"}
       scale={active ? 0.92 : 0.62}
@@ -440,6 +452,7 @@ function MemorialInstance({
         terrain={terrain}
         house={house}
         color={soulSettings.color}
+        glowColor={soulSettings.glowColor}
         enabled={soulSettings.enabled}
         active={isActive}
       />

@@ -2293,6 +2293,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           onGiftPreloaded={handleGiftPreloaded}
           colors={colorOverrides}
           soulColor={soulSettings.color}
+          soulGlowColor={soulSettings.glowColor}
           soulEnabled={soulSettings.enabled}
           soulMode={editDialogOpen ? "idle" : "arrival"}
           onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
@@ -3218,6 +3219,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       gifts={giftInstances}
                       colors={colorOverrides}
                       soulColor={soulSettings.color}
+                      soulGlowColor={soulSettings.glowColor}
                       soulEnabled={soulSettings.enabled}
                       soulMode="idle"
                       softEdges

@@ -12,9 +12,11 @@ export type PetSoulQuality = "full" | "light";
 export type PetSoulSettings = {
   enabled: boolean;
   color: string;
+  glowColor: string;
 };
 
 export const DEFAULT_SOUL_COLOR = "#8ee9ff";
+export const DEFAULT_SOUL_GLOW_COLOR = "#dffcff";
 
 export const SOUL_COLOR_OPTIONS = [
   { id: "sky", name: "Небесная", color: "#8ee9ff" },
@@ -23,6 +25,15 @@ export const SOUL_COLOR_OPTIONS = [
   { id: "rose", name: "Розовая", color: "#ff9fd2" },
   { id: "violet", name: "Лиловая", color: "#b8a4ff" },
   { id: "warm", name: "Тёплая", color: "#fff1bd" }
+] as const;
+
+export const SOUL_GLOW_COLOR_OPTIONS = [
+  { id: "mist", name: "Туманная", color: "#dffcff" },
+  { id: "sky", name: "Голубая", color: "#8ee9ff" },
+  { id: "mint", name: "Мятная", color: "#8ff5c8" },
+  { id: "gold", name: "Золотая", color: "#ffd36e" },
+  { id: "rose", name: "Розовая", color: "#ffb6dc" },
+  { id: "violet", name: "Лиловая", color: "#c7bbff" }
 ] as const;
 
 const Group = "group" as unknown as ComponentType<any>;
@@ -34,12 +45,13 @@ const AmbientLight = "ambientLight" as unknown as ComponentType<any>;
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
 
-export function normalizeSoulColor(value?: unknown) {
+export function normalizeSoulColor(value?: unknown, fallback = DEFAULT_SOUL_COLOR) {
+  const safeFallback = HEX_COLOR_RE.test(fallback) ? fallback : DEFAULT_SOUL_COLOR;
   if (typeof value !== "string") {
-    return DEFAULT_SOUL_COLOR;
+    return safeFallback;
   }
   const trimmed = value.trim();
-  return HEX_COLOR_RE.test(trimmed) ? trimmed : DEFAULT_SOUL_COLOR;
+  return HEX_COLOR_RE.test(trimmed) ? trimmed : safeFallback;
 }
 
 export function readSoulSettings(sceneJson?: Record<string, unknown> | null): PetSoulSettings {
@@ -47,17 +59,24 @@ export function readSoulSettings(sceneJson?: Record<string, unknown> | null): Pe
     sceneJson?.soul && typeof sceneJson.soul === "object" && !Array.isArray(sceneJson.soul)
       ? (sceneJson.soul as Record<string, unknown>)
       : {};
+  const color = normalizeSoulColor(soul.color);
   return {
     enabled: soul.enabled !== false,
-    color: normalizeSoulColor(soul.color)
+    color,
+    glowColor: normalizeSoulColor(soul.glowColor, color)
   };
 }
 
-export function buildSoulSettings(color: string): PetSoulSettings & { version: number } {
+export function buildSoulSettings(
+  color: string,
+  glowColor = color
+): PetSoulSettings & { version: number } {
+  const normalizedColor = normalizeSoulColor(color);
   return {
     enabled: true,
-    color: normalizeSoulColor(color),
-    version: 1
+    color: normalizedColor,
+    glowColor: normalizeSoulColor(glowColor, normalizedColor),
+    version: 2
   };
 }
 
@@ -70,7 +89,19 @@ export function resolveSoulAnchorPosition(
   const housePosition = new THREE.Vector3();
   house.getWorldPosition(housePosition);
   terrain.worldToLocal(housePosition);
-  return [housePosition.x + 1.15, housePosition.y + 1.45, housePosition.z + 0.75];
+  return [housePosition.x - 1.25, housePosition.y + 1.42, housePosition.z + 0.78];
+}
+
+export function resolveSoulObstacleCenterPosition(
+  terrain: THREE.Object3D,
+  house: THREE.Object3D
+): [number, number, number] {
+  terrain.updateMatrixWorld(true);
+  house.updateMatrixWorld(true);
+  const housePosition = new THREE.Vector3();
+  house.getWorldPosition(housePosition);
+  terrain.worldToLocal(housePosition);
+  return [housePosition.x, housePosition.y + 0.38, housePosition.z];
 }
 
 const PARTICLE_SEEDS = [
@@ -160,15 +191,41 @@ function setMaterialOpacity(object: THREE.Object3D | null, opacity: number) {
   });
 }
 
+function keepSoulOutsideObstacle(
+  target: THREE.Vector3,
+  center?: [number, number, number] | null,
+  radius = 0.92
+) {
+  if (!center) {
+    return;
+  }
+  const dx = target.x - center[0];
+  const dz = target.z - center[2];
+  const distance = Math.hypot(dx, dz);
+  const isNearHouseHeight = target.y < center[1] + 1.7;
+  if (!isNearHouseHeight || distance >= radius) {
+    return;
+  }
+  const angle = distance > 0.001 ? Math.atan2(dz, dx) : Math.PI;
+  target.x = center[0] + Math.cos(angle) * radius;
+  target.z = center[2] + Math.sin(angle) * radius;
+}
+
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
+  glowColor,
   position = [0, 1.4, 0],
+  avoidCenter = null,
+  avoidRadius = 0.92,
   scale = 1,
   mode = "idle",
   quality = "full"
 }: {
   color?: string | null;
+  glowColor?: string | null;
   position?: [number, number, number];
+  avoidCenter?: [number, number, number] | null;
+  avoidRadius?: number;
   scale?: number;
   mode?: PetSoulMode;
   quality?: PetSoulQuality;
@@ -187,13 +244,30 @@ export function PetSoul({
   const trailDustMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const particleMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const startedAtRef = useRef<number | null>(null);
+  const previousModeRef = useRef<PetSoulMode>(mode);
   const normalizedColor = normalizeSoulColor(color);
+  const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
   const particleSeeds = quality === "light" ? PARTICLE_SEEDS.slice(0, 4) : PARTICLE_SEEDS;
   const trailSegments = quality === "light" ? TRAIL_SEGMENTS.slice(0, 3) : TRAIL_SEGMENTS;
   const trailDust = quality === "light" ? TRAIL_DUST.slice(0, 3) : TRAIL_DUST;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
-  const lightColor = useMemo(() => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.1), [baseColor]);
-  const softColor = useMemo(() => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.28), [baseColor]);
+  const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
+  const lightColor = useMemo(
+    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.1),
+    [baseColor]
+  );
+  const softGlowColor = useMemo(
+    () => glowBaseColor.clone().lerp(new THREE.Color("#ffffff"), 0.24),
+    [glowBaseColor]
+  );
+
+  useEffect(() => {
+    if (previousModeRef.current === mode) {
+      return;
+    }
+    previousModeRef.current = mode;
+    startedAtRef.current = null;
+  }, [mode]);
 
   useEffect(() => {
     const updateMaterial = (
@@ -206,15 +280,15 @@ export function PetSoul({
       material.color.set(nextColor);
       material.needsUpdate = true;
     };
-    updateMaterial(shellMaterialRef.current, normalizedColor);
-    updateMaterial(auraMaterialRef.current, normalizedColor);
+    updateMaterial(shellMaterialRef.current, normalizedGlowColor);
+    updateMaterial(auraMaterialRef.current, normalizedGlowColor);
     updateMaterial(coreMaterialRef.current, lightColor);
     trailMaterialRefs.current.forEach((material, index) => {
-      updateMaterial(material, index < 2 ? softColor : normalizedColor);
+      updateMaterial(material, index < 2 ? softGlowColor : normalizedGlowColor);
     });
-    trailDustMaterialRefs.current.forEach((material) => updateMaterial(material, softColor));
+    trailDustMaterialRefs.current.forEach((material) => updateMaterial(material, softGlowColor));
     particleMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
-  }, [lightColor, normalizedColor, softColor]);
+  }, [lightColor, normalizedGlowColor, softGlowColor]);
 
   useFrame(({ clock }) => {
     if (startedAtRef.current === null) {
@@ -246,17 +320,48 @@ export function PetSoul({
       const eased = 1 - Math.pow(1 - progress, 3);
       const start = base.clone().add(new THREE.Vector3(-4.2, 2.2, -4.8));
       target.lerpVectors(start, target, eased);
+      keepSoulOutsideObstacle(target, avoidCenter, avoidRadius);
       opacity = THREE.MathUtils.clamp(progress * 1.35, 0, 1);
       visualScale = scale * THREE.MathUtils.lerp(0.45, 1, eased);
     }
 
     if (mode === "farewell") {
-      const progress = Math.min(elapsed / 1.25, 1);
-      const eased = progress * progress * (3 - 2 * progress);
-      const home = base.clone().add(new THREE.Vector3(-0.25, -0.62, -0.2));
-      target.lerp(home, eased);
-      opacity = 1 - eased;
-      visualScale = scale * THREE.MathUtils.lerp(1, 0.18, eased);
+      const progress = Math.min(elapsed / 3.4, 1);
+      const center = avoidCenter
+        ? new THREE.Vector3(avoidCenter[0], avoidCenter[1], avoidCenter[2])
+        : base.clone().add(new THREE.Vector3(1.25, -1.04, -0.78));
+      const orbitRadius = avoidRadius + 0.98;
+      const startAngle = Math.PI * 0.86;
+      const endAngle = startAngle + Math.PI * 2.18;
+      if (progress < 0.74) {
+        const orbitProgress = progress / 0.74;
+        const easedOrbit = orbitProgress * orbitProgress * (3 - 2 * orbitProgress);
+        const angle = THREE.MathUtils.lerp(startAngle, endAngle, easedOrbit);
+        target.set(
+          center.x + Math.cos(angle) * orbitRadius,
+          center.y + 1.18 + Math.sin(orbitProgress * Math.PI) * 0.58,
+          center.z + Math.sin(angle) * orbitRadius
+        );
+        opacity = 1;
+        visualScale = scale * THREE.MathUtils.lerp(1, 1.08, Math.sin(orbitProgress * Math.PI));
+      } else {
+        const flyProgress = (progress - 0.74) / 0.26;
+        const easedFly = 1 - Math.pow(1 - flyProgress, 3);
+        const angle = endAngle;
+        const from = new THREE.Vector3(
+          center.x + Math.cos(angle) * orbitRadius,
+          center.y + 1.18,
+          center.z + Math.sin(angle) * orbitRadius
+        );
+        const home = center.clone().add(new THREE.Vector3(0.02, 0.34, 0.04));
+        target.lerpVectors(from, home, easedFly);
+        opacity = 1 - Math.max(0, flyProgress - 0.58) / 0.42;
+        visualScale = scale * THREE.MathUtils.lerp(1.02, 0.12, easedFly);
+      }
+    }
+
+    if (mode !== "farewell" && mode !== "arrival") {
+      keepSoulOutsideObstacle(target, avoidCenter, avoidRadius);
     }
 
     if (groupRef.current) {
@@ -328,12 +433,12 @@ export function PetSoul({
   });
 
   return (
-    <Group ref={groupRef} key={`${normalizedColor}-${quality}`}>
+    <Group ref={groupRef} key={`${normalizedColor}-${normalizedGlowColor}-${quality}`}>
       <Mesh ref={shellRef} raycast={() => null}>
         <SphereGeometry args={[0.62, 32, 32]} />
         <MeshBasicMaterial
           ref={shellMaterialRef}
-          color={normalizedColor}
+          color={normalizedGlowColor}
           transparent
           opacity={0.075}
           depthWrite={false}
@@ -344,7 +449,7 @@ export function PetSoul({
         <SphereGeometry args={[0.39, 32, 32]} />
         <MeshBasicMaterial
           ref={auraMaterialRef}
-          color={normalizedColor}
+          color={normalizedGlowColor}
           transparent
           opacity={0.18}
           depthWrite={false}
@@ -377,7 +482,7 @@ export function PetSoul({
             ref={(node: THREE.MeshBasicMaterial | null) => {
               trailMaterialRefs.current[index] = node;
             }}
-            color={index < 2 ? softColor : normalizedColor}
+            color={index < 2 ? softGlowColor : normalizedGlowColor}
             transparent
             opacity={segment.opacity}
             depthWrite={false}
@@ -399,7 +504,7 @@ export function PetSoul({
             ref={(node: THREE.MeshBasicMaterial | null) => {
               trailDustMaterialRefs.current[index] = node;
             }}
-            color={softColor}
+            color={softGlowColor}
             transparent
             opacity={dust.opacity}
             depthWrite={false}
@@ -434,20 +539,24 @@ export function PetSoul({
 
 export function PetSoulPreview({
   color,
+  glowColor,
   className
 }: {
   color?: string | null;
+  glowColor?: string | null;
   className?: string;
 }) {
   const normalizedPreviewColor = normalizeSoulColor(color);
+  const normalizedPreviewGlowColor = normalizeSoulColor(glowColor, normalizedPreviewColor);
   return (
     <div className={`relative overflow-hidden rounded-[22px] bg-[#eef8ff] ${className ?? ""}`}>
       <Canvas dpr={1} camera={{ position: [0, 0.35, 3.2], fov: 42 }}>
         <SoulPreviewBackground />
         <AmbientLight intensity={0.8} />
         <PetSoul
-          key={normalizedPreviewColor}
+          key={`${normalizedPreviewColor}-${normalizedPreviewGlowColor}`}
           color={normalizedPreviewColor}
+          glowColor={normalizedPreviewGlowColor}
           mode="preview"
           position={[0.42, 0, 0]}
           scale={1.05}

@@ -46,7 +46,9 @@ import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import {
   DEFAULT_SOUL_COLOR,
+  DEFAULT_SOUL_GLOW_COLOR,
   SOUL_COLOR_OPTIONS,
+  SOUL_GLOW_COLOR_OPTIONS,
   PetSoulPreview,
   buildSoulSettings,
   readSoulSettings,
@@ -120,6 +122,7 @@ type FormState = {
   bowlFoodColor: string;
   bowlWaterColor: string;
   soulColor: string;
+  soulGlowColor: string;
 };
 
 type PhotoDraft = {
@@ -397,7 +400,8 @@ const initialState: FormState = {
   matColor: colorPalette[9] ?? "#5DADE2",
   bowlFoodColor: colorPalette[3] ?? "#FFD166",
   bowlWaterColor: colorPalette[7] ?? "#8ECAE6",
-  soulColor: DEFAULT_SOUL_COLOR
+  soulColor: DEFAULT_SOUL_COLOR,
+  soulGlowColor: DEFAULT_SOUL_GLOW_COLOR
 };
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
@@ -489,7 +493,8 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
     bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
-    soulColor: soul.color
+    soulColor: soul.color,
+    soulGlowColor: soul.glowColor
   };
 };
 
@@ -536,8 +541,10 @@ export default function CreateMemorialClient({
   const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
-  const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("arrival");
+  const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
+  const [hoveredSoulGlowColor, setHoveredSoulGlowColor] = useState<string | null>(null);
+  const [farewellPlaying, setFarewellPlaying] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
@@ -1152,6 +1159,7 @@ export default function CreateMemorialClient({
     bowl_water_paint: form.bowlWaterColor
   };
   const soulPreviewColor = hoveredSoulColor ?? form.soulColor;
+  const soulPreviewGlowColor = hoveredSoulGlowColor ?? form.soulGlowColor;
 
   useEffect(() => {
     photosRef.current = photos;
@@ -1872,7 +1880,7 @@ export default function CreateMemorialClient({
                 bowl_food_paint: form.bowlFoodColor,
                 bowl_water_paint: form.bowlWaterColor
               },
-              soul: buildSoulSettings(form.soulColor),
+              soul: buildSoulSettings(form.soulColor, form.soulGlowColor),
               version: 3
             }
           })
@@ -1974,7 +1982,7 @@ export default function CreateMemorialClient({
           bowl_food_paint: form.bowlFoodColor,
           bowl_water_paint: form.bowlWaterColor
         },
-        soul: buildSoulSettings(form.soulColor),
+        soul: buildSoulSettings(form.soulColor, form.soulGlowColor),
         version: 3
       }
     };
@@ -2040,8 +2048,11 @@ export default function CreateMemorialClient({
       );
       setReviewVisible(false);
       setReviewOpen(false);
+      setActiveOverlay(null);
+      setLoading(false);
+      setFarewellPlaying(true);
       setSoulSceneMode("farewell");
-      await new Promise((resolve) => window.setTimeout(resolve, 1250));
+      await new Promise((resolve) => window.setTimeout(resolve, 3600));
       router.push(`/pets/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания");
@@ -2350,7 +2361,7 @@ export default function CreateMemorialClient({
     if (step < 1) {
       return;
     }
-    setSoulSceneMode("arrival");
+    setSoulSceneMode("idle");
     if (isEditMode && !editInitialPreloadDoneRef.current) {
       editInitialPreloadDoneRef.current = true;
       setIsTransitioning(true);
@@ -2751,11 +2762,12 @@ export default function CreateMemorialClient({
         </div>
         <PetSoulPreview
           color={soulPreviewColor}
+          glowColor={soulPreviewGlowColor}
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
         <div className="grid gap-2 rounded-[24px] border border-white/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]">
-            Цвет свечения
+            Цвет души
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {SOUL_COLOR_OPTIONS.map((option) => {
@@ -2770,6 +2782,36 @@ export default function CreateMemorialClient({
                   onMouseLeave={() => setHoveredSoulColor(null)}
                   onFocus={() => setHoveredSoulColor(option.color)}
                   onBlur={() => setHoveredSoulColor(null)}
+                  className={`h-9 w-9 rounded-full border transition ${
+                    isSelected
+                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                      : isPreviewed
+                        ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
+                        : "border-white hover:scale-105 hover:border-[#d3a27f]"
+                  }`}
+                  style={{ backgroundColor: option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                />
+              );
+            })}
+          </div>
+          <div className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]">
+            Цвет рассеивания
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {SOUL_GLOW_COLOR_OPTIONS.map((option) => {
+              const isSelected = form.soulGlowColor === option.color;
+              const isPreviewed = soulPreviewGlowColor === option.color;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleChange("soulGlowColor", option.color)}
+                  onMouseEnter={() => setHoveredSoulGlowColor(option.color)}
+                  onMouseLeave={() => setHoveredSoulGlowColor(null)}
+                  onFocus={() => setHoveredSoulGlowColor(option.color)}
+                  onBlur={() => setHoveredSoulGlowColor(null)}
                   className={`h-9 w-9 rounded-full border transition ${
                     isSelected
                       ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
@@ -3382,6 +3424,7 @@ export default function CreateMemorialClient({
                 houseRotationY={previewHousePlacement.rotY}
                 houseScaleMultiplier={previewHouseScale}
                 soulColor={form.soulColor}
+                soulGlowColor={form.soulGlowColor}
                 soulMode={soulSceneMode}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
@@ -3396,7 +3439,7 @@ export default function CreateMemorialClient({
               focusSlot={focusSlot}
               focusRequestId={focusRequestId}
               showControls={false}
-              controlsEnabled={!activeOverlay}
+              controlsEnabled={!activeOverlay && !farewellPlaying}
               preserveDrawingBuffer={false}
               onControlsReady={(controls) => {
                 previewControlsRef.current = controls;
@@ -3405,13 +3448,13 @@ export default function CreateMemorialClient({
                 previewRenderRef.current = context;
               }}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
-              cameraAdjustmentKey={activeCameraKey}
-              onHouseSlotsDetected={setDetectedHouseSlots}
-              onGiftSlotsDetected={setDetectedGiftSlots}
-              onDetailClick={handlePreviewDetailClick}
-            />
+                cameraAdjustmentKey={activeCameraKey}
+                onHouseSlotsDetected={setDetectedHouseSlots}
+                onGiftSlotsDetected={setDetectedGiftSlots}
+                onDetailClick={handlePreviewDetailClick}
+              />
           </div>
-          {activeOverlay ? (
+          {activeOverlay && !farewellPlaying ? (
             <button
               type="button"
               aria-label="Закрыть окно"
@@ -3420,6 +3463,13 @@ export default function CreateMemorialClient({
             />
           ) : null}
 
+          {farewellPlaying ? (
+            <div className="pointer-events-none fixed inset-x-0 bottom-8 z-20 flex justify-center px-4">
+              <div className="rounded-[24px] border-[3px] border-white bg-white/82 px-5 py-3 text-center text-[11px] font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_18px_42px_-24px_rgba(93,64,55,0.55)] backdrop-blur">
+                Душа облетает мемориал
+              </div>
+            </div>
+          ) : (
           <div className="pointer-events-none fixed inset-0 z-10">
 
             <div className={builderEditorPanelClass}>
@@ -3650,6 +3700,7 @@ export default function CreateMemorialClient({
               </div>
             </div>
           </div>
+          )}
 
           {reviewOpen ? (
             <div
@@ -3716,6 +3767,7 @@ export default function CreateMemorialClient({
                       houseRotationY={activeHousePlacement.rotY}
                       houseScaleMultiplier={activeHouseScale}
                       soulColor={form.soulColor}
+                      soulGlowColor={form.soulGlowColor}
                       soulMode="idle"
                       parts={partList}
                       colors={colorOverrides}

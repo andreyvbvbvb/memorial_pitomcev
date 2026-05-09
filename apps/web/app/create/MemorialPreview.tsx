@@ -19,6 +19,7 @@ import {
   PetSoul,
   normalizeSoulColor,
   resolveSoulAnchorPosition,
+  resolveSoulObstacleCenterPosition,
   type PetSoulMode,
   type PetSoulQuality
 } from "../../components/PetSoul";
@@ -80,6 +81,7 @@ type Props = {
   houseRotationY?: number;
   houseScaleMultiplier?: number;
   soulColor?: string | null;
+  soulGlowColor?: string | null;
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
   soulQuality?: PetSoulQuality;
@@ -834,6 +836,7 @@ function SoulAnchor({
   terrain,
   house,
   color,
+  glowColor,
   mode,
   quality,
   enabled
@@ -841,29 +844,42 @@ function SoulAnchor({
   terrain: THREE.Object3D;
   house: THREE.Object3D;
   color?: string | null;
+  glowColor?: string | null;
   mode: PetSoulMode;
   quality: PetSoulQuality;
   enabled: boolean;
 }) {
-  const [position, setPosition] = useState<[number, number, number] | null>(null);
+  const [anchor, setAnchor] = useState<{
+    position: [number, number, number];
+    avoidCenter: [number, number, number];
+  } | null>(null);
 
   useEffect(() => {
     if (!enabled) {
-      setPosition(null);
+      setAnchor(null);
       return;
     }
-    setPosition(resolveSoulAnchorPosition(terrain, house));
+    setAnchor({
+      position: resolveSoulAnchorPosition(terrain, house),
+      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house)
+    });
   }, [enabled, terrain, house]);
 
-  if (!enabled || !position) {
+  if (!enabled || !anchor) {
     return null;
   }
 
+  const normalizedColor = normalizeSoulColor(color);
+  const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
+
   return (
     <PetSoul
-      key={normalizeSoulColor(color)}
-      color={normalizeSoulColor(color)}
-      position={position}
+      key={`${normalizedColor}-${normalizedGlowColor}-${mode}`}
+      color={normalizedColor}
+      glowColor={normalizedGlowColor}
+      position={anchor.position}
+      avoidCenter={anchor.avoidCenter}
+      avoidRadius={0.96}
       mode={mode}
       quality={quality}
       scale={quality === "light" ? 0.78 : 1}
@@ -904,6 +920,7 @@ function TerrainWithHouse({
   houseRotationY,
   houseScaleMultiplier,
   soulColor,
+  soulGlowColor,
   soulEnabled,
   soulMode,
   soulQuality,
@@ -949,6 +966,7 @@ function TerrainWithHouse({
   houseRotationY?: number;
   houseScaleMultiplier?: number;
   soulColor?: string | null;
+  soulGlowColor?: string | null;
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
   soulQuality?: PetSoulQuality;
@@ -1341,6 +1359,7 @@ function TerrainWithHouse({
           terrain={terrain}
           house={house}
           color={soulColor}
+          glowColor={soulGlowColor}
           mode={soulMode ?? "idle"}
           quality={soulQuality ?? "full"}
           enabled
@@ -1440,6 +1459,7 @@ export default function MemorialPreview({
   houseRotationY,
   houseScaleMultiplier,
   soulColor,
+  soulGlowColor,
   soulEnabled = true,
   soulMode = "idle",
   soulQuality = "full",
@@ -1831,6 +1851,7 @@ export default function MemorialPreview({
               houseRotationY={activeHousePresentation.houseRotationY}
               houseScaleMultiplier={activeHousePresentation.houseScaleMultiplier}
               soulColor={soulColor}
+              soulGlowColor={soulGlowColor}
               soulEnabled={soulEnabled}
               soulMode={soulMode}
               soulQuality={soulQuality}
