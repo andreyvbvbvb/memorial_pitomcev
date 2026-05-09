@@ -11,6 +11,7 @@ import MemorialPreview from "../../create/MemorialPreview";
 import ErrorToast from "../../../components/ErrorToast";
 import PhotoLightbox from "../../../components/PhotoLightbox";
 import usePortraitLayout from "../../../components/usePortraitLayout";
+import { readSoulSettings } from "../../../components/PetSoul";
 import {
   resolveEnvironmentModel,
   resolveHouseModel,
@@ -681,6 +682,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
     return value as Record<string, unknown>;
   }, [pet?.memorial?.sceneJson]);
+  const soulSettings = useMemo(() => readSoulSettings(sceneJson), [sceneJson]);
   const currentAppearance = useMemo<AppearanceDraft>(() => {
     const parts =
       sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
@@ -2290,6 +2292,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
           preloadGiftUrl={pendingPreviewUrl}
           onGiftPreloaded={handleGiftPreloaded}
           colors={colorOverrides}
+          soulColor={soulSettings.color}
+          soulEnabled={soulSettings.enabled}
+          soulMode={editDialogOpen ? "idle" : "arrival"}
           onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
           showControls={false}
           showGiftSlots={shouldShowGiftSlots}
@@ -3212,6 +3217,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       dirtLevel={dirtLevel}
                       gifts={giftInstances}
                       colors={colorOverrides}
+                      soulColor={soulSettings.color}
+                      soulEnabled={soulSettings.enabled}
+                      soulMode="idle"
                       softEdges
                       className="h-[420px]"
                     />

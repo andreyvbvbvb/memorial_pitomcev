@@ -44,6 +44,14 @@ import {
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
+import {
+  DEFAULT_SOUL_COLOR,
+  SOUL_COLOR_OPTIONS,
+  PetSoulPreview,
+  buildSoulSettings,
+  readSoulSettings,
+  type PetSoulMode
+} from "../../components/PetSoul";
 import { getConfiguredHouseSlots, getTerrainGiftSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
 import {
@@ -111,6 +119,7 @@ type FormState = {
   matColor: string;
   bowlFoodColor: string;
   bowlWaterColor: string;
+  soulColor: string;
 };
 
 type PhotoDraft = {
@@ -387,7 +396,8 @@ const initialState: FormState = {
   frameRightColor: colorPalette[16] ?? "#E9D1B3",
   matColor: colorPalette[9] ?? "#5DADE2",
   bowlFoodColor: colorPalette[3] ?? "#FFD166",
-  bowlWaterColor: colorPalette[7] ?? "#8ECAE6"
+  bowlWaterColor: colorPalette[7] ?? "#8ECAE6",
+  soulColor: DEFAULT_SOUL_COLOR
 };
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
@@ -434,6 +444,7 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
     sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
       ? (sceneJson.colors as Record<string, unknown>)
       : {};
+  const soul = readSoulSettings(sceneJson);
   const environmentDraft = parseEnvironmentDraft(memorial?.environmentId ?? null);
   const pickId = (key: string, fallback: string) =>
     typeof parts[key] === "string" && parts[key] ? String(parts[key]) : fallback;
@@ -477,7 +488,8 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
     frameRightColor: pickColor("frame_right_paint", initialState.frameRightColor),
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
-    bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor)
+    bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
+    soulColor: soul.color
   };
 };
 
@@ -524,6 +536,7 @@ export default function CreateMemorialClient({
   const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("arrival");
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
@@ -1857,6 +1870,7 @@ export default function CreateMemorialClient({
                 bowl_food_paint: form.bowlFoodColor,
                 bowl_water_paint: form.bowlWaterColor
               },
+              soul: buildSoulSettings(form.soulColor),
               version: 3
             }
           })
@@ -1958,6 +1972,7 @@ export default function CreateMemorialClient({
           bowl_food_paint: form.bowlFoodColor,
           bowl_water_paint: form.bowlWaterColor
         },
+        soul: buildSoulSettings(form.soulColor),
         version: 3
       }
     };
@@ -2021,6 +2036,10 @@ export default function CreateMemorialClient({
       setWalletBalance((prev) =>
         typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev
       );
+      setReviewVisible(false);
+      setReviewOpen(false);
+      setSoulSceneMode("farewell");
+      await new Promise((resolve) => window.setTimeout(resolve, 1250));
       router.push(`/pets/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания");
@@ -2329,6 +2348,7 @@ export default function CreateMemorialClient({
     if (step < 1) {
       return;
     }
+    setSoulSceneMode("arrival");
     if (isEditMode && !editInitialPreloadDoneRef.current) {
       editInitialPreloadDoneRef.current = true;
       setIsTransitioning(true);
@@ -2751,6 +2771,32 @@ export default function CreateMemorialClient({
           <option value="other">Другое</option>
         </select>
       </label>
+      {centered ? (
+        <div className="grid w-full gap-2 rounded-[24px] border border-white/70 bg-white/55 p-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <div className="text-sm font-medium text-[#8a7c77]">Душа питомца</div>
+          <PetSoulPreview color={form.soulColor} className="mx-auto h-24 w-24 border border-white/80 shadow-inner" />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {SOUL_COLOR_OPTIONS.map((option) => {
+              const isSelected = form.soulColor === option.color;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleChange("soulColor", option.color)}
+                  className={`h-8 w-8 rounded-full border transition ${
+                    isSelected
+                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/50"
+                      : "border-white/90 hover:scale-105 hover:border-[#d3a27f]"
+                  }`}
+                  style={{ backgroundColor: option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
       <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
         <label
           className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}
@@ -3302,6 +3348,8 @@ export default function CreateMemorialClient({
                 houseOffsetZ={previewHousePlacement.z}
                 houseRotationY={previewHousePlacement.rotY}
                 houseScaleMultiplier={previewHouseScale}
+                soulColor={form.soulColor}
+                soulMode={soulSceneMode}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -3634,6 +3682,8 @@ export default function CreateMemorialClient({
                       houseOffsetZ={activeHousePlacement.z}
                       houseRotationY={activeHousePlacement.rotY}
                       houseScaleMultiplier={activeHouseScale}
+                      soulColor={form.soulColor}
+                      soulMode="idle"
                       parts={partList}
                       colors={colorOverrides}
                       softEdges

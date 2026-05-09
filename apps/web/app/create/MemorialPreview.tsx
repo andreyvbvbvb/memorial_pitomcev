@@ -15,6 +15,12 @@ import {
 import type { HouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
 import { applyHousePlacement, getHouseTransform } from "../../lib/house-layout";
+import {
+  PetSoul,
+  resolveSoulAnchorPosition,
+  type PetSoulMode,
+  type PetSoulQuality
+} from "../../components/PetSoul";
 
 ensureDracoLoader();
 
@@ -72,6 +78,10 @@ type Props = {
   houseOffsetZ?: number;
   houseRotationY?: number;
   houseScaleMultiplier?: number;
+  soulColor?: string | null;
+  soulEnabled?: boolean;
+  soulMode?: PetSoulMode;
+  soulQuality?: PetSoulQuality;
   suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -819,6 +829,46 @@ function DirtStackAttachment({
   );
 }
 
+function SoulAnchor({
+  terrain,
+  house,
+  color,
+  mode,
+  quality,
+  enabled
+}: {
+  terrain: THREE.Object3D;
+  house: THREE.Object3D;
+  color?: string | null;
+  mode: PetSoulMode;
+  quality: PetSoulQuality;
+  enabled: boolean;
+}) {
+  const [position, setPosition] = useState<[number, number, number] | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setPosition(null);
+      return;
+    }
+    setPosition(resolveSoulAnchorPosition(terrain, house));
+  }, [enabled, terrain, house]);
+
+  if (!enabled || !position) {
+    return null;
+  }
+
+  return (
+    <PetSoul
+      color={color}
+      position={position}
+      mode={mode}
+      quality={quality}
+      scale={quality === "light" ? 0.78 : 1}
+    />
+  );
+}
+
 function TerrainWithHouse({
   terrainUrl,
   houseUrl,
@@ -851,6 +901,10 @@ function TerrainWithHouse({
   houseOffsetZ,
   houseRotationY,
   houseScaleMultiplier,
+  soulColor,
+  soulEnabled,
+  soulMode,
+  soulQuality,
   onReady,
   visible = true
 }: {
@@ -892,6 +946,10 @@ function TerrainWithHouse({
   houseOffsetZ?: number;
   houseRotationY?: number;
   houseScaleMultiplier?: number;
+  soulColor?: string | null;
+  soulEnabled?: boolean;
+  soulMode?: PetSoulMode;
+  soulQuality?: PetSoulQuality;
   onReady?: () => void;
   visible?: boolean;
 }) {
@@ -1276,6 +1334,16 @@ function TerrainWithHouse({
       ) : dirtUrl && dirtLevel > 0 ? (
         <DirtAttachment house={house} url={dirtUrl} level={dirtLevel} />
       ) : null}
+      {soulEnabled !== false ? (
+        <SoulAnchor
+          terrain={terrain}
+          house={house}
+          color={soulColor}
+          mode={soulMode ?? "idle"}
+          quality={soulQuality ?? "full"}
+          enabled
+        />
+      ) : null}
     </Group>
   );
 }
@@ -1369,6 +1437,10 @@ export default function MemorialPreview({
   houseOffsetZ,
   houseRotationY,
   houseScaleMultiplier,
+  soulColor,
+  soulEnabled = true,
+  soulMode = "idle",
+  soulQuality = "full",
   suppressLoadingOverlay = false,
   className,
   style
@@ -1756,6 +1828,10 @@ export default function MemorialPreview({
               houseOffsetZ={activeHousePresentation.houseOffsetZ}
               houseRotationY={activeHousePresentation.houseRotationY}
               houseScaleMultiplier={activeHousePresentation.houseScaleMultiplier}
+              soulColor={soulColor}
+              soulEnabled={soulEnabled}
+              soulMode={soulMode}
+              soulQuality={soulQuality}
               onReady={() => setSceneReady(true)}
             />
           ) : null}
@@ -1817,6 +1893,7 @@ export default function MemorialPreview({
                   houseOffsetZ={pendingHousePresentation?.houseOffsetZ}
                   houseRotationY={pendingHousePresentation?.houseRotationY}
                   houseScaleMultiplier={pendingHousePresentation?.houseScaleMultiplier}
+                  soulEnabled={false}
                   onReady={() => handlePendingReady(pendingSignature)}
                 />
               ) : pendingAssets.houseUrl ? (

@@ -25,6 +25,11 @@ import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
 import { applyHousePlacement, getHouseTransform } from "../lib/house-layout";
 import VisibilityIndicator from "./VisibilityIndicator";
+import {
+  PetSoul,
+  readSoulSettings,
+  resolveSoulAnchorPosition
+} from "./PetSoul";
 
 type SceneParts = {
   roof?: string;
@@ -257,6 +262,44 @@ function PartAttachment({
   return null;
 }
 
+function SoulAnchor({
+  terrain,
+  house,
+  color,
+  enabled,
+  active
+}: {
+  terrain: THREE.Object3D;
+  house: THREE.Object3D;
+  color?: string | null;
+  enabled: boolean;
+  active: boolean;
+}) {
+  const [position, setPosition] = useState<[number, number, number] | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setPosition(null);
+      return;
+    }
+    setPosition(resolveSoulAnchorPosition(terrain, house));
+  }, [enabled, terrain, house]);
+
+  if (!enabled || !position) {
+    return null;
+  }
+
+  return (
+    <PetSoul
+      color={color}
+      position={position}
+      mode="idle"
+      quality={active ? "full" : "light"}
+      scale={active ? 0.92 : 0.62}
+    />
+  );
+}
+
 function MemorialInstance({
   item,
   isActive,
@@ -276,6 +319,7 @@ function MemorialInstance({
     parts?: SceneParts;
     colors?: Record<string, string>;
   };
+  const soulSettings = readSoulSettings(memorial?.sceneJson as Record<string, unknown> | null);
   const parts = useMemo(
     () =>
       [
@@ -392,6 +436,13 @@ function MemorialInstance({
       {parts.map((part) => (
         <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={sceneJson.colors} />
       ))}
+      <SoulAnchor
+        terrain={terrain}
+        house={house}
+        color={soulSettings.color}
+        enabled={soulSettings.enabled}
+        active={isActive}
+      />
     </Group>
   );
 }

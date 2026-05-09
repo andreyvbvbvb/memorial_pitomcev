@@ -15,6 +15,11 @@ import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import VisibilityIndicator from "../../components/VisibilityIndicator";
+import {
+  PetSoul,
+  readSoulSettings,
+  resolveSoulAnchorPosition
+} from "../../components/PetSoul";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 import {
   resolveEnvironmentModel,
@@ -85,6 +90,10 @@ type MemorialSceneData = {
   parts: { slot: string; url: string }[];
   colors?: Record<string, string>;
   gifts?: { slot: string; url: string; size?: string | null }[];
+  soul?: {
+    enabled: boolean;
+    color: string;
+  };
 };
 
 const Group = "group" as unknown as React.ComponentType<any>;
@@ -480,7 +489,53 @@ function GiftInstance({
   return null;
 }
 
-function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?: number }) {
+function SoulAnchor({
+  terrain,
+  house,
+  color,
+  enabled,
+  active
+}: {
+  terrain: THREE.Object3D;
+  house: THREE.Object3D;
+  color?: string | null;
+  enabled: boolean;
+  active: boolean;
+}) {
+  const [position, setPosition] = useState<[number, number, number] | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setPosition(null);
+      return;
+    }
+    setPosition(resolveSoulAnchorPosition(terrain, house));
+  }, [enabled, terrain, house]);
+
+  if (!enabled || !position) {
+    return null;
+  }
+
+  return (
+    <PetSoul
+      color={color}
+      position={position}
+      mode="idle"
+      quality={active ? "full" : "light"}
+      scale={active ? 0.86 : 0.58}
+    />
+  );
+}
+
+function TerrainWithHouseScene({
+  data,
+  tone,
+  active
+}: {
+  data: MemorialSceneData;
+  tone?: number;
+  active?: boolean;
+}) {
   const { scene: terrainScene } = useGLTF(data.terrainUrl);
   const { scene: houseScene } = useGLTF(data.houseUrl);
   const terrain = useMemo(() => {
@@ -530,6 +585,15 @@ function TerrainWithHouseScene({ data, tone }: { data: MemorialSceneData; tone?:
       {data.gifts?.map((gift) => (
         <GiftInstance key={`${gift.slot}-${gift.url}`} terrain={terrain} slot={gift.slot} url={gift.url} size={gift.size} />
       ))}
+      {data.soul?.enabled !== false ? (
+        <SoulAnchor
+          terrain={terrain}
+          house={house}
+          color={data.soul?.color}
+          enabled
+          active={active === true}
+        />
+      ) : null}
     </Group>
   );
 }
@@ -609,7 +673,7 @@ function MemorialInstance({
       }}
     >
       <Group>
-        <TerrainWithHouseScene data={data} tone={tone} />
+        <TerrainWithHouseScene data={data} tone={tone} active={tone >= 0.98} />
       </Group>
     </Group>
   );
@@ -1603,6 +1667,7 @@ export default function MapClient() {
       };
       colors?: Record<string, string>;
     };
+    const soulSettings = readSoulSettings(memorial?.sceneJson as Record<string, unknown> | null);
     const parts = [
       houseSlots.roof ? { slot: houseSlots.roof, url: resolveRoofModel(sceneJson.parts?.roof) } : null,
       houseSlots.wall ? { slot: houseSlots.wall, url: resolveWallModel(sceneJson.parts?.wall) } : null,
@@ -1648,7 +1713,8 @@ export default function MapClient() {
       houseId: memorial?.houseId ?? null,
       parts,
       colors: sceneJson.colors ?? undefined,
-      gifts: gifts.length > 0 ? gifts : undefined
+      gifts: gifts.length > 0 ? gifts : undefined,
+      soul: soulSettings
     };
   }, [petCache]);
 
