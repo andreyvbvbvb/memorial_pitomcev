@@ -85,6 +85,7 @@ type Props = {
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
   soulQuality?: PetSoulQuality;
+  soulAnchorMode?: "scene" | "screen-left";
   suppressLoadingOverlay?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -887,6 +888,56 @@ function SoulAnchor({
   );
 }
 
+function ScreenAnchoredSoul({
+  color,
+  glowColor,
+  quality,
+  enabled
+}: {
+  color?: string | null;
+  glowColor?: string | null;
+  quality: PetSoulQuality;
+  enabled: boolean;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const { camera, size } = useThree();
+  const normalizedColor = normalizeSoulColor(color);
+  const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
+  const ndc = useMemo(() => new THREE.Vector3(), []);
+  const world = useMemo(() => new THREE.Vector3(), []);
+  const direction = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(() => {
+    if (!groupRef.current || !enabled) {
+      return;
+    }
+    const isNarrow = size.width < 720;
+    ndc.set(isNarrow ? -0.42 : -0.5, isNarrow ? 0.02 : 0.0, 0.52);
+    world.copy(ndc).unproject(camera);
+    direction.copy(world).sub(camera.position).normalize();
+    groupRef.current.position.copy(camera.position).add(direction.multiplyScalar(isNarrow ? 5.4 : 6.2));
+    groupRef.current.quaternion.copy(camera.quaternion);
+  });
+
+  if (!enabled) {
+    return null;
+  }
+
+  return (
+    <Group ref={groupRef} renderOrder={80}>
+      <PetSoul
+        key={`${normalizedColor}-${normalizedGlowColor}-screen`}
+        color={normalizedColor}
+        glowColor={normalizedGlowColor}
+        position={[0, 0, 0]}
+        mode="idle"
+        quality={quality}
+        scale={quality === "light" ? 0.55 : 0.7}
+      />
+    </Group>
+  );
+}
+
 function TerrainWithHouse({
   terrainUrl,
   houseUrl,
@@ -924,6 +975,7 @@ function TerrainWithHouse({
   soulEnabled,
   soulMode,
   soulQuality,
+  soulAnchorMode,
   onReady,
   visible = true
 }: {
@@ -970,6 +1022,7 @@ function TerrainWithHouse({
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
   soulQuality?: PetSoulQuality;
+  soulAnchorMode?: "scene" | "screen-left";
   onReady?: () => void;
   visible?: boolean;
 }) {
@@ -1354,7 +1407,7 @@ function TerrainWithHouse({
       ) : dirtUrl && dirtLevel > 0 ? (
         <DirtAttachment house={house} url={dirtUrl} level={dirtLevel} />
       ) : null}
-      {soulEnabled !== false ? (
+      {soulEnabled !== false && soulAnchorMode !== "screen-left" ? (
         <SoulAnchor
           terrain={terrain}
           house={house}
@@ -1463,6 +1516,7 @@ export default function MemorialPreview({
   soulEnabled = true,
   soulMode = "idle",
   soulQuality = "full",
+  soulAnchorMode = "scene",
   suppressLoadingOverlay = false,
   className,
   style
@@ -1855,6 +1909,7 @@ export default function MemorialPreview({
               soulEnabled={soulEnabled}
               soulMode={soulMode}
               soulQuality={soulQuality}
+              soulAnchorMode={soulAnchorMode}
               onReady={() => setSceneReady(true)}
             />
           ) : null}
@@ -1880,6 +1935,14 @@ export default function MemorialPreview({
             </Html>
           ) : null}
         </Suspense>
+        {soulEnabled !== false && soulAnchorMode === "screen-left" ? (
+          <ScreenAnchoredSoul
+            color={soulColor}
+            glowColor={soulGlowColor}
+            quality={soulQuality}
+            enabled
+          />
+        ) : null}
         {pendingAssets && pendingSignature ? (
           <Suspense fallback={null}>
             <Group visible={false}>

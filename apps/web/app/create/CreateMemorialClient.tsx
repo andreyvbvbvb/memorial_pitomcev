@@ -553,13 +553,14 @@ export default function CreateMemorialClient({
     camera: THREE.Camera;
   } | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<
-    "marker" | "photos" | "story" | "base" | null
+    "marker" | "photos" | "story" | "base" | "soul" | null
   >(null);
   const [visitedOverlays, setVisitedOverlays] = useState({
     marker: false,
     photos: false,
     story: false,
-    base: false
+    base: false,
+    soul: false
   });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
@@ -1342,7 +1343,8 @@ export default function CreateMemorialClient({
             marker: true,
             photos: true,
             story: true,
-            base: true
+            base: true,
+            soul: true
           });
           setEditReady(true);
         } else {
@@ -2061,8 +2063,8 @@ export default function CreateMemorialClient({
     }
   };
 
-  const toggleOverlay = (panel: "marker" | "photos" | "story" | "base") => {
-    if (isEditMode && panel !== "photos") {
+  const toggleOverlay = (panel: "marker" | "photos" | "story" | "base" | "soul") => {
+    if (isEditMode && panel !== "photos" && panel !== "soul") {
       return;
     }
     setVisitedOverlays((prev) => ({ ...prev, [panel]: true }));
@@ -3247,6 +3249,66 @@ export default function CreateMemorialClient({
     </div>
   );
 
+  const renderSoulColorPanel = () => (
+    <div className={overlayShellClass}>
+      <h3 className={overlaySectionTitleClass}>
+        <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+        Душа питомца
+      </h3>
+      <div className="grid gap-4">
+        <div className="grid gap-2">
+          <div className={overlayLabelClass}>Цвет души</div>
+          <div className="flex flex-wrap gap-2">
+            {SOUL_COLOR_OPTIONS.map((option) => {
+              const isSelected = form.soulColor === option.color;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleChange("soulColor", option.color)}
+                  className={`h-10 w-10 rounded-full border transition ${
+                    isSelected
+                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                      : "border-white hover:scale-105 hover:border-[#d3a27f]"
+                  }`}
+                  style={{ backgroundColor: option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                />
+              );
+            })}
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <div className={overlayLabelClass}>Цвет рассеивания</div>
+          <div className="flex flex-wrap gap-2">
+            {SOUL_GLOW_COLOR_OPTIONS.map((option) => {
+              const isSelected = form.soulGlowColor === option.color;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleChange("soulGlowColor", option.color)}
+                  className={`h-10 w-10 rounded-full border transition ${
+                    isSelected
+                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                      : "border-white hover:scale-105 hover:border-[#d3a27f]"
+                  }`}
+                  style={{ backgroundColor: option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                />
+              );
+            })}
+          </div>
+        </div>
+        <p className="text-xs font-semibold leading-relaxed text-[#8d6e63]">
+          Цвет души меняет ядро, а цвет рассеивания заметнее влияет на ауру, хвост и частицы.
+        </p>
+      </div>
+    </div>
+  );
+
   const isBuilderStep = step === 1;
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
@@ -3426,6 +3488,7 @@ export default function CreateMemorialClient({
                 soulColor={form.soulColor}
                 soulGlowColor={form.soulGlowColor}
                 soulMode={soulSceneMode}
+                soulAnchorMode={farewellPlaying ? "scene" : "screen-left"}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
@@ -3570,7 +3633,9 @@ export default function CreateMemorialClient({
                     ? renderMarkerPanel()
                     : activeOverlay === "photos"
                       ? renderPhotosPanel()
-                      : renderStoryPanel()}
+                      : activeOverlay === "soul"
+                        ? renderSoulColorPanel()
+                        : renderStoryPanel()}
               </div>
             ) : null}
 
@@ -3624,6 +3689,22 @@ export default function CreateMemorialClient({
                     ) : null}
                   </button>
                   <span className={builderControlTooltipClass}>История</span>
+                </div>
+                <div className="group/control relative">
+                  <button
+                    type="button"
+                    onClick={() => toggleOverlay("soul")}
+                    aria-label="Цвет души"
+                    title="Цвет души"
+                    className={panelButtonClass(activeOverlay === "soul", false)}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
+                      <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
+                      <path d="M6 15c.5 1.3 1.2 2 2.4 2.4C7.2 17.8 6.5 18.5 6 20c-.5-1.5-1.2-2.2-2.4-2.6C4.8 17 5.5 16.3 6 15z" />
+                    </svg>
+                  </button>
+                  <span className={builderControlTooltipClass}>Цвет души</span>
                 </div>
                 <div className="group/control relative">
                   <button

@@ -82,14 +82,23 @@ export function buildSoulSettings(
 
 export function resolveSoulAnchorPosition(
   terrain: THREE.Object3D,
-  house: THREE.Object3D
+  _house: THREE.Object3D
 ): [number, number, number] {
   terrain.updateMatrixWorld(true);
-  house.updateMatrixWorld(true);
-  const housePosition = new THREE.Vector3();
-  house.getWorldPosition(housePosition);
-  terrain.worldToLocal(housePosition);
-  return [housePosition.x - 1.25, housePosition.y + 1.42, housePosition.z + 0.78];
+  const box = new THREE.Box3().setFromObject(terrain);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+  const anchor = center.clone().add(
+    new THREE.Vector3(
+      -Math.max(1.1, size.x * 0.24),
+      Math.max(1.12, size.y * 0.34 + 0.72),
+      Math.max(0.56, size.z * 0.14)
+    )
+  );
+  terrain.worldToLocal(anchor);
+  return [anchor.x, anchor.y, anchor.z];
 }
 
 export function resolveSoulObstacleCenterPosition(
@@ -116,22 +125,22 @@ const PARTICLE_SEEDS = [
 ];
 
 const TRAIL_SEGMENTS = [
-  { x: -0.22, y: -0.01, z: 0.0, radius: 0.13, sx: 1.5, sy: 0.5, opacity: 0.2 },
-  { x: -0.46, y: -0.03, z: 0.02, radius: 0.11, sx: 1.8, sy: 0.42, opacity: 0.15 },
-  { x: -0.72, y: -0.05, z: -0.01, radius: 0.09, sx: 2.1, sy: 0.35, opacity: 0.11 },
-  { x: -1.0, y: -0.06, z: 0.02, radius: 0.075, sx: 2.42, sy: 0.29, opacity: 0.075 },
-  { x: -1.3, y: -0.07, z: -0.02, radius: 0.06, sx: 2.7, sy: 0.24, opacity: 0.052 },
-  { x: -1.62, y: -0.08, z: 0.01, radius: 0.048, sx: 3.05, sy: 0.19, opacity: 0.036 },
-  { x: -1.96, y: -0.08, z: -0.02, radius: 0.037, sx: 3.35, sy: 0.15, opacity: 0.024 },
+  { x: -0.22, y: -0.01, z: 0.0, radius: 0.13, sx: 1.5, sy: 0.5, opacity: 0.28 },
+  { x: -0.46, y: -0.03, z: 0.02, radius: 0.11, sx: 1.8, sy: 0.42, opacity: 0.22 },
+  { x: -0.72, y: -0.05, z: -0.01, radius: 0.09, sx: 2.1, sy: 0.35, opacity: 0.16 },
+  { x: -1.0, y: -0.06, z: 0.02, radius: 0.075, sx: 2.42, sy: 0.29, opacity: 0.11 },
+  { x: -1.3, y: -0.07, z: -0.02, radius: 0.06, sx: 2.7, sy: 0.24, opacity: 0.078 },
+  { x: -1.62, y: -0.08, z: 0.01, radius: 0.048, sx: 3.05, sy: 0.19, opacity: 0.052 },
+  { x: -1.96, y: -0.08, z: -0.02, radius: 0.037, sx: 3.35, sy: 0.15, opacity: 0.032 },
   { x: -2.28, y: -0.08, z: 0.02, radius: 0.03, sx: 3.55, sy: 0.12, opacity: 0.016 }
 ];
 
 const TRAIL_DUST = [
-  { x: -0.52, y: 0.18, z: -0.14, size: 0.026, opacity: 0.22, speed: 1.3, phase: 0.1 },
-  { x: -0.82, y: -0.19, z: 0.12, size: 0.022, opacity: 0.17, speed: 1.1, phase: 1.4 },
-  { x: -1.08, y: 0.1, z: 0.18, size: 0.018, opacity: 0.13, speed: 1.45, phase: 2.1 },
-  { x: -1.36, y: -0.12, z: -0.1, size: 0.015, opacity: 0.1, speed: 1.18, phase: 2.8 },
-  { x: -1.68, y: 0.07, z: 0.08, size: 0.012, opacity: 0.075, speed: 1.55, phase: 3.5 },
+  { x: -0.52, y: 0.18, z: -0.14, size: 0.026, opacity: 0.3, speed: 1.3, phase: 0.1 },
+  { x: -0.82, y: -0.19, z: 0.12, size: 0.022, opacity: 0.23, speed: 1.1, phase: 1.4 },
+  { x: -1.08, y: 0.1, z: 0.18, size: 0.018, opacity: 0.17, speed: 1.45, phase: 2.1 },
+  { x: -1.36, y: -0.12, z: -0.1, size: 0.015, opacity: 0.12, speed: 1.18, phase: 2.8 },
+  { x: -1.68, y: 0.07, z: 0.08, size: 0.012, opacity: 0.09, speed: 1.55, phase: 3.5 },
   { x: -2.02, y: -0.05, z: -0.06, size: 0.01, opacity: 0.052, speed: 1.22, phase: 4.4 }
 ];
 
@@ -257,7 +266,7 @@ export function PetSoul({
     [baseColor]
   );
   const softGlowColor = useMemo(
-    () => glowBaseColor.clone().lerp(new THREE.Color("#ffffff"), 0.24),
+    () => glowBaseColor.clone().lerp(new THREE.Color("#ffffff"), 0.06),
     [glowBaseColor]
   );
 
@@ -440,7 +449,7 @@ export function PetSoul({
           ref={shellMaterialRef}
           color={normalizedGlowColor}
           transparent
-          opacity={0.075}
+          opacity={0.16}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -451,7 +460,7 @@ export function PetSoul({
           ref={auraMaterialRef}
           color={normalizedGlowColor}
           transparent
-          opacity={0.18}
+          opacity={0.36}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
