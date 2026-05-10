@@ -20,6 +20,7 @@ import {
   normalizeSoulColor,
   resolveSoulAnchorPosition,
   resolveSoulObstacleCenterPosition,
+  resolveSoulSurfaceFloorY,
   type PetSoulMode,
   type PetSoulQuality
 } from "../../components/PetSoul";
@@ -853,6 +854,7 @@ function SoulAnchor({
   const [anchor, setAnchor] = useState<{
     position: [number, number, number];
     avoidCenter: [number, number, number];
+    floorY: number;
   } | null>(null);
 
   useEffect(() => {
@@ -862,7 +864,8 @@ function SoulAnchor({
     }
     setAnchor({
       position: resolveSoulAnchorPosition(terrain, house),
-      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house)
+      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house),
+      floorY: resolveSoulSurfaceFloorY(terrain, house)
     });
   }, [enabled, terrain, house]);
 
@@ -881,6 +884,7 @@ function SoulAnchor({
       position={anchor.position}
       avoidCenter={anchor.avoidCenter}
       avoidRadius={0.96}
+      floorY={anchor.floorY}
       mode={mode}
       quality={quality}
       scale={quality === "light" ? 0.78 : 1}

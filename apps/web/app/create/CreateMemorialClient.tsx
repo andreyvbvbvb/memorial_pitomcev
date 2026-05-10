@@ -3488,7 +3488,6 @@ export default function CreateMemorialClient({
                 soulColor={form.soulColor}
                 soulGlowColor={form.soulGlowColor}
                 soulMode={soulSceneMode}
-                soulAnchorMode={farewellPlaying ? "scene" : "screen-left"}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={

@@ -19,7 +19,8 @@ import {
   PetSoul,
   readSoulSettings,
   resolveSoulAnchorPosition,
-  resolveSoulObstacleCenterPosition
+  resolveSoulObstacleCenterPosition,
+  resolveSoulSurfaceFloorY
 } from "../../components/PetSoul";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 import {
@@ -509,6 +510,7 @@ function SoulAnchor({
   const [anchor, setAnchor] = useState<{
     position: [number, number, number];
     avoidCenter: [number, number, number];
+    floorY: number;
   } | null>(null);
 
   useEffect(() => {
@@ -518,7 +520,8 @@ function SoulAnchor({
     }
     setAnchor({
       position: resolveSoulAnchorPosition(terrain, house),
-      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house)
+      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house),
+      floorY: resolveSoulSurfaceFloorY(terrain, house)
     });
   }, [enabled, terrain, house]);
 
@@ -533,6 +536,7 @@ function SoulAnchor({
       position={anchor.position}
       avoidCenter={anchor.avoidCenter}
       avoidRadius={0.96}
+      floorY={anchor.floorY}
       mode="idle"
       quality={active ? "full" : "light"}
       scale={active ? 0.86 : 0.58}

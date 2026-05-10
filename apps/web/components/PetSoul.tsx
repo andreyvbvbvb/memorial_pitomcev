@@ -113,6 +113,18 @@ export function resolveSoulObstacleCenterPosition(
   return [housePosition.x, housePosition.y + 0.38, housePosition.z];
 }
 
+export function resolveSoulSurfaceFloorY(
+  terrain: THREE.Object3D,
+  house: THREE.Object3D
+) {
+  terrain.updateMatrixWorld(true);
+  house.updateMatrixWorld(true);
+  const housePosition = new THREE.Vector3();
+  house.getWorldPosition(housePosition);
+  terrain.worldToLocal(housePosition);
+  return housePosition.y + 0.78;
+}
+
 const PARTICLE_SEEDS = [
   { angle: 0.1, radius: 0.52, speed: 0.92, y: 0.08, size: 0.035 },
   { angle: 1.4, radius: 0.68, speed: 0.72, y: -0.05, size: 0.028 },
@@ -125,23 +137,33 @@ const PARTICLE_SEEDS = [
 ];
 
 const TRAIL_SEGMENTS = [
-  { x: -0.22, y: -0.01, z: 0.0, radius: 0.13, sx: 1.5, sy: 0.5, opacity: 0.28 },
-  { x: -0.46, y: -0.03, z: 0.02, radius: 0.11, sx: 1.8, sy: 0.42, opacity: 0.22 },
-  { x: -0.72, y: -0.05, z: -0.01, radius: 0.09, sx: 2.1, sy: 0.35, opacity: 0.16 },
-  { x: -1.0, y: -0.06, z: 0.02, radius: 0.075, sx: 2.42, sy: 0.29, opacity: 0.11 },
-  { x: -1.3, y: -0.07, z: -0.02, radius: 0.06, sx: 2.7, sy: 0.24, opacity: 0.078 },
-  { x: -1.62, y: -0.08, z: 0.01, radius: 0.048, sx: 3.05, sy: 0.19, opacity: 0.052 },
-  { x: -1.96, y: -0.08, z: -0.02, radius: 0.037, sx: 3.35, sy: 0.15, opacity: 0.032 },
-  { x: -2.28, y: -0.08, z: 0.02, radius: 0.03, sx: 3.55, sy: 0.12, opacity: 0.016 }
+  { x: -0.22, y: -0.01, z: 0.0, radius: 0.14, sx: 1.52, sy: 0.52, opacity: 0.42 },
+  { x: -0.46, y: -0.03, z: 0.02, radius: 0.12, sx: 1.82, sy: 0.44, opacity: 0.34 },
+  { x: -0.72, y: -0.05, z: -0.01, radius: 0.1, sx: 2.15, sy: 0.36, opacity: 0.25 },
+  { x: -1.0, y: -0.06, z: 0.02, radius: 0.082, sx: 2.48, sy: 0.3, opacity: 0.18 },
+  { x: -1.3, y: -0.07, z: -0.02, radius: 0.066, sx: 2.82, sy: 0.25, opacity: 0.12 },
+  { x: -1.62, y: -0.08, z: 0.01, radius: 0.052, sx: 3.14, sy: 0.2, opacity: 0.082 },
+  { x: -1.96, y: -0.08, z: -0.02, radius: 0.04, sx: 3.48, sy: 0.16, opacity: 0.052 },
+  { x: -2.28, y: -0.08, z: 0.02, radius: 0.032, sx: 3.75, sy: 0.13, opacity: 0.03 }
 ];
 
 const TRAIL_DUST = [
-  { x: -0.52, y: 0.18, z: -0.14, size: 0.026, opacity: 0.3, speed: 1.3, phase: 0.1 },
-  { x: -0.82, y: -0.19, z: 0.12, size: 0.022, opacity: 0.23, speed: 1.1, phase: 1.4 },
-  { x: -1.08, y: 0.1, z: 0.18, size: 0.018, opacity: 0.17, speed: 1.45, phase: 2.1 },
-  { x: -1.36, y: -0.12, z: -0.1, size: 0.015, opacity: 0.12, speed: 1.18, phase: 2.8 },
-  { x: -1.68, y: 0.07, z: 0.08, size: 0.012, opacity: 0.09, speed: 1.55, phase: 3.5 },
-  { x: -2.02, y: -0.05, z: -0.06, size: 0.01, opacity: 0.052, speed: 1.22, phase: 4.4 }
+  { x: -0.42, y: 0.22, z: -0.16, size: 0.029, opacity: 0.42, speed: 1.3, phase: 0.1 },
+  { x: -0.54, y: -0.18, z: 0.14, size: 0.025, opacity: 0.34, speed: 1.52, phase: 0.75 },
+  { x: -0.68, y: 0.05, z: 0.22, size: 0.023, opacity: 0.3, speed: 1.1, phase: 1.15 },
+  { x: -0.82, y: -0.22, z: -0.12, size: 0.021, opacity: 0.27, speed: 1.38, phase: 1.55 },
+  { x: -0.98, y: 0.18, z: -0.2, size: 0.02, opacity: 0.24, speed: 1.68, phase: 2.05 },
+  { x: -1.12, y: -0.08, z: 0.18, size: 0.018, opacity: 0.21, speed: 1.24, phase: 2.45 },
+  { x: -1.28, y: 0.12, z: 0.08, size: 0.017, opacity: 0.18, speed: 1.52, phase: 2.95 },
+  { x: -1.42, y: -0.16, z: -0.18, size: 0.016, opacity: 0.16, speed: 1.18, phase: 3.35 },
+  { x: -1.58, y: 0.04, z: 0.2, size: 0.015, opacity: 0.14, speed: 1.74, phase: 3.8 },
+  { x: -1.72, y: 0.14, z: -0.08, size: 0.014, opacity: 0.12, speed: 1.4, phase: 4.15 },
+  { x: -1.88, y: -0.12, z: 0.1, size: 0.013, opacity: 0.1, speed: 1.62, phase: 4.55 },
+  { x: -2.04, y: 0.08, z: -0.16, size: 0.012, opacity: 0.085, speed: 1.3, phase: 5.05 },
+  { x: -2.22, y: -0.03, z: 0.16, size: 0.011, opacity: 0.072, speed: 1.48, phase: 5.45 },
+  { x: -2.38, y: 0.11, z: -0.04, size: 0.01, opacity: 0.058, speed: 1.22, phase: 5.9 },
+  { x: -2.56, y: -0.07, z: -0.12, size: 0.009, opacity: 0.046, speed: 1.64, phase: 6.35 },
+  { x: -2.74, y: 0.04, z: 0.1, size: 0.008, opacity: 0.035, speed: 1.36, phase: 6.8 }
 ];
 
 function SoulPreviewBackground() {
@@ -220,12 +242,20 @@ function keepSoulOutsideObstacle(
   target.z = center[2] + Math.sin(angle) * radius;
 }
 
+function keepSoulAboveSurface(target: THREE.Vector3, floorY?: number | null) {
+  if (typeof floorY !== "number" || Number.isNaN(floorY)) {
+    return;
+  }
+  target.y = Math.max(target.y, floorY);
+}
+
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
   glowColor,
   position = [0, 1.4, 0],
   avoidCenter = null,
   avoidRadius = 0.92,
+  floorY = null,
   scale = 1,
   mode = "idle",
   quality = "full"
@@ -235,6 +265,7 @@ export function PetSoul({
   position?: [number, number, number];
   avoidCenter?: [number, number, number] | null;
   avoidRadius?: number;
+  floorY?: number | null;
   scale?: number;
   mode?: PetSoulMode;
   quality?: PetSoulQuality;
@@ -262,7 +293,7 @@ export function PetSoul({
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
   const lightColor = useMemo(
-    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.1),
+    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.02),
     [baseColor]
   );
   const softGlowColor = useMemo(
@@ -330,6 +361,7 @@ export function PetSoul({
       const start = base.clone().add(new THREE.Vector3(-4.2, 2.2, -4.8));
       target.lerpVectors(start, target, eased);
       keepSoulOutsideObstacle(target, avoidCenter, avoidRadius);
+      keepSoulAboveSurface(target, floorY);
       opacity = THREE.MathUtils.clamp(progress * 1.35, 0, 1);
       visualScale = scale * THREE.MathUtils.lerp(0.45, 1, eased);
     }
@@ -351,6 +383,7 @@ export function PetSoul({
           center.y + 1.18 + Math.sin(orbitProgress * Math.PI) * 0.58,
           center.z + Math.sin(angle) * orbitRadius
         );
+        keepSoulAboveSurface(target, floorY);
         opacity = 1;
         visualScale = scale * THREE.MathUtils.lerp(1, 1.08, Math.sin(orbitProgress * Math.PI));
       } else {
@@ -364,6 +397,7 @@ export function PetSoul({
         );
         const home = center.clone().add(new THREE.Vector3(0.02, 0.34, 0.04));
         target.lerpVectors(from, home, easedFly);
+        keepSoulAboveSurface(target, floorY);
         opacity = 1 - Math.max(0, flyProgress - 0.58) / 0.42;
         visualScale = scale * THREE.MathUtils.lerp(1.02, 0.12, easedFly);
       }
@@ -371,6 +405,7 @@ export function PetSoul({
 
     if (mode !== "farewell" && mode !== "arrival") {
       keepSoulOutsideObstacle(target, avoidCenter, avoidRadius);
+      keepSoulAboveSurface(target, floorY);
     }
 
     if (groupRef.current) {
@@ -449,7 +484,7 @@ export function PetSoul({
           ref={shellMaterialRef}
           color={normalizedGlowColor}
           transparent
-          opacity={0.16}
+          opacity={0.24}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -460,7 +495,7 @@ export function PetSoul({
           ref={auraMaterialRef}
           color={normalizedGlowColor}
           transparent
-          opacity={0.36}
+          opacity={0.5}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -471,7 +506,7 @@ export function PetSoul({
           ref={coreMaterialRef}
           color={lightColor}
           transparent
-          opacity={0.86}
+          opacity={0.95}
           depthWrite={false}
           blending={THREE.NormalBlending}
         />
@@ -536,7 +571,7 @@ export function PetSoul({
             }}
             color={lightColor}
             transparent
-            opacity={0.52}
+            opacity={0.68}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
