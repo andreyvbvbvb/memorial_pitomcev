@@ -349,13 +349,21 @@ export function PetSoul({
   const trailDust = quality === "light" ? TRAIL_DUST.slice(0, 3) : TRAIL_DUST;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
+  const rimColor = useMemo(
+    () => baseColor.clone().lerp(glowBaseColor, 0.22),
+    [baseColor, glowBaseColor]
+  );
+  const mistColor = useMemo(
+    () => glowBaseColor.clone().lerp(baseColor, 0.34),
+    [baseColor, glowBaseColor]
+  );
   const lightColor = useMemo(
-    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.02),
+    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.28),
     [baseColor]
   );
   const softGlowColor = useMemo(
-    () => glowBaseColor.clone().lerp(new THREE.Color("#ffffff"), 0.06),
-    [glowBaseColor]
+    () => rimColor.clone().lerp(new THREE.Color("#ffffff"), 0.08),
+    [rimColor]
   );
 
   useEffect(() => {
@@ -377,19 +385,19 @@ export function PetSoul({
       material.color.set(nextColor);
       material.needsUpdate = true;
     };
-    updateMaterial(shellMaterialRef.current, normalizedGlowColor);
-    updateMaterial(auraMaterialRef.current, normalizedGlowColor);
+    updateMaterial(shellMaterialRef.current, mistColor);
+    updateMaterial(auraMaterialRef.current, rimColor);
     updateMaterial(coreMaterialRef.current, lightColor);
     trailMaterialRefs.current.forEach((material, index) => {
-      updateMaterial(material, index < 2 ? softGlowColor : normalizedGlowColor);
+      updateMaterial(material, index < 2 ? softGlowColor : rimColor);
     });
     trailDustMaterialRefs.current.forEach((material) => updateMaterial(material, softGlowColor));
     particleMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
     innerSparkMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
-    rayMaterialRefs.current.forEach((material) => updateMaterial(material, softGlowColor));
-    ringMaterialRefs.current.forEach((material) => updateMaterial(material, softGlowColor));
-    mistMaterialRefs.current.forEach((material) => updateMaterial(material, normalizedGlowColor));
-  }, [lightColor, normalizedGlowColor, softGlowColor]);
+    rayMaterialRefs.current.forEach((material) => updateMaterial(material, rimColor));
+    ringMaterialRefs.current.forEach((material) => updateMaterial(material, rimColor));
+    mistMaterialRefs.current.forEach((material) => updateMaterial(material, mistColor));
+  }, [lightColor, mistColor, rimColor, softGlowColor]);
 
   useFrame(({ clock }) => {
     if (startedAtRef.current === null) {
@@ -618,23 +626,23 @@ export function PetSoul({
   return (
     <Group ref={groupRef} key={`${normalizedColor}-${normalizedGlowColor}-${quality}`}>
       <Mesh ref={shellRef} raycast={() => null}>
-        <SphereGeometry args={[0.78, 40, 40]} />
+        <SphereGeometry args={[0.74, 40, 40]} />
         <MeshBasicMaterial
           ref={shellMaterialRef}
-          color={normalizedGlowColor}
+          color={mistColor}
           transparent
-          opacity={0.32}
+          opacity={0.16}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={THREE.NormalBlending}
         />
       </Mesh>
       <Mesh ref={auraRef} raycast={() => null}>
-        <SphereGeometry args={[0.43, 32, 32]} />
+        <SphereGeometry args={[0.34, 32, 32]} />
         <MeshBasicMaterial
           ref={auraMaterialRef}
-          color={normalizedGlowColor}
+          color={rimColor}
           transparent
-          opacity={0.68}
+          opacity={0.38}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -653,7 +661,7 @@ export function PetSoul({
             ref={(node: THREE.MeshBasicMaterial | null) => {
               ringMaterialRefs.current[index] = node;
             }}
-            color={softGlowColor}
+            color={rimColor}
             transparent
             opacity={ring.opacity}
             depthWrite={false}
@@ -677,7 +685,7 @@ export function PetSoul({
             ref={(node: THREE.MeshBasicMaterial | null) => {
               mistMaterialRefs.current[index] = node;
             }}
-            color={normalizedGlowColor}
+            color={mistColor}
             transparent
             opacity={ribbon.opacity}
             depthWrite={false}
@@ -701,7 +709,7 @@ export function PetSoul({
             ref={(node: THREE.MeshBasicMaterial | null) => {
               rayMaterialRefs.current[index] = node;
             }}
-            color={softGlowColor}
+            color={rimColor}
             transparent
             opacity={ray.opacity}
             depthWrite={false}
@@ -710,22 +718,22 @@ export function PetSoul({
         </Mesh>
       ))}
       <Mesh ref={coreRef} raycast={() => null}>
-        <SphereGeometry args={[0.2, 32, 32]} />
+        <SphereGeometry args={[0.14, 32, 32]} />
         <MeshBasicMaterial
           ref={coreMaterialRef}
           color={lightColor}
           transparent
-          opacity={1}
+          opacity={0.72}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </Mesh>
-      <Mesh scale={[0.58, 1.46, 0.58]} raycast={() => null}>
-        <SphereGeometry args={[0.14, 24, 24]} />
+      <Mesh scale={[0.36, 1.08, 0.36]} raycast={() => null}>
+        <SphereGeometry args={[0.11, 24, 24]} />
         <MeshBasicMaterial
           color="#ffffff"
           transparent
-          opacity={0.78}
+          opacity={0.36}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -766,7 +774,7 @@ export function PetSoul({
             ref={(node: THREE.MeshBasicMaterial | null) => {
               trailMaterialRefs.current[index] = node;
             }}
-            color={index < 2 ? softGlowColor : normalizedGlowColor}
+            color={index < 2 ? softGlowColor : rimColor}
             transparent
             opacity={segment.opacity}
             depthWrite={false}
