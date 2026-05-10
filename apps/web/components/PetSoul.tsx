@@ -192,25 +192,6 @@ const TRAIL_SEGMENTS = [
   { x: -2.28, y: -0.08, z: 0.02, radius: 0.032, sx: 3.75, sy: 0.13, opacity: 0.03 }
 ];
 
-const TRAIL_DUST = [
-  { x: -0.42, y: 0.22, z: -0.16, size: 0.029, opacity: 0.42, speed: 1.3, phase: 0.1 },
-  { x: -0.54, y: -0.18, z: 0.14, size: 0.025, opacity: 0.34, speed: 1.52, phase: 0.75 },
-  { x: -0.68, y: 0.05, z: 0.22, size: 0.023, opacity: 0.3, speed: 1.1, phase: 1.15 },
-  { x: -0.82, y: -0.22, z: -0.12, size: 0.021, opacity: 0.27, speed: 1.38, phase: 1.55 },
-  { x: -0.98, y: 0.18, z: -0.2, size: 0.02, opacity: 0.24, speed: 1.68, phase: 2.05 },
-  { x: -1.12, y: -0.08, z: 0.18, size: 0.018, opacity: 0.21, speed: 1.24, phase: 2.45 },
-  { x: -1.28, y: 0.12, z: 0.08, size: 0.017, opacity: 0.18, speed: 1.52, phase: 2.95 },
-  { x: -1.42, y: -0.16, z: -0.18, size: 0.016, opacity: 0.16, speed: 1.18, phase: 3.35 },
-  { x: -1.58, y: 0.04, z: 0.2, size: 0.015, opacity: 0.14, speed: 1.74, phase: 3.8 },
-  { x: -1.72, y: 0.14, z: -0.08, size: 0.014, opacity: 0.12, speed: 1.4, phase: 4.15 },
-  { x: -1.88, y: -0.12, z: 0.1, size: 0.013, opacity: 0.1, speed: 1.62, phase: 4.55 },
-  { x: -2.04, y: 0.08, z: -0.16, size: 0.012, opacity: 0.085, speed: 1.3, phase: 5.05 },
-  { x: -2.22, y: -0.03, z: 0.16, size: 0.011, opacity: 0.072, speed: 1.48, phase: 5.45 },
-  { x: -2.38, y: 0.11, z: -0.04, size: 0.01, opacity: 0.058, speed: 1.22, phase: 5.9 },
-  { x: -2.56, y: -0.07, z: -0.12, size: 0.009, opacity: 0.046, speed: 1.64, phase: 6.35 },
-  { x: -2.74, y: 0.04, z: 0.1, size: 0.008, opacity: 0.035, speed: 1.36, phase: 6.8 }
-];
-
 function SoulPreviewBackground() {
   const texture = useTexture("/nebo.png");
   const hasTexture = Boolean(texture?.image);
@@ -325,12 +306,10 @@ export function PetSoul({
   const ringRefs = useRef<(THREE.Mesh | null)[]>([]);
   const mistRefs = useRef<(THREE.Mesh | null)[]>([]);
   const trailRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const trailDustRefs = useRef<(THREE.Mesh | null)[]>([]);
   const shellMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const auraMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const trailMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
-  const trailDustMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const particleMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const innerSparkMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const rayMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
@@ -346,7 +325,6 @@ export function PetSoul({
   const soulRings = quality === "light" ? SOUL_RINGS.slice(0, 1) : SOUL_RINGS;
   const mistRibbons = quality === "light" ? MIST_RIBBONS.slice(0, 1) : MIST_RIBBONS;
   const trailSegments = quality === "light" ? TRAIL_SEGMENTS.slice(0, 3) : TRAIL_SEGMENTS;
-  const trailDust = quality === "light" ? TRAIL_DUST.slice(0, 3) : TRAIL_DUST;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
   const rimColor = useMemo(
@@ -354,7 +332,7 @@ export function PetSoul({
     [baseColor, glowBaseColor]
   );
   const mistColor = useMemo(
-    () => glowBaseColor.clone().lerp(baseColor, 0.34),
+    () => glowBaseColor.clone().lerp(baseColor, 0.55),
     [baseColor, glowBaseColor]
   );
   const lightColor = useMemo(
@@ -391,7 +369,6 @@ export function PetSoul({
     trailMaterialRefs.current.forEach((material, index) => {
       updateMaterial(material, index < 2 ? softGlowColor : rimColor);
     });
-    trailDustMaterialRefs.current.forEach((material) => updateMaterial(material, softGlowColor));
     particleMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
     innerSparkMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
     rayMaterialRefs.current.forEach((material) => updateMaterial(material, rimColor));
@@ -572,23 +549,6 @@ export function PetSoul({
         segment.sy * (1 + wave * 0.03)
       );
     });
-    trailDust.forEach((dust, index) => {
-      const particle = trailDustRefs.current[index];
-      const material = trailDustMaterialRefs.current[index];
-      if (!particle || !material) {
-        return;
-      }
-      const wave = Math.sin(t * dust.speed + dust.phase);
-      const fade = (Math.sin(t * (dust.speed * 0.72) + dust.phase) + 1) * 0.5;
-      particle.position.set(
-        dust.x - fade * 0.16,
-        dust.y + wave * 0.08,
-        dust.z + Math.cos(t * dust.speed + dust.phase) * 0.08
-      );
-      particle.scale.setScalar(0.8 + fade * 0.55);
-      material.opacity = dust.opacity * (0.45 + fade * 0.42) * opacity;
-      material.needsUpdate = true;
-    });
     particleSeeds.forEach((seed, index) => {
       const particle = particleRefs.current[index];
       if (!particle) {
@@ -631,7 +591,7 @@ export function PetSoul({
           ref={shellMaterialRef}
           color={mistColor}
           transparent
-          opacity={0.16}
+          opacity={0.22}
           depthWrite={false}
           blending={THREE.NormalBlending}
         />
@@ -642,7 +602,7 @@ export function PetSoul({
           ref={auraMaterialRef}
           color={rimColor}
           transparent
-          opacity={0.38}
+          opacity={0.28}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -777,28 +737,6 @@ export function PetSoul({
             color={index < 2 ? softGlowColor : rimColor}
             transparent
             opacity={segment.opacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </Mesh>
-      ))}
-      {trailDust.map((dust, index) => (
-        <Mesh
-          key={`${dust.x}-${dust.phase}`}
-          ref={(node: THREE.Mesh | null) => {
-            trailDustRefs.current[index] = node;
-          }}
-          position={[dust.x, dust.y, dust.z]}
-          raycast={() => null}
-        >
-          <SphereGeometry args={[dust.size, 12, 12]} />
-          <MeshBasicMaterial
-            ref={(node: THREE.MeshBasicMaterial | null) => {
-              trailDustMaterialRefs.current[index] = node;
-            }}
-            color={softGlowColor}
-            transparent
-            opacity={dust.opacity}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
