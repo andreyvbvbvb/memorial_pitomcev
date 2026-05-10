@@ -125,20 +125,6 @@ export function resolveSoulSurfaceFloorY(
   return housePosition.y + 0.78;
 }
 
-const INNER_SPARKS = Array.from({ length: 26 }, (_, index) => {
-  const angle = index * 2.3999632297;
-  const ring = index % 5;
-  return {
-    angle,
-    radius: 0.08 + ring * 0.052,
-    speed: 1.15 + (index % 7) * 0.13,
-    y: -0.18 + (index % 9) * 0.045,
-    size: 0.012 + (index % 4) * 0.004,
-    phase: index * 0.57,
-    opacity: 0.42 + (index % 5) * 0.08
-  };
-});
-
 function SoulPreviewBackground() {
   const texture = useTexture("/nebo.png");
   const hasTexture = Boolean(texture?.image);
@@ -247,16 +233,13 @@ export function PetSoul({
   const coreRef = useRef<THREE.Mesh>(null);
   const auraRef = useRef<THREE.Mesh>(null);
   const shellRef = useRef<THREE.Mesh>(null);
-  const innerSparkRefs = useRef<(THREE.Mesh | null)[]>([]);
   const shellMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const auraMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
-  const innerSparkMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const previousModeRef = useRef<PetSoulMode>(mode);
   const normalizedColor = normalizeSoulColor(color);
   const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
-  const innerSparks = quality === "light" ? INNER_SPARKS.slice(0, 9) : INNER_SPARKS;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
   const rimColor = useMemo(
@@ -294,7 +277,6 @@ export function PetSoul({
     updateMaterial(shellMaterialRef.current, mistColor);
     updateMaterial(auraMaterialRef.current, rimColor);
     updateMaterial(coreMaterialRef.current, lightColor);
-    innerSparkMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
   }, [lightColor, mistColor, rimColor]);
 
   useFrame(({ clock }) => {
@@ -394,25 +376,6 @@ export function PetSoul({
       const pulse = 1 + Math.sin(t * 1.1 + 1.6) * 0.18;
       shellRef.current.scale.setScalar(pulse);
     }
-    innerSparks.forEach((spark, index) => {
-      const particle = innerSparkRefs.current[index];
-      const material = innerSparkMaterialRefs.current[index];
-      if (!particle || !material) {
-        return;
-      }
-      const angle = spark.angle + t * spark.speed;
-      const verticalWave = Math.sin(t * (spark.speed * 0.86) + spark.phase);
-      const radius = spark.radius + Math.sin(t * 1.4 + spark.phase) * 0.025;
-      particle.position.set(
-        Math.cos(angle) * radius,
-        spark.y + verticalWave * 0.12,
-        Math.sin(angle * 0.86 + spark.phase) * radius
-      );
-      const shimmer = 0.55 + (Math.sin(t * 3.2 + spark.phase) + 1) * 0.28;
-      particle.scale.setScalar(0.72 + shimmer * 0.52);
-      material.opacity = spark.opacity * shimmer * opacity;
-      material.needsUpdate = true;
-    });
   });
 
   return (
@@ -460,27 +423,6 @@ export function PetSoul({
           blending={THREE.AdditiveBlending}
         />
       </Mesh>
-      {innerSparks.map((spark, index) => (
-        <Mesh
-          key={`${spark.angle}-${spark.phase}`}
-          ref={(node: THREE.Mesh | null) => {
-            innerSparkRefs.current[index] = node;
-          }}
-          raycast={() => null}
-        >
-          <SphereGeometry args={[spark.size, 10, 10]} />
-          <MeshBasicMaterial
-            ref={(node: THREE.MeshBasicMaterial | null) => {
-              innerSparkMaterialRefs.current[index] = node;
-            }}
-            color={lightColor}
-            transparent
-            opacity={spark.opacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </Mesh>
-      ))}
     </Group>
   );
 }
