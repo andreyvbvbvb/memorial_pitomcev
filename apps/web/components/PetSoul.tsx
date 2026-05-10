@@ -125,17 +125,6 @@ export function resolveSoulSurfaceFloorY(
   return housePosition.y + 0.78;
 }
 
-const PARTICLE_SEEDS = [
-  { angle: 0.1, radius: 0.52, speed: 0.92, y: 0.08, size: 0.035 },
-  { angle: 1.4, radius: 0.68, speed: 0.72, y: -0.05, size: 0.028 },
-  { angle: 2.6, radius: 0.44, speed: 1.1, y: 0.22, size: 0.024 },
-  { angle: 3.7, radius: 0.78, speed: 0.62, y: 0.0, size: 0.032 },
-  { angle: 4.5, radius: 0.58, speed: 0.82, y: -0.18, size: 0.022 },
-  { angle: 5.6, radius: 0.72, speed: 1.02, y: 0.16, size: 0.026 },
-  { angle: 0.9, radius: 0.88, speed: 0.52, y: 0.3, size: 0.02 },
-  { angle: 2.2, radius: 0.64, speed: 1.2, y: -0.25, size: 0.024 }
-];
-
 const INNER_SPARKS = Array.from({ length: 26 }, (_, index) => {
   const angle = index * 2.3999632297;
   const ring = index % 5;
@@ -258,18 +247,15 @@ export function PetSoul({
   const coreRef = useRef<THREE.Mesh>(null);
   const auraRef = useRef<THREE.Mesh>(null);
   const shellRef = useRef<THREE.Mesh>(null);
-  const particleRefs = useRef<(THREE.Mesh | null)[]>([]);
   const innerSparkRefs = useRef<(THREE.Mesh | null)[]>([]);
   const shellMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const auraMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
-  const particleMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const innerSparkMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const previousModeRef = useRef<PetSoulMode>(mode);
   const normalizedColor = normalizeSoulColor(color);
   const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
-  const particleSeeds = quality === "light" ? PARTICLE_SEEDS.slice(0, 4) : PARTICLE_SEEDS;
   const innerSparks = quality === "light" ? INNER_SPARKS.slice(0, 9) : INNER_SPARKS;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
@@ -308,7 +294,6 @@ export function PetSoul({
     updateMaterial(shellMaterialRef.current, mistColor);
     updateMaterial(auraMaterialRef.current, rimColor);
     updateMaterial(coreMaterialRef.current, lightColor);
-    particleMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
     innerSparkMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
   }, [lightColor, mistColor, rimColor]);
 
@@ -409,19 +394,6 @@ export function PetSoul({
       const pulse = 1 + Math.sin(t * 1.1 + 1.6) * 0.18;
       shellRef.current.scale.setScalar(pulse);
     }
-    particleSeeds.forEach((seed, index) => {
-      const particle = particleRefs.current[index];
-      if (!particle) {
-        return;
-      }
-      const angle = seed.angle + t * seed.speed;
-      particle.position.set(
-        Math.cos(angle) * seed.radius,
-        seed.y + Math.sin(t * (seed.speed + 0.35) + seed.angle) * 0.14,
-        Math.sin(angle) * seed.radius
-      );
-      particle.scale.setScalar(1 + Math.sin(t * 2 + seed.angle) * 0.18);
-    });
     innerSparks.forEach((spark, index) => {
       const particle = innerSparkRefs.current[index];
       const material = innerSparkMaterialRefs.current[index];
@@ -504,27 +476,6 @@ export function PetSoul({
             color={lightColor}
             transparent
             opacity={spark.opacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </Mesh>
-      ))}
-      {particleSeeds.map((seed, index) => (
-        <Mesh
-          key={`${seed.angle}-${seed.radius}`}
-          ref={(node: THREE.Mesh | null) => {
-            particleRefs.current[index] = node;
-          }}
-          raycast={() => null}
-        >
-          <SphereGeometry args={[seed.size, 12, 12]} />
-          <MeshBasicMaterial
-            ref={(node: THREE.MeshBasicMaterial | null) => {
-              particleMaterialRefs.current[index] = node;
-            }}
-            color={lightColor}
-            transparent
-            opacity={0.68}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
