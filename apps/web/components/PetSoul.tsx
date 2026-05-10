@@ -150,23 +150,6 @@ const INNER_SPARKS = Array.from({ length: 26 }, (_, index) => {
   };
 });
 
-const ENERGY_RAYS = [
-  { angle: -0.1, length: 0.72, y: 0.0, z: 0.02, thickness: 0.018, opacity: 0.42, phase: 0.1 },
-  { angle: 0.62, length: 0.56, y: 0.03, z: -0.04, thickness: 0.014, opacity: 0.32, phase: 0.9 },
-  { angle: 1.36, length: 0.5, y: 0.04, z: 0.03, thickness: 0.012, opacity: 0.28, phase: 1.6 },
-  { angle: 2.3, length: 0.62, y: -0.02, z: -0.03, thickness: 0.015, opacity: 0.34, phase: 2.25 },
-  { angle: 3.48, length: 0.68, y: 0.01, z: 0.04, thickness: 0.016, opacity: 0.36, phase: 2.95 },
-  { angle: 4.1, length: 0.48, y: -0.04, z: -0.02, thickness: 0.012, opacity: 0.24, phase: 3.5 },
-  { angle: 5.25, length: 0.58, y: 0.05, z: 0.0, thickness: 0.013, opacity: 0.3, phase: 4.35 }
-];
-
-const MIST_RIBBONS = [
-  { angle: 0.15, x: -0.08, y: 0.23, z: -0.08, radius: 0.035, sx: 10.4, sy: 1.2, opacity: 0.18, phase: 0.2, speed: 0.46 },
-  { angle: 0.82, x: 0.2, y: -0.08, z: 0.08, radius: 0.026, sx: 8.2, sy: 1.0, opacity: 0.13, phase: 1.15, speed: 0.56 },
-  { angle: -0.58, x: -0.26, y: -0.2, z: 0.04, radius: 0.024, sx: 7.4, sy: 0.9, opacity: 0.12, phase: 2.05, speed: 0.4 },
-  { angle: 1.75, x: 0.0, y: 0.02, z: -0.12, radius: 0.02, sx: 6.6, sy: 0.86, opacity: 0.1, phase: 2.75, speed: 0.52 }
-];
-
 function SoulPreviewBackground() {
   const texture = useTexture("/nebo.png");
   const hasTexture = Boolean(texture?.image);
@@ -277,23 +260,17 @@ export function PetSoul({
   const shellRef = useRef<THREE.Mesh>(null);
   const particleRefs = useRef<(THREE.Mesh | null)[]>([]);
   const innerSparkRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const rayRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const mistRefs = useRef<(THREE.Mesh | null)[]>([]);
   const shellMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const auraMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const particleMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const innerSparkMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
-  const rayMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
-  const mistMaterialRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const previousModeRef = useRef<PetSoulMode>(mode);
   const normalizedColor = normalizeSoulColor(color);
   const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
   const particleSeeds = quality === "light" ? PARTICLE_SEEDS.slice(0, 4) : PARTICLE_SEEDS;
   const innerSparks = quality === "light" ? INNER_SPARKS.slice(0, 9) : INNER_SPARKS;
-  const energyRays = quality === "light" ? ENERGY_RAYS.slice(0, 3) : ENERGY_RAYS;
-  const mistRibbons = quality === "light" ? MIST_RIBBONS.slice(0, 1) : MIST_RIBBONS;
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
   const rimColor = useMemo(
@@ -333,8 +310,6 @@ export function PetSoul({
     updateMaterial(coreMaterialRef.current, lightColor);
     particleMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
     innerSparkMaterialRefs.current.forEach((material) => updateMaterial(material, lightColor));
-    rayMaterialRefs.current.forEach((material) => updateMaterial(material, rimColor));
-    mistMaterialRefs.current.forEach((material) => updateMaterial(material, mistColor));
   }, [lightColor, mistColor, rimColor]);
 
   useFrame(({ clock }) => {
@@ -434,49 +409,6 @@ export function PetSoul({
       const pulse = 1 + Math.sin(t * 1.1 + 1.6) * 0.18;
       shellRef.current.scale.setScalar(pulse);
     }
-    energyRays.forEach((ray, index) => {
-      const mesh = rayRefs.current[index];
-      const material = rayMaterialRefs.current[index];
-      if (!mesh || !material) {
-        return;
-      }
-      const pulse = 0.75 + (Math.sin(t * 1.8 + ray.phase) + 1) * 0.18;
-      const length = ray.length * pulse;
-      mesh.position.set(
-        Math.cos(ray.angle) * length * 0.28,
-        ray.y + Math.sin(ray.angle) * length * 0.28,
-        ray.z + Math.sin(t * 0.72 + ray.phase) * 0.018
-      );
-      mesh.rotation.set(0, Math.sin(t * 0.36 + ray.phase) * 0.14, ray.angle);
-      mesh.scale.set(length, ray.thickness, ray.thickness);
-      material.opacity = ray.opacity * (0.62 + Math.sin(t * 2.1 + ray.phase) * 0.28) * opacity;
-      material.needsUpdate = true;
-    });
-    mistRibbons.forEach((ribbon, index) => {
-      const mesh = mistRefs.current[index];
-      const material = mistMaterialRefs.current[index];
-      if (!mesh || !material) {
-        return;
-      }
-      const wave = Math.sin(t * ribbon.speed + ribbon.phase);
-      mesh.position.set(
-        ribbon.x + Math.cos(t * 0.32 + ribbon.phase) * 0.05,
-        ribbon.y + wave * 0.06,
-        ribbon.z + Math.sin(t * 0.28 + ribbon.phase) * 0.06
-      );
-      mesh.rotation.set(
-        0.16 + Math.sin(t * 0.2 + ribbon.phase) * 0.16,
-        0.38 + Math.cos(t * 0.18 + ribbon.phase) * 0.2,
-        ribbon.angle + Math.sin(t * ribbon.speed + ribbon.phase) * 0.28
-      );
-      mesh.scale.set(
-        ribbon.sx * (1 + wave * 0.035),
-        ribbon.sy * (1 - wave * 0.04),
-        ribbon.sy * 0.7
-      );
-      material.opacity = ribbon.opacity * (0.68 + (wave + 1) * 0.14) * opacity;
-      material.needsUpdate = true;
-    });
     particleSeeds.forEach((seed, index) => {
       const particle = particleRefs.current[index];
       if (!particle) {
@@ -535,54 +467,6 @@ export function PetSoul({
           blending={THREE.AdditiveBlending}
         />
       </Mesh>
-      {mistRibbons.map((ribbon, index) => (
-        <Mesh
-          key={`${ribbon.angle}-${ribbon.phase}`}
-          ref={(node: THREE.Mesh | null) => {
-            mistRefs.current[index] = node;
-          }}
-          position={[ribbon.x, ribbon.y, ribbon.z]}
-          rotation={[0, 0, ribbon.angle]}
-          scale={[ribbon.sx, ribbon.sy, ribbon.sy * 0.7]}
-          raycast={() => null}
-        >
-          <SphereGeometry args={[ribbon.radius, 18, 18]} />
-          <MeshBasicMaterial
-            ref={(node: THREE.MeshBasicMaterial | null) => {
-              mistMaterialRefs.current[index] = node;
-            }}
-            color={mistColor}
-            transparent
-            opacity={ribbon.opacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </Mesh>
-      ))}
-      {energyRays.map((ray, index) => (
-        <Mesh
-          key={`${ray.angle}-${ray.length}`}
-          ref={(node: THREE.Mesh | null) => {
-            rayRefs.current[index] = node;
-          }}
-          position={[Math.cos(ray.angle) * ray.length * 0.28, ray.y, ray.z]}
-          rotation={[0, 0, ray.angle]}
-          scale={[ray.length, ray.thickness, ray.thickness]}
-          raycast={() => null}
-        >
-          <SphereGeometry args={[1, 18, 18]} />
-          <MeshBasicMaterial
-            ref={(node: THREE.MeshBasicMaterial | null) => {
-              rayMaterialRefs.current[index] = node;
-            }}
-            color={rimColor}
-            transparent
-            opacity={ray.opacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </Mesh>
-      ))}
       <Mesh ref={coreRef} raycast={() => null}>
         <SphereGeometry args={[0.14, 32, 32]} />
         <MeshBasicMaterial
