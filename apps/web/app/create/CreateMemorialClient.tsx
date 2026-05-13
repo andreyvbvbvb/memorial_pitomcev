@@ -46,9 +46,7 @@ import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import {
   DEFAULT_SOUL_COLOR,
-  DEFAULT_SOUL_GLOW_COLOR,
   SOUL_COLOR_OPTIONS,
-  SOUL_GLOW_COLOR_OPTIONS,
   PetSoulPreview,
   buildSoulSettings,
   readSoulSettings,
@@ -122,7 +120,6 @@ type FormState = {
   bowlFoodColor: string;
   bowlWaterColor: string;
   soulColor: string;
-  soulGlowColor: string;
 };
 
 type PhotoDraft = {
@@ -400,8 +397,7 @@ const initialState: FormState = {
   matColor: colorPalette[9] ?? "#5DADE2",
   bowlFoodColor: colorPalette[3] ?? "#FFD166",
   bowlWaterColor: colorPalette[7] ?? "#8ECAE6",
-  soulColor: DEFAULT_SOUL_COLOR,
-  soulGlowColor: DEFAULT_SOUL_GLOW_COLOR
+  soulColor: DEFAULT_SOUL_COLOR
 };
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
@@ -493,8 +489,7 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
     bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
-    soulColor: soul.color,
-    soulGlowColor: soul.glowColor
+    soulColor: soul.color
   };
 };
 
@@ -543,7 +538,6 @@ export default function CreateMemorialClient({
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
-  const [hoveredSoulGlowColor, setHoveredSoulGlowColor] = useState<string | null>(null);
   const [farewellPlaying, setFarewellPlaying] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
@@ -1160,7 +1154,6 @@ export default function CreateMemorialClient({
     bowl_water_paint: form.bowlWaterColor
   };
   const soulPreviewColor = hoveredSoulColor ?? form.soulColor;
-  const soulPreviewGlowColor = hoveredSoulGlowColor ?? form.soulGlowColor;
 
   useEffect(() => {
     photosRef.current = photos;
@@ -1882,7 +1875,7 @@ export default function CreateMemorialClient({
                 bowl_food_paint: form.bowlFoodColor,
                 bowl_water_paint: form.bowlWaterColor
               },
-              soul: buildSoulSettings(form.soulColor, form.soulGlowColor),
+              soul: buildSoulSettings(form.soulColor),
               version: 3
             }
           })
@@ -1984,7 +1977,7 @@ export default function CreateMemorialClient({
           bowl_food_paint: form.bowlFoodColor,
           bowl_water_paint: form.bowlWaterColor
         },
-        soul: buildSoulSettings(form.soulColor, form.soulGlowColor),
+        soul: buildSoulSettings(form.soulColor),
         version: 3
       }
     };
@@ -2764,7 +2757,6 @@ export default function CreateMemorialClient({
         </div>
         <PetSoulPreview
           color={soulPreviewColor}
-          glowColor={soulPreviewGlowColor}
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
         <div className="grid gap-2 rounded-[24px] border border-white/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
@@ -2784,36 +2776,6 @@ export default function CreateMemorialClient({
                   onMouseLeave={() => setHoveredSoulColor(null)}
                   onFocus={() => setHoveredSoulColor(option.color)}
                   onBlur={() => setHoveredSoulColor(null)}
-                  className={`h-9 w-9 rounded-full border transition ${
-                    isSelected
-                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
-                      : isPreviewed
-                        ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
-                        : "border-white hover:scale-105 hover:border-[#d3a27f]"
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                />
-              );
-            })}
-          </div>
-          <div className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]">
-            Цвет рассеивания
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {SOUL_GLOW_COLOR_OPTIONS.map((option) => {
-              const isSelected = form.soulGlowColor === option.color;
-              const isPreviewed = soulPreviewGlowColor === option.color;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleChange("soulGlowColor", option.color)}
-                  onMouseEnter={() => setHoveredSoulGlowColor(option.color)}
-                  onMouseLeave={() => setHoveredSoulGlowColor(null)}
-                  onFocus={() => setHoveredSoulGlowColor(option.color)}
-                  onBlur={() => setHoveredSoulGlowColor(null)}
                   className={`h-9 w-9 rounded-full border transition ${
                     isSelected
                       ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
@@ -3279,31 +3241,8 @@ export default function CreateMemorialClient({
             })}
           </div>
         </div>
-        <div className="grid gap-2">
-          <div className={overlayLabelClass}>Цвет рассеивания</div>
-          <div className="flex flex-wrap gap-2">
-            {SOUL_GLOW_COLOR_OPTIONS.map((option) => {
-              const isSelected = form.soulGlowColor === option.color;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleChange("soulGlowColor", option.color)}
-                  className={`h-10 w-10 rounded-full border transition ${
-                    isSelected
-                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
-                      : "border-white hover:scale-105 hover:border-[#d3a27f]"
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                />
-              );
-            })}
-          </div>
-        </div>
         <p className="text-xs font-semibold leading-relaxed text-[#8d6e63]">
-          Цвет души меняет ядро, а цвет рассеивания заметнее влияет на ауру, хвост и частицы.
+          Цвет души меняет ядро и мягкое свечение вокруг него.
         </p>
       </div>
     </div>
@@ -3486,7 +3425,6 @@ export default function CreateMemorialClient({
                 houseRotationY={previewHousePlacement.rotY}
                 houseScaleMultiplier={previewHouseScale}
                 soulColor={form.soulColor}
-                soulGlowColor={form.soulGlowColor}
                 soulMode={soulSceneMode}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
@@ -3847,7 +3785,6 @@ export default function CreateMemorialClient({
                       houseRotationY={activeHousePlacement.rotY}
                       houseScaleMultiplier={activeHouseScale}
                       soulColor={form.soulColor}
-                      soulGlowColor={form.soulGlowColor}
                       soulMode="idle"
                       parts={partList}
                       colors={colorOverrides}

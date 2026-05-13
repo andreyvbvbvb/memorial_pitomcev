@@ -16,7 +16,6 @@ export type PetSoulSettings = {
 };
 
 export const DEFAULT_SOUL_COLOR = "#8ee9ff";
-export const DEFAULT_SOUL_GLOW_COLOR = "#dffcff";
 
 export const SOUL_COLOR_OPTIONS = [
   { id: "sky", name: "Небесная", color: "#8ee9ff" },
@@ -25,15 +24,6 @@ export const SOUL_COLOR_OPTIONS = [
   { id: "rose", name: "Розовая", color: "#ff9fd2" },
   { id: "violet", name: "Лиловая", color: "#b8a4ff" },
   { id: "warm", name: "Тёплая", color: "#fff1bd" }
-] as const;
-
-export const SOUL_GLOW_COLOR_OPTIONS = [
-  { id: "mist", name: "Туманная", color: "#dffcff" },
-  { id: "sky", name: "Голубая", color: "#8ee9ff" },
-  { id: "mint", name: "Мятная", color: "#8ff5c8" },
-  { id: "gold", name: "Золотая", color: "#ffd36e" },
-  { id: "rose", name: "Розовая", color: "#ffb6dc" },
-  { id: "violet", name: "Лиловая", color: "#c7bbff" }
 ] as const;
 
 const Group = "group" as unknown as ComponentType<any>;
@@ -63,19 +53,16 @@ export function readSoulSettings(sceneJson?: Record<string, unknown> | null): Pe
   return {
     enabled: soul.enabled !== false,
     color,
-    glowColor: normalizeSoulColor(soul.glowColor, color)
+    glowColor: color
   };
 }
 
-export function buildSoulSettings(
-  color: string,
-  glowColor = color
-): PetSoulSettings & { version: number } {
+export function buildSoulSettings(color: string): PetSoulSettings & { version: number } {
   const normalizedColor = normalizeSoulColor(color);
   return {
     enabled: true,
     color: normalizedColor,
-    glowColor: normalizeSoulColor(glowColor, normalizedColor),
+    glowColor: normalizedColor,
     version: 2
   };
 }
@@ -210,7 +197,6 @@ function keepSoulAboveSurface(target: THREE.Vector3, floorY?: number | null) {
 
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
-  glowColor,
   position = [0, 1.4, 0],
   avoidCenter = null,
   avoidRadius = 0.92,
@@ -232,26 +218,18 @@ export function PetSoul({
   const groupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Mesh>(null);
   const auraRef = useRef<THREE.Mesh>(null);
-  const shellRef = useRef<THREE.Mesh>(null);
-  const shellMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const auraMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const previousModeRef = useRef<PetSoulMode>(mode);
   const normalizedColor = normalizeSoulColor(color);
-  const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
-  const glowBaseColor = useMemo(() => new THREE.Color(normalizedGlowColor), [normalizedGlowColor]);
   const rimColor = useMemo(
-    () => baseColor.clone().lerp(glowBaseColor, 0.22),
-    [baseColor, glowBaseColor]
-  );
-  const mistColor = useMemo(
-    () => glowBaseColor.clone().lerp(baseColor, 0.55),
-    [baseColor, glowBaseColor]
+    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.12),
+    [baseColor]
   );
   const lightColor = useMemo(
-    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.28),
+    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.04),
     [baseColor]
   );
 
@@ -274,10 +252,9 @@ export function PetSoul({
       material.color.set(nextColor);
       material.needsUpdate = true;
     };
-    updateMaterial(shellMaterialRef.current, mistColor);
     updateMaterial(auraMaterialRef.current, rimColor);
     updateMaterial(coreMaterialRef.current, lightColor);
-  }, [lightColor, mistColor, rimColor]);
+  }, [lightColor, rimColor]);
 
   useFrame(({ clock }) => {
     if (startedAtRef.current === null) {
@@ -372,25 +349,10 @@ export function PetSoul({
       const pulse = 1 + Math.sin(t * 1.7 + 0.8) * 0.13;
       auraRef.current.scale.setScalar(pulse);
     }
-    if (shellRef.current) {
-      const pulse = 1 + Math.sin(t * 1.1 + 1.6) * 0.18;
-      shellRef.current.scale.setScalar(pulse);
-    }
   });
 
   return (
-    <Group ref={groupRef} key={`${normalizedColor}-${normalizedGlowColor}-${quality}`}>
-      <Mesh ref={shellRef} raycast={() => null}>
-        <SphereGeometry args={[0.74, 40, 40]} />
-        <MeshBasicMaterial
-          ref={shellMaterialRef}
-          color={mistColor}
-          transparent
-          opacity={0.22}
-          depthWrite={false}
-          blending={THREE.NormalBlending}
-        />
-      </Mesh>
+    <Group ref={groupRef} key={`${normalizedColor}-${quality}`}>
       <Mesh ref={auraRef} raycast={() => null}>
         <SphereGeometry args={[0.34, 32, 32]} />
         <MeshBasicMaterial
@@ -403,22 +365,22 @@ export function PetSoul({
         />
       </Mesh>
       <Mesh ref={coreRef} raycast={() => null}>
-        <SphereGeometry args={[0.14, 32, 32]} />
+        <SphereGeometry args={[0.306, 40, 40]} />
         <MeshBasicMaterial
           ref={coreMaterialRef}
           color={lightColor}
           transparent
-          opacity={0.72}
+          opacity={0.9}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={THREE.NormalBlending}
         />
       </Mesh>
-      <Mesh scale={[0.36, 1.08, 0.36]} raycast={() => null}>
-        <SphereGeometry args={[0.11, 24, 24]} />
+      <Mesh scale={[0.24, 0.82, 0.24]} raycast={() => null}>
+        <SphereGeometry args={[0.1, 24, 24]} />
         <MeshBasicMaterial
           color="#ffffff"
           transparent
-          opacity={0.36}
+          opacity={0.18}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -429,24 +391,20 @@ export function PetSoul({
 
 export function PetSoulPreview({
   color,
-  glowColor,
   className
 }: {
   color?: string | null;
-  glowColor?: string | null;
   className?: string;
 }) {
   const normalizedPreviewColor = normalizeSoulColor(color);
-  const normalizedPreviewGlowColor = normalizeSoulColor(glowColor, normalizedPreviewColor);
   return (
     <div className={`relative overflow-hidden rounded-[22px] bg-[#eef8ff] ${className ?? ""}`}>
       <Canvas dpr={1} camera={{ position: [0, 0.35, 3.2], fov: 42 }}>
         <SoulPreviewBackground />
         <AmbientLight intensity={0.8} />
         <PetSoul
-          key={`${normalizedPreviewColor}-${normalizedPreviewGlowColor}`}
+          key={normalizedPreviewColor}
           color={normalizedPreviewColor}
-          glowColor={normalizedPreviewGlowColor}
           mode="preview"
           position={[0.42, 0, 0]}
           scale={1.05}
