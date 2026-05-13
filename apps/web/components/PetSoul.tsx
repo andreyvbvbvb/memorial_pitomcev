@@ -3,7 +3,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import type { ComponentType } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 export type PetSoulMode = "preview" | "arrival" | "idle" | "farewell";
@@ -218,6 +218,8 @@ export function PetSoul({
   const groupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Mesh>(null);
   const auraRef = useRef<THREE.Mesh>(null);
+  const auraGeometryRef = useRef<THREE.BufferGeometry | null>(null);
+  const auraBasePositionsRef = useRef<Float32Array | null>(null);
   const auraMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -232,6 +234,20 @@ export function PetSoul({
     () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.04),
     [baseColor]
   );
+  const setAuraGeometryRef = useCallback((geometry: THREE.BufferGeometry | null) => {
+    auraGeometryRef.current = geometry;
+    if (!geometry) {
+      auraBasePositionsRef.current = null;
+      return;
+    }
+    const positionAttribute = geometry.getAttribute("position") as THREE.BufferAttribute | undefined;
+    if (!positionAttribute) {
+      auraBasePositionsRef.current = null;
+      return;
+    }
+    positionAttribute.setUsage(THREE.DynamicDrawUsage);
+    auraBasePositionsRef.current = new Float32Array(positionAttribute.array as ArrayLike<number>);
+  }, []);
 
   useEffect(() => {
     if (previousModeRef.current === mode) {
@@ -349,12 +365,39 @@ export function PetSoul({
       const pulse = 1 + Math.sin(t * 1.7 + 0.8) * 0.065;
       auraRef.current.scale.setScalar(pulse);
     }
+    const auraGeometry = auraGeometryRef.current;
+    const auraBasePositions = auraBasePositionsRef.current;
+    const auraPositionAttribute = auraGeometry?.getAttribute("position") as
+      | THREE.BufferAttribute
+      | undefined;
+    if (auraPositionAttribute && auraBasePositions) {
+      const positions = auraPositionAttribute.array;
+      for (let vertexIndex = 0; vertexIndex < auraPositionAttribute.count; vertexIndex += 1) {
+        const index = vertexIndex * 3;
+        const x = auraBasePositions[index] ?? 0;
+        const y = auraBasePositions[index + 1] ?? 0;
+        const z = auraBasePositions[index + 2] ?? 0;
+        const length = Math.hypot(x, y, z) || 1;
+        const nx = x / length;
+        const ny = y / length;
+        const nz = z / length;
+        const wave =
+          Math.sin(nx * 7.8 + t * 1.25) * 0.018 +
+          Math.sin(ny * 6.4 - t * 1.55) * 0.014 +
+          Math.sin((nx + nz) * 5.2 + t * 0.92) * 0.012;
+        const radiusScale = 1 + wave;
+        positions[index] = x * radiusScale;
+        positions[index + 1] = y * radiusScale;
+        positions[index + 2] = z * radiusScale;
+      }
+      auraPositionAttribute.needsUpdate = true;
+    }
   });
 
   return (
     <Group ref={groupRef} key={`${normalizedColor}-${quality}`}>
       <Mesh ref={auraRef} raycast={() => null}>
-        <SphereGeometry args={[0.34, 32, 32]} />
+        <SphereGeometry ref={setAuraGeometryRef} args={[0.34, 48, 48]} />
         <MeshBasicMaterial
           ref={auraMaterialRef}
           color={rimColor}
