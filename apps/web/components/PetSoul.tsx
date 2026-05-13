@@ -402,7 +402,7 @@ export function PetSoul({
           ref={auraMaterialRef}
           color={rimColor}
           transparent
-          opacity={0.28}
+          opacity={0.18}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
