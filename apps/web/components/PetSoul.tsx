@@ -396,7 +396,7 @@ export function PetSoul({
 
   return (
     <Group ref={groupRef} key={`${normalizedColor}-${quality}`}>
-      <Mesh ref={auraRef} raycast={() => null}>
+      <Mesh ref={auraRef} renderOrder={1} raycast={() => null}>
         <SphereGeometry ref={setAuraGeometryRef} args={[0.34, 48, 48]} />
         <MeshBasicMaterial
           ref={auraMaterialRef}
@@ -407,8 +407,8 @@ export function PetSoul({
           blending={THREE.AdditiveBlending}
         />
       </Mesh>
-      <Mesh ref={coreRef} raycast={() => null}>
-        <SphereGeometry args={[0.234, 40, 40]} />
+      <Mesh ref={coreRef} renderOrder={2} raycast={() => null}>
+        <SphereGeometry args={[0.199, 40, 40]} />
         <MeshBasicMaterial
           ref={coreMaterialRef}
           color={lightColor}
