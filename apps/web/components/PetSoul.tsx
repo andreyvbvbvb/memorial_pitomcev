@@ -408,7 +408,7 @@ export function PetSoul({
         />
       </Mesh>
       <Mesh ref={coreRef} raycast={() => null}>
-        <SphereGeometry args={[0.275, 40, 40]} />
+        <SphereGeometry args={[0.234, 40, 40]} />
         <MeshBasicMaterial
           ref={coreMaterialRef}
           color={lightColor}
