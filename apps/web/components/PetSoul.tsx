@@ -346,7 +346,7 @@ export function PetSoul({
       coreRef.current.scale.setScalar(pulse);
     }
     if (auraRef.current) {
-      const pulse = 1 + Math.sin(t * 1.7 + 0.8) * 0.13;
+      const pulse = 1 + Math.sin(t * 1.7 + 0.8) * 0.065;
       auraRef.current.scale.setScalar(pulse);
     }
   });
@@ -365,7 +365,7 @@ export function PetSoul({
         />
       </Mesh>
       <Mesh ref={coreRef} raycast={() => null}>
-        <SphereGeometry args={[0.306, 40, 40]} />
+        <SphereGeometry args={[0.275, 40, 40]} />
         <MeshBasicMaterial
           ref={coreMaterialRef}
           color={lightColor}
@@ -373,16 +373,6 @@ export function PetSoul({
           opacity={0.9}
           depthWrite={false}
           blending={THREE.NormalBlending}
-        />
-      </Mesh>
-      <Mesh scale={[0.24, 0.82, 0.24]} raycast={() => null}>
-        <SphereGeometry args={[0.1, 24, 24]} />
-        <MeshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.18}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
         />
       </Mesh>
     </Group>
