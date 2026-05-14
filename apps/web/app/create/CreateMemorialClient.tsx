@@ -49,6 +49,7 @@ import {
   SOUL_COLOR_OPTIONS,
   PetSoulPreview,
   buildSoulSettings,
+  normalizeSoulColor,
   readSoulSettings,
   type PetSoulMode
 } from "../../components/PetSoul";
@@ -538,6 +539,7 @@ export default function CreateMemorialClient({
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
+  const [customSoulPickerOpen, setCustomSoulPickerOpen] = useState(false);
   const [farewellPlaying, setFarewellPlaying] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
@@ -1154,6 +1156,89 @@ export default function CreateMemorialClient({
     bowl_water_paint: form.bowlWaterColor
   };
   const soulPreviewColor = hoveredSoulColor ?? form.soulColor;
+  const selectedSoulColorIsPreset = SOUL_COLOR_OPTIONS.some(
+    (option) => option.color.toLowerCase() === form.soulColor.toLowerCase()
+  );
+  const customSoulColorValue = normalizeSoulColor(form.soulColor);
+
+  const applySoulColor = (value: string) => {
+    const normalized = normalizeSoulColor(value, form.soulColor);
+    setForm((prev) => ({ ...prev, soulColor: normalized }));
+    setHoveredSoulColor(normalized);
+  };
+
+  const renderSoulColorControls = (compact = false) => {
+    const swatchClass = compact ? "h-10 w-10" : "h-9 w-9";
+    return (
+      <div className="grid gap-2">
+        <div className={compact ? overlayLabelClass : "text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]"}>
+          Цвет души
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {SOUL_COLOR_OPTIONS.map((option) => {
+            const isSelected = form.soulColor.toLowerCase() === option.color.toLowerCase();
+            const isPreviewed = soulPreviewColor.toLowerCase() === option.color.toLowerCase();
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => applySoulColor(option.color)}
+                onMouseEnter={() => setHoveredSoulColor(option.color)}
+                onMouseLeave={() => setHoveredSoulColor(null)}
+                onFocus={() => setHoveredSoulColor(option.color)}
+                onBlur={() => setHoveredSoulColor(null)}
+                className={`${swatchClass} rounded-full border transition ${
+                  isSelected
+                    ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                    : isPreviewed
+                      ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
+                      : "border-white hover:scale-105 hover:border-[#d3a27f]"
+                }`}
+                style={{ backgroundColor: option.color }}
+                aria-label={option.name}
+                title={option.name}
+              />
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setCustomSoulPickerOpen((open) => !open)}
+            onMouseEnter={() => setHoveredSoulColor(customSoulColorValue)}
+            onMouseLeave={() => setHoveredSoulColor(null)}
+            onFocus={() => setHoveredSoulColor(customSoulColorValue)}
+            onBlur={() => setHoveredSoulColor(null)}
+            className={`inline-flex h-10 items-center gap-2 rounded-full border bg-white/90 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 ${
+              !selectedSoulColorIsPreset
+                ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                : "border-white hover:border-[#d3a27f]"
+            }`}
+            aria-expanded={customSoulPickerOpen}
+          >
+            <span
+              className="h-5 w-5 rounded-full border border-white shadow-inner"
+              style={{ backgroundColor: customSoulColorValue }}
+            />
+            Свой
+          </button>
+        </div>
+        {customSoulPickerOpen ? (
+          <div className="grid gap-2 rounded-[18px] border-2 border-white bg-white/88 p-3 shadow-[0_14px_30px_-22px_rgba(93,64,55,0.45)]">
+            <label className="grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+              Палитра
+              <input
+                type="color"
+                value={customSoulColorValue}
+                onInput={(event) => applySoulColor(event.currentTarget.value)}
+                onChange={(event) => applySoulColor(event.currentTarget.value)}
+                className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-transparent p-1 shadow-inner"
+                aria-label="Выбрать свой цвет души"
+              />
+            </label>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   useEffect(() => {
     photosRef.current = photos;
@@ -2760,36 +2845,7 @@ export default function CreateMemorialClient({
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
         <div className="grid gap-2 rounded-[24px] border border-white/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]">
-            Цвет души
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {SOUL_COLOR_OPTIONS.map((option) => {
-              const isSelected = form.soulColor === option.color;
-              const isPreviewed = soulPreviewColor === option.color;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleChange("soulColor", option.color)}
-                  onMouseEnter={() => setHoveredSoulColor(option.color)}
-                  onMouseLeave={() => setHoveredSoulColor(null)}
-                  onFocus={() => setHoveredSoulColor(option.color)}
-                  onBlur={() => setHoveredSoulColor(null)}
-                  className={`h-9 w-9 rounded-full border transition ${
-                    isSelected
-                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
-                      : isPreviewed
-                        ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
-                        : "border-white hover:scale-105 hover:border-[#d3a27f]"
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                />
-              );
-            })}
-          </div>
+          {renderSoulColorControls()}
         </div>
       </div>
     </div>
@@ -3218,29 +3274,7 @@ export default function CreateMemorialClient({
         Душа питомца
       </h3>
       <div className="grid gap-4">
-        <div className="grid gap-2">
-          <div className={overlayLabelClass}>Цвет души</div>
-          <div className="flex flex-wrap gap-2">
-            {SOUL_COLOR_OPTIONS.map((option) => {
-              const isSelected = form.soulColor === option.color;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleChange("soulColor", option.color)}
-                  className={`h-10 w-10 rounded-full border transition ${
-                    isSelected
-                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
-                      : "border-white hover:scale-105 hover:border-[#d3a27f]"
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                />
-              );
-            })}
-          </div>
-        </div>
+        {renderSoulColorControls(true)}
         <p className="text-xs font-semibold leading-relaxed text-[#8d6e63]">
           Цвет души меняет ядро и мягкое свечение вокруг него.
         </p>

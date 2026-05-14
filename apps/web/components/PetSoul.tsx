@@ -19,10 +19,20 @@ export const DEFAULT_SOUL_COLOR = "#8ee9ff";
 
 export const SOUL_COLOR_OPTIONS = [
   { id: "sky", name: "Небесная", color: "#8ee9ff" },
+  { id: "ocean", name: "Океанская", color: "#42c8ff" },
+  { id: "aqua", name: "Аквамарин", color: "#4ee8df" },
   { id: "mint", name: "Мятная", color: "#8ff5c8" },
+  { id: "emerald", name: "Изумрудная", color: "#5df0a6" },
+  { id: "lime", name: "Лаймовая", color: "#baf76e" },
   { id: "gold", name: "Золотая", color: "#ffd36e" },
+  { id: "amber", name: "Янтарная", color: "#ffb84d" },
+  { id: "coral", name: "Коралловая", color: "#ff8a70" },
   { id: "rose", name: "Розовая", color: "#ff9fd2" },
+  { id: "ruby", name: "Малиновая", color: "#ff5f8f" },
   { id: "violet", name: "Лиловая", color: "#b8a4ff" },
+  { id: "lavender", name: "Лавандовая", color: "#d6b7ff" },
+  { id: "moon", name: "Лунная", color: "#e6f2ff" },
+  { id: "dusk", name: "Сумеречная", color: "#9fb7ff" },
   { id: "warm", name: "Тёплая", color: "#fff1bd" }
 ] as const;
 
@@ -227,13 +237,10 @@ export function PetSoul({
   const normalizedColor = normalizeSoulColor(color);
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const rimColor = useMemo(
-    () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.12),
-    [baseColor]
-  );
-  const lightColor = useMemo(
     () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.04),
     [baseColor]
   );
+  const lightColor = useMemo(() => baseColor.clone(), [baseColor]);
   const setAuraGeometryRef = useCallback((geometry: THREE.BufferGeometry | null) => {
     auraGeometryRef.current = geometry;
     if (!geometry) {
@@ -413,7 +420,7 @@ export function PetSoul({
           ref={coreMaterialRef}
           color={lightColor}
           transparent
-          opacity={0.9}
+          opacity={0.96}
           depthWrite={false}
           blending={THREE.NormalBlending}
         />
