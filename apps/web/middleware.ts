@@ -17,5 +17,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/create/:path*", "/my-pets/:path*", "/profile/:path*", "/admin/sql/:path*"]
+  matcher: ["/my-pets/:path*", "/profile/:path*", "/admin/sql/:path*"]
 };

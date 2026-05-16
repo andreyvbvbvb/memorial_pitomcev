@@ -13,6 +13,7 @@ export default function AppHeader() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
+  const [authIntent, setAuthIntent] = useState<"default" | "create">("default");
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -102,7 +103,8 @@ export default function AppHeader() {
     setTimeout(() => setMenuOpen(false), 160);
   };
 
-  const openAuth = () => {
+  const openAuth = (intent: "default" | "create" = "default") => {
+    setAuthIntent(intent);
     setAuthOpen(true);
     requestAnimationFrame(() => setAuthVisible(true));
   };
@@ -434,6 +436,26 @@ export default function AppHeader() {
               </>
             ) : (
               <>
+                <button
+                  type="button"
+                  className={createButtonClass}
+                  aria-label="Создать мемориал"
+                  onClick={() => openAuth("create")}
+                  onMouseEnter={() => triggerCreateSpin(false)}
+                  onMouseLeave={() => triggerCreateSpin(true)}
+                >
+                  <span
+                    key={createSpin.key}
+                    className={`inline-flex text-sm leading-none ${
+                      createSpin.reverse
+                        ? "animate-[createPlusSpinReverse_0.45s_ease-in-out]"
+                        : "animate-[createPlusSpin_0.45s_ease-in-out]"
+                    }`}
+                  >
+                    +
+                  </span>
+                  <span>создать</span>
+                </button>
                 <Link
                   className={pillClass}
                   href="/about"
@@ -446,7 +468,7 @@ export default function AppHeader() {
                   <button
                     type="button"
                     className={authButtonClass}
-                    onClick={openAuth}
+                    onClick={() => openAuth("default")}
                   >
                     Войти
                   </button>
@@ -461,6 +483,18 @@ export default function AppHeader() {
         open={authOpen}
         visible={authVisible}
         onClose={closeAuth}
+        title={authIntent === "create" ? "Создание мемориала" : undefined}
+        helperText={
+          authIntent === "create"
+            ? "Войдите или зарегистрируйтесь, чтобы сразу сохранить мемориал в аккаунте."
+            : undefined
+        }
+        showGuestCreate={authIntent === "create"}
+        successRedirect={authIntent === "create" ? "/create" : "/profile"}
+        onGuestCreate={() => {
+          closeAuth();
+          router.push("/create?guest=1");
+        }}
         onSuccess={(payload) => {
           setUser(payload);
           closeAuth();

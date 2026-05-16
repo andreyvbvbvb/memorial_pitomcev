@@ -3,13 +3,14 @@
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
 import { useGLTF } from "@react-three/drei";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../lib/map-preview";
-import { canUseCalibration, type AccessLevel } from "../../lib/access";
+import { canUseCalibration, type AccessLevel, type AuthUser } from "../../lib/access";
+import AuthModal from "../../components/AuthModal";
 import {
   getAllMemorialModelUrls,
   getEnvironmentSeasons,
@@ -60,6 +61,12 @@ import {
   getGiftSlotType,
   resolveGiftModelUrl
 } from "../../lib/gifts";
+import {
+  deleteGuestMemorialDraft,
+  getGuestMemorialDraft,
+  saveGuestMemorialDraft,
+  type GuestMemorialDraft
+} from "../../lib/guest-drafts";
 import { giftModelsGenerated } from "../../lib/gifts.generated";
 import {
   bowlFoodOptions as allBowlFoodOptions,
@@ -561,6 +568,12 @@ export default function CreateMemorialClient({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
+  const [publishAuthOpen, setPublishAuthOpen] = useState(false);
+  const [publishAuthVisible, setPublishAuthVisible] = useState(false);
+  const [pendingPublishAfterAuth, setPendingPublishAfterAuth] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(isEditMode);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingProgressRef = useRef<number | null>(null);
@@ -579,6 +592,8 @@ export default function CreateMemorialClient({
   });
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftIdFromUrl = searchParams.get("draft");
   const apiUrl = useMemo(() => API_BASE, []);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: apiKey });
@@ -595,6 +610,39 @@ export default function CreateMemorialClient({
       URL.revokeObjectURL(photo.url);
     }
   }, []);
+  const openPublishAuth = useCallback(() => {
+    setPublishAuthOpen(true);
+    requestAnimationFrame(() => setPublishAuthVisible(true));
+  }, []);
+  const closePublishAuth = useCallback(() => {
+    setPublishAuthVisible(false);
+    setTimeout(() => setPublishAuthOpen(false), 200);
+  }, []);
+  const hasDraftContent = useMemo(
+    () =>
+      !isEditMode &&
+      (form.name.trim() ||
+        form.birthDate ||
+        form.deathDate ||
+        form.epitaph.trim() ||
+        form.story.trim() ||
+        form.lat.trim() ||
+        form.lng.trim() ||
+        photos.length > 0 ||
+        step > 0),
+    [
+      form.birthDate,
+      form.deathDate,
+      form.epitaph,
+      form.lat,
+      form.lng,
+      form.name,
+      form.story,
+      isEditMode,
+      photos.length,
+      step
+    ]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -1372,7 +1420,12 @@ export default function CreateMemorialClient({
       try {
         const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
         if (!response.ok) {
-          router.replace("/auth");
+          if (isEditMode) {
+            router.replace("/auth");
+          } else {
+            setCurrentUserLogin(null);
+            setAccessLevel("USER");
+          }
           return;
         }
         const data = (await response.json()) as {
@@ -1432,7 +1485,8 @@ export default function CreateMemorialClient({
         setAccessLevel(data.accessLevel ?? "USER");
       } catch {
         if (!isEditMode) {
-          router.replace("/auth");
+          setCurrentUserLogin(null);
+          setAccessLevel("USER");
         } else if (editId) {
           router.replace(`/pets/${editId}`);
         } else {
@@ -1454,6 +1508,144 @@ export default function CreateMemorialClient({
     }
     void fetchWalletBalance();
   }, [fetchWalletBalance, form.ownerId]);
+
+  useEffect(() => {
+    if (isEditMode || !draftIdFromUrl) {
+      return;
+    }
+    let isMounted = true;
+    const loadDraft = async () => {
+      setDraftLoading(true);
+      try {
+        const draft = await getGuestMemorialDraft(draftIdFromUrl);
+        if (!isMounted || !draft) {
+          return;
+        }
+        photosRef.current.forEach((photo) => revokePhotoUrl(photo));
+        const nextPhotos = draft.photos.map((photo) => {
+          const file =
+            photo.file instanceof File
+              ? photo.file
+              : new File([photo.file], photo.name || "photo", {
+                  type: photo.type || photo.file.type || "image/jpeg",
+                  lastModified: photo.lastModified || Date.now()
+                });
+          return {
+            id: photo.id,
+            file,
+            persistedId: null,
+            isObjectUrl: true,
+            url: URL.createObjectURL(file)
+          };
+        });
+        setForm((prev) => {
+          const nextForm = { ...initialState, ...draft.form } as FormState;
+          nextForm.ownerId = prev.ownerId || "";
+          return nextForm;
+        });
+        setPhotos(nextPhotos);
+        setRemovedPhotoIds([]);
+        setPreviewPhotoId(
+          draft.previewPhotoId && nextPhotos.some((photo) => photo.id === draft.previewPhotoId)
+            ? draft.previewPhotoId
+            : nextPhotos[0]?.id ?? null
+        );
+        setStep(draft.step);
+        setCurrentDraftId(draft.id);
+        setDraftNotice("Черновик загружен");
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Не удалось загрузить черновик");
+        }
+      } finally {
+        if (isMounted) {
+          setDraftLoading(false);
+        }
+      }
+    };
+    void loadDraft();
+    return () => {
+      isMounted = false;
+    };
+  }, [draftIdFromUrl, isEditMode, revokePhotoUrl]);
+
+  const saveCurrentDraft = useCallback(async () => {
+    if (isEditMode) {
+      return null;
+    }
+    const id =
+      currentDraftId ??
+      crypto.randomUUID?.() ??
+      `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const draftPhotos: GuestMemorialDraft["photos"] = photos.flatMap((photo) => {
+      if (!photo.file) {
+        return [];
+      }
+      return [
+        {
+          id: photo.id,
+          name: photo.file.name || "photo",
+          type: photo.file.type || "image/jpeg",
+          lastModified: photo.file.lastModified || Date.now(),
+          file: photo.file
+        }
+      ];
+    });
+    await saveGuestMemorialDraft({
+      id,
+      name: form.name.trim() || "Новый мемориал",
+      updatedAt: new Date().toISOString(),
+      step,
+      form,
+      photos: draftPhotos,
+      previewPhotoId
+    });
+    setCurrentDraftId(id);
+    setDraftNotice("Черновик сохранён в этом браузере");
+    return id;
+  }, [currentDraftId, form, isEditMode, photos, previewPhotoId, step]);
+
+  useEffect(() => {
+    if (!hasDraftContent) {
+      return;
+    }
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasDraftContent]);
+
+  useEffect(() => {
+    if (!hasDraftContent || isEditMode) {
+      return;
+    }
+    const handleLinkClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const link = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!link || link.target === "_blank" || link.origin !== window.location.origin) {
+        return;
+      }
+      if (link.pathname === window.location.pathname && link.search === window.location.search) {
+        return;
+      }
+      const shouldSave = window.confirm("Сохранить черновик перед переходом?");
+      if (!shouldSave) {
+        return;
+      }
+      event.preventDefault();
+      void saveCurrentDraft().finally(() => {
+        router.push(`${link.pathname}${link.search}${link.hash}`);
+      });
+    };
+    document.addEventListener("click", handleLinkClick, true);
+    return () => {
+      document.removeEventListener("click", handleLinkClick, true);
+    };
+  }, [hasDraftContent, isEditMode, router, saveCurrentDraft]);
 
   useEffect(() => {
     return () => {
@@ -1526,9 +1718,6 @@ export default function CreateMemorialClient({
     if (current === 0) {
       if (!authReady) {
         return "Проверяем авторизацию...";
-      }
-      if (!form.ownerId.trim()) {
-        return "Нужно войти в аккаунт";
       }
       if (!form.name.trim()) {
         return "Имя питомца обязательно";
@@ -2009,6 +2198,12 @@ export default function CreateMemorialClient({
       }
     }
 
+    if (!form.ownerId.trim()) {
+      setError(null);
+      openPublishAuth();
+      return;
+    }
+
     if (walletBalance === null) {
       setError("Не удалось загрузить баланс для оплаты мемориала");
       return;
@@ -2126,6 +2321,10 @@ export default function CreateMemorialClient({
       setWalletBalance((prev) =>
         typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev
       );
+      if (currentDraftId) {
+        await deleteGuestMemorialDraft(currentDraftId);
+        setCurrentDraftId(null);
+      }
       setReviewVisible(false);
       setReviewOpen(false);
       setActiveOverlay(null);
@@ -2140,6 +2339,14 @@ export default function CreateMemorialClient({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!pendingPublishAfterAuth || !form.ownerId.trim()) {
+      return;
+    }
+    setPendingPublishAfterAuth(false);
+    void handleSubmit();
+  }, [form.ownerId, pendingPublishAfterAuth]);
 
   const toggleOverlay = (panel: "marker" | "photos" | "story" | "base" | "soul") => {
     if (isEditMode && panel !== "photos" && panel !== "soul") {
@@ -2198,7 +2405,7 @@ export default function CreateMemorialClient({
           type="button"
           onClick={handleNext}
           className={`group inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white ${buttonClassName ?? ""}`}
-          disabled={!authReady || isTransitioning}
+          disabled={!authReady || isTransitioning || draftLoading}
         >
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
             Продолжить
@@ -3739,6 +3946,15 @@ export default function CreateMemorialClient({
                     Отмена
                   </button>
                 ) : null}
+                {!isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={() => void saveCurrentDraft()}
+                    className={builderCancelButtonClass}
+                  >
+                    Сохранить черновик
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={openReview}
@@ -3750,6 +3966,11 @@ export default function CreateMemorialClient({
                   {renderArrowIcon()}
                 </button>
               </div>
+              {draftNotice && !isEditMode ? (
+                <div className="mt-2 rounded-full border-2 border-white bg-white/88 px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.1em] text-[#3b8d76] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)]">
+                  {draftNotice}
+                </div>
+              ) : null}
             </div>
           </div>
           )}
@@ -3837,7 +4058,9 @@ export default function CreateMemorialClient({
                         ) : (
                           <>
                             <p className="text-xs text-slate-500">
-                              Баланс: {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
+                              {form.ownerId
+                                ? `Баланс: ${walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет`
+                                : "Вы собрали мемориал без входа. Для публикации нужно войти или зарегистрироваться."}
                             </p>
                             <div className="grid gap-2">
                               {memorialPlans.map((plan) => {
@@ -3874,7 +4097,9 @@ export default function CreateMemorialClient({
                                 : "Публикация..."
                               : isEditMode
                                 ? "Сохранить"
-                                : `Опубликовать мемориал • ${memorialPrice} монет`}
+                                : form.ownerId
+                                  ? `Опубликовать мемориал • ${memorialPrice} монет`
+                                  : "Войти / зарегистрироваться и опубликовать"}
                           </span>
                         </button>
                       </div>
@@ -3886,6 +4111,26 @@ export default function CreateMemorialClient({
           ) : null}
         </>
       )}
+
+      <AuthModal
+        open={publishAuthOpen}
+        visible={publishAuthVisible}
+        title="Публикация мемориала"
+        helperText="Войдите или зарегистрируйтесь, чтобы сохранить готовый мемориал в аккаунте и опубликовать его."
+        successRedirect={null}
+        onClose={closePublishAuth}
+        onSuccess={(payload: AuthUser) => {
+          setForm((prev) => ({ ...prev, ownerId: payload.id }));
+          setCurrentUserLogin(payload.login ?? null);
+          setAccessLevel(payload.accessLevel ?? "USER");
+          setWalletBalance(
+            typeof payload.coinBalance === "number" ? payload.coinBalance : null
+          );
+          setAuthReady(true);
+          closePublishAuth();
+          setPendingPublishAfterAuth(true);
+        }}
+      />
 
       <ErrorToast message={error} onClose={() => setError(null)} />
 

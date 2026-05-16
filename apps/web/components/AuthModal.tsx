@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../lib/config";
+import type { AuthUser } from "../lib/access";
 import AuthHelpHint from "./AuthHelpHint";
 import ErrorToast from "./ErrorToast";
 import {
@@ -29,23 +30,29 @@ import {
 
 type AuthMode = "login" | "register";
 
-type AuthUser = {
-  id: string;
-  login?: string | null;
-  email: string;
-  coinBalance?: number;
-  termsAccepted?: boolean;
-  offerAccepted?: boolean;
-};
-
 type AuthModalProps = {
   open: boolean;
   visible: boolean;
   onClose: () => void;
   onSuccess?: (user: AuthUser) => void;
+  title?: string;
+  helperText?: string;
+  successRedirect?: string | null;
+  showGuestCreate?: boolean;
+  onGuestCreate?: () => void;
 };
 
-export default function AuthModal({ open, visible, onClose, onSuccess }: AuthModalProps) {
+export default function AuthModal({
+  open,
+  visible,
+  onClose,
+  onSuccess,
+  title,
+  helperText,
+  successRedirect = "/profile",
+  showGuestCreate = false,
+  onGuestCreate
+}: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [identifier, setIdentifier] = useState("");
   const [login, setLogin] = useState("");
@@ -218,7 +225,9 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
       }
       setNotice("Готово! Перенаправляем...");
       onSuccess?.(payload);
-      router.push("/profile");
+      if (successRedirect) {
+        router.push(successRedirect);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка авторизации");
     } finally {
@@ -253,7 +262,9 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
       setConsentOpen(false);
       setNotice("Готово! Перенаправляем...");
       onSuccess?.(payload);
-      router.push("/profile");
+      if (successRedirect) {
+        router.push(successRedirect);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка подтверждения");
     } finally {
@@ -267,7 +278,7 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[1000] flex items-center justify-center px-4 transition-opacity duration-200 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -287,8 +298,11 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <h2 className={authTitleClass}>
-                  {forgotMode ? "Восстановление пароля" : "Вход и регистрация"}
+                  {forgotMode ? "Восстановление пароля" : title ?? "Вход и регистрация"}
                 </h2>
+                {!forgotMode && helperText ? (
+                  <p className={`mt-2 ${authHelperTextClass}`}>{helperText}</p>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -460,6 +474,25 @@ export default function AuthModal({ open, visible, onClose, onSuccess }: AuthMod
                     </button>
                   ) : null}
                 </form>
+                {showGuestCreate ? (
+                  <div className="mt-4 grid gap-3 rounded-[22px] border-[3px] border-white bg-[#f7f1ee] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[3px] border-white bg-white text-[11px] font-black text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)]">
+                        ?
+                      </span>
+                      <p className="text-xs font-bold leading-relaxed text-[#6f6360]">
+                        Можно собрать мемориал без входа. Сохранить и опубликовать его получится в конце после входа или регистрации.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="inline-flex w-full items-center justify-center rounded-[18px] border-[3px] border-white bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-[#fffaf6]"
+                      onClick={onGuestCreate}
+                    >
+                      Создать без входа
+                    </button>
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="mt-5 grid gap-4">
