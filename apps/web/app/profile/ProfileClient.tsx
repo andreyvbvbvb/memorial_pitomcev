@@ -143,6 +143,7 @@ export default function ProfileClient() {
     setProfile(null);
     setLogin("");
     setEmail("");
+    window.dispatchEvent(new Event("memorial-auth-changed"));
     router.replace("/auth");
   };
 

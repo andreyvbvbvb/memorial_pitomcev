@@ -13,19 +13,13 @@ export default function AppHeader() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
-  const [authIntent, setAuthIntent] = useState<"default" | "create">("default");
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [topUpVisible, setTopUpVisible] = useState(false);
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
-  const [createSpin, setCreateSpin] = useState({ key: 0, reverse: false });
   const [balanceSpin, setBalanceSpin] = useState({ key: 0, reverse: false });
-  const [createChecking, setCreateChecking] = useState(false);
-  const [createLimitOpen, setCreateLimitOpen] = useState(false);
-  const [createLimitVisible, setCreateLimitVisible] = useState(false);
-  const [createLimitMessage, setCreateLimitMessage] = useState("");
   const headerRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const apiUrl = useMemo(() => API_BASE, []);
@@ -49,6 +43,16 @@ export default function AppHeader() {
   useEffect(() => {
     fetchMe();
   }, [pathname]);
+
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      void fetchMe();
+    };
+    window.addEventListener("memorial-auth-changed", handleAuthChanged);
+    return () => {
+      window.removeEventListener("memorial-auth-changed", handleAuthChanged);
+    };
+  }, [apiUrl]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -103,8 +107,7 @@ export default function AppHeader() {
     setTimeout(() => setMenuOpen(false), 160);
   };
 
-  const openAuth = (intent: "default" | "create" = "default") => {
-    setAuthIntent(intent);
+  const openAuth = () => {
     setAuthOpen(true);
     requestAnimationFrame(() => setAuthVisible(true));
   };
@@ -124,60 +127,12 @@ export default function AppHeader() {
     setTimeout(() => setTopUpOpen(false), 180);
   };
 
-  const openCreateLimit = (message: string) => {
-    setCreateLimitMessage(message);
-    setCreateLimitOpen(true);
-    requestAnimationFrame(() => setCreateLimitVisible(true));
-  };
-
-  const closeCreateLimit = () => {
-    setCreateLimitVisible(false);
-    setTimeout(() => setCreateLimitOpen(false), 180);
-  };
-
-  const handleCreateClick = async () => {
-    if (!user || createChecking) {
-      return;
-    }
-    setCreateChecking(true);
-    try {
-      const response = await fetch(
-        `${apiUrl}/pets/create-limit/${encodeURIComponent(user.id)}`,
-        { credentials: "include" }
-      );
-      if (!response.ok) {
-        router.push("/create");
-        return;
-      }
-      const data = (await response.json()) as {
-        maxMemorials?: number;
-        canCreate?: boolean;
-      };
-      if (data.canCreate === false) {
-        const maxMemorials =
-          typeof data.maxMemorials === "number"
-            ? data.maxMemorials
-            : user.accessLevel === "OWNER"
-              ? 10000
-              : user.maxMemorials ?? 5;
-        openCreateLimit(
-          `На данный момент можно создать только ${maxMemorials} мемориалов. Для увеличения лимита напишите запрос на primer@gmail.com.`
-        );
-        return;
-      }
-      router.push("/create");
-    } catch {
-      router.push("/create");
-    } finally {
-      setCreateChecking(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await fetch(`${apiUrl}/auth/logout`, { method: "POST", credentials: "include" });
     } finally {
       setUser(null);
+      window.dispatchEvent(new Event("memorial-auth-changed"));
       setMenuVisible(false);
       setMenuOpen(false);
       router.push("/");
@@ -206,10 +161,6 @@ export default function AppHeader() {
       : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 px-4 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
     "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
-  const createButtonClass =
-    isPortraitLayout
-      ? "inline-flex h-[34px] shrink-0 items-center gap-1 rounded-[10px] bg-[#111827] px-2.5 text-[9px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none"
-      : "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none";
   const authButtonClass =
     "rounded-[24px] border border-[#e7dbd3] bg-[#f6efea] px-5 py-2 text-sm font-semibold text-[#5d4037] shadow-[0_12px_24px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-[#fff7f2]";
   const menuPanelClass =
@@ -218,10 +169,6 @@ export default function AppHeader() {
     }`;
   const menuItemClass =
     "flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-left text-[#5d4037] transition-all hover:bg-[#fdf2e9]";
-
-  const triggerCreateSpin = (reverse: boolean) => {
-    setCreateSpin((prev) => ({ key: prev.key + 1, reverse }));
-  };
 
   const triggerBalanceSpin = (reverse: boolean) => {
     setBalanceSpin((prev) => ({ key: prev.key + 1, reverse }));
@@ -298,27 +245,6 @@ export default function AppHeader() {
           <div className={navWrapClass}>
             {user ? (
               <>
-                <button
-                  type="button"
-                  className={createButtonClass}
-                  aria-label="Создать мемориал"
-                  onClick={handleCreateClick}
-                  disabled={createChecking}
-                  onMouseEnter={() => triggerCreateSpin(false)}
-                  onMouseLeave={() => triggerCreateSpin(true)}
-                >
-                  <span
-                    key={createSpin.key}
-                    className={`inline-flex text-sm leading-none ${
-                      createSpin.reverse
-                        ? "animate-[createPlusSpinReverse_0.45s_ease-in-out]"
-                        : "animate-[createPlusSpin_0.45s_ease-in-out]"
-                    }`}
-                  >
-                    +
-                  </span>
-                  <span>{createChecking ? "проверка" : "создать"}</span>
-                </button>
                 <Link
                   className={pillClass}
                   href="/my-pets"
@@ -436,26 +362,6 @@ export default function AppHeader() {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  className={createButtonClass}
-                  aria-label="Создать мемориал"
-                  onClick={() => openAuth("create")}
-                  onMouseEnter={() => triggerCreateSpin(false)}
-                  onMouseLeave={() => triggerCreateSpin(true)}
-                >
-                  <span
-                    key={createSpin.key}
-                    className={`inline-flex text-sm leading-none ${
-                      createSpin.reverse
-                        ? "animate-[createPlusSpinReverse_0.45s_ease-in-out]"
-                        : "animate-[createPlusSpin_0.45s_ease-in-out]"
-                    }`}
-                  >
-                    +
-                  </span>
-                  <span>создать</span>
-                </button>
                 <Link
                   className={pillClass}
                   href="/about"
@@ -468,7 +374,7 @@ export default function AppHeader() {
                   <button
                     type="button"
                     className={authButtonClass}
-                    onClick={() => openAuth("default")}
+                    onClick={openAuth}
                   >
                     Войти
                   </button>
@@ -483,18 +389,7 @@ export default function AppHeader() {
         open={authOpen}
         visible={authVisible}
         onClose={closeAuth}
-        title={authIntent === "create" ? "Создание мемориала" : undefined}
-        helperText={
-          authIntent === "create"
-            ? "Войдите или зарегистрируйтесь, чтобы сразу сохранить мемориал в аккаунте."
-            : undefined
-        }
-        showGuestCreate={authIntent === "create"}
-        successRedirect={authIntent === "create" ? "/create" : "/profile"}
-        onGuestCreate={() => {
-          closeAuth();
-          router.push("/create?guest=1");
-        }}
+        successRedirect="/profile"
         onSuccess={(payload) => {
           setUser(payload);
           closeAuth();
@@ -592,37 +487,6 @@ export default function AppHeader() {
                 Продолжить
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
-      {createLimitOpen ? (
-        <div
-          className={`fixed inset-0 z-[999] flex items-center justify-center px-4 transition-opacity duration-200 ${
-            createLimitVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <button
-            type="button"
-            aria-label="Закрыть"
-            className="absolute inset-0 bg-black/35 backdrop-blur-sm"
-            onClick={closeCreateLimit}
-          />
-          <div
-            className={`relative w-full max-w-md rounded-[28px] border-[4px] border-white bg-white p-6 shadow-[0_24px_70px_-24px_rgba(0,0,0,0.35)] transition-transform duration-200 ${
-              createLimitVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
-            }`}
-          >
-            <h3 className="text-lg font-black text-[#5d4037]">Лимит мемориалов</h3>
-            <p className="mt-3 text-sm font-semibold leading-relaxed text-[#7c6b63]">
-              {createLimitMessage}
-            </p>
-            <button
-              type="button"
-              className="mt-5 w-full rounded-xl bg-[#111827] px-5 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition active:translate-y-[3px] active:shadow-none"
-              onClick={closeCreateLimit}
-            >
-              Понятно
-            </button>
           </div>
         </div>
       ) : null}

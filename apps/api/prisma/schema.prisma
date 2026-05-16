@@ -30,6 +30,7 @@ model User {
 
   pets         Pet[]
   gifts        GiftPlacement[]
+  memorialDrafts MemorialDraft[]
 }
 
 model Pet {
@@ -79,6 +80,31 @@ model Memorial {
   pet           Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@index([activeUntil, deactivatedAt])
+}
+
+model MemorialDraft {
+  id            String   @id @default(cuid())
+  ownerId       String
+  name          String
+  species       String?
+  birthDate     DateTime?
+  deathDate     DateTime?
+  epitaph       String?
+  story         String?
+  isPublic      Boolean  @default(false)
+  lat           Float?
+  lng           Float?
+  markerStyle   String?
+  environmentId String?
+  houseId       String?
+  sceneJson     Json?
+  step          Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, updatedAt])
 }
 
 model MapMarker {

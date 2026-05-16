@@ -24,6 +24,7 @@ import { AuthService } from "../auth/auth.service";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { CreatePetDto } from "./dto/create-pet.dto";
 import { ExtendMemorialDto } from "./dto/extend-memorial.dto";
+import { SaveMemorialDraftDto } from "./dto/save-memorial-draft.dto";
 import { SetPreviewPhotoDto } from "./dto/set-preview-photo.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 import { PetsService } from "./pets.service";
@@ -65,6 +66,33 @@ export class PetsController {
       throw new ForbiddenException("Можно смотреть только свой лимит");
     }
     return this.petsService.getCreationLimit(ownerId);
+  }
+
+  @Get("drafts")
+  @UseGuards(AuthGuard)
+  findDrafts(@CurrentUser() user: AuthenticatedUser) {
+    return this.petsService.findDrafts(user.id);
+  }
+
+  @Get("drafts/:id")
+  @UseGuards(AuthGuard)
+  findDraft(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.petsService.findDraft(id, user);
+  }
+
+  @Post("drafts")
+  @UseGuards(AuthGuard)
+  saveDraft(
+    @Body() dto: SaveMemorialDraftDto,
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.petsService.saveDraft(dto, user);
+  }
+
+  @Delete("drafts/:id")
+  @UseGuards(AuthGuard)
+  removeDraft(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.petsService.removeDraft(id, user);
   }
 
   @Get(":id")

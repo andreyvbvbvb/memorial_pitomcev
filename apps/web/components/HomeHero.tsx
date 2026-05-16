@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import HomeCreateButton from "./HomeCreateButton";
 import HomeHeroBackground from "./HomeHeroBackground";
 
 export default function HomeHero() {
@@ -28,12 +29,9 @@ export default function HomeHero() {
           className="animate-fade-up flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row"
           style={{ "--delay": "0.18s" } as CSSProperties}
         >
-          <Link
-            href="/create"
-            className="inline-flex items-center justify-center rounded-[18px] bg-[#111827] px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none"
-          >
+          <HomeCreateButton className="inline-flex items-center justify-center rounded-[18px] bg-[#111827] px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80">
             Создать мемориал
-          </Link>
+          </HomeCreateButton>
           <Link
             href="/map"
             className="inline-flex items-center justify-center rounded-[18px] border-[3px] border-white bg-white/[0.82] px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_16px_34px_-24px_rgba(93,64,55,0.55)] backdrop-blur transition hover:bg-white"

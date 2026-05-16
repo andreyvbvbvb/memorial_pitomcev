@@ -15,6 +15,7 @@ import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { S3Service } from "../storage/s3.service";
 import { CreatePetDto } from "./dto/create-pet.dto";
+import { SaveMemorialDraftDto } from "./dto/save-memorial-draft.dto";
 import { UpdatePetDto } from "./dto/update-pet.dto";
 
 const DUST_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000;
@@ -203,6 +204,78 @@ export class PetsService {
     ]);
 
     return pet;
+  }
+
+  private buildDraftData(dto: SaveMemorialDraftDto, ownerId: string) {
+    const name = typeof dto.name === "string" ? dto.name.trim() : "";
+    if (!name) {
+      throw new BadRequestException("Имя питомца обязательно");
+    }
+    const hasCoords = typeof dto.lat === "number" && typeof dto.lng === "number";
+    const sceneJson =
+      dto.sceneJson && typeof dto.sceneJson === "object" && !Array.isArray(dto.sceneJson)
+        ? (dto.sceneJson as Prisma.InputJsonValue)
+        : Prisma.JsonNull;
+    return {
+      ownerId,
+      name,
+      species: dto.species ?? null,
+      birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+      deathDate: dto.deathDate ? new Date(dto.deathDate) : null,
+      epitaph: dto.epitaph ?? null,
+      story: dto.story ?? null,
+      isPublic: dto.isPublic ?? false,
+      lat: hasCoords ? dto.lat! : null,
+      lng: hasCoords ? dto.lng! : null,
+      markerStyle: dto.markerStyle ?? null,
+      environmentId: dto.environmentId ?? null,
+      houseId: dto.houseId ?? null,
+      sceneJson,
+      step: typeof dto.step === "number" ? Math.max(0, Math.min(1, Math.round(dto.step))) : 1
+    };
+  }
+
+  async findDrafts(ownerId: string) {
+    return this.prisma.memorialDraft.findMany({
+      where: { ownerId },
+      orderBy: { updatedAt: "desc" }
+    });
+  }
+
+  async findDraft(id: string, viewer: AuthenticatedUser) {
+    const draft = await this.prisma.memorialDraft.findUnique({ where: { id } });
+    if (!draft) {
+      throw new NotFoundException("Draft not found");
+    }
+    if (draft.ownerId !== viewer.id && !canAccessAdmin(viewer)) {
+      throw new ForbiddenException("Можно смотреть только свои черновики");
+    }
+    return draft;
+  }
+
+  async saveDraft(dto: SaveMemorialDraftDto, viewer: AuthenticatedUser) {
+    const data = this.buildDraftData(dto, viewer.id);
+    if (dto.id) {
+      const existing = await this.prisma.memorialDraft.findUnique({
+        where: { id: dto.id }
+      });
+      if (existing) {
+        if (existing.ownerId !== viewer.id && !canAccessAdmin(viewer)) {
+          throw new ForbiddenException("Можно менять только свои черновики");
+        }
+        return this.prisma.memorialDraft.update({
+          where: { id: existing.id },
+          data
+        });
+      }
+    }
+    return this.prisma.memorialDraft.create({ data });
+  }
+
+  async removeDraft(id: string, viewer: AuthenticatedUser) {
+    const draft = await this.findDraft(id, viewer);
+    await this.prisma.memorialDraft.delete({ where: { id: draft.id } });
+    return { ok: true };
   }
 
   async findAll(

@@ -223,7 +223,8 @@ export default function AuthModal({
         setNotice(null);
         return;
       }
-      setNotice("Готово! Перенаправляем...");
+      window.dispatchEvent(new Event("memorial-auth-changed"));
+      setNotice(successRedirect ? "Готово! Перенаправляем..." : "Готово!");
       onSuccess?.(payload);
       if (successRedirect) {
         router.push(successRedirect);
@@ -260,7 +261,8 @@ export default function AuthModal({
       }
       const payload = (await response.json()) as AuthUser;
       setConsentOpen(false);
-      setNotice("Готово! Перенаправляем...");
+      window.dispatchEvent(new Event("memorial-auth-changed"));
+      setNotice(successRedirect ? "Готово! Перенаправляем..." : "Готово!");
       onSuccess?.(payload);
       if (successRedirect) {
         router.push(successRedirect);

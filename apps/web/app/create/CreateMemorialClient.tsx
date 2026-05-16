@@ -61,12 +61,6 @@ import {
   getGiftSlotType,
   resolveGiftModelUrl
 } from "../../lib/gifts";
-import {
-  deleteGuestMemorialDraft,
-  getGuestMemorialDraft,
-  saveGuestMemorialDraft,
-  type GuestMemorialDraft
-} from "../../lib/guest-drafts";
 import { giftModelsGenerated } from "../../lib/gifts.generated";
 import {
   bowlFoodOptions as allBowlFoodOptions,
@@ -167,6 +161,24 @@ type EditMemorialPet = {
 
 type CreateMemorialClientProps = {
   editId?: string | null;
+};
+
+type MemorialDraftDto = {
+  id: string;
+  name: string;
+  species?: string | null;
+  birthDate?: string | null;
+  deathDate?: string | null;
+  epitaph?: string | null;
+  story?: string | null;
+  isPublic?: boolean;
+  lat?: number | null;
+  lng?: number | null;
+  markerStyle?: string | null;
+  environmentId?: string | null;
+  houseId?: string | null;
+  sceneJson?: Record<string, unknown> | null;
+  step?: number | null;
 };
 
 const MEMORIAL_PLANS = [
@@ -501,6 +513,68 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
   };
 };
 
+const buildDraftFormState = (draft: MemorialDraftDto, ownerId: string): FormState => {
+  const sceneJson =
+    draft.sceneJson && typeof draft.sceneJson === "object" && !Array.isArray(draft.sceneJson)
+      ? draft.sceneJson
+      : {};
+  const parts =
+    sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
+      ? (sceneJson.parts as Record<string, unknown>)
+      : {};
+  const colors =
+    sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
+      ? (sceneJson.colors as Record<string, unknown>)
+      : {};
+  const soul = readSoulSettings(sceneJson);
+  const environmentDraft = parseEnvironmentDraft(draft.environmentId ?? null);
+  const pickId = (key: string, fallback: string) =>
+    typeof parts[key] === "string" && parts[key] ? String(parts[key]) : fallback;
+  const pickColor = (key: string, fallback: string) =>
+    typeof colors[key] === "string" && colors[key] ? String(colors[key]) : fallback;
+
+  return {
+    ownerId,
+    name: draft.name ?? "",
+    species: draft.species ?? initialState.species,
+    birthDate: draft.birthDate ? draft.birthDate.slice(0, 10) : "",
+    deathDate: draft.deathDate ? draft.deathDate.slice(0, 10) : "",
+    epitaph: draft.epitaph ?? "",
+    story: draft.story ?? "",
+    isPublic: draft.isPublic ?? true,
+    lat:
+      typeof draft.lat === "number" && !Number.isNaN(draft.lat)
+        ? draft.lat.toFixed(6)
+        : "",
+    lng:
+      typeof draft.lng === "number" && !Number.isNaN(draft.lng)
+        ? draft.lng.toFixed(6)
+        : "",
+    markerStyle: draft.markerStyle ?? firstMarkerVariantId(draft.species ?? initialState.species),
+    environmentId: environmentDraft.environmentId,
+    environmentSeason: environmentDraft.environmentSeason,
+    environmentSeasonAuto: environmentDraft.environmentSeasonAuto,
+    houseId: draft.houseId ?? initialState.houseId,
+    roofId: pickId("roof", initialState.roofId),
+    wallId: pickId("wall", initialState.wallId),
+    signId: pickId("sign", initialState.signId),
+    frameLeftId: pickId("frameLeft", initialState.frameLeftId),
+    frameRightId: pickId("frameRight", initialState.frameRightId),
+    matId: pickId("mat", initialState.matId),
+    bowlFoodId: pickId("bowlFood", initialState.bowlFoodId),
+    bowlWaterId: pickId("bowlWater", initialState.bowlWaterId),
+    roofColor: pickColor("roof_paint", initialState.roofColor),
+    wallColor: pickColor("wall_paint", initialState.wallColor),
+    signColor: pickColor("sign_paint", initialState.signColor),
+    frameLeftColor: pickColor("frame_left_paint", initialState.frameLeftColor),
+    frameRightColor: pickColor("frame_right_paint", initialState.frameRightColor),
+    matColor: pickColor("mat_paint", initialState.matColor),
+    bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
+    bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
+    soulColor: soul.color
+  };
+};
+
 export default function CreateMemorialClient({
   editId = null
 }: CreateMemorialClientProps) {
@@ -568,9 +642,11 @@ export default function CreateMemorialClient({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
-  const [publishAuthOpen, setPublishAuthOpen] = useState(false);
-  const [publishAuthVisible, setPublishAuthVisible] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [authPromptVisible, setAuthPromptVisible] = useState(false);
+  const [authPromptPurpose, setAuthPromptPurpose] = useState<"publish" | "draft">("publish");
   const [pendingPublishAfterAuth, setPendingPublishAfterAuth] = useState(false);
+  const [pendingDraftAfterAuth, setPendingDraftAfterAuth] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
@@ -610,13 +686,14 @@ export default function CreateMemorialClient({
       URL.revokeObjectURL(photo.url);
     }
   }, []);
-  const openPublishAuth = useCallback(() => {
-    setPublishAuthOpen(true);
-    requestAnimationFrame(() => setPublishAuthVisible(true));
+  const openAuthPrompt = useCallback((purpose: "publish" | "draft") => {
+    setAuthPromptPurpose(purpose);
+    setAuthPromptOpen(true);
+    requestAnimationFrame(() => setAuthPromptVisible(true));
   }, []);
-  const closePublishAuth = useCallback(() => {
-    setPublishAuthVisible(false);
-    setTimeout(() => setPublishAuthOpen(false), 200);
+  const closeAuthPrompt = useCallback(() => {
+    setAuthPromptVisible(false);
+    setTimeout(() => setAuthPromptOpen(false), 200);
   }, []);
   const hasDraftContent = useMemo(
     () =>
@@ -1203,6 +1280,54 @@ export default function CreateMemorialClient({
     bowl_food_paint: form.bowlFoodColor,
     bowl_water_paint: form.bowlWaterColor
   };
+  const currentEnvironmentId = form.environmentSeasonAuto
+    ? form.environmentId
+    : `${form.environmentId}_${form.environmentSeason}`;
+  const buildCurrentSceneJson = useCallback(
+    () => ({
+      parts: {
+        roof: form.roofId,
+        wall: form.wallId,
+        sign: form.signId,
+        frameLeft: form.frameLeftId,
+        frameRight: form.frameRightId,
+        mat: form.matId,
+        bowlFood: form.bowlFoodId,
+        bowlWater: form.bowlWaterId
+      },
+      colors: {
+        roof_paint: form.roofColor,
+        wall_paint: form.wallColor,
+        sign_paint: form.signColor,
+        frame_left_paint: form.frameLeftColor,
+        frame_right_paint: form.frameRightColor,
+        mat_paint: form.matColor,
+        bowl_food_paint: form.bowlFoodColor,
+        bowl_water_paint: form.bowlWaterColor
+      },
+      soul: buildSoulSettings(form.soulColor),
+      version: 3
+    }),
+    [
+      form.bowlFoodColor,
+      form.bowlFoodId,
+      form.bowlWaterColor,
+      form.bowlWaterId,
+      form.frameLeftColor,
+      form.frameLeftId,
+      form.frameRightColor,
+      form.frameRightId,
+      form.matColor,
+      form.matId,
+      form.roofColor,
+      form.roofId,
+      form.signColor,
+      form.signId,
+      form.soulColor,
+      form.wallColor,
+      form.wallId
+    ]
+  );
   const soulPreviewColor = hoveredSoulColor ?? form.soulColor;
   const selectedSoulColorIsPreset = SOUL_COLOR_OPTIONS.some(
     (option) => option.color.toLowerCase() === form.soulColor.toLowerCase()
@@ -1510,49 +1635,37 @@ export default function CreateMemorialClient({
   }, [fetchWalletBalance, form.ownerId]);
 
   useEffect(() => {
-    if (isEditMode || !draftIdFromUrl) {
+    if (isEditMode || !draftIdFromUrl || !authReady) {
+      return;
+    }
+    if (!form.ownerId.trim()) {
+      openAuthPrompt("draft");
       return;
     }
     let isMounted = true;
     const loadDraft = async () => {
       setDraftLoading(true);
       try {
-        const draft = await getGuestMemorialDraft(draftIdFromUrl);
-        if (!isMounted || !draft) {
+        const response = await fetch(
+          `${apiUrl}/pets/drafts/${encodeURIComponent(draftIdFromUrl)}`,
+          { credentials: "include" }
+        );
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось загрузить черновик");
+        }
+        const draft = (await response.json()) as MemorialDraftDto;
+        if (!isMounted) {
           return;
         }
         photosRef.current.forEach((photo) => revokePhotoUrl(photo));
-        const nextPhotos = draft.photos.map((photo) => {
-          const file =
-            photo.file instanceof File
-              ? photo.file
-              : new File([photo.file], photo.name || "photo", {
-                  type: photo.type || photo.file.type || "image/jpeg",
-                  lastModified: photo.lastModified || Date.now()
-                });
-          return {
-            id: photo.id,
-            file,
-            persistedId: null,
-            isObjectUrl: true,
-            url: URL.createObjectURL(file)
-          };
-        });
-        setForm((prev) => {
-          const nextForm = { ...initialState, ...draft.form } as FormState;
-          nextForm.ownerId = prev.ownerId || "";
-          return nextForm;
-        });
-        setPhotos(nextPhotos);
+        setForm((prev) => buildDraftFormState(draft, prev.ownerId));
+        setPhotos([]);
         setRemovedPhotoIds([]);
-        setPreviewPhotoId(
-          draft.previewPhotoId && nextPhotos.some((photo) => photo.id === draft.previewPhotoId)
-            ? draft.previewPhotoId
-            : nextPhotos[0]?.id ?? null
-        );
-        setStep(draft.step);
+        setPreviewPhotoId(null);
+        setStep(draft.step === 0 ? 0 : 1);
         setCurrentDraftId(draft.id);
-        setDraftNotice("Черновик загружен");
+        setDraftNotice(null);
       } catch (err) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : "Не удалось загрузить черновик");
@@ -1567,43 +1680,81 @@ export default function CreateMemorialClient({
     return () => {
       isMounted = false;
     };
-  }, [draftIdFromUrl, isEditMode, revokePhotoUrl]);
+  }, [apiUrl, authReady, draftIdFromUrl, form.ownerId, isEditMode, openAuthPrompt, revokePhotoUrl]);
 
-  const saveCurrentDraft = useCallback(async () => {
+  const saveCurrentDraft = useCallback(async (options?: { redirectToMyPets?: boolean }) => {
     if (isEditMode) {
       return null;
     }
-    const id =
-      currentDraftId ??
-      crypto.randomUUID?.() ??
-      `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const draftPhotos: GuestMemorialDraft["photos"] = photos.flatMap((photo) => {
-      if (!photo.file) {
-        return [];
+    if (!form.ownerId.trim()) {
+      setPendingDraftAfterAuth(true);
+      openAuthPrompt("draft");
+      return null;
+    }
+    setDraftLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/pets/drafts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          id: currentDraftId ?? undefined,
+          name: form.name.trim() || "Новый мемориал",
+          species: form.species,
+          birthDate: form.birthDate || undefined,
+          deathDate: form.deathDate || undefined,
+          epitaph: form.epitaph.trim() || undefined,
+          story: form.story.trim() || undefined,
+          isPublic: form.isPublic,
+          lat: canShowMarker ? lat : undefined,
+          lng: canShowMarker ? lng : undefined,
+          markerStyle: form.markerStyle,
+          environmentId: currentEnvironmentId,
+          houseId: form.houseId,
+          step,
+          sceneJson: buildCurrentSceneJson()
+        })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить черновик");
       }
-      return [
-        {
-          id: photo.id,
-          name: photo.file.name || "photo",
-          type: photo.file.type || "image/jpeg",
-          lastModified: photo.file.lastModified || Date.now(),
-          file: photo.file
-        }
-      ];
-    });
-    await saveGuestMemorialDraft({
-      id,
-      name: form.name.trim() || "Новый мемориал",
-      updatedAt: new Date().toISOString(),
-      step,
-      form,
-      photos: draftPhotos,
-      previewPhotoId
-    });
-    setCurrentDraftId(id);
-    setDraftNotice("Черновик сохранён в этом браузере");
-    return id;
-  }, [currentDraftId, form, isEditMode, photos, previewPhotoId, step]);
+      const saved = (await response.json()) as MemorialDraftDto;
+      setCurrentDraftId(saved.id);
+      setDraftNotice("Черновик сохранён. Фотографии сохраняются только при публикации.");
+      if (options?.redirectToMyPets !== false) {
+        window.setTimeout(() => router.push("/my-pets"), 700);
+      }
+      return saved.id;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось сохранить черновик");
+      return null;
+    } finally {
+      setDraftLoading(false);
+    }
+  }, [
+    apiUrl,
+    buildCurrentSceneJson,
+    canShowMarker,
+    currentDraftId,
+    currentEnvironmentId,
+    form.birthDate,
+    form.deathDate,
+    form.epitaph,
+    form.houseId,
+    form.isPublic,
+    form.markerStyle,
+    form.name,
+    form.ownerId,
+    form.species,
+    form.story,
+    isEditMode,
+    lat,
+    lng,
+    openAuthPrompt,
+    router,
+    step
+  ]);
 
   useEffect(() => {
     if (!hasDraftContent) {
@@ -1632,20 +1783,29 @@ export default function CreateMemorialClient({
       if (link.pathname === window.location.pathname && link.search === window.location.search) {
         return;
       }
-      const shouldSave = window.confirm("Сохранить черновик перед переходом?");
+      const shouldSave = window.confirm(
+        "Сохранить черновик перед переходом? Для сохранения нужно войти или зарегистрироваться. Фотографии сохраняются только при публикации."
+      );
       if (!shouldSave) {
         return;
       }
       event.preventDefault();
-      void saveCurrentDraft().finally(() => {
-        router.push(`${link.pathname}${link.search}${link.hash}`);
+      if (!form.ownerId.trim()) {
+        setPendingDraftAfterAuth(true);
+        openAuthPrompt("draft");
+        return;
+      }
+      void saveCurrentDraft({ redirectToMyPets: false }).then((savedId) => {
+        if (savedId) {
+          router.push(`${link.pathname}${link.search}${link.hash}`);
+        }
       });
     };
     document.addEventListener("click", handleLinkClick, true);
     return () => {
       document.removeEventListener("click", handleLinkClick, true);
     };
-  }, [hasDraftContent, isEditMode, router, saveCurrentDraft]);
+  }, [form.ownerId, hasDraftContent, isEditMode, openAuthPrompt, router, saveCurrentDraft]);
 
   useEffect(() => {
     return () => {
@@ -2128,30 +2288,7 @@ export default function CreateMemorialClient({
           credentials: "include",
           body: JSON.stringify({
             houseId: form.houseId,
-            sceneJson: {
-              parts: {
-                roof: form.roofId,
-                wall: form.wallId,
-                sign: form.signId,
-                frameLeft: form.frameLeftId,
-                frameRight: form.frameRightId,
-                mat: form.matId,
-                bowlFood: form.bowlFoodId,
-                bowlWater: form.bowlWaterId
-              },
-              colors: {
-                roof_paint: form.roofColor,
-                wall_paint: form.wallColor,
-                sign_paint: form.signColor,
-                frame_left_paint: form.frameLeftColor,
-                frame_right_paint: form.frameRightColor,
-                mat_paint: form.matColor,
-                bowl_food_paint: form.bowlFoodColor,
-                bowl_water_paint: form.bowlWaterColor
-              },
-              soul: buildSoulSettings(form.soulColor),
-              version: 3
-            }
+            sceneJson: buildCurrentSceneJson()
           })
         });
         if (!response.ok) {
@@ -2200,7 +2337,7 @@ export default function CreateMemorialClient({
 
     if (!form.ownerId.trim()) {
       setError(null);
-      openPublishAuth();
+      openAuthPrompt("publish");
       return;
     }
 
@@ -2217,10 +2354,6 @@ export default function CreateMemorialClient({
     setLoading(true);
     setError(null);
 
-    const environmentId = form.environmentSeasonAuto
-      ? form.environmentId
-      : `${form.environmentId}_${form.environmentSeason}`;
-
     const payload = {
       ownerId: form.ownerId.trim(),
       name: form.name.trim(),
@@ -2233,33 +2366,10 @@ export default function CreateMemorialClient({
       lat: canShowMarker ? lat : undefined,
       lng: canShowMarker ? lng : undefined,
       markerStyle: form.markerStyle,
-      environmentId,
+      environmentId: currentEnvironmentId,
       houseId: form.houseId,
       memorialPlanYears: memorialPlan.years,
-      sceneJson: {
-        parts: {
-          roof: form.roofId,
-          wall: form.wallId,
-          sign: form.signId,
-          frameLeft: form.frameLeftId,
-          frameRight: form.frameRightId,
-          mat: form.matId,
-          bowlFood: form.bowlFoodId,
-          bowlWater: form.bowlWaterId
-        },
-        colors: {
-          roof_paint: form.roofColor,
-          wall_paint: form.wallColor,
-          sign_paint: form.signColor,
-          frame_left_paint: form.frameLeftColor,
-          frame_right_paint: form.frameRightColor,
-          mat_paint: form.matColor,
-          bowl_food_paint: form.bowlFoodColor,
-          bowl_water_paint: form.bowlWaterColor
-        },
-        soul: buildSoulSettings(form.soulColor),
-        version: 3
-      }
+      sceneJson: buildCurrentSceneJson()
     };
 
     try {
@@ -2322,7 +2432,10 @@ export default function CreateMemorialClient({
         typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev
       );
       if (currentDraftId) {
-        await deleteGuestMemorialDraft(currentDraftId);
+        await fetch(`${apiUrl}/pets/drafts/${encodeURIComponent(currentDraftId)}`, {
+          method: "DELETE",
+          credentials: "include"
+        });
         setCurrentDraftId(null);
       }
       setReviewVisible(false);
@@ -2347,6 +2460,14 @@ export default function CreateMemorialClient({
     setPendingPublishAfterAuth(false);
     void handleSubmit();
   }, [form.ownerId, pendingPublishAfterAuth]);
+
+  useEffect(() => {
+    if (!pendingDraftAfterAuth || !form.ownerId.trim()) {
+      return;
+    }
+    setPendingDraftAfterAuth(false);
+    void saveCurrentDraft({ redirectToMyPets: true });
+  }, [form.ownerId, pendingDraftAfterAuth, saveCurrentDraft]);
 
   const toggleOverlay = (panel: "marker" | "photos" | "story" | "base" | "soul") => {
     if (isEditMode && panel !== "photos" && panel !== "soul") {
@@ -3822,6 +3943,30 @@ export default function CreateMemorialClient({
                 <div className="group/control relative">
                   <button
                     type="button"
+                    onClick={() => toggleOverlay("soul")}
+                    aria-label="Цвет души"
+                    title="Цвет души"
+                    className={panelButtonClass(
+                      activeOverlay === "soul",
+                      !isEditMode && isBuilderStep && !visitedOverlays.soul
+                    )}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
+                      <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
+                      <path d="M6 15c.5 1.3 1.2 2 2.4 2.4C7.2 17.8 6.5 18.5 6 20c-.5-1.5-1.2-2.2-2.4-2.6C4.8 17 5.5 16.3 6 15z" />
+                    </svg>
+                    {!isEditMode && isBuilderStep && !visitedOverlays.soul ? (
+                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                        !
+                      </span>
+                    ) : null}
+                  </button>
+                  <span className={builderControlTooltipClass}>Цвет души</span>
+                </div>
+                <div className="group/control relative">
+                  <button
+                    type="button"
                     onClick={() => toggleOverlay("base")}
                     aria-label="Основные данные"
                     title="Основные данные"
@@ -3867,22 +4012,6 @@ export default function CreateMemorialClient({
                     ) : null}
                   </button>
                   <span className={builderControlTooltipClass}>История</span>
-                </div>
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleOverlay("soul")}
-                    aria-label="Цвет души"
-                    title="Цвет души"
-                    className={panelButtonClass(activeOverlay === "soul", false)}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
-                      <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
-                      <path d="M6 15c.5 1.3 1.2 2 2.4 2.4C7.2 17.8 6.5 18.5 6 20c-.5-1.5-1.2-2.2-2.4-2.6C4.8 17 5.5 16.3 6 15z" />
-                    </svg>
-                  </button>
-                  <span className={builderControlTooltipClass}>Цвет души</span>
                 </div>
                 <div className="group/control relative">
                   <button
@@ -3949,10 +4078,11 @@ export default function CreateMemorialClient({
                 {!isEditMode ? (
                   <button
                     type="button"
-                    onClick={() => void saveCurrentDraft()}
+                    onClick={() => void saveCurrentDraft({ redirectToMyPets: true })}
                     className={builderCancelButtonClass}
+                    disabled={draftLoading}
                   >
-                    Сохранить черновик
+                    {draftLoading ? "Сохраняем..." : "Сохранить черновик"}
                   </button>
                 ) : null}
                 <button
@@ -3966,10 +4096,10 @@ export default function CreateMemorialClient({
                   {renderArrowIcon()}
                 </button>
               </div>
-              {draftNotice && !isEditMode ? (
-                <div className="mt-2 rounded-full border-2 border-white bg-white/88 px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.1em] text-[#3b8d76] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)]">
-                  {draftNotice}
-                </div>
+              {!isEditMode ? (
+                <p className="mt-2 max-w-xl text-center text-[10px] font-bold leading-snug text-[#8d6e63]/75">
+                  Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
+                </p>
               ) : null}
             </div>
           </div>
@@ -4113,12 +4243,16 @@ export default function CreateMemorialClient({
       )}
 
       <AuthModal
-        open={publishAuthOpen}
-        visible={publishAuthVisible}
-        title="Публикация мемориала"
-        helperText="Войдите или зарегистрируйтесь, чтобы сохранить готовый мемориал в аккаунте и опубликовать его."
+        open={authPromptOpen}
+        visible={authPromptVisible}
+        title={authPromptPurpose === "draft" ? "Сохранение черновика" : "Публикация мемориала"}
+        helperText={
+          authPromptPurpose === "draft"
+            ? "Войдите или зарегистрируйтесь, чтобы сохранить черновик в аккаунте. Фотографии сохраняются только при публикации."
+            : "Войдите или зарегистрируйтесь, чтобы сохранить готовый мемориал в аккаунте и опубликовать его."
+        }
         successRedirect={null}
-        onClose={closePublishAuth}
+        onClose={closeAuthPrompt}
         onSuccess={(payload: AuthUser) => {
           setForm((prev) => ({ ...prev, ownerId: payload.id }));
           setCurrentUserLogin(payload.login ?? null);
@@ -4127,12 +4261,22 @@ export default function CreateMemorialClient({
             typeof payload.coinBalance === "number" ? payload.coinBalance : null
           );
           setAuthReady(true);
-          closePublishAuth();
-          setPendingPublishAfterAuth(true);
+          closeAuthPrompt();
+          if (authPromptPurpose === "draft") {
+            setPendingDraftAfterAuth(true);
+          } else {
+            setPendingPublishAfterAuth(true);
+          }
         }}
       />
 
       <ErrorToast message={error} onClose={() => setError(null)} />
+      <ErrorToast
+        message={draftNotice}
+        onClose={() => setDraftNotice(null)}
+        variant="success"
+        offset={72}
+      />
 
       {topUpOpen ? (
         <div

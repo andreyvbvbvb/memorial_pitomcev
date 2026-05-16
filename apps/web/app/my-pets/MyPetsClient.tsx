@@ -5,11 +5,6 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../lib/config";
-import {
-  deleteGuestMemorialDraft,
-  listGuestMemorialDrafts,
-  type GuestMemorialDraft
-} from "../../lib/guest-drafts";
 import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
 
@@ -47,15 +42,20 @@ type PetWithPreview = Pet & {
   previewUrl: string | null;
 };
 
-type DraftWithPreview = GuestMemorialDraft & {
-  previewUrl: string | null;
+type MemorialDraft = {
+  id: string;
+  name: string;
+  birthDate: string | null;
+  deathDate: string | null;
+  updatedAt: string;
 };
 
 export default function MyPetsClient() {
   const isPortraitLayout = usePortraitLayout();
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(false);
-  const [drafts, setDrafts] = useState<DraftWithPreview[]>([]);
+  const [drafts, setDrafts] = useState<MemorialDraft[]>([]);
+  const [showDrafts, setShowDrafts] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<4 | 5>(4);
 
@@ -80,9 +80,19 @@ export default function MyPetsClient() {
         if (!petsResponse.ok) {
           throw new Error("Не удалось загрузить список");
         }
-        const petsData = (await petsResponse.json()) as Pet[];
+        const draftsResponse = await fetch(`${apiUrl}/pets/drafts`, {
+          credentials: "include"
+        });
+        if (!draftsResponse.ok) {
+          throw new Error("Не удалось загрузить черновики");
+        }
+        const [petsData, draftsData] = await Promise.all([
+          petsResponse.json() as Promise<Pet[]>,
+          draftsResponse.json() as Promise<MemorialDraft[]>
+        ]);
         if (isMounted) {
           setPets(petsData);
+          setDrafts(draftsData);
         }
       } catch (err) {
         if (isMounted) {
@@ -99,41 +109,6 @@ export default function MyPetsClient() {
       isMounted = false;
     };
   }, [apiUrl, router]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const objectUrls: string[] = [];
-    const loadDrafts = async () => {
-      try {
-        const rows = await listGuestMemorialDrafts();
-        if (!isMounted) {
-          return;
-        }
-        setDrafts(
-          rows.map((draft) => {
-            const previewPhoto =
-              draft.previewPhotoId
-                ? draft.photos.find((photo) => photo.id === draft.previewPhotoId)
-                : draft.photos[0];
-            const previewUrl = previewPhoto ? URL.createObjectURL(previewPhoto.file) : null;
-            if (previewUrl) {
-              objectUrls.push(previewUrl);
-            }
-            return { ...draft, previewUrl };
-          })
-        );
-      } catch {
-        if (isMounted) {
-          setDrafts([]);
-        }
-      }
-    };
-    void loadDrafts();
-    return () => {
-      isMounted = false;
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, []);
 
   const petsWithPreview = useMemo<PetWithPreview[]>(() => {
     return pets.map((pet) => {
@@ -152,6 +127,21 @@ export default function MyPetsClient() {
   const formatLifeRange = (pet: PetWithPreview) => {
     const birthYear = pet.birthDate ? new Date(pet.birthDate).getFullYear() : null;
     const deathYear = pet.deathDate ? new Date(pet.deathDate).getFullYear() : null;
+    if (birthYear && deathYear) {
+      return `${birthYear} — ${deathYear}`;
+    }
+    if (birthYear) {
+      return `Рождён: ${birthYear}`;
+    }
+    if (deathYear) {
+      return `Ушёл: ${deathYear}`;
+    }
+    return "Без дат";
+  };
+  const visibleDrafts = showDrafts ? drafts : [];
+  const formatDraftLifeRange = (draft: MemorialDraft) => {
+    const birthYear = draft.birthDate ? new Date(draft.birthDate).getFullYear() : null;
+    const deathYear = draft.deathDate ? new Date(draft.deathDate).getFullYear() : null;
     if (birthYear && deathYear) {
       return `${birthYear} — ${deathYear}`;
     }
@@ -188,14 +178,33 @@ export default function MyPetsClient() {
         <div className="pointer-events-auto">
           {viewMode === 4 ? (
             <section className={cardsSectionClass}>
+              <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#adb5bd]">
+                    Мои питомцы
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-[#8d6e63]/75">
+                    Черновики хранят данные мемориала без фотографий.
+                  </p>
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-3 rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)]">
+                  <input
+                    type="checkbox"
+                    checked={showDrafts}
+                    onChange={(event) => setShowDrafts(event.target.checked)}
+                    className="h-4 w-4 accent-[#3bceac]"
+                  />
+                  Показывать черновики
+                </label>
+              </div>
               {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
 
-              {petsWithPreview.length === 0 && drafts.length === 0 && !loading ? (
+              {petsWithPreview.length === 0 && visibleDrafts.length === 0 && !loading ? (
                 <p className="text-sm text-slate-500">Пока нет мемориалов.</p>
               ) : null}
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {drafts.map((draft) => (
+                {visibleDrafts.map((draft) => (
                   <div key={draft.id} className={petCardClass}>
                     <div className="block">
                       <button
@@ -204,30 +213,21 @@ export default function MyPetsClient() {
                         className="block w-full text-left"
                       >
                         <div className="relative aspect-square overflow-hidden rounded-[24px] border-2 border-white bg-[#efedeb]">
-                          {draft.previewUrl ? (
-                            <img
-                              src={draft.previewUrl}
-                              alt={`Черновик ${draft.name}`}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fdf2e9] to-[#d3a27f]/10">
-                              <svg
-                                viewBox="0 0 24 24"
-                                className="h-12 w-12 text-[#d3a27f]/25"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.8"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                aria-hidden="true"
-                              >
-                                <path d="M4 5h8a3 3 0 0 1 3 3v11" />
-                                <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
-                              </svg>
-                            </div>
-                          )}
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fdf2e9] to-[#d3a27f]/10">
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-12 w-12 text-[#d3a27f]/25"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M4 5h8a3 3 0 0 1 3 3v11" />
+                              <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
+                            </svg>
+                          </div>
                           <div className="absolute left-3 top-3 rounded-full border border-white bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-[#5d4037] shadow-sm backdrop-blur">
                             Черновик
                           </div>
@@ -239,12 +239,25 @@ export default function MyPetsClient() {
                           <p className="mt-1 text-xs font-bold text-[#8d6e63]/70">
                             Сохранён {new Date(draft.updatedAt).toLocaleDateString("ru-RU")}
                           </p>
+                          <p className="mt-1 text-[11px] font-bold text-[#8d6e63]/60">
+                            {formatDraftLifeRange(draft)}
+                          </p>
+                          <p className="mt-2 text-[10px] font-bold leading-relaxed text-[#8d6e63]/65">
+                            Фотографии не хранятся в черновике и появятся только после публикации.
+                          </p>
                         </div>
                       </button>
                       <button
                         type="button"
                         onClick={async () => {
-                          await deleteGuestMemorialDraft(draft.id);
+                          const response = await fetch(
+                            `${apiUrl}/pets/drafts/${encodeURIComponent(draft.id)}`,
+                            { method: "DELETE", credentials: "include" }
+                          );
+                          if (!response.ok) {
+                            setError("Не удалось удалить черновик");
+                            return;
+                          }
                           setDrafts((current) => current.filter((item) => item.id !== draft.id));
                         }}
                         className="mx-2 mb-2 rounded-[16px] border-2 border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-500 transition hover:bg-red-50"
