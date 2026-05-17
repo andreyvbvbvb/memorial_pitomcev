@@ -448,18 +448,19 @@ function MemorialInstance({
         document.body.style.cursor = "";
       }}
     >
-      <Primitive object={terrain} />
+      <Primitive object={terrain}>
+        <SoulAnchor
+          terrain={terrain}
+          house={house}
+          color={soulSettings.color}
+          glowColor={soulSettings.glowColor}
+          enabled={soulSettings.enabled}
+          active={isActive}
+        />
+      </Primitive>
       {parts.map((part) => (
         <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={sceneJson.colors} />
       ))}
-      <SoulAnchor
-        terrain={terrain}
-        house={house}
-        color={soulSettings.color}
-        glowColor={soulSettings.glowColor}
-        enabled={soulSettings.enabled}
-        active={isActive}
-      />
     </Group>
   );
 }

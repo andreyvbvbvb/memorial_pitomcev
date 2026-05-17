@@ -45,6 +45,7 @@ import {
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
+import AuthHelpHint from "../../components/AuthHelpHint";
 import {
   DEFAULT_SOUL_COLOR,
   SOUL_COLOR_OPTIONS,
@@ -1343,11 +1344,11 @@ export default function CreateMemorialClient({
   const renderSoulColorControls = (compact = false) => {
     const swatchClass = compact ? "h-10 w-10" : "h-9 w-9";
     return (
-      <div className="grid gap-2">
+      <div className="relative grid gap-2">
         <div className={compact ? overlayLabelClass : "text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]"}>
           Цвет души
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex flex-wrap items-center gap-2">
           {SOUL_COLOR_OPTIONS.map((option) => {
             const isSelected = form.soulColor.toLowerCase() === option.color.toLowerCase();
             const isPreviewed = soulPreviewColor.toLowerCase() === option.color.toLowerCase();
@@ -1386,29 +1387,29 @@ export default function CreateMemorialClient({
                 : "border-white hover:border-[#d3a27f]"
             }`}
             aria-expanded={customSoulPickerOpen}
-          >
-            <span
-              className="h-5 w-5 rounded-full border border-white shadow-inner"
-              style={{ backgroundColor: customSoulColorValue }}
-            />
-            Свой
-          </button>
-        </div>
-        {customSoulPickerOpen ? (
-          <div className="grid gap-2 rounded-[18px] border-2 border-white bg-white/88 p-3 shadow-[0_14px_30px_-22px_rgba(93,64,55,0.45)]">
-            <label className="grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-              Палитра
-              <input
-                type="color"
-                value={customSoulColorValue}
-                onInput={(event) => applySoulColor(event.currentTarget.value)}
-                onChange={(event) => applySoulColor(event.currentTarget.value)}
-                className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-transparent p-1 shadow-inner"
-                aria-label="Выбрать свой цвет души"
+            >
+              <span
+                className="h-5 w-5 rounded-full border border-white shadow-inner"
+                style={{ backgroundColor: customSoulColorValue }}
               />
-            </label>
-          </div>
-        ) : null}
+              Свой
+            </button>
+          {customSoulPickerOpen ? (
+            <div className={`absolute top-[calc(100%+0.6rem)] z-[260] w-[min(16rem,calc(100vw-2rem))] rounded-[18px] border-[3px] border-white bg-white/96 p-3 shadow-[0_18px_40px_-22px_rgba(93,64,55,0.55)] backdrop-blur ${compact ? "left-0" : "right-0"}`}>
+              <label className="grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                Палитра
+                <input
+                  type="color"
+                  value={customSoulColorValue}
+                  onInput={(event) => applySoulColor(event.currentTarget.value)}
+                  onChange={(event) => applySoulColor(event.currentTarget.value)}
+                  className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-transparent p-1 shadow-inner"
+                  aria-label="Выбрать свой цвет души"
+                />
+              </label>
+            </div>
+          ) : null}
+        </div>
       </div>
     );
   };
@@ -3157,22 +3158,23 @@ export default function CreateMemorialClient({
   };
 
   const renderSoulPicker = () => (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[30px] border-2 border-white/80 bg-[#dfeef8] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:rounded-[34px] sm:p-4">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.68),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.28))]" />
+    <div className="relative flex h-full w-full flex-col overflow-visible rounded-[30px] border border-white/70 bg-[#f7f1ee] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:rounded-[34px] sm:p-4">
+      <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.5),transparent_38%)]" />
       <div className="relative z-10 grid h-full gap-3">
-        <div>
+        <div className="flex items-center gap-2">
           <div className="text-[11px] font-black uppercase tracking-[0.28em] text-[#8d6e63]">
             Душа питомца
           </div>
-          <p className="mt-1 text-sm font-semibold leading-snug text-[#6f6360]">
-            Выберите цвет светящегося спутника мемориала.
-          </p>
+          <AuthHelpHint
+            className="h-6 w-6 border-2 text-[10px]"
+            text="Выберите цвет светящегося спутника мемориала. Душа появится рядом с домиком и будет сопровождать мемориал в 3D."
+          />
         </div>
         <PetSoulPreview
           color={soulPreviewColor}
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
-        <div className="grid gap-2 rounded-[24px] border border-white/70 bg-white/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <div className="relative grid gap-2 rounded-[24px] border border-white/70 bg-white/78 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
           {renderSoulColorControls()}
         </div>
       </div>
@@ -3600,12 +3602,13 @@ export default function CreateMemorialClient({
       <h3 className={overlaySectionTitleClass}>
         <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
         Душа питомца
+        <AuthHelpHint
+          className="h-6 w-6 border-2 text-[10px] normal-case tracking-normal"
+          text="Цвет души меняет ядро и мягкое свечение вокруг него."
+        />
       </h3>
       <div className="grid gap-4">
         {renderSoulColorControls(true)}
-        <p className="text-xs font-semibold leading-relaxed text-[#8d6e63]">
-          Цвет души меняет ядро и мягкое свечение вокруг него.
-        </p>
       </div>
     </div>
   );
@@ -3658,7 +3661,7 @@ export default function CreateMemorialClient({
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2"
-    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-6";
+    : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3 sm:right-4";
   const builderEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
@@ -3678,9 +3681,14 @@ export default function CreateMemorialClient({
   const builderCancelButtonClass = isPortraitLayout
     ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
     : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
+  const builderDraftButtonClass = isPortraitLayout
+    ? "inline-flex w-[7.8rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-3 py-2.5 text-center text-[0.68rem] font-black uppercase leading-tight tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70"
+    : "inline-flex w-[9rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-3 py-2.5 text-center text-[0.72rem] font-black uppercase leading-tight tracking-[0.1em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70";
   const builderFinishButtonClass = isPortraitLayout
     ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
-    : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+    : "group inline-flex min-w-[15rem] items-center justify-center rounded-xl bg-[#2d3436] px-10 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+  const builderActionTooltipClass =
+    "pointer-events-none absolute bottom-[calc(100%+0.65rem)] right-0 z-[300] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200";
   const builderSceneFrameClass = isPortraitLayout
     ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
     : "fixed inset-0 z-0";
@@ -3747,19 +3755,19 @@ export default function CreateMemorialClient({
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
             {step === 0 ? (
-              <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
+              <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
                 <div className="relative z-10 w-full max-w-[1120px] px-1 sm:px-0">
-                  <div className="relative overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[#efe6e2]/96 p-3 shadow-[0_32px_64px_rgba(89,71,65,0.2)] transition-transform duration-300 ease-out hover:scale-[1.006] sm:rounded-[46px] sm:p-4 lg:p-5">
+                  <div className="relative overflow-visible rounded-[38px] border-[3px] border-white/80 bg-[#efe6e2]/96 p-3 shadow-[0_32px_64px_rgba(89,71,65,0.2)] transition-transform duration-300 ease-out hover:scale-[1.006] sm:rounded-[46px] sm:p-4 lg:p-5">
                     <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
                     <div className="relative grid w-full items-stretch gap-4 md:grid-cols-[minmax(280px,0.9fr)_minmax(390px,1fr)] lg:gap-5">
                       {renderSoulPicker()}
-                      <div className="relative w-full rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
+                      <div className="relative flex w-full flex-col rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
                         <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
                           {renderBaseInfoForm(true)}
                         </div>
                         {renderNavButtons(
-                          "mt-6",
+                          "mt-auto pt-6",
                           "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
                         )}
                       </div>
@@ -4076,31 +4084,44 @@ export default function CreateMemorialClient({
                   </button>
                 ) : null}
                 {!isEditMode ? (
+                  <div className="group/draft-action relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void saveCurrentDraft({ redirectToMyPets: true })}
+                      className={builderDraftButtonClass}
+                      disabled={draftLoading}
+                    >
+                      {draftLoading ? (
+                        "Сохраняем..."
+                      ) : (
+                        <>
+                          Сохранить
+                          <br />
+                          черновик
+                        </>
+                      )}
+                    </button>
+                    <span className={`${builderActionTooltipClass} group-hover/draft-action:opacity-100 group-focus-within/draft-action:opacity-100`}>
+                      Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
+                    </span>
+                  </div>
+                ) : null}
+                <div className="group/finish-action relative min-w-0 flex-1 sm:flex-none">
                   <button
                     type="button"
-                    onClick={() => void saveCurrentDraft({ redirectToMyPets: true })}
-                    className={builderCancelButtonClass}
-                    disabled={draftLoading}
+                    onClick={openReview}
+                    className={builderFinishButtonClass}
                   >
-                    {draftLoading ? "Сохраняем..." : "Сохранить черновик"}
+                    <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                      {isEditMode ? "Сохранить" : "Завершить"}
+                    </span>
+                    {renderArrowIcon()}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={openReview}
-                  className={builderFinishButtonClass}
-                >
-                  <span className="transition-transform duration-300 group-hover:-translate-x-1">
-                    {isEditMode ? "Сохранить" : "Завершить"}
+                  <span className={`${builderActionTooltipClass} group-hover/finish-action:opacity-100 group-focus-within/finish-action:opacity-100`}>
+                    Далее откроется проверка мемориала, после которой можно будет оплатить и опубликовать его.
                   </span>
-                  {renderArrowIcon()}
-                </button>
+                </div>
               </div>
-              {!isEditMode ? (
-                <p className="mt-2 max-w-xl text-center text-[10px] font-bold leading-snug text-[#8d6e63]/75">
-                  Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
-                </p>
-              ) : null}
             </div>
           </div>
           )}

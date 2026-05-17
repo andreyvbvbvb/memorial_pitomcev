@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
+import AuthHelpHint from "../../components/AuthHelpHint";
 
 const MyPets3DView = dynamic(() => import("../../components/MyPets3DView"), {
   ssr: false
@@ -180,12 +181,15 @@ export default function MyPetsClient() {
             <section className={cardsSectionClass}>
               <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#adb5bd]">
-                    Мои питомцы
-                  </p>
-                  <p className="mt-1 text-xs font-bold text-[#8d6e63]/75">
-                    Черновики хранят данные мемориала без фотографий.
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#adb5bd]">
+                      Мои питомцы
+                    </p>
+                    <AuthHelpHint
+                      className="h-6 w-6 border-2 text-[10px]"
+                      text="На этой странице можно открыть опубликованные мемориалы, переключиться в 3D-режим и продолжить работу с сохраненными черновиками. Черновики хранят данные мемориала без фотографий: фотографии загружаются только при публикации."
+                    />
+                  </div>
                 </div>
                 <label className="inline-flex cursor-pointer items-center gap-3 rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)]">
                   <input
@@ -212,8 +216,8 @@ export default function MyPetsClient() {
                         onClick={() => router.push(`/create?draft=${encodeURIComponent(draft.id)}`)}
                         className="block w-full text-left"
                       >
-                        <div className="relative aspect-square overflow-hidden rounded-[24px] border-2 border-white bg-[#efedeb]">
-                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#fdf2e9] to-[#d3a27f]/10">
+                        <div className="relative aspect-square rounded-[24px] border-2 border-white bg-[#efedeb]">
+                          <div className="flex h-full w-full overflow-hidden rounded-[22px] items-center justify-center bg-gradient-to-br from-[#fdf2e9] to-[#d3a27f]/10">
                             <svg
                               viewBox="0 0 24 24"
                               className="h-12 w-12 text-[#d3a27f]/25"
@@ -228,8 +232,11 @@ export default function MyPetsClient() {
                               <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                             </svg>
                           </div>
-                          <div className="absolute left-3 top-3 rounded-full border border-white bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-[#5d4037] shadow-sm backdrop-blur">
+                          <div className="group/draft-badge absolute left-3 top-3 rounded-full border border-white bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-[#5d4037] shadow-sm backdrop-blur">
                             Черновик
+                            <span className="pointer-events-none absolute left-0 top-[calc(100%+0.5rem)] z-[1000] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200 group-hover/draft-badge:opacity-100">
+                              Фотографии не хранятся в черновике и появятся только после публикации.
+                            </span>
                           </div>
                         </div>
                         <div className="mt-4 px-2 pb-2">
@@ -241,9 +248,6 @@ export default function MyPetsClient() {
                           </p>
                           <p className="mt-1 text-[11px] font-bold text-[#8d6e63]/60">
                             {formatDraftLifeRange(draft)}
-                          </p>
-                          <p className="mt-2 text-[10px] font-bold leading-relaxed text-[#8d6e63]/65">
-                            Фотографии не хранятся в черновике и появятся только после публикации.
                           </p>
                         </div>
                       </button>
@@ -260,9 +264,26 @@ export default function MyPetsClient() {
                           }
                           setDrafts((current) => current.filter((item) => item.id !== draft.id));
                         }}
-                        className="mx-2 mb-2 rounded-[16px] border-2 border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-500 transition hover:bg-red-50"
+                        className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-white/95 text-red-500 shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-red-50 hover:text-red-600"
+                        aria-label="Удалить черновик"
+                        title="Удалить черновик"
                       >
-                        Удалить черновик
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M19 6l-1 14H6L5 6" />
+                          <path d="M10 11v5" />
+                          <path d="M14 11v5" />
+                        </svg>
                       </button>
                     </div>
                   </div>

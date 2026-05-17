@@ -205,6 +205,39 @@ function keepSoulAboveSurface(target: THREE.Vector3, floorY?: number | null) {
   target.y = Math.max(target.y, floorY);
 }
 
+type IdleSoulAction = {
+  kind: "float" | "orbit" | "loop";
+  startedAt: number;
+  duration: number;
+  seed: number;
+  direction: 1 | -1;
+  radius: number;
+};
+
+function pickIdleSoulAction(startedAt: number, canOrbit: boolean): IdleSoulAction {
+  const roll = Math.random();
+  let kind: IdleSoulAction["kind"] = "float";
+  if (roll > 0.56 && roll <= 0.78) {
+    kind = "loop";
+  } else if (roll > 0.78 && canOrbit) {
+    kind = "orbit";
+  }
+  const duration =
+    kind === "orbit"
+      ? 5.2 + Math.random() * 2.4
+      : kind === "loop"
+        ? 2.6 + Math.random() * 1.3
+        : 4.2 + Math.random() * 2.2;
+  return {
+    kind,
+    startedAt,
+    duration,
+    seed: Math.random() * Math.PI * 2,
+    direction: Math.random() > 0.5 ? 1 : -1,
+    radius: 0.56 + Math.random() * 0.38
+  };
+}
+
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
   position = [0, 1.4, 0],
@@ -234,6 +267,8 @@ export function PetSoul({
   const coreMaterialRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const previousModeRef = useRef<PetSoulMode>(mode);
+  const idlePhaseRef = useRef(Math.random() * Math.PI * 2);
+  const idleActionRef = useRef<IdleSoulAction | null>(null);
   const normalizedColor = normalizeSoulColor(color);
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const rimColor = useMemo(
@@ -262,6 +297,7 @@ export function PetSoul({
     }
     previousModeRef.current = mode;
     startedAtRef.current = null;
+    idleActionRef.current = null;
   }, [mode]);
 
   useEffect(() => {
@@ -285,15 +321,48 @@ export function PetSoul({
     }
     const elapsed = clock.elapsedTime - startedAtRef.current;
     const t = clock.elapsedTime;
+    const phase = idlePhaseRef.current;
     const base = new THREE.Vector3(position[0], position[1], position[2]);
     const idle = new THREE.Vector3(
-      Math.cos(t * 0.55) * 0.44,
-      Math.sin(t * 1.28) * 0.18 + Math.sin(t * 0.42) * 0.08,
-      Math.sin(t * 0.48) * 0.38
+      Math.cos(t * 0.55 + phase) * 0.44,
+      Math.sin(t * 1.28 + phase * 0.7) * 0.18 + Math.sin(t * 0.42 + phase) * 0.08,
+      Math.sin(t * 0.48 + phase * 1.2) * 0.38
     );
     const target = base.clone().add(idle);
     let opacity = 1;
     let visualScale = scale;
+    let spinBoost = 0;
+
+    if (mode === "idle") {
+      const canOrbit = Boolean(avoidCenter);
+      const currentAction = idleActionRef.current;
+      if (!currentAction || t - currentAction.startedAt >= currentAction.duration) {
+        idleActionRef.current = pickIdleSoulAction(t, canOrbit);
+      }
+      const action = idleActionRef.current;
+      if (action?.kind === "orbit" && avoidCenter) {
+        const progress = THREE.MathUtils.clamp((t - action.startedAt) / action.duration, 0, 1);
+        const angle = action.seed + action.direction * progress * Math.PI * 2.15;
+        const orbitRadius = avoidRadius + action.radius;
+        const centerY = avoidCenter[1] + 0.98;
+        target.set(
+          avoidCenter[0] + Math.cos(angle) * orbitRadius,
+          centerY + Math.sin(progress * Math.PI * 2 + action.seed) * 0.34,
+          avoidCenter[2] + Math.sin(angle) * orbitRadius
+        );
+        visualScale = scale * (1 + Math.sin(progress * Math.PI) * 0.08);
+      } else if (action?.kind === "loop") {
+        const progress = THREE.MathUtils.clamp((t - action.startedAt) / action.duration, 0, 1);
+        const angle = action.seed + action.direction * progress * Math.PI * 2.4;
+        target.set(
+          base.x + Math.cos(angle) * action.radius,
+          base.y + Math.sin(progress * Math.PI * 2) * 0.28,
+          base.z + Math.sin(angle * 1.35) * action.radius * 0.72
+        );
+        spinBoost = action.direction * progress * Math.PI * 4;
+        visualScale = scale * (1 + Math.sin(progress * Math.PI) * 0.1);
+      }
+    }
 
     if (mode === "preview") {
       target.set(
@@ -360,8 +429,8 @@ export function PetSoul({
     if (groupRef.current) {
       groupRef.current.position.copy(target);
       groupRef.current.scale.setScalar(visualScale);
-      groupRef.current.rotation.y = t * 0.38;
-      groupRef.current.rotation.z = Math.sin(t * 0.5) * 0.08;
+      groupRef.current.rotation.y = t * 0.38 + spinBoost;
+      groupRef.current.rotation.z = Math.sin(t * 0.5 + phase) * 0.08;
       setMaterialOpacity(groupRef.current, opacity);
     }
     if (coreRef.current) {
