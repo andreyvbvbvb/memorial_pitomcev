@@ -265,6 +265,7 @@ function PartAttachment({
 }
 
 function SoulAnchor({
+  root,
   terrain,
   house,
   color,
@@ -272,6 +273,7 @@ function SoulAnchor({
   enabled,
   active
 }: {
+  root: THREE.Object3D | null;
   terrain: THREE.Object3D;
   house: THREE.Object3D;
   color?: string | null;
@@ -286,16 +288,31 @@ function SoulAnchor({
   } | null>(null);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !root) {
       setAnchor(null);
       return;
     }
+    root.updateMatrixWorld(true);
+    terrain.updateMatrixWorld(true);
+
+    const toRootLocal = (value: [number, number, number]): [number, number, number] => {
+      const point = new THREE.Vector3(value[0], value[1], value[2]);
+      terrain.localToWorld(point);
+      root.worldToLocal(point);
+      return [point.x, point.y, point.z];
+    };
+
+    const terrainFloorY = resolveSoulSurfaceFloorY(terrain, house);
+    const floorPoint = new THREE.Vector3(0, terrainFloorY, 0);
+    terrain.localToWorld(floorPoint);
+    root.worldToLocal(floorPoint);
+
     setAnchor({
-      position: resolveSoulAnchorPosition(terrain, house),
-      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house),
-      floorY: resolveSoulSurfaceFloorY(terrain, house)
+      position: toRootLocal(resolveSoulAnchorPosition(terrain, house)),
+      avoidCenter: toRootLocal(resolveSoulObstacleCenterPosition(terrain, house)),
+      floorY: floorPoint.y
     });
-  }, [enabled, terrain, house]);
+  }, [enabled, root, terrain, house]);
 
   if (!enabled || !anchor) {
     return null;
@@ -397,9 +414,14 @@ function MemorialInstance({
     moved: boolean;
     pointerId: number | null;
   } | null>(null);
+  const [root, setRoot] = useState<THREE.Group | null>(null);
+  const handleRootRef = useCallback((node: THREE.Group | null) => {
+    setRoot(node);
+  }, []);
 
   return (
     <Group
+      ref={handleRootRef}
       position={item.position}
       rotation={item.rotation}
       scale={isActive ? 1.05 : 1}
@@ -448,19 +470,19 @@ function MemorialInstance({
         document.body.style.cursor = "";
       }}
     >
-      <Primitive object={terrain}>
-        <SoulAnchor
-          terrain={terrain}
-          house={house}
-          color={soulSettings.color}
-          glowColor={soulSettings.glowColor}
-          enabled={soulSettings.enabled}
-          active={isActive}
-        />
-      </Primitive>
+      <Primitive object={terrain} />
       {parts.map((part) => (
         <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={sceneJson.colors} />
       ))}
+      <SoulAnchor
+        root={root}
+        terrain={terrain}
+        house={house}
+        color={soulSettings.color}
+        glowColor={soulSettings.glowColor}
+        enabled={soulSettings.enabled}
+        active={isActive}
+      />
     </Group>
   );
 }

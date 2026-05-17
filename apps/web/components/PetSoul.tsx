@@ -342,25 +342,31 @@ export function PetSoul({
       const action = idleActionRef.current;
       if (action?.kind === "orbit" && avoidCenter) {
         const progress = THREE.MathUtils.clamp((t - action.startedAt) / action.duration, 0, 1);
+        const envelope = Math.sin(progress * Math.PI);
+        const eased = progress * progress * (3 - 2 * progress);
         const angle = action.seed + action.direction * progress * Math.PI * 2.15;
         const orbitRadius = avoidRadius + action.radius;
         const centerY = avoidCenter[1] + 0.98;
-        target.set(
+        const orbitTarget = new THREE.Vector3(
           avoidCenter[0] + Math.cos(angle) * orbitRadius,
-          centerY + Math.sin(progress * Math.PI * 2 + action.seed) * 0.34,
+          centerY + Math.sin(eased * Math.PI * 2 + action.seed) * 0.34,
           avoidCenter[2] + Math.sin(angle) * orbitRadius
         );
-        visualScale = scale * (1 + Math.sin(progress * Math.PI) * 0.08);
+        target.lerp(orbitTarget, envelope);
+        visualScale = scale * (1 + envelope * 0.08);
       } else if (action?.kind === "loop") {
         const progress = THREE.MathUtils.clamp((t - action.startedAt) / action.duration, 0, 1);
-        const angle = action.seed + action.direction * progress * Math.PI * 2.4;
-        target.set(
-          base.x + Math.cos(angle) * action.radius,
-          base.y + Math.sin(progress * Math.PI * 2) * 0.28,
-          base.z + Math.sin(angle * 1.35) * action.radius * 0.72
+        const envelope = Math.sin(progress * Math.PI);
+        const angle = action.seed + action.direction * progress * Math.PI * 2;
+        target.add(
+          new THREE.Vector3(
+            Math.cos(angle) * action.radius * envelope,
+            Math.sin(progress * Math.PI * 2) * 0.28 * envelope,
+            Math.sin(angle * 1.35) * action.radius * 0.72 * envelope
+          )
         );
-        spinBoost = action.direction * progress * Math.PI * 4;
-        visualScale = scale * (1 + Math.sin(progress * Math.PI) * 0.1);
+        spinBoost = action.direction * envelope * Math.PI * 2;
+        visualScale = scale * (1 + envelope * 0.1);
       }
     }
 

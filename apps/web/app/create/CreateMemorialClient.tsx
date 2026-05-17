@@ -1395,7 +1395,7 @@ export default function CreateMemorialClient({
               Свой
             </button>
           {customSoulPickerOpen ? (
-            <div className={`absolute top-[calc(100%+0.6rem)] z-[260] w-[min(16rem,calc(100vw-2rem))] rounded-[18px] border-[3px] border-white bg-white/96 p-3 shadow-[0_18px_40px_-22px_rgba(93,64,55,0.55)] backdrop-blur ${compact ? "left-0" : "right-0"}`}>
+            <div className={`absolute z-[260] w-[min(16rem,calc(100vw-2rem))] rounded-[18px] border-[3px] border-white bg-white/96 p-3 shadow-[0_18px_40px_-22px_rgba(93,64,55,0.55)] backdrop-blur ${compact ? "bottom-[calc(100%+0.6rem)] left-0" : "right-0 top-[calc(100%+0.6rem)]"}`}>
               <label className="grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
                 Палитра
                 <input
@@ -3604,6 +3604,7 @@ export default function CreateMemorialClient({
         Душа питомца
         <AuthHelpHint
           className="h-6 w-6 border-2 text-[10px] normal-case tracking-normal"
+          placement="top"
           text="Цвет души меняет ядро и мягкое свечение вокруг него."
         />
       </h3>
@@ -3618,14 +3619,18 @@ export default function CreateMemorialClient({
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] overflow-hidden rounded-[18px] border-2 border-white bg-white/95 p-1.5 shadow-[0_16px_36px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
-      : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] overflow-hidden rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
-  const overlayPanelClass = (variant?: "marker") =>
+      ? "pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] rounded-[18px] border-2 border-white bg-white/95 p-1.5 shadow-[0_16px_36px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
+      : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
+  const overlayPanelClass = (variant?: "marker" | "soul") =>
     `${overlayPanelBase} ${
       variant === "marker"
         ? isPortraitLayout
           ? "w-auto max-h-[min(52vh,420px)] overflow-y-auto"
           : "w-[min(1080px,calc(100vw-8.75rem))] max-h-[min(74vh,700px)] overflow-x-hidden !overflow-y-auto [@media(max-height:640px)]:w-[min(720px,calc(100vw-8.75rem))] [@media(max-height:640px)]:max-h-[calc(100dvh-var(--app-header-height,56px)-5.5rem)] [@media(max-height:640px)]:rounded-[24px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-1.5"
+        : variant === "soul"
+          ? isPortraitLayout
+            ? "w-auto overflow-visible"
+            : "w-[min(500px,calc(100vw-8.75rem))] overflow-visible"
         : isPortraitLayout
           ? "w-auto max-h-[min(44vh,360px)] overflow-y-auto"
           : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
@@ -3933,7 +3938,7 @@ export default function CreateMemorialClient({
             </div>
 
             {activeOverlay ? (
-              <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : undefined)}>
+              <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : activeOverlay === "soul" ? "soul" : undefined)}>
                 {activeOverlay === "base"
                   ? renderBaseInfoPanel()
                   : activeOverlay === "marker"

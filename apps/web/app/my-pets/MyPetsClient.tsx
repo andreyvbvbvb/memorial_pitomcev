@@ -254,6 +254,10 @@ export default function MyPetsClient() {
                       <button
                         type="button"
                         onClick={async () => {
+                          const confirmed = window.confirm("Удалить черновик?");
+                          if (!confirmed) {
+                            return;
+                          }
                           const response = await fetch(
                             `${apiUrl}/pets/drafts/${encodeURIComponent(draft.id)}`,
                             { method: "DELETE", credentials: "include" }
