@@ -477,18 +477,20 @@ export default function AuthModal({
                   ) : null}
                 </form>
                 {showGuestCreate ? (
-                  <div className="mt-3 flex flex-col gap-3 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:flex-row sm:items-center">
-                    <div className="flex min-w-0 flex-1 items-start gap-2.5">
-                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-white text-[10px] font-black text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)]">
-                        ?
-                      </span>
-                      <p className="text-[11px] font-bold leading-snug text-[#6f6360]">
-                        Можно собрать мемориал без входа. Сохранить и опубликовать его получится в конце после входа или регистрации.
+                  <div className="mt-3 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                    <div className="mb-2 flex items-center justify-center gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63]">
+                        Продолжить без входа
                       </p>
+                      <AuthHelpHint
+                        className="h-6 w-6 border-2 text-[10px]"
+                        placement="top"
+                        text="Можно собрать мемориал без входа. Сохранить и опубликовать его получится в конце после входа или регистрации."
+                      />
                     </div>
                     <button
                       type="button"
-                      className="inline-flex w-full shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-[#fffaf6] sm:w-auto"
+                      className="inline-flex w-full items-center justify-center rounded-[16px] border-[3px] border-white bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-[#fffaf6]"
                       onClick={onGuestCreate}
                     >
                       Создать без входа
