@@ -5,7 +5,7 @@ export const authBackdropGlowClass =
   "pointer-events-none absolute rounded-full blur-[100px]";
 
 export const authCardClass =
-  "relative overflow-hidden rounded-[32px] border-[4px] border-white bg-white/90 p-3 shadow-[0_28px_70px_-28px_rgba(93,64,55,0.46)] backdrop-blur sm:rounded-[38px] sm:p-4";
+  "relative overflow-visible rounded-[32px] border-[4px] border-white bg-white/90 p-3 shadow-[0_28px_70px_-28px_rgba(93,64,55,0.46)] backdrop-blur sm:rounded-[38px] sm:p-4";
 
 export const authInnerShellClass =
   "rounded-[24px] bg-[#fffaf6] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] sm:rounded-[30px] sm:p-5";

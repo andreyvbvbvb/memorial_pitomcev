@@ -280,7 +280,7 @@ export default function AuthModal({
 
   return (
     <div
-      className={`fixed inset-0 z-[1000] flex items-center justify-center px-4 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-[1000] flex items-center justify-center px-3 py-3 transition-opacity duration-200 sm:px-4 sm:py-6 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -291,13 +291,13 @@ export default function AuthModal({
         onClick={handleClose}
       />
       <div
-        className={`relative w-full max-w-[32rem] transition-transform duration-200 ${
+        className={`relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[32rem] overflow-y-auto overflow-x-visible overscroll-contain rounded-[38px] transition-transform duration-200 sm:max-h-[calc(100dvh-3rem)] ${
           visible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
         }`}
       >
         <div className={authCardClass}>
           <div className={authInnerShellClass}>
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
               <div className="min-w-0 flex-1">
                 <h2 className={authTitleClass}>
                   {forgotMode ? "Восстановление пароля" : title ?? "Вход и регистрация"}
@@ -318,7 +318,7 @@ export default function AuthModal({
 
             {!forgotMode ? (
               <>
-                <div className={`mt-5 ${authTabsRailClass}`}>
+                <div className={`mt-4 sm:mt-5 ${authTabsRailClass}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -341,7 +341,7 @@ export default function AuthModal({
                   </button>
                 </div>
 
-                <form className="mt-5 grid gap-4" onSubmit={handleSubmitEvent}>
+                <form className={`${showGuestCreate ? "mt-4 grid gap-3" : "mt-5 grid gap-4"}`} onSubmit={handleSubmitEvent}>
                   {mode === "login" ? (
                     <>
                       <label className={authLabelClass}>
@@ -477,18 +477,18 @@ export default function AuthModal({
                   ) : null}
                 </form>
                 {showGuestCreate ? (
-                  <div className="mt-4 grid gap-3 rounded-[22px] border-[3px] border-white bg-[#f7f1ee] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                    <div className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[3px] border-white bg-white text-[11px] font-black text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)]">
+                  <div className="mt-3 flex flex-col gap-3 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white bg-white text-[10px] font-black text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)]">
                         ?
                       </span>
-                      <p className="text-xs font-bold leading-relaxed text-[#6f6360]">
+                      <p className="text-[11px] font-bold leading-snug text-[#6f6360]">
                         Можно собрать мемориал без входа. Сохранить и опубликовать его получится в конце после входа или регистрации.
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="inline-flex w-full items-center justify-center rounded-[18px] border-[3px] border-white bg-white px-5 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-[#fffaf6]"
+                      className="inline-flex w-full shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-[#fffaf6] sm:w-auto"
                       onClick={onGuestCreate}
                     >
                       Создать без входа
