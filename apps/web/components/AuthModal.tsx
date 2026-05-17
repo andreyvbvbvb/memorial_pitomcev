@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../lib/config";
 import type { AuthUser } from "../lib/access";
@@ -71,9 +72,14 @@ export default function AuthModal({
   const [consentTerms, setConsentTerms] = useState(false);
   const [consentOffer, setConsentOffer] = useState(false);
   const [consentLoading, setConsentLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -274,11 +280,11 @@ export default function AuthModal({
     }
   };
 
-  if (!open) {
+  if (!open || !mounted) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       className={`fixed inset-0 z-[1000] flex items-center justify-center px-3 py-3 transition-opacity duration-200 sm:px-4 sm:py-6 ${
         visible ? "opacity-100" : "opacity-0"
@@ -569,6 +575,7 @@ export default function AuthModal({
           </div>
         </div>
       ) : null}
-    </div>
+    </div>,
+    document.body
   );
 }
