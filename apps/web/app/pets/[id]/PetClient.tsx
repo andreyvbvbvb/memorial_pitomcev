@@ -2295,6 +2295,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           soulColor={soulSettings.color}
           soulGlowColor={soulSettings.glowColor}
           soulEnabled={soulSettings.enabled}
+          soulPath={soulSettings.path}
           soulMode={editDialogOpen ? "idle" : "arrival"}
           onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
           showControls={false}
@@ -3221,6 +3222,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       soulColor={soulSettings.color}
                       soulGlowColor={soulSettings.glowColor}
                       soulEnabled={soulSettings.enabled}
+                      soulPath={soulSettings.path}
                       soulMode="idle"
                       softEdges
                       className="h-[420px]"

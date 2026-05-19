@@ -30,7 +30,8 @@ import {
   readSoulSettings,
   resolveSoulAnchorPosition,
   resolveSoulObstacleCenterPosition,
-  resolveSoulSurfaceFloorY
+  resolveSoulSurfaceFloorY,
+  type PetSoulPath
 } from "./PetSoul";
 
 type SceneParts = {
@@ -270,6 +271,7 @@ function SoulAnchor({
   house,
   color,
   glowColor,
+  path,
   enabled,
   active
 }: {
@@ -278,6 +280,7 @@ function SoulAnchor({
   house: THREE.Object3D;
   color?: string | null;
   glowColor?: string | null;
+  path?: PetSoulPath | null;
   enabled: boolean;
   active: boolean;
 }) {
@@ -328,6 +331,7 @@ function SoulAnchor({
       floorY={anchor.floorY}
       mode="idle"
       quality={active ? "full" : "light"}
+      path={path}
       scale={active ? 0.92 : 0.62}
     />
   );
@@ -480,6 +484,7 @@ function MemorialInstance({
         house={house}
         color={soulSettings.color}
         glowColor={soulSettings.glowColor}
+        path={soulSettings.path}
         enabled={soulSettings.enabled}
         active={isActive}
       />

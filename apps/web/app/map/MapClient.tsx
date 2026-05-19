@@ -20,7 +20,8 @@ import {
   readSoulSettings,
   resolveSoulAnchorPosition,
   resolveSoulObstacleCenterPosition,
-  resolveSoulSurfaceFloorY
+  resolveSoulSurfaceFloorY,
+  type PetSoulPath
 } from "../../components/PetSoul";
 import { markerAnchor, markerBaseId, markerIconUrl, markerSize, markerStyles } from "../../lib/markers";
 import {
@@ -96,6 +97,7 @@ type MemorialSceneData = {
     enabled: boolean;
     color: string;
     glowColor: string;
+    path: PetSoulPath | null;
   };
 };
 
@@ -497,6 +499,7 @@ function SoulAnchor({
   house,
   color,
   glowColor,
+  path,
   enabled,
   active
 }: {
@@ -504,6 +507,7 @@ function SoulAnchor({
   house: THREE.Object3D;
   color?: string | null;
   glowColor?: string | null;
+  path?: PetSoulPath | null;
   enabled: boolean;
   active: boolean;
 }) {
@@ -539,6 +543,7 @@ function SoulAnchor({
       floorY={anchor.floorY}
       mode="idle"
       quality={active ? "full" : "light"}
+      path={path}
       scale={active ? 0.86 : 0.58}
     />
   );
@@ -608,6 +613,7 @@ function TerrainWithHouseScene({
           house={house}
           color={data.soul?.color}
           glowColor={data.soul?.glowColor}
+          path={data.soul?.path}
           enabled
           active={active === true}
         />

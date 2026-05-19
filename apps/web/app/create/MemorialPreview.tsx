@@ -22,6 +22,7 @@ import {
   resolveSoulObstacleCenterPosition,
   resolveSoulSurfaceFloorY,
   type PetSoulMode,
+  type PetSoulPath,
   type PetSoulQuality
 } from "../../components/PetSoul";
 
@@ -85,6 +86,7 @@ type Props = {
   soulGlowColor?: string | null;
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
+  soulPath?: PetSoulPath | null;
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   suppressLoadingOverlay?: boolean;
@@ -841,6 +843,7 @@ function SoulAnchor({
   glowColor,
   mode,
   quality,
+  path,
   enabled
 }: {
   terrain: THREE.Object3D;
@@ -849,6 +852,7 @@ function SoulAnchor({
   glowColor?: string | null;
   mode: PetSoulMode;
   quality: PetSoulQuality;
+  path?: PetSoulPath | null;
   enabled: boolean;
 }) {
   const [anchor, setAnchor] = useState<{
@@ -887,6 +891,7 @@ function SoulAnchor({
       floorY={anchor.floorY}
       mode={mode}
       quality={quality}
+      path={path}
       scale={quality === "light" ? 0.78 : 1}
     />
   );
@@ -978,6 +983,7 @@ function TerrainWithHouse({
   soulGlowColor,
   soulEnabled,
   soulMode,
+  soulPath,
   soulQuality,
   soulAnchorMode,
   onReady,
@@ -1025,6 +1031,7 @@ function TerrainWithHouse({
   soulGlowColor?: string | null;
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
+  soulPath?: PetSoulPath | null;
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   onReady?: () => void;
@@ -1418,6 +1425,7 @@ function TerrainWithHouse({
           color={soulColor}
           glowColor={soulGlowColor}
           mode={soulMode ?? "idle"}
+          path={soulPath}
           quality={soulQuality ?? "full"}
           enabled
         />
@@ -1519,6 +1527,7 @@ export default function MemorialPreview({
   soulGlowColor,
   soulEnabled = true,
   soulMode = "idle",
+  soulPath,
   soulQuality = "full",
   soulAnchorMode = "scene",
   suppressLoadingOverlay = false,
@@ -1912,6 +1921,7 @@ export default function MemorialPreview({
               soulGlowColor={soulGlowColor}
               soulEnabled={soulEnabled}
               soulMode={soulMode}
+              soulPath={soulPath}
               soulQuality={soulQuality}
               soulAnchorMode={soulAnchorMode}
               onReady={() => setSceneReady(true)}

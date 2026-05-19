@@ -13,6 +13,21 @@ export type PetSoulSettings = {
   enabled: boolean;
   color: string;
   glowColor: string;
+  path: PetSoulPath | null;
+};
+
+export type PetSoulPathPoint = {
+  x: number;
+  y: number;
+  z: number;
+  duration: number;
+};
+
+export type PetSoulPath = {
+  enabled: boolean;
+  points: PetSoulPathPoint[];
+  returnDuration: number;
+  idleDuration: number;
 };
 
 export const DEFAULT_SOUL_COLOR = "#8ee9ff";
@@ -44,6 +59,18 @@ const Color = "color" as unknown as ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as ComponentType<any>;
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+const SOUL_PATH_MIN_DURATION = 0.2;
+const SOUL_PATH_MAX_DURATION = 30;
+const SOUL_PATH_MAX_POINTS = 12;
+const SOUL_PATH_MAX_OFFSET = 8;
+
+const clampFiniteNumber = (value: unknown, fallback: number, min: number, max: number) => {
+  const number = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+  return THREE.MathUtils.clamp(number, min, max);
+};
 
 export function normalizeSoulColor(value?: unknown, fallback = DEFAULT_SOUL_COLOR) {
   const safeFallback = HEX_COLOR_RE.test(fallback) ? fallback : DEFAULT_SOUL_COLOR;
@@ -52,6 +79,50 @@ export function normalizeSoulColor(value?: unknown, fallback = DEFAULT_SOUL_COLO
   }
   const trimmed = value.trim();
   return HEX_COLOR_RE.test(trimmed) ? trimmed : safeFallback;
+}
+
+export function normalizeSoulPath(value?: unknown): PetSoulPath | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const raw = value as Record<string, unknown>;
+  const rawPoints = Array.isArray(raw.points) ? raw.points : [];
+  const points = rawPoints
+    .slice(0, SOUL_PATH_MAX_POINTS)
+    .map((point) => {
+      if (!point || typeof point !== "object" || Array.isArray(point)) {
+        return null;
+      }
+      const item = point as Record<string, unknown>;
+      return {
+        x: clampFiniteNumber(item.x, 0, -SOUL_PATH_MAX_OFFSET, SOUL_PATH_MAX_OFFSET),
+        y: clampFiniteNumber(item.y, 0, -SOUL_PATH_MAX_OFFSET, SOUL_PATH_MAX_OFFSET),
+        z: clampFiniteNumber(item.z, 0, -SOUL_PATH_MAX_OFFSET, SOUL_PATH_MAX_OFFSET),
+        duration: clampFiniteNumber(
+          item.duration,
+          2,
+          SOUL_PATH_MIN_DURATION,
+          SOUL_PATH_MAX_DURATION
+        )
+      };
+    })
+    .filter((point): point is PetSoulPathPoint => Boolean(point));
+
+  if (points.length === 0) {
+    return null;
+  }
+
+  return {
+    enabled: raw.enabled === true,
+    points,
+    returnDuration: clampFiniteNumber(
+      raw.returnDuration,
+      2,
+      SOUL_PATH_MIN_DURATION,
+      SOUL_PATH_MAX_DURATION
+    ),
+    idleDuration: clampFiniteNumber(raw.idleDuration, 2.5, 0, SOUL_PATH_MAX_DURATION)
+  };
 }
 
 export function readSoulSettings(sceneJson?: Record<string, unknown> | null): PetSoulSettings {
@@ -63,16 +134,27 @@ export function readSoulSettings(sceneJson?: Record<string, unknown> | null): Pe
   return {
     enabled: soul.enabled !== false,
     color,
-    glowColor: color
+    glowColor: color,
+    path: normalizeSoulPath(soul.path)
   };
 }
 
-export function buildSoulSettings(color: string): PetSoulSettings & { version: number } {
+export function buildSoulSettings(
+  color: string,
+  path?: PetSoulPath | null
+): PetSoulSettings & { version: number } {
   const normalizedColor = normalizeSoulColor(color);
+  const normalizedPath = normalizeSoulPath(path);
   return {
     enabled: true,
     color: normalizedColor,
     glowColor: normalizedColor,
+    path: normalizedPath
+      ? {
+          ...normalizedPath,
+          enabled: path?.enabled === true
+        }
+      : null,
     version: 2
   };
 }
@@ -238,6 +320,41 @@ function pickIdleSoulAction(startedAt: number, canOrbit: boolean): IdleSoulActio
   };
 }
 
+function sampleSoulPathOffset(elapsed: number, path?: PetSoulPath | null) {
+  if (!path?.enabled || path.points.length === 0) {
+    return null;
+  }
+  const returnDuration = Math.max(SOUL_PATH_MIN_DURATION, path.returnDuration);
+  const idleDuration = Math.max(0, path.idleDuration);
+  const travelDuration =
+    path.points.reduce((total, point) => total + Math.max(SOUL_PATH_MIN_DURATION, point.duration), 0) +
+    returnDuration;
+  const cycleDuration = travelDuration + idleDuration;
+  if (cycleDuration <= 0) {
+    return null;
+  }
+  let cursor = ((elapsed % cycleDuration) + cycleDuration) % cycleDuration;
+  let from = new THREE.Vector3(0, 0, 0);
+
+  for (const point of path.points) {
+    const duration = Math.max(SOUL_PATH_MIN_DURATION, point.duration);
+    const to = new THREE.Vector3(point.x, point.y, point.z);
+    if (cursor <= duration) {
+      const progress = THREE.MathUtils.smoothstep(cursor / duration, 0, 1);
+      return from.lerp(to, progress);
+    }
+    cursor -= duration;
+    from = to;
+  }
+
+  if (cursor <= returnDuration) {
+    const progress = THREE.MathUtils.smoothstep(cursor / returnDuration, 0, 1);
+    return from.lerp(new THREE.Vector3(0, 0, 0), progress);
+  }
+
+  return new THREE.Vector3(0, 0, 0);
+}
+
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
   position = [0, 1.4, 0],
@@ -246,7 +363,8 @@ export function PetSoul({
   floorY = null,
   scale = 1,
   mode = "idle",
-  quality = "full"
+  quality = "full",
+  path = null
 }: {
   color?: string | null;
   glowColor?: string | null;
@@ -257,6 +375,7 @@ export function PetSoul({
   scale?: number;
   mode?: PetSoulMode;
   quality?: PetSoulQuality;
+  path?: PetSoulPath | null;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const coreRef = useRef<THREE.Mesh>(null);
@@ -328,12 +447,13 @@ export function PetSoul({
       Math.sin(t * 1.28 + phase * 0.7) * 0.18 + Math.sin(t * 0.42 + phase) * 0.08,
       Math.sin(t * 0.48 + phase * 1.2) * 0.38
     );
-    const target = base.clone().add(idle);
+    const pathOffset = mode === "idle" ? sampleSoulPathOffset(t + phase, path) : null;
+    const target = pathOffset ? base.clone().add(pathOffset) : base.clone().add(idle);
     let opacity = 1;
     let visualScale = scale;
     let spinBoost = 0;
 
-    if (mode === "idle") {
+    if (mode === "idle" && !pathOffset) {
       const canOrbit = Boolean(avoidCenter);
       const currentAction = idleActionRef.current;
       if (!currentAction || t - currentAction.startedAt >= currentAction.duration) {

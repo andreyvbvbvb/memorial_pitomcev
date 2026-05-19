@@ -52,8 +52,10 @@ import {
   PetSoulPreview,
   buildSoulSettings,
   normalizeSoulColor,
+  normalizeSoulPath,
   readSoulSettings,
-  type PetSoulMode
+  type PetSoulMode,
+  type PetSoulPath
 } from "../../components/PetSoul";
 import { getConfiguredHouseSlots, getTerrainGiftSlots } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
@@ -123,6 +125,22 @@ type FormState = {
   bowlFoodColor: string;
   bowlWaterColor: string;
   soulColor: string;
+  soulPath: SoulPathState;
+};
+
+type SoulPathPointState = {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  duration: number;
+};
+
+type SoulPathState = {
+  enabled: boolean;
+  returnDuration: number;
+  idleDuration: number;
+  points: SoulPathPointState[];
 };
 
 type PhotoDraft = {
@@ -386,6 +404,44 @@ const colorPalette = [
   "#422913"
 ];
 
+const createDefaultSoulPathState = (): SoulPathState => ({
+  enabled: false,
+  returnDuration: 2.4,
+  idleDuration: 2.5,
+  points: [
+    { id: "point-1", x: -1.15, y: 0.2, z: 0.45, duration: 2.2 },
+    { id: "point-2", x: 0.15, y: 0.65, z: 1.1, duration: 2.4 },
+    { id: "point-3", x: 1.05, y: 0.28, z: -0.35, duration: 2.2 }
+  ]
+});
+
+const soulPathStateFromSettings = (path?: PetSoulPath | null): SoulPathState => {
+  const fallback = createDefaultSoulPathState();
+  if (!path?.points.length) {
+    return fallback;
+  }
+  return {
+    enabled: path.enabled,
+    returnDuration: path.returnDuration,
+    idleDuration: path.idleDuration,
+    points: path.points.map((point, index) => ({
+      id: `point-${index + 1}`,
+      x: point.x,
+      y: point.y,
+      z: point.z,
+      duration: point.duration
+    }))
+  };
+};
+
+const soulPathForScene = (state: SoulPathState): PetSoulPath | null =>
+  normalizeSoulPath({
+    enabled: state.enabled,
+    returnDuration: state.returnDuration,
+    idleDuration: state.idleDuration,
+    points: state.points.map(({ x, y, z, duration }) => ({ x, y, z, duration }))
+  });
+
 const initialState: FormState = {
   ownerId: "",
   name: "",
@@ -418,7 +474,8 @@ const initialState: FormState = {
   matColor: colorPalette[9] ?? "#5DADE2",
   bowlFoodColor: colorPalette[3] ?? "#FFD166",
   bowlWaterColor: colorPalette[7] ?? "#8ECAE6",
-  soulColor: DEFAULT_SOUL_COLOR
+  soulColor: DEFAULT_SOUL_COLOR,
+  soulPath: createDefaultSoulPathState()
 };
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
@@ -510,7 +567,8 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
     bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
-    soulColor: soul.color
+    soulColor: soul.color,
+    soulPath: soulPathStateFromSettings(soul.path)
   };
 };
 
@@ -572,7 +630,8 @@ const buildDraftFormState = (draft: MemorialDraftDto, ownerId: string): FormStat
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
     bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
-    soulColor: soul.color
+    soulColor: soul.color,
+    soulPath: soulPathStateFromSettings(soul.path)
   };
 };
 
@@ -980,6 +1039,11 @@ export default function CreateMemorialClient({
     };
   const activeHouseScale =
     houseScaleOverrides[selectedHouseLayoutKey] ?? defaultHouseTransform.scale;
+  const activeSoulPath = useMemo(() => soulPathForScene(form.soulPath), [form.soulPath]);
+  const soulPathExportJson = useMemo(() => {
+    const enabledPath = soulPathForScene({ ...form.soulPath, enabled: true });
+    return JSON.stringify(enabledPath ?? { enabled: false, points: [] }, null, 2);
+  }, [form.soulPath]);
   const updateHousePlacement = useCallback(
     (patch: Partial<{ x: number; z: number; rotY: number }>) => {
       if (!selectedHouseLayoutKey) {
@@ -1015,6 +1079,67 @@ export default function CreateMemorialClient({
     },
     [selectedHouseLayoutKey]
   );
+  const updateSoulPath = useCallback((patch: Partial<Omit<SoulPathState, "points">>) => {
+    setForm((prev) => ({
+      ...prev,
+      soulPath: {
+        ...prev.soulPath,
+        ...patch
+      }
+    }));
+  }, []);
+  const updateSoulPathPoint = useCallback(
+    (id: string, patch: Partial<Omit<SoulPathPointState, "id">>) => {
+      setForm((prev) => ({
+        ...prev,
+        soulPath: {
+          ...prev.soulPath,
+          points: prev.soulPath.points.map((point) =>
+            point.id === id ? { ...point, ...patch } : point
+          )
+        }
+      }));
+    },
+    []
+  );
+  const addSoulPathPoint = useCallback(() => {
+    setForm((prev) => {
+      if (prev.soulPath.points.length >= 12) {
+        return prev;
+      }
+      const lastPoint = prev.soulPath.points[prev.soulPath.points.length - 1];
+      return {
+        ...prev,
+        soulPath: {
+          ...prev.soulPath,
+          points: [
+            ...prev.soulPath.points,
+            {
+              id: `point-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              x: lastPoint ? Number((lastPoint.x + 0.35).toFixed(2)) : 0,
+              y: lastPoint?.y ?? 0.25,
+              z: lastPoint ? Number((lastPoint.z - 0.35).toFixed(2)) : 0.4,
+              duration: lastPoint?.duration ?? 2
+            }
+          ]
+        }
+      };
+    });
+  }, []);
+  const removeSoulPathPoint = useCallback((id: string) => {
+    setForm((prev) => {
+      if (prev.soulPath.points.length <= 1) {
+        return prev;
+      }
+      return {
+        ...prev,
+        soulPath: {
+          ...prev.soulPath,
+          points: prev.soulPath.points.filter((point) => point.id !== id)
+        }
+      };
+    });
+  }, []);
   const hoveredId = (category: string) =>
     hoveredOption?.category === category ? hoveredOption.id : null;
   const environmentPreviewId = hoveredId("environment") ?? form.environmentId;
@@ -1306,10 +1431,11 @@ export default function CreateMemorialClient({
         bowl_food_paint: form.bowlFoodColor,
         bowl_water_paint: form.bowlWaterColor
       },
-      soul: buildSoulSettings(form.soulColor),
+      soul: buildSoulSettings(form.soulColor, activeSoulPath),
       version: 3
     }),
     [
+      activeSoulPath,
       form.bowlFoodColor,
       form.bowlFoodId,
       form.bowlWaterColor,
@@ -3597,6 +3723,194 @@ export default function CreateMemorialClient({
     </div>
   );
 
+  const renderSoulPathCalibrationPanel = () => {
+    if (!canUseCalibration(accessLevel)) {
+      return null;
+    }
+
+    const rowInputClass =
+      "w-16 rounded-xl border border-white bg-white/88 px-2 py-1 text-right text-[11px] font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20";
+    const rangeClass = "h-2 w-full accent-[#3bceac]";
+
+    return (
+      <div className="grid max-h-[min(48vh,420px)] gap-3 overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/96 p-3 text-[11px] text-[#6f6360] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="font-black uppercase tracking-[0.16em] text-[#5d4037]">
+              Путь души
+            </div>
+            <div className="mt-1 leading-snug text-[#8a7c77]">
+              X/Y/Z — сдвиг от обычной позиции души. После последней точки она плавно возвращается в старт.
+            </div>
+          </div>
+          <label className="inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 font-black uppercase tracking-[0.1em] text-[#3b8d76]">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-[#d8cfc9]"
+              checked={form.soulPath.enabled}
+              onChange={(event) => updateSoulPath({ enabled: event.target.checked })}
+            />
+            Включить
+          </label>
+        </div>
+
+        <div className="grid gap-2 rounded-[16px] bg-white/55 p-2">
+          <label className="grid gap-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-bold">Возврат в старт</span>
+              <input
+                type="number"
+                min={0.2}
+                max={30}
+                step={0.1}
+                value={form.soulPath.returnDuration}
+                onChange={(event) =>
+                  updateSoulPath({ returnDuration: Number(event.target.value) })
+                }
+                className={rowInputClass}
+              />
+            </div>
+            <input
+              type="range"
+              min={0.2}
+              max={8}
+              step={0.1}
+              value={form.soulPath.returnDuration}
+              onChange={(event) =>
+                updateSoulPath({ returnDuration: Number(event.target.value) })
+              }
+              className={rangeClass}
+            />
+          </label>
+          <label className="grid gap-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-bold">Пауза между циклами</span>
+              <input
+                type="number"
+                min={0}
+                max={30}
+                step={0.1}
+                value={form.soulPath.idleDuration}
+                onChange={(event) =>
+                  updateSoulPath({ idleDuration: Number(event.target.value) })
+                }
+                className={rowInputClass}
+              />
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={8}
+              step={0.1}
+              value={form.soulPath.idleDuration}
+              onChange={(event) =>
+                updateSoulPath({ idleDuration: Number(event.target.value) })
+              }
+              className={rangeClass}
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-2">
+          {form.soulPath.points.map((point, index) => (
+            <div key={point.id} className="grid gap-2 rounded-[16px] bg-white/64 p-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Точка {index + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeSoulPathPoint(point.id)}
+                  disabled={form.soulPath.points.length <= 1}
+                  className="rounded-full bg-[#f1ebe9] px-2 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#8d6e63] transition hover:bg-[#eadfd9] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Убрать
+                </button>
+              </div>
+              {(["x", "y", "z"] as const).map((axis) => (
+                <label key={axis} className="grid gap-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-bold uppercase">{axis}</span>
+                    <input
+                      type="number"
+                      min={-8}
+                      max={8}
+                      step={0.05}
+                      value={point[axis]}
+                      onChange={(event) =>
+                        updateSoulPathPoint(point.id, { [axis]: Number(event.target.value) })
+                      }
+                      className={rowInputClass}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min={-4}
+                    max={4}
+                    step={0.05}
+                    value={point[axis]}
+                    onChange={(event) =>
+                      updateSoulPathPoint(point.id, { [axis]: Number(event.target.value) })
+                    }
+                    className={rangeClass}
+                  />
+                </label>
+              ))}
+              <label className="grid gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-bold">Время до точки</span>
+                  <input
+                    type="number"
+                    min={0.2}
+                    max={30}
+                    step={0.1}
+                    value={point.duration}
+                    onChange={(event) =>
+                      updateSoulPathPoint(point.id, { duration: Number(event.target.value) })
+                    }
+                    className={rowInputClass}
+                  />
+                </div>
+                <input
+                  type="range"
+                  min={0.2}
+                  max={8}
+                  step={0.1}
+                  value={point.duration}
+                  onChange={(event) =>
+                    updateSoulPathPoint(point.id, { duration: Number(event.target.value) })
+                  }
+                  className={rangeClass}
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={addSoulPathPoint}
+          disabled={form.soulPath.points.length >= 12}
+          className="rounded-[16px] border-2 border-white bg-white/88 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] transition hover:-translate-y-0.5 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Добавить точку
+        </button>
+
+        <label className="grid gap-1">
+          <span className="font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+            JSON для передачи
+          </span>
+          <textarea
+            readOnly
+            value={soulPathExportJson}
+            className="min-h-28 resize-y rounded-[16px] border-2 border-white bg-white/82 p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </label>
+      </div>
+    );
+  };
+
   const renderSoulColorPanel = () => (
     <div className={overlayShellClass}>
       <h3 className={overlaySectionTitleClass}>
@@ -3610,6 +3924,7 @@ export default function CreateMemorialClient({
       </h3>
       <div className="grid gap-4">
         {renderSoulColorControls(true)}
+        {renderSoulPathCalibrationPanel()}
       </div>
     </div>
   );
@@ -3651,6 +3966,9 @@ export default function CreateMemorialClient({
       }`;
   const builderControlTooltipClass =
     "pointer-events-none absolute left-full top-1/2 z-[140] ml-2 w-max max-w-[12rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
+  const builderAttentionBadgeClass = isPortraitLayout
+    ? "absolute -right-0.5 -top-0.5 flex h-[1.125rem] w-[1.125rem] items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow"
+    : "absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow";
   const builderEditorPanelClass = `${
     activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
   } ${
@@ -3800,6 +4118,7 @@ export default function CreateMemorialClient({
                 houseRotationY={previewHousePlacement.rotY}
                 houseScaleMultiplier={previewHouseScale}
                 soulColor={form.soulColor}
+                soulPath={activeSoulPath}
                 soulMode={soulSceneMode}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
@@ -3970,7 +4289,7 @@ export default function CreateMemorialClient({
                       <path d="M6 15c.5 1.3 1.2 2 2.4 2.4C7.2 17.8 6.5 18.5 6 20c-.5-1.5-1.2-2.2-2.4-2.6C4.8 17 5.5 16.3 6 15z" />
                     </svg>
                     {!isEditMode && isBuilderStep && !visitedOverlays.soul ? (
-                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                      <span className={builderAttentionBadgeClass}>
                         !
                       </span>
                     ) : null}
@@ -3995,7 +4314,7 @@ export default function CreateMemorialClient({
                       <circle cx="12" cy="8" r="1" />
                     </svg>
                     {!isEditMode && isBuilderStep && !visitedOverlays.base ? (
-                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                      <span className={builderAttentionBadgeClass}>
                         !
                       </span>
                     ) : null}
@@ -4019,7 +4338,7 @@ export default function CreateMemorialClient({
                       <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
                     </svg>
                     {!isEditMode && isBuilderStep && !visitedOverlays.story ? (
-                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                      <span className={builderAttentionBadgeClass}>
                         !
                       </span>
                     ) : null}
@@ -4043,7 +4362,7 @@ export default function CreateMemorialClient({
                       <circle cx="12" cy="10" r="2.5" />
                     </svg>
                     {!isEditMode && isBuilderStep && !visitedOverlays.marker ? (
-                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                      <span className={builderAttentionBadgeClass}>
                         !
                       </span>
                     ) : null}
@@ -4067,7 +4386,7 @@ export default function CreateMemorialClient({
                       <path d="M21 15l-4-4-4 4-3-3-5 5" />
                     </svg>
                     {!isEditMode && isBuilderStep && !visitedOverlays.photos ? (
-                      <span className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow">
+                      <span className={builderAttentionBadgeClass}>
                         !
                       </span>
                     ) : null}
@@ -4196,6 +4515,7 @@ export default function CreateMemorialClient({
                       houseRotationY={activeHousePlacement.rotY}
                       houseScaleMultiplier={activeHouseScale}
                       soulColor={form.soulColor}
+                      soulPath={activeSoulPath}
                       soulMode="idle"
                       parts={partList}
                       colors={colorOverrides}
