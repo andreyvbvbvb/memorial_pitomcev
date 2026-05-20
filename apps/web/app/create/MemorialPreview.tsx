@@ -167,7 +167,7 @@ const DirectionalLight = "directionalLight" as unknown as React.ComponentType<an
 const Group = "group" as unknown as React.ComponentType<any>;
 const Mesh = "mesh" as unknown as React.ComponentType<any>;
 const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
-const CylinderGeometry = "cylinderGeometry" as unknown as React.ComponentType<any>;
+const TubeGeometry = "tubeGeometry" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 const HemisphereLight = "hemisphereLight" as unknown as React.ComponentType<any>;
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
@@ -838,38 +838,33 @@ function DirtStackAttachment({
   );
 }
 
-function SoulPathSegment({
-  from,
-  to,
+function SoulPathCurve({
+  points,
+  smooth,
   color
 }: {
-  from: [number, number, number];
-  to: [number, number, number];
+  points: [number, number, number][];
+  smooth: boolean;
   color: string;
 }) {
-  const transform = useMemo(() => {
-    const start = new THREE.Vector3(from[0], from[1], from[2]);
-    const end = new THREE.Vector3(to[0], to[1], to[2]);
-    const direction = end.clone().sub(start);
-    const length = direction.length();
-    const position = start.clone().lerp(end, 0.5);
-    const quaternion =
-      length > 0.001
-        ? new THREE.Quaternion().setFromUnitVectors(
-            new THREE.Vector3(0, 1, 0),
-            direction.normalize()
-          )
-        : new THREE.Quaternion();
-    return { position, quaternion, length };
-  }, [from, to]);
+  const curve = useMemo(() => {
+    if (points.length < 2) {
+      return null;
+    }
+    const vectors = points.map((point) => new THREE.Vector3(point[0], point[1], point[2]));
+    if (smooth && vectors.length >= 3) {
+      return new THREE.CatmullRomCurve3(vectors, true, "centripetal", 0.5);
+    }
+    return new THREE.CatmullRomCurve3(vectors, vectors.length > 2, "catmullrom", 0.5);
+  }, [points, smooth]);
 
-  if (transform.length <= 0.001) {
+  if (!curve) {
     return null;
   }
 
   return (
-    <Mesh position={transform.position} quaternion={transform.quaternion} renderOrder={72} raycast={() => null}>
-      <CylinderGeometry args={[0.016, 0.016, transform.length, 10, 1]} />
+    <Mesh renderOrder={72} raycast={() => null}>
+      <TubeGeometry args={[curve, Math.max(48, points.length * 24), 0.016, 8, smooth && points.length >= 3]} />
       <MeshBasicMaterial
         color={color}
         transparent
@@ -914,29 +909,15 @@ function SoulPathMarkers({
   }
 
   const segmentColor = normalizeSoulColor(color);
-  const segments = [
-    ...markers.slice(0, -1).map((marker, index) => ({
-      id: `${marker.id}-${markers[index + 1]!.id}`,
-      from: marker.position,
-      to: markers[index + 1]!.position
-    })),
-    {
-      id: `${markers[markers.length - 1]!.id}-start`,
-      from: markers[markers.length - 1]!.position,
-      to: markers[0]!.position
-    }
-  ];
+  const pathPoints = markers.map((marker) => marker.position);
 
   return (
     <Group renderOrder={70}>
-      {segments.map((segment) => (
-        <SoulPathSegment
-          key={segment.id}
-          from={segment.from}
-          to={segment.to}
-          color={segmentColor}
-        />
-      ))}
+      <SoulPathCurve
+        points={pathPoints}
+        smooth={path?.curve !== "linear"}
+        color={segmentColor}
+      />
       {markers.map((marker, index) => {
         const isStart = index === 0;
         return (

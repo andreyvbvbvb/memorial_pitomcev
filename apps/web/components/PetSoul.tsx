@@ -23,11 +23,15 @@ export type PetSoulPathPoint = {
   duration: number;
 };
 
+export type PetSoulPathCurve = "smooth" | "linear";
+
 export type PetSoulPath = {
   enabled: boolean;
   points: PetSoulPathPoint[];
   returnDuration: number;
   idleDuration: number;
+  curve: PetSoulPathCurve;
+  closed: boolean;
 };
 
 export const DEFAULT_SOUL_COLOR = "#8ee9ff";
@@ -121,7 +125,9 @@ export function normalizeSoulPath(value?: unknown): PetSoulPath | null {
       SOUL_PATH_MIN_DURATION,
       SOUL_PATH_MAX_DURATION
     ),
-    idleDuration: clampFiniteNumber(raw.idleDuration, 2.5, 0, SOUL_PATH_MAX_DURATION)
+    idleDuration: clampFiniteNumber(raw.idleDuration, 2.5, 0, SOUL_PATH_MAX_DURATION),
+    curve: raw.curve === "linear" ? "linear" : "smooth",
+    closed: raw.closed !== false
   };
 }
 
@@ -296,6 +302,15 @@ type IdleSoulAction = {
   radius: number;
 };
 
+type PreparedSoulPath = {
+  knots: THREE.Vector3[];
+  segmentDurations: number[];
+  travelDuration: number;
+  idleDuration: number;
+  closed: boolean;
+  curve: THREE.CatmullRomCurve3 | null;
+};
+
 function pickIdleSoulAction(startedAt: number, canOrbit: boolean): IdleSoulAction {
   const roll = Math.random();
   let kind: IdleSoulAction["kind"] = "float";
@@ -320,36 +335,68 @@ function pickIdleSoulAction(startedAt: number, canOrbit: boolean): IdleSoulActio
   };
 }
 
-function sampleSoulPathOffset(elapsed: number, path?: PetSoulPath | null) {
+function prepareSoulPath(path?: PetSoulPath | null): PreparedSoulPath | null {
   if (!path?.enabled || path.points.length === 0) {
     return null;
   }
-  const returnDuration = Math.max(SOUL_PATH_MIN_DURATION, path.returnDuration);
+
+  const closed = path.closed !== false;
+  const knots = [
+    new THREE.Vector3(0, 0, 0),
+    ...path.points.map((point) => new THREE.Vector3(point.x, point.y, point.z))
+  ];
+  const segmentDurations = path.points.map((point) =>
+    Math.max(SOUL_PATH_MIN_DURATION, point.duration)
+  );
+  if (closed) {
+    segmentDurations.push(Math.max(SOUL_PATH_MIN_DURATION, path.returnDuration));
+  }
+  const travelDuration = segmentDurations.reduce((total, duration) => total + duration, 0);
   const idleDuration = Math.max(0, path.idleDuration);
-  const travelDuration =
-    path.points.reduce((total, point) => total + Math.max(SOUL_PATH_MIN_DURATION, point.duration), 0) +
-    returnDuration;
+  const curve =
+    path.curve === "smooth" && closed && knots.length >= 3
+      ? new THREE.CatmullRomCurve3(knots, true, "centripetal", 0.5)
+      : null;
+
+  return {
+    knots,
+    segmentDurations,
+    travelDuration,
+    idleDuration,
+    closed,
+    curve
+  };
+}
+
+function sampleSoulPathOffset(elapsed: number, preparedPath?: PreparedSoulPath | null) {
+  if (!preparedPath || preparedPath.segmentDurations.length === 0) {
+    return null;
+  }
+  const { knots, segmentDurations, travelDuration, idleDuration, closed, curve } = preparedPath;
   const cycleDuration = travelDuration + idleDuration;
   if (cycleDuration <= 0) {
     return null;
   }
   let cursor = ((elapsed % cycleDuration) + cycleDuration) % cycleDuration;
-  let from = new THREE.Vector3(0, 0, 0);
 
-  for (const point of path.points) {
-    const duration = Math.max(SOUL_PATH_MIN_DURATION, point.duration);
-    const to = new THREE.Vector3(point.x, point.y, point.z);
+  for (let segmentIndex = 0; segmentIndex < segmentDurations.length; segmentIndex += 1) {
+    const duration = segmentDurations[segmentIndex] ?? SOUL_PATH_MIN_DURATION;
     if (cursor <= duration) {
-      const progress = THREE.MathUtils.smoothstep(cursor / duration, 0, 1);
-      return from.lerp(to, progress);
+      const progress = THREE.MathUtils.clamp(cursor / duration, 0, 1);
+      if (curve && closed) {
+        const segmentCount = knots.length;
+        return curve.getPoint((segmentIndex + progress) / segmentCount);
+      }
+
+      const from = knots[segmentIndex];
+      const nextIndex = segmentIndex + 1;
+      const to = knots[nextIndex] ?? (closed ? knots[0] : knots[knots.length - 1]);
+      if (!from || !to) {
+        return new THREE.Vector3(0, 0, 0);
+      }
+      return from.clone().lerp(to, progress);
     }
     cursor -= duration;
-    from = to;
-  }
-
-  if (cursor <= returnDuration) {
-    const progress = THREE.MathUtils.smoothstep(cursor / returnDuration, 0, 1);
-    return from.lerp(new THREE.Vector3(0, 0, 0), progress);
   }
 
   return new THREE.Vector3(0, 0, 0);
@@ -389,6 +436,7 @@ export function PetSoul({
   const idlePhaseRef = useRef(Math.random() * Math.PI * 2);
   const idleActionRef = useRef<IdleSoulAction | null>(null);
   const normalizedColor = normalizeSoulColor(color);
+  const preparedPath = useMemo(() => prepareSoulPath(path), [path]);
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
   const rimColor = useMemo(
     () => baseColor.clone().lerp(new THREE.Color("#ffffff"), 0.04),
@@ -447,7 +495,7 @@ export function PetSoul({
       Math.sin(t * 1.28 + phase * 0.7) * 0.18 + Math.sin(t * 0.42 + phase) * 0.08,
       Math.sin(t * 0.48 + phase * 1.2) * 0.38
     );
-    const pathOffset = mode === "idle" ? sampleSoulPathOffset(t + phase, path) : null;
+    const pathOffset = mode === "idle" ? sampleSoulPathOffset(t + phase, preparedPath) : null;
     const target = pathOffset ? base.clone().add(pathOffset) : base.clone().add(idle);
     let opacity = 1;
     let visualScale = scale;

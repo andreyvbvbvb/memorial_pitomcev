@@ -3830,7 +3830,7 @@ export default function CreateMemorialClient({
               Путь души
             </div>
             <div className="mt-1 leading-snug text-[#8a7c77]">
-              X/Y/Z — сдвиг от обычной позиции души. После последней точки она плавно возвращается в старт.
+              Один путь — это одно движение души. Точки задают плавную траекторию без остановок, затем душа возвращается в старт.
             </div>
           </div>
           <label className="inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 font-black uppercase tracking-[0.1em] text-[#3b8d76]">
@@ -3872,7 +3872,7 @@ export default function CreateMemorialClient({
               className={rangeClass}
             />
             <span className="text-[10px] leading-snug text-[#9b8a84]">
-              Масштабирует время всех переходов между точками, без участка возврата в старт.
+              Масштабирует время прохождения всей траектории по точкам, без участка возврата в старт.
             </span>
           </label>
           <label className="grid gap-1">
