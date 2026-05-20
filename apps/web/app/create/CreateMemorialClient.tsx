@@ -1,7 +1,15 @@
 "use client";
 
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
-import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent
+} from "react";
 import { useGLTF } from "@react-three/drei";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as THREE from "three";
@@ -684,6 +692,9 @@ export default function CreateMemorialClient({
   const [farewellPlaying, setFarewellPlaying] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
+  const sceneDismissPointerRef = useRef<{ x: number; y: number; pointerId: number | null } | null>(
+    null
+  );
   const previewRenderRef = useRef<{
     gl: THREE.WebGLRenderer;
     scene: THREE.Scene;
@@ -699,6 +710,44 @@ export default function CreateMemorialClient({
     base: false,
     soul: false
   });
+  const handleBuilderScenePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!activeOverlay || farewellPlaying) {
+        sceneDismissPointerRef.current = null;
+        return;
+      }
+
+      sceneDismissPointerRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        pointerId: typeof event.pointerId === "number" ? event.pointerId : null
+      };
+    },
+    [activeOverlay, farewellPlaying]
+  );
+  const handleBuilderScenePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const start = sceneDismissPointerRef.current;
+      sceneDismissPointerRef.current = null;
+
+      if (!start || !activeOverlay || farewellPlaying) {
+        return;
+      }
+
+      if (start.pointerId !== null && event.pointerId !== start.pointerId) {
+        return;
+      }
+
+      const movedDistance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+      if (movedDistance <= 5) {
+        setActiveOverlay(null);
+      }
+    },
+    [activeOverlay, farewellPlaying]
+  );
+  const handleBuilderScenePointerCancel = useCallback(() => {
+    sceneDismissPointerRef.current = null;
+  }, []);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
@@ -4175,7 +4224,12 @@ export default function CreateMemorialClient({
         </div>
       ) : (
         <>
-          <div className={builderSceneFrameClass}>
+          <div
+            className={builderSceneFrameClass}
+            onPointerDown={handleBuilderScenePointerDown}
+            onPointerUp={handleBuilderScenePointerUp}
+            onPointerCancel={handleBuilderScenePointerCancel}
+          >
               <MemorialPreview
                 className="h-full w-full rounded-none border-transparent bg-transparent"
                 terrainUrl={environmentUrl}
@@ -4205,7 +4259,7 @@ export default function CreateMemorialClient({
               focusSlot={focusSlot}
               focusRequestId={focusRequestId}
               showControls={false}
-              controlsEnabled={!activeOverlay && !farewellPlaying}
+              controlsEnabled={!farewellPlaying}
               preserveDrawingBuffer={false}
               onControlsReady={(controls) => {
                 previewControlsRef.current = controls;
@@ -4220,14 +4274,6 @@ export default function CreateMemorialClient({
                 onDetailClick={handlePreviewDetailClick}
               />
           </div>
-          {activeOverlay && !farewellPlaying ? (
-            <button
-              type="button"
-              aria-label="Закрыть окно"
-              className="fixed inset-0 z-5 pointer-events-auto"
-              onClick={() => setActiveOverlay(null)}
-            />
-          ) : null}
 
           {farewellPlaying ? (
             <div className="pointer-events-none fixed inset-x-0 bottom-8 z-20 flex justify-center px-4">
