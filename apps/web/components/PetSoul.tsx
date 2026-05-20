@@ -62,7 +62,7 @@ const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
 const SOUL_PATH_MIN_DURATION = 0.2;
 const SOUL_PATH_MAX_DURATION = 30;
 const SOUL_PATH_MAX_POINTS = 12;
-const SOUL_PATH_MAX_OFFSET = 8;
+const SOUL_PATH_MAX_OFFSET = 20;
 
 const clampFiniteNumber = (value: unknown, fallback: number, min: number, max: number) => {
   const number = typeof value === "number" ? value : Number(value);

@@ -3904,8 +3904,8 @@ export default function CreateMemorialClient({
                     <span className="font-bold uppercase">{axis}</span>
                     <input
                       type="number"
-                      min={-8}
-                      max={8}
+                      min={-20}
+                      max={20}
                       step={0.05}
                       value={point[axis]}
                       onChange={(event) =>
@@ -3916,8 +3916,8 @@ export default function CreateMemorialClient({
                   </div>
                   <input
                     type="range"
-                    min={-4}
-                    max={4}
+                    min={-20}
+                    max={20}
                     step={0.05}
                     value={point[axis]}
                     onChange={(event) =>
