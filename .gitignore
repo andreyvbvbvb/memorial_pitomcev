@@ -7,3 +7,7 @@ coverage
 .env
 .env.*
 .DS_Store
+logs_*.txt
+code_*.txt
+codex_*.pdf
+apps/web/public/models/Nonusage/

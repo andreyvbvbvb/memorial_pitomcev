@@ -7,3 +7,7 @@ node_modules
 .env
 .env.local
 apps/api/uploads
+apps/web/public/models/Nonusage
+logs_*.txt
+code_*.txt
+codex_*.pdf

@@ -2,8 +2,9 @@ FROM node:20-bookworm-slim AS base
 WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ARG PNPM_VERSION=10.28.1
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
