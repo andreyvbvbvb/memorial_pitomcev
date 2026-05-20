@@ -1040,6 +1040,14 @@ export default function CreateMemorialClient({
   const activeHouseScale =
     houseScaleOverrides[selectedHouseLayoutKey] ?? defaultHouseTransform.scale;
   const activeSoulPath = useMemo(() => soulPathForScene(form.soulPath), [form.soulPath]);
+  const soulPathTotalDuration = useMemo(
+    () =>
+      form.soulPath.points.reduce(
+        (total, point) => total + (Number.isFinite(point.duration) ? point.duration : 0),
+        0
+      ),
+    [form.soulPath.points]
+  );
   const soulPathExportJson = useMemo(() => {
     const enabledPath = soulPathForScene({ ...form.soulPath, enabled: true });
     return JSON.stringify(enabledPath ?? { enabled: false, points: [] }, null, 2);
@@ -1102,6 +1110,39 @@ export default function CreateMemorialClient({
     },
     []
   );
+  const updateSoulPathTotalDuration = useCallback((value: number) => {
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+    setForm((prev) => {
+      const pointsCount = prev.soulPath.points.length;
+      if (pointsCount === 0) {
+        return prev;
+      }
+      const safeTotal = Math.max(0.2 * pointsCount, value);
+      const currentTotal = prev.soulPath.points.reduce(
+        (total, point) => total + (Number.isFinite(point.duration) ? point.duration : 0),
+        0
+      );
+      const nextPoints =
+        currentTotal > 0
+          ? prev.soulPath.points.map((point) => ({
+              ...point,
+              duration: Number(Math.max(0.2, point.duration * (safeTotal / currentTotal)).toFixed(2))
+            }))
+          : prev.soulPath.points.map((point) => ({
+              ...point,
+              duration: Number((safeTotal / pointsCount).toFixed(2))
+            }));
+      return {
+        ...prev,
+        soulPath: {
+          ...prev.soulPath,
+          points: nextPoints
+        }
+      };
+    });
+  }, []);
   const addSoulPathPoint = useCallback(() => {
     setForm((prev) => {
       if (prev.soulPath.points.length >= 12) {
@@ -3757,6 +3798,36 @@ export default function CreateMemorialClient({
         <div className="grid gap-2 rounded-[16px] bg-white/55 p-2">
           <label className="grid gap-1">
             <div className="flex items-center justify-between gap-3">
+              <span className="font-bold">Время по точкам</span>
+              <input
+                type="number"
+                min={0.2}
+                max={120}
+                step={0.1}
+                value={Number(soulPathTotalDuration.toFixed(2))}
+                onChange={(event) =>
+                  updateSoulPathTotalDuration(Number(event.target.value))
+                }
+                className={rowInputClass}
+              />
+            </div>
+            <input
+              type="range"
+              min={Math.max(0.2, form.soulPath.points.length * 0.2)}
+              max={Math.max(30, Math.ceil(soulPathTotalDuration))}
+              step={0.1}
+              value={Math.max(0.2, soulPathTotalDuration)}
+              onChange={(event) =>
+                updateSoulPathTotalDuration(Number(event.target.value))
+              }
+              className={rangeClass}
+            />
+            <span className="text-[10px] leading-snug text-[#9b8a84]">
+              Масштабирует время всех переходов между точками, без участка возврата в старт.
+            </span>
+          </label>
+          <label className="grid gap-1">
+            <div className="flex items-center justify-between gap-3">
               <span className="font-bold">Возврат в старт</span>
               <input
                 type="number"
@@ -4119,6 +4190,7 @@ export default function CreateMemorialClient({
                 houseScaleMultiplier={previewHouseScale}
                 soulColor={form.soulColor}
                 soulPath={activeSoulPath}
+                showSoulPathMarkers={canUseCalibration(accessLevel) && activeOverlay === "soul"}
                 soulMode={soulSceneMode}
                 parts={partList}
                 gifts={giftPreviewEnabled ? previewGifts : undefined}
@@ -4516,6 +4588,7 @@ export default function CreateMemorialClient({
                       houseScaleMultiplier={activeHouseScale}
                       soulColor={form.soulColor}
                       soulPath={activeSoulPath}
+                      showSoulPathMarkers={canUseCalibration(accessLevel)}
                       soulMode="idle"
                       parts={partList}
                       colors={colorOverrides}

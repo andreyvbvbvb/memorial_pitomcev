@@ -9,16 +9,6 @@ export type GeneratedOptionItem = {
 
 export const environmentOptionsGenerated = [
   {
-    "id": "1",
-    "name": "Поверхность 1",
-    "description": "Автодобавлено"
-  },
-  {
-    "id": "2",
-    "name": "Поверхность 2",
-    "description": "Автодобавлено"
-  },
-  {
     "id": "3",
     "name": "Поверхность 3",
     "description": "Автодобавлено"

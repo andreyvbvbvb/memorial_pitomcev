@@ -87,6 +87,7 @@ type Props = {
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
   soulPath?: PetSoulPath | null;
+  showSoulPathMarkers?: boolean;
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   suppressLoadingOverlay?: boolean;
@@ -166,6 +167,7 @@ const DirectionalLight = "directionalLight" as unknown as React.ComponentType<an
 const Group = "group" as unknown as React.ComponentType<any>;
 const Mesh = "mesh" as unknown as React.ComponentType<any>;
 const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
+const CylinderGeometry = "cylinderGeometry" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 const HemisphereLight = "hemisphereLight" as unknown as React.ComponentType<any>;
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
@@ -836,6 +838,134 @@ function DirtStackAttachment({
   );
 }
 
+function SoulPathSegment({
+  from,
+  to,
+  color
+}: {
+  from: [number, number, number];
+  to: [number, number, number];
+  color: string;
+}) {
+  const transform = useMemo(() => {
+    const start = new THREE.Vector3(from[0], from[1], from[2]);
+    const end = new THREE.Vector3(to[0], to[1], to[2]);
+    const direction = end.clone().sub(start);
+    const length = direction.length();
+    const position = start.clone().lerp(end, 0.5);
+    const quaternion =
+      length > 0.001
+        ? new THREE.Quaternion().setFromUnitVectors(
+            new THREE.Vector3(0, 1, 0),
+            direction.normalize()
+          )
+        : new THREE.Quaternion();
+    return { position, quaternion, length };
+  }, [from, to]);
+
+  if (transform.length <= 0.001) {
+    return null;
+  }
+
+  return (
+    <Mesh position={transform.position} quaternion={transform.quaternion} renderOrder={72} raycast={() => null}>
+      <CylinderGeometry args={[0.016, 0.016, transform.length, 10, 1]} />
+      <MeshBasicMaterial
+        color={color}
+        transparent
+        opacity={0.62}
+        depthWrite={false}
+        depthTest={false}
+      />
+    </Mesh>
+  );
+}
+
+function SoulPathMarkers({
+  position,
+  path,
+  color
+}: {
+  position: [number, number, number];
+  path?: PetSoulPath | null;
+  color: string;
+}) {
+  const markers = useMemo(() => {
+    if (!path?.points.length) {
+      return [];
+    }
+    const base = new THREE.Vector3(position[0], position[1], position[2]);
+    return [
+      { id: "start", label: "Старт", duration: null, position: [base.x, base.y, base.z] as [number, number, number] },
+      ...path.points.map((point, index) => {
+        const next = base.clone().add(new THREE.Vector3(point.x, point.y, point.z));
+        return {
+          id: `point-${index + 1}`,
+          label: `${index + 1}`,
+          duration: point.duration,
+          position: [next.x, next.y, next.z] as [number, number, number]
+        };
+      })
+    ];
+  }, [path, position]);
+
+  if (markers.length <= 1) {
+    return null;
+  }
+
+  const segmentColor = normalizeSoulColor(color);
+  const segments = [
+    ...markers.slice(0, -1).map((marker, index) => ({
+      id: `${marker.id}-${markers[index + 1]!.id}`,
+      from: marker.position,
+      to: markers[index + 1]!.position
+    })),
+    {
+      id: `${markers[markers.length - 1]!.id}-start`,
+      from: markers[markers.length - 1]!.position,
+      to: markers[0]!.position
+    }
+  ];
+
+  return (
+    <Group renderOrder={70}>
+      {segments.map((segment) => (
+        <SoulPathSegment
+          key={segment.id}
+          from={segment.from}
+          to={segment.to}
+          color={segmentColor}
+        />
+      ))}
+      {markers.map((marker, index) => {
+        const isStart = index === 0;
+        return (
+          <Group key={marker.id} position={marker.position} renderOrder={76}>
+            <Mesh renderOrder={76} raycast={() => null}>
+              <SphereGeometry args={[isStart ? 0.095 : 0.085, 18, 18]} />
+              <MeshBasicMaterial
+                color={isStart ? "#ffffff" : segmentColor}
+                transparent
+                opacity={isStart ? 0.95 : 0.9}
+                depthWrite={false}
+                depthTest={false}
+              />
+            </Mesh>
+            <Html center distanceFactor={7.5} className="pointer-events-none select-none">
+              <div className="rounded-full border border-white/90 bg-white/92 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-16px_rgba(93,64,55,0.55)]">
+                {marker.label}
+                {marker.duration !== null ? (
+                  <span className="ml-1 text-[#8d6e63]">{marker.duration.toFixed(1)}с</span>
+                ) : null}
+              </div>
+            </Html>
+          </Group>
+        );
+      })}
+    </Group>
+  );
+}
+
 function SoulAnchor({
   terrain,
   house,
@@ -844,6 +974,7 @@ function SoulAnchor({
   mode,
   quality,
   path,
+  showPathMarkers,
   enabled
 }: {
   terrain: THREE.Object3D;
@@ -853,6 +984,7 @@ function SoulAnchor({
   mode: PetSoulMode;
   quality: PetSoulQuality;
   path?: PetSoulPath | null;
+  showPathMarkers?: boolean;
   enabled: boolean;
 }) {
   const [anchor, setAnchor] = useState<{
@@ -881,19 +1013,24 @@ function SoulAnchor({
   const normalizedGlowColor = normalizeSoulColor(glowColor, normalizedColor);
 
   return (
-    <PetSoul
-      key={`${normalizedColor}-${normalizedGlowColor}-${mode}`}
-      color={normalizedColor}
-      glowColor={normalizedGlowColor}
-      position={anchor.position}
-      avoidCenter={anchor.avoidCenter}
-      avoidRadius={0.96}
-      floorY={anchor.floorY}
-      mode={mode}
-      quality={quality}
-      path={path}
-      scale={quality === "light" ? 0.78 : 1}
-    />
+    <>
+      <PetSoul
+        key={`${normalizedColor}-${normalizedGlowColor}-${mode}`}
+        color={normalizedColor}
+        glowColor={normalizedGlowColor}
+        position={anchor.position}
+        avoidCenter={anchor.avoidCenter}
+        avoidRadius={0.96}
+        floorY={anchor.floorY}
+        mode={mode}
+        quality={quality}
+        path={path}
+        scale={quality === "light" ? 0.78 : 1}
+      />
+      {showPathMarkers ? (
+        <SoulPathMarkers position={anchor.position} path={path} color={normalizedColor} />
+      ) : null}
+    </>
   );
 }
 
@@ -984,6 +1121,7 @@ function TerrainWithHouse({
   soulEnabled,
   soulMode,
   soulPath,
+  showSoulPathMarkers,
   soulQuality,
   soulAnchorMode,
   onReady,
@@ -1032,6 +1170,7 @@ function TerrainWithHouse({
   soulEnabled?: boolean;
   soulMode?: PetSoulMode;
   soulPath?: PetSoulPath | null;
+  showSoulPathMarkers?: boolean;
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   onReady?: () => void;
@@ -1426,6 +1565,7 @@ function TerrainWithHouse({
           glowColor={soulGlowColor}
           mode={soulMode ?? "idle"}
           path={soulPath}
+          showPathMarkers={showSoulPathMarkers}
           quality={soulQuality ?? "full"}
           enabled
         />
@@ -1528,6 +1668,7 @@ export default function MemorialPreview({
   soulEnabled = true,
   soulMode = "idle",
   soulPath,
+  showSoulPathMarkers = false,
   soulQuality = "full",
   soulAnchorMode = "scene",
   suppressLoadingOverlay = false,
@@ -1922,6 +2063,7 @@ export default function MemorialPreview({
               soulEnabled={soulEnabled}
               soulMode={soulMode}
               soulPath={soulPath}
+              showSoulPathMarkers={showSoulPathMarkers}
               soulQuality={soulQuality}
               soulAnchorMode={soulAnchorMode}
               onReady={() => setSceneReady(true)}
