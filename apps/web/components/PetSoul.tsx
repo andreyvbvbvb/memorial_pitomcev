@@ -71,11 +71,22 @@ const MEMORIAL_ORBIT_RADIUS_MULTIPLIER = 1.1;
 const MEMORIAL_ORBIT_DURATION = 4;
 const MEMORIAL_ORBIT_TRANSITION_DURATION = 1.5;
 const MEMORIAL_ORBIT_START_RAMP_DURATION = 0.3;
+const MEMORIAL_ORBIT_CLOCKWISE_YAW = -Math.PI / 4;
+const MEMORIAL_ORBIT_COUNTER_YAW = Math.PI / 4;
+const FLOAT_ACTION_MIN_DURATION = 3;
+const FLOAT_ACTION_MAX_DURATION = 4;
 const WHIRLPOOL_RISE_DURATION = 4.2;
 const WHIRLPOOL_RETURN_DURATION = 1.2;
 const WHIRLPOOL_TURNS = 5;
-const WHIRLPOOL_HEIGHT = 2.3;
+const WHIRLPOOL_HEIGHT = 1.5;
 const WHIRLPOOL_RADIUS = 0.62;
+const SURFACE_HOP_DESCEND_DURATION = 0.85;
+const SURFACE_HOP_DURATION = 4.4;
+const SURFACE_HOP_RETURN_DURATION = 1.1;
+const SURFACE_HOP_COUNT = 7;
+const POINT_HOP_DURATION = 4.2;
+const POINT_HOP_RETURN_DURATION = 0.85;
+const POINT_HOP_COUNT = 6;
 
 const clampFiniteNumber = (value: unknown, fallback: number, min: number, max: number) => {
   const number = typeof value === "number" ? value : Number(value);
@@ -183,7 +194,7 @@ export function resolveSoulAnchorPosition(
   const center = new THREE.Vector3();
   box.getCenter(center);
   terrain.worldToLocal(center);
-  center.y = resolveSoulSurfaceFloorY(terrain, house) + 2;
+  center.y = resolveSoulSurfaceFloorY(terrain, house) + 1.4;
   return [center.x, center.y, center.z];
 }
 
@@ -316,7 +327,14 @@ function keepSoulAboveSurface(target: THREE.Vector3, floorY?: number | null) {
 }
 
 type IdleSoulAction = {
-  kind: "float" | "orbit" | "loop" | "memorialOrbit" | "whirlpool";
+  kind:
+    | "float"
+    | "loop"
+    | "memorialOrbit"
+    | "memorialOrbitCounter"
+    | "whirlpool"
+    | "surfaceHops"
+    | "pointHops";
   startedAt: number;
   duration: number;
   seed: number;
@@ -369,34 +387,46 @@ function cubicBezierVector(
 
 function pickIdleSoulAction(
   startedAt: number,
-  canOrbit: boolean,
   canMemorialOrbit: boolean,
   preferMemorialOrbit = false,
-  recentKinds: IdleSoulActionKind[] = []
+  recentKinds: IdleSoulActionKind[] = [],
+  forceFloat = false
 ): IdleSoulAction {
-  const candidates: IdleSoulActionKind[] = ["float", "loop", "whirlpool"];
-  if (canOrbit) {
-    candidates.push("orbit");
+  if (forceFloat) {
+    return {
+      kind: "float",
+      startedAt,
+      duration:
+        FLOAT_ACTION_MIN_DURATION +
+        Math.random() * (FLOAT_ACTION_MAX_DURATION - FLOAT_ACTION_MIN_DURATION),
+      seed: Math.random() * Math.PI * 2,
+      direction: Math.random() > 0.5 ? 1 : -1,
+      radius: 0.56 + Math.random() * 0.38
+    };
   }
+  const candidates: IdleSoulActionKind[] = ["loop", "whirlpool", "surfaceHops", "pointHops"];
   if (canMemorialOrbit) {
     candidates.push("memorialOrbit");
+    candidates.push("memorialOrbitCounter");
   }
   const availableCandidates = candidates.filter((candidate) => !recentKinds.includes(candidate));
   const pool = availableCandidates.length > 0 ? availableCandidates : candidates;
 
-  let kind: IdleSoulActionKind = "float";
+  let kind: IdleSoulActionKind = "loop";
   if (preferMemorialOrbit && pool.includes("memorialOrbit")) {
     kind = "memorialOrbit";
   } else {
-    kind = pool[Math.floor(Math.random() * pool.length)] ?? "float";
+    kind = pool[Math.floor(Math.random() * pool.length)] ?? "loop";
   }
   const duration =
-    kind === "memorialOrbit"
+    kind === "memorialOrbit" || kind === "memorialOrbitCounter"
       ? MEMORIAL_ORBIT_DURATION + MEMORIAL_ORBIT_TRANSITION_DURATION * 2
       : kind === "whirlpool"
         ? WHIRLPOOL_RISE_DURATION + WHIRLPOOL_RETURN_DURATION
-      : kind === "orbit"
-      ? 5.2 + Math.random() * 2.4
+      : kind === "surfaceHops"
+        ? SURFACE_HOP_DESCEND_DURATION + SURFACE_HOP_DURATION + SURFACE_HOP_RETURN_DURATION
+      : kind === "pointHops"
+        ? POINT_HOP_DURATION + POINT_HOP_RETURN_DURATION
       : kind === "loop"
         ? 2.6 + Math.random() * 1.3
         : 4.2 + Math.random() * 2.2;
@@ -405,7 +435,14 @@ function pickIdleSoulAction(
     startedAt,
     duration,
     seed: Math.random() * Math.PI * 2,
-    direction: kind === "memorialOrbit" ? 1 : Math.random() > 0.5 ? 1 : -1,
+    direction:
+      kind === "memorialOrbit"
+        ? 1
+        : kind === "memorialOrbitCounter"
+          ? -1
+          : Math.random() > 0.5
+            ? 1
+            : -1,
     radius: 0.56 + Math.random() * 0.38
   };
 }
@@ -588,22 +625,25 @@ export function PetSoul({
     let spinBoost = 0;
 
     if (mode === "idle" && !pathOffset) {
-      const canOrbit = Boolean(avoidCenter);
       const canMemorialOrbit = Boolean(orbitCenter);
       const currentAction = idleActionRef.current;
       if (!currentAction || t - currentAction.startedAt >= currentAction.duration) {
-        const preferMemorialOrbit = canMemorialOrbit && !initialMemorialOrbitPlayedRef.current;
+        const forceFloat = Boolean(currentAction && currentAction.kind !== "float");
+        const preferMemorialOrbit =
+          !forceFloat && canMemorialOrbit && !initialMemorialOrbitPlayedRef.current;
         idleActionRef.current = pickIdleSoulAction(
           t,
-          canOrbit,
           canMemorialOrbit,
           preferMemorialOrbit,
-          recentIdleActionKindsRef.current
+          recentIdleActionKindsRef.current,
+          forceFloat
         );
-        recentIdleActionKindsRef.current = [
-          idleActionRef.current.kind,
-          ...recentIdleActionKindsRef.current
-        ].slice(0, 2);
+        if (idleActionRef.current.kind !== "float") {
+          recentIdleActionKindsRef.current = [
+            idleActionRef.current.kind,
+            ...recentIdleActionKindsRef.current
+          ].slice(0, 2);
+        }
         if (preferMemorialOrbit) {
           initialMemorialOrbitPlayedRef.current = true;
         }
@@ -612,21 +652,7 @@ export function PetSoul({
         }
       }
       const action = idleActionRef.current;
-      if (action?.kind === "orbit" && avoidCenter) {
-        const progress = THREE.MathUtils.clamp((t - action.startedAt) / action.duration, 0, 1);
-        const envelope = Math.sin(progress * Math.PI);
-        const eased = progress * progress * (3 - 2 * progress);
-        const angle = action.seed + action.direction * progress * Math.PI * 2.15;
-        const orbitRadius = avoidRadius + action.radius;
-        const centerY = avoidCenter[1] + 0.98;
-        const orbitTarget = new THREE.Vector3(
-          avoidCenter[0] + Math.cos(angle) * orbitRadius,
-          centerY + Math.sin(eased * Math.PI * 2 + action.seed) * 0.34,
-          avoidCenter[2] + Math.sin(angle) * orbitRadius
-        );
-        target.lerp(orbitTarget, envelope);
-        visualScale = scale * (1 + envelope * 0.08);
-      } else if (action?.kind === "loop") {
+      if (action?.kind === "loop") {
         const progress = THREE.MathUtils.clamp((t - action.startedAt) / action.duration, 0, 1);
         const envelope = Math.sin(progress * Math.PI);
         const angle = action.seed + action.direction * progress * Math.PI * 2;
@@ -693,18 +719,155 @@ export function PetSoul({
           spinBoost = action.direction * Math.PI * 2;
           visualScale = scale * (1 + (1 - returnProgress) * 0.05);
         }
-      } else if (action?.kind === "memorialOrbit" && orbitCenter) {
+      } else if (action?.kind === "surfaceHops") {
+        const actionStart = action.startPosition?.clone() ?? naturalIdleTarget.clone();
+        const actionElapsed = t - action.startedAt;
+        const groundY =
+          typeof floorY === "number" && Number.isFinite(floorY)
+            ? floorY + 0.22
+            : actionStart.y - 1.18;
+        const surfaceRadius =
+          typeof orbitRadius === "number" && Number.isFinite(orbitRadius) ? orbitRadius : 1.6;
+        const hopRadius = THREE.MathUtils.clamp(surfaceRadius * 0.32, 0.72, 1.18);
+        const hopCenter = orbitCenter
+          ? new THREE.Vector3(orbitCenter[0], groundY, orbitCenter[2])
+          : new THREE.Vector3(base.x, groundY, base.z);
+        if (avoidCenter) {
+          const awayFromHouse = hopCenter
+            .clone()
+            .sub(new THREE.Vector3(avoidCenter[0], groundY, avoidCenter[2]));
+          if (awayFromHouse.lengthSq() < 0.001) {
+            awayFromHouse.set(Math.cos(action.seed), 0, Math.sin(action.seed));
+          }
+          hopCenter.add(
+            awayFromHouse
+              .normalize()
+              .multiplyScalar(Math.max(avoidRadius + 0.28, hopRadius * 0.42))
+          );
+        }
+        const resolveHopPoint = (progress: number) => {
+          const angle = action.seed + action.direction * progress * Math.PI * 2 * 1.16;
+          const radiusPulse = hopRadius * (0.92 + Math.sin(progress * Math.PI * 2) * 0.08);
+          const hopArc = Math.abs(Math.sin(progress * Math.PI * SURFACE_HOP_COUNT));
+          return new THREE.Vector3(
+            hopCenter.x + Math.cos(angle) * radiusPulse,
+            groundY + hopArc * 0.5,
+            hopCenter.z + Math.sin(angle) * radiusPulse * 0.72
+          );
+        };
+        const firstHopPoint = resolveHopPoint(0);
+        const hopEndTime = SURFACE_HOP_DESCEND_DURATION + SURFACE_HOP_DURATION;
+        if (actionElapsed < SURFACE_HOP_DESCEND_DURATION) {
+          const descendProgress = THREE.MathUtils.smoothstep(
+            actionElapsed / SURFACE_HOP_DESCEND_DURATION,
+            0,
+            1
+          );
+          target.copy(
+            cubicBezierVector(
+              actionStart,
+              actionStart.clone().add(new THREE.Vector3(0, -0.24, 0)),
+              firstHopPoint.clone().add(new THREE.Vector3(0, 0.58, 0)),
+              firstHopPoint,
+              descendProgress
+            )
+          );
+        } else if (actionElapsed < hopEndTime) {
+          const hopProgress = THREE.MathUtils.clamp(
+            (actionElapsed - SURFACE_HOP_DESCEND_DURATION) / SURFACE_HOP_DURATION,
+            0,
+            1
+          );
+          target.copy(resolveHopPoint(hopProgress));
+          spinBoost = action.direction * Math.sin(hopProgress * Math.PI) * Math.PI * 1.2;
+          visualScale =
+            scale *
+            (1 + Math.abs(Math.sin(hopProgress * Math.PI * SURFACE_HOP_COUNT)) * 0.06);
+        } else {
+          const returnProgress = THREE.MathUtils.smoothstep(
+            (actionElapsed - hopEndTime) / SURFACE_HOP_RETURN_DURATION,
+            0,
+            1
+          );
+          const lastHopPoint = resolveHopPoint(1);
+          const tangent = new THREE.Vector3(
+            -Math.sin(action.seed + action.direction * Math.PI * 2 * 1.16) * action.direction,
+            0,
+            Math.cos(action.seed + action.direction * Math.PI * 2 * 1.16) * action.direction
+          ).normalize();
+          target.copy(
+            cubicBezierVector(
+              lastHopPoint,
+              lastHopPoint
+                .clone()
+                .add(tangent.clone().multiplyScalar(hopRadius * 0.35))
+                .add(new THREE.Vector3(0, 0.42, 0)),
+              naturalIdleTarget
+                .clone()
+                .sub(tangent.clone().multiplyScalar(hopRadius * 0.22))
+                .add(new THREE.Vector3(0, 0.36, 0)),
+              naturalIdleTarget,
+              returnProgress
+            )
+          );
+          visualScale = scale * (1 + (1 - returnProgress) * 0.04);
+        }
+      } else if (action?.kind === "pointHops") {
+        const actionStart = action.startPosition?.clone() ?? naturalIdleTarget.clone();
+        const actionElapsed = t - action.startedAt;
+        const jumpDuration = POINT_HOP_DURATION;
+        const jumpVector = new THREE.Vector3(
+          Math.cos(action.seed) * action.radius * 1.22,
+          0,
+          Math.sin(action.seed) * action.radius * 0.86
+        );
+        const pointA = actionStart;
+        const pointB = actionStart.clone().add(jumpVector);
+        if (actionElapsed < jumpDuration) {
+          const progress = THREE.MathUtils.clamp(actionElapsed / jumpDuration, 0, 1);
+          const scaledProgress = Math.min(progress * POINT_HOP_COUNT, POINT_HOP_COUNT - 0.0001);
+          const jumpIndex = Math.floor(scaledProgress);
+          const localProgress = scaledProgress - jumpIndex;
+          const easedJump = THREE.MathUtils.smoothstep(localProgress, 0, 1);
+          const from = jumpIndex % 2 === 0 ? pointA : pointB;
+          const to = jumpIndex % 2 === 0 ? pointB : pointA;
+          target.lerpVectors(from, to, easedJump);
+          target.y += Math.sin(localProgress * Math.PI) * 0.46;
+          spinBoost = action.direction * Math.sin(progress * Math.PI) * Math.PI * 1.6;
+          visualScale = scale * (1 + Math.sin(localProgress * Math.PI) * 0.07);
+        } else {
+          const returnProgress = THREE.MathUtils.smoothstep(
+            (actionElapsed - jumpDuration) / POINT_HOP_RETURN_DURATION,
+            0,
+            1
+          );
+          target.copy(
+            cubicBezierVector(
+              pointA,
+              pointA.clone().add(new THREE.Vector3(0, 0.16, 0)),
+              naturalIdleTarget.clone().add(new THREE.Vector3(0, 0.22, 0)),
+              naturalIdleTarget,
+              returnProgress
+            )
+          );
+        }
+      } else if (
+        (action?.kind === "memorialOrbit" || action?.kind === "memorialOrbitCounter") &&
+        orbitCenter
+      ) {
         shouldRespectSceneColliders = false;
         const center = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
         const actionStart = action.startPosition?.clone() ?? base.clone();
         const startVector = actionStart.clone().sub(center);
-        const horizontalAxis = startVector.clone();
-        horizontalAxis.y = 0;
-        if (horizontalAxis.lengthSq() < 0.001) {
-          horizontalAxis.set(-1, 0, 0);
-        }
-        horizontalAxis.normalize();
         const verticalAxis = new THREE.Vector3(0, 1, 0);
+        const horizontalAxis = new THREE.Vector3(-1, 0, 0)
+          .applyAxisAngle(
+            verticalAxis,
+            action.kind === "memorialOrbitCounter"
+              ? MEMORIAL_ORBIT_COUNTER_YAW
+              : MEMORIAL_ORBIT_CLOCKWISE_YAW
+          )
+          .normalize();
         const startHorizontal = startVector.dot(horizontalAxis);
         const startVertical = startVector.y;
         const memorialOrbitRadius = Math.max(
