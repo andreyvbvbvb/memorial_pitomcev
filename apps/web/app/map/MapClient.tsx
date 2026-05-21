@@ -48,7 +48,11 @@ import {
 } from "../../lib/gifts";
 import { getHouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
-import { applyHousePlacement, getHouseTransform } from "../../lib/house-layout";
+import {
+  applyHousePlacement,
+  getHousePartScaleMultiplier,
+  getHouseTransform
+} from "../../lib/house-layout";
 
 type MarkerDto = {
   id: string;
@@ -414,12 +418,14 @@ function PartInstance({
   house,
   slot,
   url,
-  colors
+  colors,
+  houseId
 }: {
   house: THREE.Object3D;
   slot: string;
   url: string;
   colors?: Record<string, string>;
+  houseId?: string | null;
 }) {
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
@@ -429,10 +435,10 @@ function PartInstance({
       applyPartFitScale(cloned, 1.25, 1.875);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.575, "x");
+      applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseId, slot), "x");
     }
     return cloned;
-  }, [scene, slot]);
+  }, [houseId, scene, slot]);
 
   useEffect(() => {
     const anchor = house.getObjectByName(slot);
@@ -610,7 +616,14 @@ function TerrainWithHouseScene({
     <Group rotation={[0, MAP_PREVIEW_ROTATION_Y, 0]}>
       <Primitive object={terrain} />
       {data.parts.map((part) => (
-        <PartInstance key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={data.colors} />
+        <PartInstance
+          key={`${part.slot}-${part.url}`}
+          house={house}
+          slot={part.slot}
+          url={part.url}
+          colors={data.colors}
+          houseId={data.houseId}
+        />
       ))}
       {data.gifts?.map((gift) => (
         <GiftInstance key={`${gift.slot}-${gift.url}`} terrain={terrain} slot={gift.slot} url={gift.url} size={gift.size} />

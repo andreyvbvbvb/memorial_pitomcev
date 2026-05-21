@@ -2980,38 +2980,64 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3">
                       {appearanceTab === "house" ? (
                         <div className="grid gap-5">
-                          <div className="grid gap-3">
-                            <h4 className="text-base font-semibold text-slate-900">Форма домика</h4>
-                            {renderAppearanceOptionGrid(
-                              "house-base",
-                              houseBaseOptions,
-                              selectedHouseBaseId,
-                              (baseId) => {
-                                const nextVariant =
-                                  houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
-                                updateAppearanceDraft("houseId", nextVariant);
-                                requestAppearanceFocus("dom_slot");
-                              },
-                              "house"
-                            )}
-                          </div>
                           {houseTextureOptions.length > 0 ? (
+                            <div className="grid min-h-[360px] grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
+                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
+                                <h4 className="px-1 text-sm font-semibold text-slate-900">
+                                  Форма домика
+                                </h4>
+                                <div className="min-h-0 overflow-y-auto overscroll-contain">
+                                  {renderAppearanceOptionGrid(
+                                    "house-base",
+                                    houseBaseOptions,
+                                    selectedHouseBaseId,
+                                    (baseId) => {
+                                      const nextVariant =
+                                        houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
+                                      updateAppearanceDraft("houseId", nextVariant);
+                                      requestAppearanceFocus("dom_slot");
+                                    },
+                                    "house"
+                                  )}
+                                </div>
+                              </div>
+                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
+                                <h4 className="px-1 text-sm font-semibold text-slate-900">
+                                  Текстура домика
+                                </h4>
+                                <div className="min-h-0 overflow-y-auto overscroll-contain">
+                                  {renderAppearanceOptionGrid(
+                                    "house-texture",
+                                    houseTextureOptions,
+                                    appearanceDraft.houseId,
+                                    (variantId) => {
+                                      updateAppearanceDraft("houseId", variantId);
+                                      requestAppearanceFocus("dom_slot");
+                                    },
+                                    "house-texture"
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
                             <div className="grid gap-3">
                               <h4 className="text-base font-semibold text-slate-900">
-                                Текстура домика
+                                Форма домика
                               </h4>
                               {renderAppearanceOptionGrid(
-                                "house-texture",
-                                houseTextureOptions,
-                                appearanceDraft.houseId,
-                                (variantId) => {
-                                  updateAppearanceDraft("houseId", variantId);
+                                "house-base",
+                                houseBaseOptions,
+                                selectedHouseBaseId,
+                                (baseId) => {
+                                  const nextVariant =
+                                    houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
+                                  updateAppearanceDraft("houseId", nextVariant);
                                   requestAppearanceFocus("dom_slot");
                                 },
-                                "house-texture"
+                                "house"
                               )}
                             </div>
-                          ) : null}
+                          )}
                         </div>
                       ) : appearanceTab === "roof" ? (
                         renderAppearanceOptionGrid(

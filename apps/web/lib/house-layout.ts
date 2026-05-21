@@ -8,6 +8,8 @@ export type HouseTransform = {
   scale: number;
 };
 
+const BOWL_PART_SLOTS = new Set(["bowl_food_slot", "bowl_water_slot"]);
+
 const DEFAULT_HOUSE_TRANSFORM: HouseTransform = {
   offsetX: 0,
   offsetZ: 0,
@@ -66,6 +68,17 @@ export const getHouseTransform = (houseId?: string | null, terrainId?: string | 
     ...transform,
     scale: Number.isFinite(transform.scale) && transform.scale > 0 ? transform.scale : 1
   };
+};
+
+export const getHousePartScaleMultiplier = (
+  houseId?: string | null,
+  slot?: string | null
+) => {
+  const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  if (slot && BOWL_PART_SLOTS.has(slot) && baseId.startsWith("mat_")) {
+    return 2 / 3;
+  }
+  return 1;
 };
 
 export const applyHousePlacement = (

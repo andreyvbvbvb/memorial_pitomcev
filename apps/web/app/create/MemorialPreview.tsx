@@ -14,7 +14,11 @@ import {
 } from "../../lib/gifts";
 import type { HouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
-import { applyHousePlacement, getHouseTransform } from "../../lib/house-layout";
+import {
+  applyHousePlacement,
+  getHousePartScaleMultiplier,
+  getHouseTransform
+} from "../../lib/house-layout";
 import {
   PetSoul,
   normalizeSoulColor,
@@ -729,14 +733,14 @@ function PartAttachment({
       applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.575, "x");
+      applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseBaseId, slot), "x");
     }
     if (slot === "sign_slot") {
       const scale = houseBaseId === "budka_1" ? 0.85 : 1;
       applyPartFitWidthHeight(cloned, 1 * scale, 0.4 * scale);
     }
     return cloned;
-  }, [scene, slot]);
+  }, [houseBaseId, scene, slot]);
 
   useEffect(() => {
     const anchor = house.getObjectByName(slot);

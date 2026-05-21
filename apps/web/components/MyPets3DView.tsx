@@ -23,7 +23,11 @@ import {
 ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
-import { applyHousePlacement, getHouseTransform } from "../lib/house-layout";
+import {
+  applyHousePlacement,
+  getHousePartScaleMultiplier,
+  getHouseTransform
+} from "../lib/house-layout";
 import VisibilityIndicator from "./VisibilityIndicator";
 import {
   PetSoul,
@@ -230,12 +234,14 @@ function PartAttachment({
   house,
   slot,
   url,
-  colors
+  colors,
+  houseId
 }: {
   house: THREE.Object3D;
   slot: string;
   url: string;
   colors?: Record<string, string>;
+  houseId?: string | null;
 }) {
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
@@ -244,10 +250,10 @@ function PartAttachment({
       applyPartFitScale(cloned, 1.25, 1.875);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.575, "x");
+      applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseId, slot), "x");
     }
     return cloned;
-  }, [scene, slot]);
+  }, [houseId, scene, slot]);
 
   useEffect(() => {
     const anchor = house.getObjectByName(slot);
@@ -492,7 +498,14 @@ function MemorialInstance({
     >
       <Primitive object={terrain} />
       {parts.map((part) => (
-        <PartAttachment key={`${part.slot}-${part.url}`} house={house} slot={part.slot} url={part.url} colors={sceneJson.colors} />
+        <PartAttachment
+          key={`${part.slot}-${part.url}`}
+          house={house}
+          slot={part.slot}
+          url={part.url}
+          colors={sceneJson.colors}
+          houseId={memorial?.houseId}
+        />
       ))}
       <SoulAnchor
         root={root}

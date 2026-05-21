@@ -3161,28 +3161,43 @@ export default function CreateMemorialClient({
       case "house":
         return (
           <div className="grid gap-4">
-            <div className="grid gap-3">
-              {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
-                const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
-                handleChange("houseId", nextVariant);
-                requestFocus("dom_slot");
-              }, "house")}
-            </div>
             {houseTextureOptions.length > 0 ? (
-              <div className="grid gap-3">
-                <h2 className="text-base font-semibold text-slate-900">Текстура домика</h2>
-                {renderOptionGrid(
-                  "house-texture",
-                  houseTextureOptions,
-                  form.houseId,
-                  (id) => {
-                    handleChange("houseId", id);
-                    requestFocus("dom_slot");
-                  },
-                  "house-texture"
-                )}
+              <div className="grid min-h-[360px] grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
+                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
+                  <h2 className="px-1 text-sm font-semibold text-slate-900">Форма домика</h2>
+                  <div className="min-h-0 overflow-y-auto overscroll-contain">
+                    {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
+                      const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
+                      handleChange("houseId", nextVariant);
+                      requestFocus("dom_slot");
+                    }, "house")}
+                  </div>
+                </div>
+                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
+                  <h2 className="px-1 text-sm font-semibold text-slate-900">Текстура домика</h2>
+                  <div className="min-h-0 overflow-y-auto overscroll-contain">
+                    {renderOptionGrid(
+                      "house-texture",
+                      houseTextureOptions,
+                      form.houseId,
+                      (id) => {
+                        handleChange("houseId", id);
+                        requestFocus("dom_slot");
+                      },
+                      "house-texture"
+                    )}
+                  </div>
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="grid gap-3">
+                {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
+                  const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
+                  handleChange("houseId", nextVariant);
+                  requestFocus("dom_slot");
+                }, "house")}
+              </div>
+            )}
             {canUseCalibration(accessLevel) ? (
             <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-xs text-slate-600">
               <div className="text-xs font-semibold text-slate-800">

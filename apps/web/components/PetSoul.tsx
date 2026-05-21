@@ -73,6 +73,7 @@ const MEMORIAL_ORBIT_TRANSITION_DURATION = 1.5;
 const MEMORIAL_ORBIT_START_RAMP_DURATION = 0.3;
 const MEMORIAL_ORBIT_CLOCKWISE_YAW = -Math.PI / 4;
 const MEMORIAL_ORBIT_COUNTER_YAW = Math.PI / 4;
+const MEMORIAL_ORBIT_TRANSITION_TURNS = 4;
 const FLOAT_ACTION_MIN_DURATION = 3;
 const FLOAT_ACTION_MAX_DURATION = 4;
 const WHIRLPOOL_RISE_DURATION = 4.2;
@@ -383,6 +384,38 @@ function cubicBezierVector(
     .add(controlA.clone().multiplyScalar(3 * inv * inv * t))
     .add(controlB.clone().multiplyScalar(3 * inv * t * t))
     .add(end.clone().multiplyScalar(t * t * t));
+}
+
+function spiraledBezierVector(
+  start: THREE.Vector3,
+  controlA: THREE.Vector3,
+  controlB: THREE.Vector3,
+  end: THREE.Vector3,
+  progress: number,
+  radius: number,
+  turns: number,
+  seed: number,
+  direction: 1 | -1
+) {
+  const point = cubicBezierVector(start, controlA, controlB, end, progress);
+  const travelAxis = end.clone().sub(start);
+  if (travelAxis.lengthSq() < 0.0001 || radius <= 0 || turns <= 0) {
+    return point;
+  }
+  travelAxis.normalize();
+  const reference =
+    Math.abs(travelAxis.dot(new THREE.Vector3(0, 1, 0))) > 0.92
+      ? new THREE.Vector3(1, 0, 0)
+      : new THREE.Vector3(0, 1, 0);
+  const normalA = new THREE.Vector3().crossVectors(travelAxis, reference).normalize();
+  const normalB = new THREE.Vector3().crossVectors(travelAxis, normalA).normalize();
+  const envelope = Math.sin(THREE.MathUtils.clamp(progress, 0, 1) * Math.PI);
+  const angle = seed + direction * progress * Math.PI * 2 * turns;
+  return point.add(
+    normalA
+      .multiplyScalar(Math.cos(angle) * radius * envelope)
+      .add(normalB.multiplyScalar(Math.sin(angle) * radius * envelope))
+  );
 }
 
 function pickIdleSoulAction(
@@ -895,11 +928,23 @@ export function PetSoul({
           .sub(orbitTangent.clone().multiplyScalar(memorialOrbitRadius * 0.22));
         const exitDuration = MEMORIAL_ORBIT_TRANSITION_DURATION;
         const returnStart = exitDuration + MEMORIAL_ORBIT_DURATION;
+        const transitionSpiralRadius = Math.min(0.34, memorialOrbitRadius * 0.13);
         if (actionElapsed < exitDuration) {
           const exitProgress = THREE.MathUtils.smoothstep(actionElapsed / exitDuration, 0, 1);
           target.copy(
-            cubicBezierVector(actionStart, exitControlA, exitControlB, orbitStart, exitProgress)
+            spiraledBezierVector(
+              actionStart,
+              exitControlA,
+              exitControlB,
+              orbitStart,
+              exitProgress,
+              transitionSpiralRadius,
+              MEMORIAL_ORBIT_TRANSITION_TURNS,
+              action.seed,
+              action.direction
+            )
           );
+          spinBoost = action.direction * exitProgress * Math.PI * 2;
         } else if (actionElapsed < returnStart) {
           const orbitElapsed = actionElapsed - exitDuration;
           const orbitProgress = progressWithStartRamp(
@@ -925,16 +970,21 @@ export function PetSoul({
             .clone()
             .sub(orbitTangent.clone().multiplyScalar(memorialOrbitRadius * 0.16));
           target.copy(
-            cubicBezierVector(
+            spiraledBezierVector(
               orbitStart,
               returnControlA,
               returnControlB,
               naturalIdleTarget,
-              returnProgress
+              returnProgress,
+              transitionSpiralRadius,
+              MEMORIAL_ORBIT_TRANSITION_TURNS,
+              action.seed + Math.PI,
+              action.direction
             )
           );
+          spinBoost = action.direction * (1 - returnProgress) * Math.PI * 2;
         }
-        spinBoost = action.direction * Math.PI * 1.5;
+        spinBoost += action.direction * Math.PI * 1.5;
         const actionProgress = THREE.MathUtils.clamp(actionElapsed / action.duration, 0, 1);
         visualScale = scale * (1 + Math.sin(actionProgress * Math.PI) * 0.06);
       }
