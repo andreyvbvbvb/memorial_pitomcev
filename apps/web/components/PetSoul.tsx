@@ -67,9 +67,9 @@ const SOUL_PATH_MIN_DURATION = 0.2;
 const SOUL_PATH_MAX_DURATION = 30;
 const SOUL_PATH_MAX_POINTS = 12;
 const SOUL_PATH_MAX_OFFSET = 20;
-const MEMORIAL_ORBIT_RADIUS_MULTIPLIER = 1.25;
+const MEMORIAL_ORBIT_RADIUS_MULTIPLIER = 1.1;
 const MEMORIAL_ORBIT_DURATION = 4;
-const MEMORIAL_ORBIT_TRANSITION_DURATION = 0.35;
+const MEMORIAL_ORBIT_TRANSITION_DURATION = 0.45;
 const MEMORIAL_ORBIT_START_RAMP_DURATION = 0.3;
 
 const clampFiniteNumber = (value: unknown, fallback: number, min: number, max: number) => {
@@ -328,6 +328,8 @@ type IdleSoulAction = {
   startPosition?: THREE.Vector3;
 };
 
+type IdleSoulActionKind = IdleSoulAction["kind"];
+
 type PreparedSoulPath = {
   knots: THREE.Vector3[];
   segmentDurations: number[];
@@ -351,22 +353,45 @@ function progressWithStartRamp(elapsed: number, duration: number, rampDuration: 
   return cruiseSpeed * (safeElapsed - safeRamp * 0.5);
 }
 
+function cubicBezierVector(
+  start: THREE.Vector3,
+  controlA: THREE.Vector3,
+  controlB: THREE.Vector3,
+  end: THREE.Vector3,
+  progress: number
+) {
+  const t = THREE.MathUtils.clamp(progress, 0, 1);
+  const inv = 1 - t;
+  return start
+    .clone()
+    .multiplyScalar(inv * inv * inv)
+    .add(controlA.clone().multiplyScalar(3 * inv * inv * t))
+    .add(controlB.clone().multiplyScalar(3 * inv * t * t))
+    .add(end.clone().multiplyScalar(t * t * t));
+}
+
 function pickIdleSoulAction(
   startedAt: number,
   canOrbit: boolean,
   canMemorialOrbit: boolean,
-  preferMemorialOrbit = false
+  preferMemorialOrbit = false,
+  recentKinds: IdleSoulActionKind[] = []
 ): IdleSoulAction {
-  const roll = Math.random();
-  let kind: IdleSoulAction["kind"] = "float";
-  if (preferMemorialOrbit && canMemorialOrbit) {
+  const candidates: IdleSoulActionKind[] = ["float", "loop"];
+  if (canOrbit) {
+    candidates.push("orbit");
+  }
+  if (canMemorialOrbit) {
+    candidates.push("memorialOrbit");
+  }
+  const availableCandidates = candidates.filter((candidate) => !recentKinds.includes(candidate));
+  const pool = availableCandidates.length > 0 ? availableCandidates : candidates;
+
+  let kind: IdleSoulActionKind = "float";
+  if (preferMemorialOrbit && pool.includes("memorialOrbit")) {
     kind = "memorialOrbit";
-  } else if (canMemorialOrbit && roll > 0.72) {
-    kind = "memorialOrbit";
-  } else if (roll > 0.5 && roll <= 0.72) {
-    kind = "loop";
-  } else if (roll > 0.34 && roll <= 0.5 && canOrbit) {
-    kind = "orbit";
+  } else {
+    kind = pool[Math.floor(Math.random() * pool.length)] ?? "float";
   }
   const duration =
     kind === "memorialOrbit"
@@ -490,6 +515,7 @@ export function PetSoul({
   const previousModeRef = useRef<PetSoulMode>(mode);
   const idlePhaseRef = useRef(Math.random() * Math.PI * 2);
   const idleActionRef = useRef<IdleSoulAction | null>(null);
+  const recentIdleActionKindsRef = useRef<IdleSoulActionKind[]>([]);
   const initialMemorialOrbitPlayedRef = useRef(false);
   const normalizedColor = normalizeSoulColor(color);
   const preparedPath = useMemo(() => prepareSoulPath(path), [path]);
@@ -521,6 +547,7 @@ export function PetSoul({
     previousModeRef.current = mode;
     startedAtRef.current = null;
     idleActionRef.current = null;
+    recentIdleActionKindsRef.current = [];
     initialMemorialOrbitPlayedRef.current = false;
   }, [mode]);
 
@@ -554,7 +581,8 @@ export function PetSoul({
     );
     const pathOffset = mode === "idle" ? sampleSoulPathOffset(t + phase, preparedPath) : null;
     const followsCustomPath = Boolean(pathOffset);
-    const target = pathOffset ? base.clone().add(pathOffset) : base.clone().add(idle);
+    const naturalIdleTarget = base.clone().add(idle);
+    const target = pathOffset ? base.clone().add(pathOffset) : naturalIdleTarget.clone();
     let shouldRespectSceneColliders = !followsCustomPath;
     let opacity = 1;
     let visualScale = scale;
@@ -570,8 +598,13 @@ export function PetSoul({
           t,
           canOrbit,
           canMemorialOrbit,
-          preferMemorialOrbit
+          preferMemorialOrbit,
+          recentIdleActionKindsRef.current
         );
+        recentIdleActionKindsRef.current = [
+          idleActionRef.current.kind,
+          ...recentIdleActionKindsRef.current
+        ].slice(0, 2);
         if (preferMemorialOrbit) {
           initialMemorialOrbitPlayedRef.current = true;
         }
@@ -629,15 +662,28 @@ export function PetSoul({
         );
         const startAngle = Math.atan2(startVertical, startHorizontal);
         const actionElapsed = t - action.startedAt;
+        const orbitTangent = horizontalAxis
+          .clone()
+          .multiplyScalar(-Math.sin(startAngle) * action.direction)
+          .add(verticalAxis.clone().multiplyScalar(Math.cos(startAngle) * action.direction))
+          .normalize();
         const orbitStart = center
           .clone()
           .add(horizontalAxis.clone().multiplyScalar(Math.cos(startAngle) * memorialOrbitRadius))
           .add(verticalAxis.clone().multiplyScalar(Math.sin(startAngle) * memorialOrbitRadius));
+        const exitControlA = actionStart
+          .clone()
+          .add(orbitTangent.clone().multiplyScalar(memorialOrbitRadius * 0.2));
+        const exitControlB = orbitStart
+          .clone()
+          .sub(orbitTangent.clone().multiplyScalar(memorialOrbitRadius * 0.22));
         const exitDuration = MEMORIAL_ORBIT_TRANSITION_DURATION;
         const returnStart = exitDuration + MEMORIAL_ORBIT_DURATION;
         if (actionElapsed < exitDuration) {
           const exitProgress = THREE.MathUtils.smoothstep(actionElapsed / exitDuration, 0, 1);
-          target.lerpVectors(actionStart, orbitStart, exitProgress);
+          target.copy(
+            cubicBezierVector(actionStart, exitControlA, exitControlB, orbitStart, exitProgress)
+          );
         } else if (actionElapsed < returnStart) {
           const orbitElapsed = actionElapsed - exitDuration;
           const orbitProgress = progressWithStartRamp(
@@ -656,7 +702,21 @@ export function PetSoul({
             0,
             1
           );
-          target.lerpVectors(orbitStart, actionStart, returnProgress);
+          const returnControlA = orbitStart
+            .clone()
+            .add(orbitTangent.clone().multiplyScalar(memorialOrbitRadius * 0.18));
+          const returnControlB = naturalIdleTarget
+            .clone()
+            .sub(orbitTangent.clone().multiplyScalar(memorialOrbitRadius * 0.16));
+          target.copy(
+            cubicBezierVector(
+              orbitStart,
+              returnControlA,
+              returnControlB,
+              naturalIdleTarget,
+              returnProgress
+            )
+          );
         }
         spinBoost = action.direction * Math.PI * 1.5;
         const actionProgress = THREE.MathUtils.clamp(actionElapsed / action.duration, 0, 1);
