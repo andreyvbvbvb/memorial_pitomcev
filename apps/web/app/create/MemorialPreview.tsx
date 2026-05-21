@@ -21,6 +21,7 @@ import {
   resolveSoulAnchorPosition,
   resolveSoulObstacleCenterPosition,
   resolveSoulOrbitCenterPosition,
+  resolveSoulOrbitRadius,
   resolveSoulSurfaceFloorY,
   type PetSoulMode,
   type PetSoulPath,
@@ -974,6 +975,7 @@ function SoulAnchor({
     position: [number, number, number];
     avoidCenter: [number, number, number];
     orbitCenter: [number, number, number];
+    orbitRadius: number;
     floorY: number;
   } | null>(null);
 
@@ -986,6 +988,7 @@ function SoulAnchor({
       position: resolveSoulAnchorPosition(terrain, house),
       avoidCenter: resolveSoulObstacleCenterPosition(terrain, house),
       orbitCenter: resolveSoulOrbitCenterPosition(terrain, house),
+      orbitRadius: resolveSoulOrbitRadius(terrain),
       floorY: resolveSoulSurfaceFloorY(terrain, house)
     });
   }, [enabled, terrain, house]);
@@ -1006,6 +1009,7 @@ function SoulAnchor({
         position={anchor.position}
         avoidCenter={anchor.avoidCenter}
         orbitCenter={anchor.orbitCenter}
+        orbitRadius={anchor.orbitRadius}
         avoidRadius={0.96}
         floorY={anchor.floorY}
         mode={mode}

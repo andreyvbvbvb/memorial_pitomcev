@@ -67,6 +67,10 @@ const SOUL_PATH_MIN_DURATION = 0.2;
 const SOUL_PATH_MAX_DURATION = 30;
 const SOUL_PATH_MAX_POINTS = 12;
 const SOUL_PATH_MAX_OFFSET = 20;
+const MEMORIAL_ORBIT_RADIUS_MULTIPLIER = 1.25;
+const MEMORIAL_ORBIT_DURATION = 4;
+const MEMORIAL_ORBIT_TRANSITION_DURATION = 0.35;
+const MEMORIAL_ORBIT_START_RAMP_DURATION = 0.3;
 
 const clampFiniteNumber = (value: unknown, fallback: number, min: number, max: number) => {
   const number = typeof value === "number" ? value : Number(value);
@@ -223,6 +227,14 @@ export function resolveSoulOrbitCenterPosition(
   return [center.x, center.y, center.z];
 }
 
+export function resolveSoulOrbitRadius(terrain: THREE.Object3D) {
+  terrain.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(terrain);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  return Math.max(1.2, Math.max(size.x, size.z) * 0.5 * MEMORIAL_ORBIT_RADIUS_MULTIPLIER);
+}
+
 function SoulPreviewBackground() {
   const texture = useTexture("/nebo.png");
   const hasTexture = Boolean(texture?.image);
@@ -313,6 +325,7 @@ type IdleSoulAction = {
   seed: number;
   direction: 1 | -1;
   radius: number;
+  startPosition?: THREE.Vector3;
 };
 
 type PreparedSoulPath = {
@@ -357,7 +370,7 @@ function pickIdleSoulAction(
   }
   const duration =
     kind === "memorialOrbit"
-      ? 4
+      ? MEMORIAL_ORBIT_DURATION + MEMORIAL_ORBIT_TRANSITION_DURATION * 2
       : kind === "orbit"
       ? 5.2 + Math.random() * 2.4
       : kind === "loop"
@@ -445,6 +458,7 @@ export function PetSoul({
   position = [0, 1.4, 0],
   avoidCenter = null,
   orbitCenter = null,
+  orbitRadius = null,
   avoidRadius = 0.92,
   floorY = null,
   scale = 1,
@@ -457,6 +471,7 @@ export function PetSoul({
   position?: [number, number, number];
   avoidCenter?: [number, number, number] | null;
   orbitCenter?: [number, number, number] | null;
+  orbitRadius?: number | null;
   avoidRadius?: number;
   floorY?: number | null;
   scale?: number;
@@ -560,6 +575,9 @@ export function PetSoul({
         if (preferMemorialOrbit) {
           initialMemorialOrbitPlayedRef.current = true;
         }
+        if (idleActionRef.current) {
+          idleActionRef.current.startPosition = target.clone();
+        }
       }
       const action = idleActionRef.current;
       if (action?.kind === "orbit" && avoidCenter) {
@@ -592,27 +610,57 @@ export function PetSoul({
       } else if (action?.kind === "memorialOrbit" && orbitCenter) {
         shouldRespectSceneColliders = false;
         const center = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
-        const horizontalAxis = base.clone().sub(center);
+        const actionStart = action.startPosition?.clone() ?? base.clone();
+        const startVector = actionStart.clone().sub(center);
+        const horizontalAxis = startVector.clone();
         horizontalAxis.y = 0;
         if (horizontalAxis.lengthSq() < 0.001) {
           horizontalAxis.set(-1, 0, 0);
         }
         horizontalAxis.normalize();
         const verticalAxis = new THREE.Vector3(0, 1, 0);
-        const startVector = base.clone().sub(center);
         const startHorizontal = startVector.dot(horizontalAxis);
         const startVertical = startVector.y;
-        const orbitRadius = Math.max(1.2, Math.hypot(startHorizontal, startVertical));
+        const memorialOrbitRadius = Math.max(
+          1.2,
+          typeof orbitRadius === "number" && Number.isFinite(orbitRadius)
+            ? orbitRadius
+            : Math.hypot(startHorizontal, startVertical)
+        );
         const startAngle = Math.atan2(startVertical, startHorizontal);
         const actionElapsed = t - action.startedAt;
-        const orbitProgress = progressWithStartRamp(actionElapsed, action.duration, 0.3);
-        const angle = startAngle + action.direction * orbitProgress * Math.PI * 2;
-        target
-          .copy(center)
-          .add(horizontalAxis.multiplyScalar(Math.cos(angle) * orbitRadius))
-          .add(verticalAxis.multiplyScalar(Math.sin(angle) * orbitRadius));
+        const orbitStart = center
+          .clone()
+          .add(horizontalAxis.clone().multiplyScalar(Math.cos(startAngle) * memorialOrbitRadius))
+          .add(verticalAxis.clone().multiplyScalar(Math.sin(startAngle) * memorialOrbitRadius));
+        const exitDuration = MEMORIAL_ORBIT_TRANSITION_DURATION;
+        const returnStart = exitDuration + MEMORIAL_ORBIT_DURATION;
+        if (actionElapsed < exitDuration) {
+          const exitProgress = THREE.MathUtils.smoothstep(actionElapsed / exitDuration, 0, 1);
+          target.lerpVectors(actionStart, orbitStart, exitProgress);
+        } else if (actionElapsed < returnStart) {
+          const orbitElapsed = actionElapsed - exitDuration;
+          const orbitProgress = progressWithStartRamp(
+            orbitElapsed,
+            MEMORIAL_ORBIT_DURATION,
+            MEMORIAL_ORBIT_START_RAMP_DURATION
+          );
+          const angle = startAngle + action.direction * orbitProgress * Math.PI * 2;
+          target
+            .copy(center)
+            .add(horizontalAxis.clone().multiplyScalar(Math.cos(angle) * memorialOrbitRadius))
+            .add(verticalAxis.clone().multiplyScalar(Math.sin(angle) * memorialOrbitRadius));
+        } else {
+          const returnProgress = THREE.MathUtils.smoothstep(
+            (actionElapsed - returnStart) / exitDuration,
+            0,
+            1
+          );
+          target.lerpVectors(orbitStart, actionStart, returnProgress);
+        }
         spinBoost = action.direction * Math.PI * 1.5;
-        visualScale = scale * (1 + Math.sin(orbitProgress * Math.PI) * 0.06);
+        const actionProgress = THREE.MathUtils.clamp(actionElapsed / action.duration, 0, 1);
+        visualScale = scale * (1 + Math.sin(actionProgress * Math.PI) * 0.06);
       }
     }
 

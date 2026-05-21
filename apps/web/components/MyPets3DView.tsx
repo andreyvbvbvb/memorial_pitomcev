@@ -31,6 +31,7 @@ import {
   resolveSoulAnchorPosition,
   resolveSoulObstacleCenterPosition,
   resolveSoulOrbitCenterPosition,
+  resolveSoulOrbitRadius,
   resolveSoulSurfaceFloorY,
   type PetSoulPath
 } from "./PetSoul";
@@ -289,6 +290,7 @@ function SoulAnchor({
     position: [number, number, number];
     avoidCenter: [number, number, number];
     orbitCenter: [number, number, number];
+    orbitRadius: number;
     floorY: number;
   } | null>(null);
 
@@ -311,11 +313,20 @@ function SoulAnchor({
     const floorPoint = new THREE.Vector3(0, terrainFloorY, 0);
     terrain.localToWorld(floorPoint);
     root.worldToLocal(floorPoint);
+    const orbitCenter = resolveSoulOrbitCenterPosition(terrain, house);
+    const orbitRadius = resolveSoulOrbitRadius(terrain);
+    const orbitCenterPoint = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
+    const orbitEdgePoint = orbitCenterPoint.clone().add(new THREE.Vector3(orbitRadius, 0, 0));
+    terrain.localToWorld(orbitCenterPoint);
+    terrain.localToWorld(orbitEdgePoint);
+    root.worldToLocal(orbitCenterPoint);
+    root.worldToLocal(orbitEdgePoint);
 
     setAnchor({
       position: toRootLocal(resolveSoulAnchorPosition(terrain, house)),
       avoidCenter: toRootLocal(resolveSoulObstacleCenterPosition(terrain, house)),
-      orbitCenter: toRootLocal(resolveSoulOrbitCenterPosition(terrain, house)),
+      orbitCenter: [orbitCenterPoint.x, orbitCenterPoint.y, orbitCenterPoint.z],
+      orbitRadius: orbitCenterPoint.distanceTo(orbitEdgePoint),
       floorY: floorPoint.y
     });
   }, [enabled, root, terrain, house]);
@@ -331,6 +342,7 @@ function SoulAnchor({
       position={anchor.position}
       avoidCenter={anchor.avoidCenter}
       orbitCenter={anchor.orbitCenter}
+      orbitRadius={anchor.orbitRadius}
       avoidRadius={0.96}
       floorY={anchor.floorY}
       mode="idle"
