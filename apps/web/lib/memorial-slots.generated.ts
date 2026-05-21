@@ -74,5 +74,21 @@ export const houseSlotsGenerated = {
   "kotik_3__base": {
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
+  },
+  "mat_1__base": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "mat_1__fourth": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "mat_1__second": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "mat_1__third": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
   }
 } as const;
