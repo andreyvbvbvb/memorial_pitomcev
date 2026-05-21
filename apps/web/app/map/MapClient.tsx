@@ -20,6 +20,7 @@ import {
   readSoulSettings,
   resolveSoulAnchorPosition,
   resolveSoulObstacleCenterPosition,
+  resolveSoulOrbitCenterPosition,
   resolveSoulSurfaceFloorY,
   type PetSoulPath
 } from "../../components/PetSoul";
@@ -514,6 +515,7 @@ function SoulAnchor({
   const [anchor, setAnchor] = useState<{
     position: [number, number, number];
     avoidCenter: [number, number, number];
+    orbitCenter: [number, number, number];
     floorY: number;
   } | null>(null);
 
@@ -525,6 +527,7 @@ function SoulAnchor({
     setAnchor({
       position: resolveSoulAnchorPosition(terrain, house),
       avoidCenter: resolveSoulObstacleCenterPosition(terrain, house),
+      orbitCenter: resolveSoulOrbitCenterPosition(terrain, house),
       floorY: resolveSoulSurfaceFloorY(terrain, house)
     });
   }, [enabled, terrain, house]);
@@ -539,6 +542,7 @@ function SoulAnchor({
       glowColor={glowColor}
       position={anchor.position}
       avoidCenter={anchor.avoidCenter}
+      orbitCenter={anchor.orbitCenter}
       avoidRadius={0.96}
       floorY={anchor.floorY}
       mode="idle"

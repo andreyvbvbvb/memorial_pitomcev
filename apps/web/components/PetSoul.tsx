@@ -210,6 +210,19 @@ export function resolveSoulSurfaceFloorY(
   return housePosition.y + 0.78;
 }
 
+export function resolveSoulOrbitCenterPosition(
+  terrain: THREE.Object3D,
+  house: THREE.Object3D
+): [number, number, number] {
+  terrain.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(terrain);
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  terrain.worldToLocal(center);
+  center.y = resolveSoulSurfaceFloorY(terrain, house);
+  return [center.x, center.y, center.z];
+}
+
 function SoulPreviewBackground() {
   const texture = useTexture("/nebo.png");
   const hasTexture = Boolean(texture?.image);
@@ -294,7 +307,7 @@ function keepSoulAboveSurface(target: THREE.Vector3, floorY?: number | null) {
 }
 
 type IdleSoulAction = {
-  kind: "float" | "orbit" | "loop";
+  kind: "float" | "orbit" | "loop" | "memorialOrbit";
   startedAt: number;
   duration: number;
   seed: number;
@@ -311,16 +324,41 @@ type PreparedSoulPath = {
   curve: THREE.CatmullRomCurve3 | null;
 };
 
-function pickIdleSoulAction(startedAt: number, canOrbit: boolean): IdleSoulAction {
+function progressWithStartRamp(elapsed: number, duration: number, rampDuration: number) {
+  const safeDuration = Math.max(0.001, duration);
+  const safeRamp = THREE.MathUtils.clamp(rampDuration, 0, safeDuration * 0.8);
+  const safeElapsed = THREE.MathUtils.clamp(elapsed, 0, safeDuration);
+  if (safeRamp <= 0) {
+    return safeElapsed / safeDuration;
+  }
+  const cruiseSpeed = 1 / (safeDuration - safeRamp * 0.5);
+  if (safeElapsed <= safeRamp) {
+    return (0.5 * cruiseSpeed * safeElapsed * safeElapsed) / safeRamp;
+  }
+  return cruiseSpeed * (safeElapsed - safeRamp * 0.5);
+}
+
+function pickIdleSoulAction(
+  startedAt: number,
+  canOrbit: boolean,
+  canMemorialOrbit: boolean,
+  preferMemorialOrbit = false
+): IdleSoulAction {
   const roll = Math.random();
   let kind: IdleSoulAction["kind"] = "float";
-  if (roll > 0.56 && roll <= 0.78) {
+  if (preferMemorialOrbit && canMemorialOrbit) {
+    kind = "memorialOrbit";
+  } else if (canMemorialOrbit && roll > 0.72) {
+    kind = "memorialOrbit";
+  } else if (roll > 0.5 && roll <= 0.72) {
     kind = "loop";
-  } else if (roll > 0.78 && canOrbit) {
+  } else if (roll > 0.34 && roll <= 0.5 && canOrbit) {
     kind = "orbit";
   }
   const duration =
-    kind === "orbit"
+    kind === "memorialOrbit"
+      ? 4
+      : kind === "orbit"
       ? 5.2 + Math.random() * 2.4
       : kind === "loop"
         ? 2.6 + Math.random() * 1.3
@@ -330,7 +368,7 @@ function pickIdleSoulAction(startedAt: number, canOrbit: boolean): IdleSoulActio
     startedAt,
     duration,
     seed: Math.random() * Math.PI * 2,
-    direction: Math.random() > 0.5 ? 1 : -1,
+    direction: kind === "memorialOrbit" ? 1 : Math.random() > 0.5 ? 1 : -1,
     radius: 0.56 + Math.random() * 0.38
   };
 }
@@ -406,6 +444,7 @@ export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
   position = [0, 1.4, 0],
   avoidCenter = null,
+  orbitCenter = null,
   avoidRadius = 0.92,
   floorY = null,
   scale = 1,
@@ -417,6 +456,7 @@ export function PetSoul({
   glowColor?: string | null;
   position?: [number, number, number];
   avoidCenter?: [number, number, number] | null;
+  orbitCenter?: [number, number, number] | null;
   avoidRadius?: number;
   floorY?: number | null;
   scale?: number;
@@ -435,6 +475,7 @@ export function PetSoul({
   const previousModeRef = useRef<PetSoulMode>(mode);
   const idlePhaseRef = useRef(Math.random() * Math.PI * 2);
   const idleActionRef = useRef<IdleSoulAction | null>(null);
+  const initialMemorialOrbitPlayedRef = useRef(false);
   const normalizedColor = normalizeSoulColor(color);
   const preparedPath = useMemo(() => prepareSoulPath(path), [path]);
   const baseColor = useMemo(() => new THREE.Color(normalizedColor), [normalizedColor]);
@@ -465,6 +506,7 @@ export function PetSoul({
     previousModeRef.current = mode;
     startedAtRef.current = null;
     idleActionRef.current = null;
+    initialMemorialOrbitPlayedRef.current = false;
   }, [mode]);
 
   useEffect(() => {
@@ -496,16 +538,28 @@ export function PetSoul({
       Math.sin(t * 0.48 + phase * 1.2) * 0.38
     );
     const pathOffset = mode === "idle" ? sampleSoulPathOffset(t + phase, preparedPath) : null;
+    const followsCustomPath = Boolean(pathOffset);
     const target = pathOffset ? base.clone().add(pathOffset) : base.clone().add(idle);
+    let shouldRespectSceneColliders = !followsCustomPath;
     let opacity = 1;
     let visualScale = scale;
     let spinBoost = 0;
 
     if (mode === "idle" && !pathOffset) {
       const canOrbit = Boolean(avoidCenter);
+      const canMemorialOrbit = Boolean(orbitCenter);
       const currentAction = idleActionRef.current;
       if (!currentAction || t - currentAction.startedAt >= currentAction.duration) {
-        idleActionRef.current = pickIdleSoulAction(t, canOrbit);
+        const preferMemorialOrbit = canMemorialOrbit && !initialMemorialOrbitPlayedRef.current;
+        idleActionRef.current = pickIdleSoulAction(
+          t,
+          canOrbit,
+          canMemorialOrbit,
+          preferMemorialOrbit
+        );
+        if (preferMemorialOrbit) {
+          initialMemorialOrbitPlayedRef.current = true;
+        }
       }
       const action = idleActionRef.current;
       if (action?.kind === "orbit" && avoidCenter) {
@@ -535,6 +589,30 @@ export function PetSoul({
         );
         spinBoost = action.direction * envelope * Math.PI * 2;
         visualScale = scale * (1 + envelope * 0.1);
+      } else if (action?.kind === "memorialOrbit" && orbitCenter) {
+        shouldRespectSceneColliders = false;
+        const center = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
+        const horizontalAxis = base.clone().sub(center);
+        horizontalAxis.y = 0;
+        if (horizontalAxis.lengthSq() < 0.001) {
+          horizontalAxis.set(-1, 0, 0);
+        }
+        horizontalAxis.normalize();
+        const verticalAxis = new THREE.Vector3(0, 1, 0);
+        const startVector = base.clone().sub(center);
+        const startHorizontal = startVector.dot(horizontalAxis);
+        const startVertical = startVector.y;
+        const orbitRadius = Math.max(1.2, Math.hypot(startHorizontal, startVertical));
+        const startAngle = Math.atan2(startVertical, startHorizontal);
+        const actionElapsed = t - action.startedAt;
+        const orbitProgress = progressWithStartRamp(actionElapsed, action.duration, 0.3);
+        const angle = startAngle + action.direction * orbitProgress * Math.PI * 2;
+        target
+          .copy(center)
+          .add(horizontalAxis.multiplyScalar(Math.cos(angle) * orbitRadius))
+          .add(verticalAxis.multiplyScalar(Math.sin(angle) * orbitRadius));
+        spinBoost = action.direction * Math.PI * 1.5;
+        visualScale = scale * (1 + Math.sin(orbitProgress * Math.PI) * 0.06);
       }
     }
 
@@ -595,7 +673,7 @@ export function PetSoul({
       }
     }
 
-    if (mode !== "farewell" && mode !== "arrival") {
+    if (mode !== "farewell" && mode !== "arrival" && shouldRespectSceneColliders) {
       keepSoulOutsideObstacle(target, avoidCenter, avoidRadius);
       keepSoulAboveSurface(target, floorY);
     }
