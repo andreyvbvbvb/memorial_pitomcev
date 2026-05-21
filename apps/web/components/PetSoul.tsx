@@ -69,8 +69,13 @@ const SOUL_PATH_MAX_POINTS = 12;
 const SOUL_PATH_MAX_OFFSET = 20;
 const MEMORIAL_ORBIT_RADIUS_MULTIPLIER = 1.1;
 const MEMORIAL_ORBIT_DURATION = 4;
-const MEMORIAL_ORBIT_TRANSITION_DURATION = 0.45;
+const MEMORIAL_ORBIT_TRANSITION_DURATION = 1.5;
 const MEMORIAL_ORBIT_START_RAMP_DURATION = 0.3;
+const WHIRLPOOL_RISE_DURATION = 4.2;
+const WHIRLPOOL_RETURN_DURATION = 1.2;
+const WHIRLPOOL_TURNS = 5;
+const WHIRLPOOL_HEIGHT = 2.3;
+const WHIRLPOOL_RADIUS = 0.62;
 
 const clampFiniteNumber = (value: unknown, fallback: number, min: number, max: number) => {
   const number = typeof value === "number" ? value : Number(value);
@@ -171,23 +176,15 @@ export function buildSoulSettings(
 
 export function resolveSoulAnchorPosition(
   terrain: THREE.Object3D,
-  _house: THREE.Object3D
+  house: THREE.Object3D
 ): [number, number, number] {
   terrain.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(terrain);
   const center = new THREE.Vector3();
-  const size = new THREE.Vector3();
   box.getCenter(center);
-  box.getSize(size);
-  const anchor = center.clone().add(
-    new THREE.Vector3(
-      -Math.max(1.1, size.x * 0.24),
-      Math.max(1.12, size.y * 0.34 + 0.72),
-      Math.max(0.56, size.z * 0.14)
-    )
-  );
-  terrain.worldToLocal(anchor);
-  return [anchor.x, anchor.y, anchor.z];
+  terrain.worldToLocal(center);
+  center.y = resolveSoulSurfaceFloorY(terrain, house) + 2;
+  return [center.x, center.y, center.z];
 }
 
 export function resolveSoulObstacleCenterPosition(
@@ -319,7 +316,7 @@ function keepSoulAboveSurface(target: THREE.Vector3, floorY?: number | null) {
 }
 
 type IdleSoulAction = {
-  kind: "float" | "orbit" | "loop" | "memorialOrbit";
+  kind: "float" | "orbit" | "loop" | "memorialOrbit" | "whirlpool";
   startedAt: number;
   duration: number;
   seed: number;
@@ -377,7 +374,7 @@ function pickIdleSoulAction(
   preferMemorialOrbit = false,
   recentKinds: IdleSoulActionKind[] = []
 ): IdleSoulAction {
-  const candidates: IdleSoulActionKind[] = ["float", "loop"];
+  const candidates: IdleSoulActionKind[] = ["float", "loop", "whirlpool"];
   if (canOrbit) {
     candidates.push("orbit");
   }
@@ -396,6 +393,8 @@ function pickIdleSoulAction(
   const duration =
     kind === "memorialOrbit"
       ? MEMORIAL_ORBIT_DURATION + MEMORIAL_ORBIT_TRANSITION_DURATION * 2
+      : kind === "whirlpool"
+        ? WHIRLPOOL_RISE_DURATION + WHIRLPOOL_RETURN_DURATION
       : kind === "orbit"
       ? 5.2 + Math.random() * 2.4
       : kind === "loop"
@@ -640,6 +639,60 @@ export function PetSoul({
         );
         spinBoost = action.direction * envelope * Math.PI * 2;
         visualScale = scale * (1 + envelope * 0.1);
+      } else if (action?.kind === "whirlpool") {
+        shouldRespectSceneColliders = false;
+        const actionStart = action.startPosition?.clone() ?? naturalIdleTarget.clone();
+        const actionElapsed = t - action.startedAt;
+        if (actionElapsed < WHIRLPOOL_RISE_DURATION) {
+          const progress = THREE.MathUtils.clamp(actionElapsed / WHIRLPOOL_RISE_DURATION, 0, 1);
+          const heightProgress = progress * progress * (3 - 2 * progress);
+          const radiusEnvelope = Math.sin(progress * Math.PI) * 0.72 + progress * 0.28;
+          const radius = WHIRLPOOL_RADIUS * radiusEnvelope;
+          const angle = action.seed + action.direction * progress * Math.PI * 2 * WHIRLPOOL_TURNS;
+          target.set(
+            actionStart.x + Math.cos(angle) * radius,
+            actionStart.y + WHIRLPOOL_HEIGHT * heightProgress,
+            actionStart.z + Math.sin(angle) * radius * 0.72
+          );
+          spinBoost = action.direction * progress * Math.PI * 3;
+          visualScale = scale * (1 + Math.sin(progress * Math.PI) * 0.08);
+        } else {
+          const returnProgress = THREE.MathUtils.smoothstep(
+            (actionElapsed - WHIRLPOOL_RISE_DURATION) / WHIRLPOOL_RETURN_DURATION,
+            0,
+            1
+          );
+          const topAngle = action.seed + action.direction * Math.PI * 2 * WHIRLPOOL_TURNS;
+          const topPosition = new THREE.Vector3(
+            actionStart.x + Math.cos(topAngle) * WHIRLPOOL_RADIUS * 0.28,
+            actionStart.y + WHIRLPOOL_HEIGHT,
+            actionStart.z + Math.sin(topAngle) * WHIRLPOOL_RADIUS * 0.28 * 0.72
+          );
+          const tangent = new THREE.Vector3(
+            -Math.sin(topAngle) * action.direction,
+            0,
+            Math.cos(topAngle) * action.direction
+          ).normalize();
+          const returnControlA = topPosition
+            .clone()
+            .add(tangent.clone().multiplyScalar(WHIRLPOOL_RADIUS * 0.55))
+            .add(new THREE.Vector3(0, 0.28, 0));
+          const returnControlB = naturalIdleTarget
+            .clone()
+            .sub(tangent.clone().multiplyScalar(WHIRLPOOL_RADIUS * 0.35))
+            .add(new THREE.Vector3(0, 0.48, 0));
+          target.copy(
+            cubicBezierVector(
+              topPosition,
+              returnControlA,
+              returnControlB,
+              naturalIdleTarget,
+              returnProgress
+            )
+          );
+          spinBoost = action.direction * Math.PI * 2;
+          visualScale = scale * (1 + (1 - returnProgress) * 0.05);
+        }
       } else if (action?.kind === "memorialOrbit" && orbitCenter) {
         shouldRespectSceneColliders = false;
         const center = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
