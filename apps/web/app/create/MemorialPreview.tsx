@@ -909,6 +909,7 @@ function SoulPathMarkers({
   }
 
   const segmentColor = normalizeSoulColor(color);
+  const pathLineColor = "#111827";
   const pathPoints = markers.map((marker) => marker.position);
 
   return (
@@ -916,7 +917,7 @@ function SoulPathMarkers({
       <SoulPathCurve
         points={pathPoints}
         smooth={path?.curve !== "linear"}
-        color={segmentColor}
+        color={pathLineColor}
       />
       {markers.map((marker, index) => {
         const isStart = index === 0;
@@ -933,7 +934,7 @@ function SoulPathMarkers({
               />
             </Mesh>
             <Html center distanceFactor={7.5} className="pointer-events-none select-none">
-              <div className="rounded-full border border-white/90 bg-white/92 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-16px_rgba(93,64,55,0.55)]">
+              <div className="rounded-full border border-white/90 bg-white/94 px-2.5 py-1.5 text-[12px] font-black uppercase leading-none tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-16px_rgba(93,64,55,0.55)]">
                 {marker.label}
                 {marker.duration !== null ? (
                   <span className="ml-1 text-[#8d6e63]">{marker.duration.toFixed(1)}с</span>
