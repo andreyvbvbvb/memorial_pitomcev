@@ -74,8 +74,9 @@ const MEMORIAL_ORBIT_START_RAMP_DURATION = 0;
 const MEMORIAL_ORBIT_CLOCKWISE_YAW = -Math.PI / 4;
 const MEMORIAL_ORBIT_COUNTER_YAW = Math.PI / 4;
 const MEMORIAL_ORBIT_TRANSITION_TURNS = 4;
-const FLOAT_ACTION_MIN_DURATION = 3;
-const FLOAT_ACTION_MAX_DURATION = 4;
+const SOUL_ANCHOR_OFFSET_X = 1;
+const FLOAT_ACTION_MIN_DURATION = 9;
+const FLOAT_ACTION_MAX_DURATION = 12;
 const WHIRLPOOL_RISE_DURATION = 4.2;
 const WHIRLPOOL_RETURN_DURATION = 1.2;
 const WHIRLPOOL_TURNS = 5;
@@ -197,6 +198,7 @@ export function resolveSoulAnchorPosition(
   const center = new THREE.Vector3();
   box.getCenter(center);
   terrain.worldToLocal(center);
+  center.x += SOUL_ANCHOR_OFFSET_X;
   center.y = resolveSoulSurfaceFloorY(terrain, house) + 0.5;
   return [center.x, center.y, center.z];
 }
