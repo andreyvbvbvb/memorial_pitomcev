@@ -86,7 +86,7 @@ const SURFACE_HOP_DESCEND_DURATION = 0.85;
 const SURFACE_HOP_DURATION = 4.4;
 const SURFACE_HOP_RETURN_DURATION = 1.1;
 const SURFACE_HOP_COUNT = 7;
-const HOP_GROUND_OFFSET = 0;
+const HOP_GROUND_OFFSET = -0.4;
 const POINT_HOP_DESCEND_DURATION = 0.65;
 const POINT_HOP_DURATION = 4.2;
 const POINT_HOP_RETURN_DURATION = 0.85;
@@ -200,7 +200,7 @@ export function resolveSoulAnchorPosition(
   terrain.worldToLocal(center);
   center.x += SOUL_ANCHOR_OFFSET_X;
   center.z += SOUL_ANCHOR_OFFSET_Z;
-  center.y = resolveSoulSurfaceFloorY(terrain, house) + 0.5;
+  center.y = resolveSoulSurfaceFloorY(terrain, house);
   return [center.x, center.y, center.z];
 }
 
@@ -545,7 +545,7 @@ function sampleSoulPathOffset(elapsed: number, preparedPath?: PreparedSoulPath |
 
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
-  position = [0, 0.5, 0],
+  position = [0, 0, 0],
   avoidCenter = null,
   orbitCenter = null,
   orbitRadius = null,
@@ -749,6 +749,7 @@ export function PetSoul({
           visualScale = scale * (1 + (1 - returnProgress) * 0.05);
         }
       } else if (action?.kind === "surfaceHops") {
+        shouldRespectSceneColliders = false;
         const actionStart = action.startPosition?.clone() ?? naturalIdleTarget.clone();
         const actionElapsed = t - action.startedAt;
         const groundY =
@@ -842,6 +843,7 @@ export function PetSoul({
           visualScale = scale * (1 + (1 - returnProgress) * 0.04);
         }
       } else if (action?.kind === "pointHops") {
+        shouldRespectSceneColliders = false;
         const actionStart = action.startPosition?.clone() ?? naturalIdleTarget.clone();
         const actionElapsed = t - action.startedAt;
         const groundY =
