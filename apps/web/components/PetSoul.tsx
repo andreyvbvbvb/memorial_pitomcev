@@ -70,7 +70,7 @@ const SOUL_PATH_MAX_OFFSET = 20;
 const MEMORIAL_ORBIT_RADIUS_MULTIPLIER = 1.1;
 const MEMORIAL_ORBIT_DURATION = 4;
 const MEMORIAL_ORBIT_TRANSITION_DURATION = 1.5;
-const MEMORIAL_ORBIT_START_RAMP_DURATION = 0.3;
+const MEMORIAL_ORBIT_START_RAMP_DURATION = 0;
 const MEMORIAL_ORBIT_CLOCKWISE_YAW = -Math.PI / 4;
 const MEMORIAL_ORBIT_COUNTER_YAW = Math.PI / 4;
 const MEMORIAL_ORBIT_TRANSITION_TURNS = 4;
@@ -85,6 +85,8 @@ const SURFACE_HOP_DESCEND_DURATION = 0.85;
 const SURFACE_HOP_DURATION = 4.4;
 const SURFACE_HOP_RETURN_DURATION = 1.1;
 const SURFACE_HOP_COUNT = 7;
+const HOP_GROUND_OFFSET = 0.15;
+const POINT_HOP_DESCEND_DURATION = 0.65;
 const POINT_HOP_DURATION = 4.2;
 const POINT_HOP_RETURN_DURATION = 0.85;
 const POINT_HOP_COUNT = 6;
@@ -195,7 +197,7 @@ export function resolveSoulAnchorPosition(
   const center = new THREE.Vector3();
   box.getCenter(center);
   terrain.worldToLocal(center);
-  center.y = resolveSoulSurfaceFloorY(terrain, house) + 0.7;
+  center.y = resolveSoulSurfaceFloorY(terrain, house) + 0.5;
   return [center.x, center.y, center.z];
 }
 
@@ -459,7 +461,7 @@ function pickIdleSoulAction(
       : kind === "surfaceHops"
         ? SURFACE_HOP_DESCEND_DURATION + SURFACE_HOP_DURATION + SURFACE_HOP_RETURN_DURATION
       : kind === "pointHops"
-        ? POINT_HOP_DURATION + POINT_HOP_RETURN_DURATION
+        ? POINT_HOP_DESCEND_DURATION + POINT_HOP_DURATION + POINT_HOP_RETURN_DURATION
       : kind === "loop"
         ? 2.6 + Math.random() * 1.3
         : 4.2 + Math.random() * 2.2;
@@ -549,7 +551,7 @@ function sampleSoulPathOffset(elapsed: number, preparedPath?: PreparedSoulPath |
 
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
-  position = [0, 0.7, 0],
+  position = [0, 0.5, 0],
   avoidCenter = null,
   orbitCenter = null,
   orbitRadius = null,
@@ -757,8 +759,8 @@ export function PetSoul({
         const actionElapsed = t - action.startedAt;
         const groundY =
           typeof floorY === "number" && Number.isFinite(floorY)
-            ? floorY + 0.22
-            : actionStart.y - 1.18;
+            ? floorY + HOP_GROUND_OFFSET
+            : actionStart.y - 0.35;
         const surfaceRadius =
           typeof orbitRadius === "number" && Number.isFinite(orbitRadius) ? orbitRadius : 1.6;
         const hopRadius = THREE.MathUtils.clamp(surfaceRadius * 0.32, 0.72, 1.18);
@@ -848,16 +850,41 @@ export function PetSoul({
       } else if (action?.kind === "pointHops") {
         const actionStart = action.startPosition?.clone() ?? naturalIdleTarget.clone();
         const actionElapsed = t - action.startedAt;
+        const groundY =
+          typeof floorY === "number" && Number.isFinite(floorY)
+            ? floorY + HOP_GROUND_OFFSET
+            : actionStart.y - 0.35;
         const jumpDuration = POINT_HOP_DURATION;
         const jumpVector = new THREE.Vector3(
           Math.cos(action.seed) * action.radius * 1.22,
           0,
           Math.sin(action.seed) * action.radius * 0.86
         );
-        const pointA = actionStart;
+        const pointA = actionStart.clone();
+        pointA.y = groundY;
         const pointB = actionStart.clone().add(jumpVector);
-        if (actionElapsed < jumpDuration) {
-          const progress = THREE.MathUtils.clamp(actionElapsed / jumpDuration, 0, 1);
+        pointB.y = groundY;
+        if (actionElapsed < POINT_HOP_DESCEND_DURATION) {
+          const descendProgress = THREE.MathUtils.clamp(
+            actionElapsed / POINT_HOP_DESCEND_DURATION,
+            0,
+            1
+          );
+          target.copy(
+            cubicBezierVector(
+              actionStart,
+              actionStart.clone().add(new THREE.Vector3(0, -0.12, 0)),
+              pointA.clone().add(new THREE.Vector3(0, 0.24, 0)),
+              pointA,
+              descendProgress
+            )
+          );
+        } else if (actionElapsed < POINT_HOP_DESCEND_DURATION + jumpDuration) {
+          const progress = THREE.MathUtils.clamp(
+            (actionElapsed - POINT_HOP_DESCEND_DURATION) / jumpDuration,
+            0,
+            1
+          );
           const scaledProgress = Math.min(progress * POINT_HOP_COUNT, POINT_HOP_COUNT - 0.0001);
           const jumpIndex = Math.floor(scaledProgress);
           const localProgress = scaledProgress - jumpIndex;
@@ -870,7 +897,7 @@ export function PetSoul({
           visualScale = scale * (1 + Math.sin(localProgress * Math.PI) * 0.07);
         } else {
           const returnProgress = THREE.MathUtils.smoothstep(
-            (actionElapsed - jumpDuration) / POINT_HOP_RETURN_DURATION,
+            (actionElapsed - POINT_HOP_DESCEND_DURATION - jumpDuration) / POINT_HOP_RETURN_DURATION,
             0,
             1
           );
@@ -930,7 +957,7 @@ export function PetSoul({
         const returnStart = exitDuration + MEMORIAL_ORBIT_DURATION;
         const transitionSpiralRadius = Math.min(0.34, memorialOrbitRadius * 0.13);
         if (actionElapsed < exitDuration) {
-          const exitProgress = THREE.MathUtils.smoothstep(actionElapsed / exitDuration, 0, 1);
+          const exitProgress = THREE.MathUtils.clamp(actionElapsed / exitDuration, 0, 1);
           target.copy(
             spiraledBezierVector(
               actionStart,
@@ -958,7 +985,7 @@ export function PetSoul({
             .add(horizontalAxis.clone().multiplyScalar(Math.cos(angle) * memorialOrbitRadius))
             .add(verticalAxis.clone().multiplyScalar(Math.sin(angle) * memorialOrbitRadius));
         } else {
-          const returnProgress = THREE.MathUtils.smoothstep(
+          const returnProgress = THREE.MathUtils.clamp(
             (actionElapsed - returnStart) / exitDuration,
             0,
             1
