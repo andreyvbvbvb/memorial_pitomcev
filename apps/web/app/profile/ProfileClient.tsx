@@ -158,7 +158,7 @@ export default function ProfileClient() {
 
   if (loadingProfile) {
     return (
-      <div className={`${authPageShellClass} px-6 py-10`}>
+      <div className={authPageShellClass}>
         <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
         <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
       </div>
@@ -166,11 +166,11 @@ export default function ProfileClient() {
   }
 
   return (
-    <div className={`${authPageShellClass} px-6 py-10`}>
+    <div className={authPageShellClass}>
       <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
       <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-      <div className="relative z-10 mx-auto w-full max-w-3xl">
+      <div className="relative z-10 mx-auto w-full max-w-3xl -translate-y-[calc(var(--app-header-height,56px)/2)]">
         <section>
           <div className={authCardClass}>
             <div className={`${authInnerShellClass} relative`}>
