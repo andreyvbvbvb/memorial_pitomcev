@@ -72,9 +72,9 @@ const MEMORIAL_ORBIT_DURATION = 4;
 const MEMORIAL_ORBIT_TRANSITION_DURATION = 1.5;
 const MEMORIAL_ORBIT_START_RAMP_DURATION = 0;
 const MEMORIAL_ORBIT_CLOCKWISE_YAW = -Math.PI / 4;
-const MEMORIAL_ORBIT_COUNTER_YAW = Math.PI / 4;
 const MEMORIAL_ORBIT_TRANSITION_TURNS = 4;
 const SOUL_ANCHOR_OFFSET_X = 1;
+const SOUL_ANCHOR_OFFSET_Z = 1;
 const FLOAT_ACTION_MIN_DURATION = 9;
 const FLOAT_ACTION_MAX_DURATION = 12;
 const WHIRLPOOL_RISE_DURATION = 4.2;
@@ -86,7 +86,7 @@ const SURFACE_HOP_DESCEND_DURATION = 0.85;
 const SURFACE_HOP_DURATION = 4.4;
 const SURFACE_HOP_RETURN_DURATION = 1.1;
 const SURFACE_HOP_COUNT = 7;
-const HOP_GROUND_OFFSET = 0.15;
+const HOP_GROUND_OFFSET = 0;
 const POINT_HOP_DESCEND_DURATION = 0.65;
 const POINT_HOP_DURATION = 4.2;
 const POINT_HOP_RETURN_DURATION = 0.85;
@@ -199,6 +199,7 @@ export function resolveSoulAnchorPosition(
   box.getCenter(center);
   terrain.worldToLocal(center);
   center.x += SOUL_ANCHOR_OFFSET_X;
+  center.z += SOUL_ANCHOR_OFFSET_Z;
   center.y = resolveSoulSurfaceFloorY(terrain, house) + 0.5;
   return [center.x, center.y, center.z];
 }
@@ -336,7 +337,6 @@ type IdleSoulAction = {
     | "float"
     | "loop"
     | "memorialOrbit"
-    | "memorialOrbitCounter"
     | "whirlpool"
     | "surfaceHops"
     | "pointHops";
@@ -444,7 +444,6 @@ function pickIdleSoulAction(
   const candidates: IdleSoulActionKind[] = ["loop", "whirlpool", "surfaceHops", "pointHops"];
   if (canMemorialOrbit) {
     candidates.push("memorialOrbit");
-    candidates.push("memorialOrbitCounter");
   }
   const availableCandidates = candidates.filter((candidate) => !recentKinds.includes(candidate));
   const pool = availableCandidates.length > 0 ? availableCandidates : candidates;
@@ -456,7 +455,7 @@ function pickIdleSoulAction(
     kind = pool[Math.floor(Math.random() * pool.length)] ?? "loop";
   }
   const duration =
-    kind === "memorialOrbit" || kind === "memorialOrbitCounter"
+    kind === "memorialOrbit"
       ? MEMORIAL_ORBIT_DURATION + MEMORIAL_ORBIT_TRANSITION_DURATION * 2
       : kind === "whirlpool"
         ? WHIRLPOOL_RISE_DURATION + WHIRLPOOL_RETURN_DURATION
@@ -472,14 +471,7 @@ function pickIdleSoulAction(
     startedAt,
     duration,
     seed: Math.random() * Math.PI * 2,
-    direction:
-      kind === "memorialOrbit"
-        ? 1
-        : kind === "memorialOrbitCounter"
-          ? -1
-          : Math.random() > 0.5
-            ? 1
-            : -1,
+    direction: kind === "memorialOrbit" ? 1 : Math.random() > 0.5 ? 1 : -1,
     radius: 0.56 + Math.random() * 0.38
   };
 }
@@ -913,22 +905,14 @@ export function PetSoul({
             )
           );
         }
-      } else if (
-        (action?.kind === "memorialOrbit" || action?.kind === "memorialOrbitCounter") &&
-        orbitCenter
-      ) {
+      } else if (action?.kind === "memorialOrbit" && orbitCenter) {
         shouldRespectSceneColliders = false;
         const center = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
         const actionStart = action.startPosition?.clone() ?? base.clone();
         const startVector = actionStart.clone().sub(center);
         const verticalAxis = new THREE.Vector3(0, 1, 0);
         const horizontalAxis = new THREE.Vector3(-1, 0, 0)
-          .applyAxisAngle(
-            verticalAxis,
-            action.kind === "memorialOrbitCounter"
-              ? MEMORIAL_ORBIT_COUNTER_YAW
-              : MEMORIAL_ORBIT_CLOCKWISE_YAW
-          )
+          .applyAxisAngle(verticalAxis, MEMORIAL_ORBIT_CLOCKWISE_YAW)
           .normalize();
         const startHorizontal = startVector.dot(horizontalAxis);
         const startVertical = startVector.y;
