@@ -76,7 +76,7 @@ export const getHousePartScaleMultiplier = (
 ) => {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   if (slot && BOWL_PART_SLOTS.has(slot) && baseId.startsWith("mat_")) {
-    return 2 / 3;
+    return 0.5;
   }
   return 1;
 };

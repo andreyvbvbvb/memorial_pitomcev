@@ -195,7 +195,7 @@ export function resolveSoulAnchorPosition(
   const center = new THREE.Vector3();
   box.getCenter(center);
   terrain.worldToLocal(center);
-  center.y = resolveSoulSurfaceFloorY(terrain, house) + 1.4;
+  center.y = resolveSoulSurfaceFloorY(terrain, house) + 0.7;
   return [center.x, center.y, center.z];
 }
 
@@ -549,7 +549,7 @@ function sampleSoulPathOffset(elapsed: number, preparedPath?: PreparedSoulPath |
 
 export function PetSoul({
   color = DEFAULT_SOUL_COLOR,
-  position = [0, 1.4, 0],
+  position = [0, 0.7, 0],
   avoidCenter = null,
   orbitCenter = null,
   orbitRadius = null,
