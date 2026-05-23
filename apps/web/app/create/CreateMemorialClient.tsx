@@ -3160,9 +3160,9 @@ export default function CreateMemorialClient({
         );
       case "house":
         return (
-          <div className="grid gap-4">
+          <div className="flex h-full min-h-0 flex-col gap-3">
             {houseTextureOptions.length > 0 ? (
-              <div className="grid min-h-[360px] grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
+              <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
                 <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
                   <h2 className="px-1 text-sm font-semibold text-slate-900">Форма домика</h2>
                   <div className="min-h-0 overflow-y-auto overscroll-contain">
@@ -3190,7 +3190,7 @@ export default function CreateMemorialClient({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-3">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
                   const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
                   handleChange("houseId", nextVariant);

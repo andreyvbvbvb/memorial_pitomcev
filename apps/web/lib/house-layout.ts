@@ -9,6 +9,8 @@ export type HouseTransform = {
 };
 
 const BOWL_PART_SLOTS = new Set(["bowl_food_slot", "bowl_water_slot"]);
+const MAT_PART_SLOT = "mat_slot";
+const RESCALED_BUDKA_BASE_IDS = new Set(["budka_1", "budka_2", "budka_3", "budka_4", "budka_5"]);
 
 const DEFAULT_HOUSE_TRANSFORM: HouseTransform = {
   offsetX: 0,
@@ -75,8 +77,15 @@ export const getHousePartScaleMultiplier = (
   slot?: string | null
 ) => {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  if (slot === MAT_PART_SLOT) {
+    const legacyMultiplier = baseId === "budka_2" ? 1.15 : 1;
+    return legacyMultiplier * (RESCALED_BUDKA_BASE_IDS.has(baseId) ? 0.4 : 1);
+  }
   if (slot && BOWL_PART_SLOTS.has(slot) && baseId.startsWith("mat_")) {
     return 0.5;
+  }
+  if (slot && BOWL_PART_SLOTS.has(slot) && RESCALED_BUDKA_BASE_IDS.has(baseId)) {
+    return 0.25;
   }
   return 1;
 };

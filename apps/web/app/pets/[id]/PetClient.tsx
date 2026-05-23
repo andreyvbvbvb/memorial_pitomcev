@@ -2979,9 +2979,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                     <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3">
                       {appearanceTab === "house" ? (
-                        <div className="grid gap-5">
+                        <div className="flex h-full min-h-0 flex-col gap-3">
                           {houseTextureOptions.length > 0 ? (
-                            <div className="grid min-h-[360px] grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
+                            <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
                               <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
                                 <h4 className="px-1 text-sm font-semibold text-slate-900">
                                   Форма домика
@@ -3020,7 +3020,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                               </div>
                             </div>
                           ) : (
-                            <div className="grid gap-3">
+                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                               <h4 className="text-base font-semibold text-slate-900">
                                 Форма домика
                               </h4>

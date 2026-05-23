@@ -729,7 +729,7 @@ function PartAttachment({
   const part = useMemo(() => {
     const cloned = scene.clone(true);
     if (slot === "mat_slot") {
-      const scale = houseBaseId === "budka_2" ? 1.15 : 1;
+      const scale = getHousePartScaleMultiplier(houseBaseId, slot);
       applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
