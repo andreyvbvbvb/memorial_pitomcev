@@ -2021,8 +2021,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
   const memorialPaidUntil =
     typeof sceneJson.memorialPaidUntil === "string" ? sceneJson.memorialPaidUntil : null;
-  const activeUntil = pet.memorial?.activeUntil ?? memorialPaidUntil ?? null;
-  const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Бессрочно";
+  const activeUntil =
+    pet.memorial?.activeUntil === undefined
+      ? memorialPaidUntil
+      : pet.memorial.activeUntil;
+  const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Без ограничений по времени";
   const canExtendMemorial = Boolean(activeUntil);
   const selectedExtensionPlan =
     extensionPlans.find((plan) => plan.years === selectedExtensionYears) ??
@@ -2627,10 +2630,18 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 <div className={panelSectionClass}>
                   <p className={panelLabelClass}>Управление</p>
                   <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
-                    <p className={panelLabelClass}>Активен до</p>
-                    <p className="mt-1 text-lg font-black text-[#5d4037]">
-                      {activeUntilLabel}
+                    <p className={panelLabelClass}>
+                      {canExtendMemorial ? "Активен до" : "Срок действия"}
                     </p>
+                    {canExtendMemorial ? (
+                      <p className="mt-1 text-lg font-black text-[#5d4037]">
+                        {activeUntilLabel}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm font-black leading-snug text-[#5d4037]">
+                        Ваш мемориал не имеет ограничения по времени
+                      </p>
+                    )}
                   </div>
                   {lifecycleError ? (
                     <p className="text-xs font-semibold text-red-600">{lifecycleError}</p>
@@ -2643,14 +2654,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     >
                       Редактировать домик
                     </button>
-                    <button
-                      type="button"
-                      onClick={openExtensionDialog}
-                      disabled={!canExtendMemorial}
-                      className={primaryActionClass}
-                    >
-                      {canExtendMemorial ? "Продлить" : "Бессрочно"}
-                    </button>
+                    {canExtendMemorial ? (
+                      <button
+                        type="button"
+                        onClick={openExtensionDialog}
+                        className={primaryActionClass}
+                      >
+                        Продлить
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={openDeleteDialog}
