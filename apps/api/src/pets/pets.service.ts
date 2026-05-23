@@ -537,16 +537,16 @@ export class PetsService {
       pet.memorial.activeUntil && pet.memorial.activeUntil > now
         ? pet.memorial.activeUntil
         : now;
-    const activeUntil = this.addYears(base, years);
+    const activeUntil = years === 0 ? null : this.addYears(base, years);
     const baseSceneJson =
       pet.memorial.sceneJson &&
       typeof pet.memorial.sceneJson === "object" &&
       !Array.isArray(pet.memorial.sceneJson)
-        ? (pet.memorial.sceneJson as Record<string, unknown>)
+      ? (pet.memorial.sceneJson as Record<string, unknown>)
         : {};
     const sceneJson: Prisma.InputJsonValue = {
       ...baseSceneJson,
-      memorialPaidUntil: activeUntil.toISOString(),
+      memorialPaidUntil: activeUntil ? activeUntil.toISOString() : null,
       memorialLastExtendedAt: now.toISOString(),
       memorialLastExtensionYears: years,
       memorialLastExtensionPrice: price

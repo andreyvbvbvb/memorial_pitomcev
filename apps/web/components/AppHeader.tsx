@@ -211,8 +211,8 @@ export default function AppHeader() {
     : "flex items-center gap-3";
   const pillClass =
     isPortraitLayout
-      ? "group relative inline-flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white"
-      : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 px-4 text-sm text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+      ? "group relative inline-flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/82 text-[9px] font-black uppercase tracking-[0.08em] text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
+      : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/82 px-4 text-[10px] font-black uppercase tracking-[0.12em] text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
     "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-white/75 text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
   const createButtonClass =
@@ -220,7 +220,9 @@ export default function AppHeader() {
       ? "inline-flex h-[34px] shrink-0 items-center gap-1 rounded-[10px] bg-[#111827] px-2.5 text-[9px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80"
       : "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80";
   const authButtonClass =
-    "rounded-[24px] border border-[#e7dbd3] bg-[#f6efea] px-5 py-2 text-sm font-semibold text-[#5d4037] shadow-[0_12px_24px_-16px_rgba(93,64,55,0.75),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-[#fff7f2]";
+    isPortraitLayout
+      ? "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea]/92 px-3 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
+      : "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea]/92 px-5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const menuPanelClass =
     `absolute right-0 ${isPortraitLayout ? "mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-[24px] border-[3px]" : "mt-3 w-72 rounded-[32px] border-[4px]"} overflow-hidden border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
       menuVisible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-95 opacity-0"
@@ -349,21 +351,20 @@ export default function AppHeader() {
                     type="button"
                     className={`${iconPillClass}`}
                     aria-label="Открыть меню"
+                    title="Раскрыть меню"
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
                       <path
-                        d="M4 5.5C4 4.12 5.12 3 6.5 3H19a2 2 0 0 1 2 2v13.5a2.5 2.5 0 0 0-2.5-2.5H6.5C5.12 16 4 14.88 4 13.5V5.5Z"
+                        d="M5 7h14M5 12h14M5 17h14"
                         stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M6 7.5h9M6 10.5h9"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
+                        strokeWidth="1.8"
                         strokeLinecap="round"
                       />
                     </svg>
+                    <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                      Раскрыть меню
+                    </span>
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>

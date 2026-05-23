@@ -60,11 +60,12 @@ const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
 const MEMORIAL_EXTENSION_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
-  { id: "5y", years: 5, label: "5 лет", price: 500 }
+  { id: "5y", years: 5, label: "5 лет", price: 500 },
+  { id: "lifetime", years: 0, label: "Навсегда", price: 1200 }
 ] as const;
 type MemorialExtensionPlan = {
   id: (typeof MEMORIAL_EXTENSION_PLANS)[number]["id"];
-  years: 1 | 2 | 5;
+  years: 0 | 1 | 2 | 5;
   label: string;
   price: number;
 };
@@ -270,7 +271,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [deletingMemorial, setDeletingMemorial] = useState(false);
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
   const [extensionDialogVisible, setExtensionDialogVisible] = useState(false);
-  const [selectedExtensionYears, setSelectedExtensionYears] = useState<1 | 2 | 5>(1);
+  const [selectedExtensionYears, setSelectedExtensionYears] = useState<0 | 1 | 2 | 5>(1);
   const [extensionPlans, setExtensionPlans] = useState<MemorialExtensionPlan[]>(() =>
     MEMORIAL_EXTENSION_PLANS.map((plan) => ({ ...plan }))
   );
@@ -1447,7 +1448,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   ];
 
   const isOwner = Boolean(currentUser?.id && pet?.ownerId === currentUser.id);
-  const handleExtendMemorial = async (years: 1 | 2 | 5) => {
+  const handleExtendMemorial = async (years: 0 | 1 | 2 | 5) => {
     if (!currentUser?.id) {
       setLifecycleError("Войдите, чтобы продлить мемориал");
       return;
@@ -1482,7 +1483,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
               ...prev,
               memorial: {
                 ...prev.memorial,
-                activeUntil: data.activeUntil ?? prev.memorial.activeUntil ?? null
+                activeUntil: "activeUntil" in data ? data.activeUntil ?? null : prev.memorial.activeUntil ?? null
               }
             }
           : prev
@@ -3366,7 +3367,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
             >
               {extendingMemorial
                 ? "Продление..."
-                : `Продлить на ${selectedExtensionPlan.label} • ${selectedExtensionPlan.price} монет`}
+                : selectedExtensionPlan.years === 0
+                  ? `Сделать навсегда • ${selectedExtensionPlan.price} монет`
+                  : `Продлить на ${selectedExtensionPlan.label} • ${selectedExtensionPlan.price} монет`}
             </button>
             </div>
           </div>

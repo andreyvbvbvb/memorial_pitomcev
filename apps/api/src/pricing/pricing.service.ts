@@ -5,7 +5,7 @@ export const DEFAULT_MEMORIAL_PLAN_PRICES = [
   { years: 1, price: 100 },
   { years: 2, price: 200 },
   { years: 5, price: 500 },
-  { years: 0, price: 1500 }
+  { years: 0, price: 1200 }
 ] as const;
 
 const SUPPORTED_PLAN_YEARS = new Set(
@@ -19,13 +19,21 @@ export class PricingService {
 
   async ensureMemorialPlanPricesSeeded() {
     await Promise.all(
-      DEFAULT_MEMORIAL_PLAN_PRICES.map((plan) =>
-        this.prisma.memorialPlanPrice.upsert({
-          where: { years: plan.years },
-          update: {},
-          create: plan
-        })
-      )
+      DEFAULT_MEMORIAL_PLAN_PRICES.map(async (plan) => {
+        const existing = await this.prisma.memorialPlanPrice.findUnique({
+          where: { years: plan.years }
+        });
+        if (!existing) {
+          await this.prisma.memorialPlanPrice.create({ data: plan });
+          return;
+        }
+        if (plan.years === 0 && existing.price === 1500) {
+          await this.prisma.memorialPlanPrice.update({
+            where: { years: plan.years },
+            data: { price: plan.price }
+          });
+        }
+      })
     );
   }
 

@@ -8,7 +8,7 @@ export class ExtendMemorialDto {
 
   @Type(() => Number)
   @IsNumber()
-  @Min(1)
+  @Min(0)
   @Max(5)
   years!: number;
 }

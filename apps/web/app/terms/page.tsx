@@ -30,12 +30,6 @@ export default function TermsPage() {
             обновлять условия, уведомляя Пользователя через сайт.
           </p>
         </div>
-        <Link
-          href="/about"
-          className="mt-7 inline-flex items-center justify-center rounded-[18px] bg-[#111827] px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none"
-        >
-          Вернуться на /about
-        </Link>
       </article>
     </main>
   );

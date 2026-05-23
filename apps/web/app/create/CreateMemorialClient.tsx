@@ -212,7 +212,7 @@ const MEMORIAL_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
   { id: "5y", years: 5, label: "5 лет", price: 500 },
-  { id: "lifetime", years: 0, label: "Бессрочно", price: 1500 }
+  { id: "lifetime", years: 0, label: "Навсегда", price: 1200 }
 ] as const;
 type MemorialPlanId = (typeof MEMORIAL_PLANS)[number]["id"];
 type MemorialPlan = {
