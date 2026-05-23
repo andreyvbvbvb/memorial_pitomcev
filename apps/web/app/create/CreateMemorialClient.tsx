@@ -55,6 +55,13 @@ import ErrorToast from "../../components/ErrorToast";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import AuthHelpHint from "../../components/AuthHelpHint";
 import {
+  hudControlButtonClass,
+  hudInnerSurfaceClass,
+  hudPanelChromeClass,
+  hudRoundButtonClass,
+  hudTooltipClass
+} from "../../components/hudTheme";
+import {
   DEFAULT_SOUL_COLOR,
   SOUL_COLOR_OPTIONS,
   PetSoulPreview,
@@ -2742,7 +2749,7 @@ export default function CreateMemorialClient({
         <button
           type="button"
           onClick={handleNext}
-          className={`group inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white ${buttonClassName ?? ""}`}
+          className={`group inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white ${buttonClassName ?? ""}`}
           disabled={!authReady || isTransitioning || draftLoading}
         >
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
@@ -3082,8 +3089,8 @@ export default function CreateMemorialClient({
             title={option.name}
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
-                ? "border-sky-400 bg-sky-50"
-                : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
+                ? "border-[#3bceac] bg-[#f0fffb]"
+                : "border-[#eadfd9] bg-transparent hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             }`}
           >
             {imageUrl ? (
@@ -3095,7 +3102,7 @@ export default function CreateMemorialClient({
                 className="h-full w-full rounded-lg object-contain"
               />
             ) : (
-              <div className="text-xs text-slate-500">Нет</div>
+              <div className="text-xs text-[#8d6e63]">Нет</div>
             )}
           </button>
         );
@@ -3113,8 +3120,8 @@ export default function CreateMemorialClient({
               requestFocus("dom_slot");
             })}
             {environmentSeasons.length > 0 ? (
-              <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3">
-                <div className="text-sm font-semibold text-slate-900">Время года</div>
+              <div className="grid gap-2 rounded-xl border border-[#eadfd9] bg-white/88 p-3">
+                <div className="text-sm font-semibold text-[#5d4037]">Время года</div>
                 <div className="flex flex-wrap gap-2">
                   {environmentSeasons.map((season) => {
                     const isActive = form.environmentSeason === season;
@@ -3132,15 +3139,15 @@ export default function CreateMemorialClient({
                         title={swatch.label}
                         className={`h-8 w-8 rounded-lg border transition ${
                           isActive
-                            ? "border-slate-900 ring-2 ring-sky-300"
-                            : "border-slate-200 hover:border-slate-400"
+                            ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
+                            : "border-[#eadfd9] hover:border-[#d3a27f]"
                         }`}
                         style={{ backgroundColor: swatch.color }}
                       />
                     );
                   })}
                 </div>
-                <label className="group relative flex items-center gap-2 text-xs text-slate-600">
+                <label className="group relative flex items-center gap-2 text-xs text-[#6f6360]">
                   <input
                     type="checkbox"
                     className="h-4 w-4"
@@ -3150,7 +3157,7 @@ export default function CreateMemorialClient({
                     }
                   />
                   Автосмена сезонов
-                  <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                     Если включить, поверхность будет меняться по текущей дате.
                   </span>
                 </label>
@@ -3163,8 +3170,8 @@ export default function CreateMemorialClient({
           <div className="flex h-full min-h-0 flex-col gap-3">
             {houseTextureOptions.length > 0 ? (
               <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
-                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
-                  <h2 className="px-1 text-sm font-semibold text-slate-900">Форма домика</h2>
+                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                  <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Форма домика</h2>
                   <div className="min-h-0 overflow-y-auto overscroll-contain">
                     {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
                       const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
@@ -3173,8 +3180,8 @@ export default function CreateMemorialClient({
                     }, "house")}
                   </div>
                 </div>
-                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
-                  <h2 className="px-1 text-sm font-semibold text-slate-900">Текстура домика</h2>
+                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                  <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Текстура домика</h2>
                   <div className="min-h-0 overflow-y-auto overscroll-contain">
                     {renderOptionGrid(
                       "house-texture",
@@ -3199,20 +3206,20 @@ export default function CreateMemorialClient({
               </div>
             )}
             {canUseCalibration(accessLevel) ? (
-            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white/90 p-3 text-xs text-slate-600">
-              <div className="text-xs font-semibold text-slate-800">
+            <div className="grid gap-3 rounded-2xl border border-[#eadfd9] bg-white/90 p-3 text-xs text-[#6f6360]">
+              <div className="text-xs font-semibold text-[#5d4037]">
                 Временная настройка положения домика
               </div>
-              <div className="text-[11px] text-slate-500">
-                Поверхность: <span className="font-semibold text-slate-700">{selectedTerrainLayoutId || "default"}</span>
+              <div className="text-[11px] text-[#8d6e63]">
+                Поверхность: <span className="font-semibold text-[#6f6360]">{selectedTerrainLayoutId || "default"}</span>
               </div>
-              <div className="text-[11px] text-slate-500">
-                Домик: <span className="font-semibold text-slate-700">{selectedHouseBaseId}</span>
+              <div className="text-[11px] text-[#8d6e63]">
+                Домик: <span className="font-semibold text-[#6f6360]">{selectedHouseBaseId}</span>
               </div>
               <div className="grid gap-2">
                 <label className="flex items-center justify-between">
                   <span>Сдвиг X</span>
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-[#6f6360]">
                     {activeHousePlacement.x.toFixed(2)}
                   </span>
                 </label>
@@ -3230,7 +3237,7 @@ export default function CreateMemorialClient({
               <div className="grid gap-2">
                 <label className="flex items-center justify-between">
                   <span>Сдвиг Z</span>
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-[#6f6360]">
                     {activeHousePlacement.z.toFixed(2)}
                   </span>
                 </label>
@@ -3248,7 +3255,7 @@ export default function CreateMemorialClient({
               <div className="grid gap-2">
                 <label className="flex items-center justify-between">
                   <span>Поворот Y</span>
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-[#6f6360]">
                     {activeHousePlacement.rotY.toFixed(0)}°
                   </span>
                 </label>
@@ -3266,7 +3273,7 @@ export default function CreateMemorialClient({
               <div className="grid gap-2">
                 <label className="flex items-center justify-between">
                   <span>Масштаб</span>
-                  <span className="font-semibold text-slate-700">
+                  <span className="font-semibold text-[#6f6360]">
                     {activeHouseScale.toFixed(2)}
                   </span>
                 </label>
@@ -3365,19 +3372,19 @@ export default function CreateMemorialClient({
   const overlayLabelClass =
     "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
   const overlayInputClass =
-    "w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayTextareaClass =
-    "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
-      ? "grid gap-2 rounded-[18px] border-2 border-white bg-white/95 p-2 shadow-[0_16px_44px_-20px_rgba(0,0,0,0.16)]"
-      : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
+      ? "grid gap-2 rounded-[18px] border-2 border-white bg-white/95 p-2 shadow-[0_16px_44px_-20px_rgba(93,64,55,0.24)]"
+      : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
-    "w-full rounded-2xl border border-slate-200 bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
+    "w-full rounded-2xl border border-[#d8cfc9] bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
   const centeredDateFieldClass = (hasError: boolean) =>
     `block w-full min-w-0 max-w-full appearance-none rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
-      hasError ? "border-red-400" : "border-slate-200"
+      hasError ? "border-red-400" : "border-[#d8cfc9]"
     } min-h-[52px] bg-[#fbf7f4] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]`;
   const centeredDateFieldStyle: CSSProperties = {
     width: "100%",
@@ -3414,7 +3421,7 @@ export default function CreateMemorialClient({
 
   const renderBaseInfoForm = (centered = false) => (
     <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
-      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}>
+      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
         {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
         {centered ? "Имя питомца" : null}
         <input
@@ -3429,7 +3436,7 @@ export default function CreateMemorialClient({
           maxLength={80}
         />
       </label>
-      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}>
+      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
         {!centered ? <span className={overlayLabelClass}>Вид питомца</span> : null}
         {centered ? "Вид питомца" : null}
         <select
@@ -3450,7 +3457,7 @@ export default function CreateMemorialClient({
       </label>
       <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
         <label
-          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}
+          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
           onClick={() => openDatePicker(birthDateInputRef.current)}
         >
           {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
@@ -3469,7 +3476,7 @@ export default function CreateMemorialClient({
           />
         </label>
         <label
-          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-slate-700" : ""}`}
+          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
           onClick={() => openDatePicker(deathDateInputRef.current)}
         >
           {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
@@ -3511,15 +3518,15 @@ export default function CreateMemorialClient({
         <div className="grid content-start gap-3 [@media(max-height:640px)]:gap-2">
           <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2">
             {!apiKey ? (
-              <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+              <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]">
                 Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
               </div>
             ) : loadError ? (
-              <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-red-600">
+              <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-red-600">
                 Ошибка загрузки карты
               </div>
             ) : !isLoaded ? (
-              <div className="flex min-h-[220px] items-center justify-center bg-slate-50 text-xs text-slate-500">
+              <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]">
                 Загрузка карты...
               </div>
             ) : (
@@ -3605,20 +3612,20 @@ export default function CreateMemorialClient({
                     () => setError("Не удалось получить геолокацию")
                   );
                 }}
-                className="rounded-xl border border-slate-200 px-2 py-1 text-[10px] text-slate-700"
+                className="rounded-xl border border-[#eadfd9] bg-white/88 px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
               >
                 Моё местоположение
               </button>
               <button
                 type="button"
                 onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-                className="rounded-xl border border-slate-200 px-2 py-1 text-[10px] text-slate-700"
+                className="rounded-xl border border-[#eadfd9] bg-white/88 px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
               >
                 Очистить
               </button>
             </div>
 
-            <label className="group relative flex items-center gap-2 text-xs font-bold text-slate-700">
+            <label className="group relative flex items-center gap-2 text-xs font-bold text-[#6f6360]">
               <input
                 type="checkbox"
                 className="h-4 w-4"
@@ -3626,11 +3633,11 @@ export default function CreateMemorialClient({
                 onChange={(event) => handleChange("isPublic", event.target.checked)}
               />
               Публичный мемориал
-              <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                 Публичный мемориал виден на карте всем пользователям. Приватные доступны только по ссылке.
               </span>
             </label>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-[#8d6e63]">
               Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
             </p>
           </div>
@@ -3657,8 +3664,8 @@ export default function CreateMemorialClient({
                       }}
                       className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border p-0 transition sm:h-14 sm:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10 [@media(max-height:640px)]:rounded-xl ${
                         isActive
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                          ? "border-[#5d4037] bg-[#5d4037] text-white"
+                          : "border-[#eadfd9] bg-white text-[#8d6e63] hover:border-[#d3a27f]"
                       }`}
                       aria-label={style.name}
                     >
@@ -3668,7 +3675,7 @@ export default function CreateMemorialClient({
                         className="h-full w-full scale-[1.12] object-contain p-0.5"
                       />
                     </button>
-                    <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600 opacity-0 shadow-sm transition group-hover:opacity-100">
+                    <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#eadfd9] bg-white px-2 py-1 text-[10px] text-[#6f6360] opacity-0 shadow-sm transition group-hover:opacity-100">
                       {style.name}
                     </span>
                   </div>
@@ -3676,7 +3683,7 @@ export default function CreateMemorialClient({
               })}
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#c2a79a]">
                 Маркеры выбранного вида
               </p>
               <div className="flex w-full flex-wrap gap-1 [@media(max-height:640px)]:max-h-32 [@media(max-height:640px)]:overflow-y-auto">
@@ -3689,11 +3696,11 @@ export default function CreateMemorialClient({
                       onClick={() => handleChange("markerStyle", marker.id)}
                       className={`flex items-center justify-center rounded-lg border p-0.5 ${
                         form.markerStyle === marker.id
-                          ? "border-slate-900 bg-slate-900 text-white"
-                          : "border-slate-200 bg-white text-slate-700"
+                          ? "border-[#5d4037] bg-[#5d4037] text-white"
+                          : "border-[#eadfd9] bg-white text-[#6f6360]"
                       }`}
                     >
-                      <span className="h-14 w-14 overflow-hidden rounded-lg bg-slate-100 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10">
+                      <span className="h-14 w-14 overflow-hidden rounded-lg bg-[#f7f1ee] [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10">
                         <img
                           src={marker.iconUrl}
                           alt={markerName}
@@ -3765,7 +3772,7 @@ export default function CreateMemorialClient({
           event.currentTarget.value = "";
         }}
       />
-      <p className="text-xs text-slate-500">Максимум {MAX_PHOTOS} фото, до 6 МБ каждое.</p>
+      <p className="text-xs text-[#8d6e63]">Максимум {MAX_PHOTOS} фото, до 6 МБ каждое.</p>
       {photos.length > 0 ? (
         <div
           className="grid gap-2"
@@ -3778,7 +3785,7 @@ export default function CreateMemorialClient({
           {photos.map((photo) => (
             <div
               key={photo.id}
-              className="relative rounded-2xl border border-slate-200 bg-white p-2"
+              className="relative rounded-2xl border border-[#eadfd9] bg-white p-2"
             >
               <button
                 type="button"
@@ -3792,7 +3799,7 @@ export default function CreateMemorialClient({
               <img
                 src={photo.url}
                 alt="Фото питомца"
-                className="h-24 w-full rounded-lg bg-slate-100 object-contain"
+                className="h-24 w-full rounded-lg bg-[#f1e7e0] object-contain"
               />
               <div className="mt-2 flex items-center justify-center">
                 <button
@@ -3800,8 +3807,8 @@ export default function CreateMemorialClient({
                   onClick={() => setPreviewPhotoId(photo.id)}
                   className={`rounded-full px-3 py-1 text-xs ${
                     previewPhotoId === photo.id
-                      ? "bg-slate-900 text-white"
-                      : "border border-slate-200 text-slate-600"
+                      ? "bg-[#111827] text-white"
+                      : "border border-[#eadfd9] text-[#6f6360]"
                   }`}
                 >
                   {previewPhotoId === photo.id ? "На обложке" : "На обложку"}
@@ -3811,7 +3818,7 @@ export default function CreateMemorialClient({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#8d6e63]">
           Добавь фотографии и выбери одну для мини‑окна на карте.
         </p>
       )}
@@ -4069,8 +4076,8 @@ export default function CreateMemorialClient({
   const headerOffset = "var(--app-header-height, 56px)";
   const overlayPanelBase =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] rounded-[18px] border-2 border-white bg-white/95 p-1.5 shadow-[0_16px_36px_-20px_rgba(0,0,0,0.24)] backdrop-blur"
-      : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] rounded-[30px] border-[4px] border-white bg-white/95 p-2.5 shadow-[0_20px_46px_-18px_rgba(0,0,0,0.22)] backdrop-blur sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]";
+      ? `pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] ${hudPanelChromeClass(true)}`
+      : `pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] ${hudPanelChromeClass(false)} sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]`;
   const overlayPanelClass = (variant?: "marker" | "soul") =>
     `${overlayPanelBase} ${
       variant === "marker"
@@ -4086,21 +4093,14 @@ export default function CreateMemorialClient({
           : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
-    `group relative flex items-center justify-center border-2 shadow-md transition-all ${
-      isPortraitLayout
-        ? "h-9 w-9 rounded-[13px]"
-        : "h-14 w-14 rounded-[22px] sm:h-16 sm:w-16 xl:h-[4.5rem] xl:w-[4.5rem]"
-    } ${
-      active
-        ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-        : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
+    `${hudRoundButtonClass(isPortraitLayout, active)} ${
+      isPortraitLayout ? "" : "xl:h-[4.5rem] xl:w-[4.5rem]"
     } ${
       highlight
         ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.18)]"
         : ""
       }`;
-  const builderControlTooltipClass =
-    "pointer-events-none absolute left-full top-1/2 z-[140] ml-2 w-max max-w-[12rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
+  const builderControlTooltipClass = hudTooltipClass("right");
   const builderAttentionBadgeClass = isPortraitLayout
     ? "absolute -right-0.5 -top-0.5 flex h-[1.125rem] w-[1.125rem] items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow"
     : "absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow";
@@ -4108,14 +4108,14 @@ export default function CreateMemorialClient({
     activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
   } ${
     isPortraitLayout
-      ? "absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[20] flex h-[min(35vh,315px)] flex-col rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_46px_-24px_rgba(0,0,0,0.3)]"
-      : "absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] z-[20] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]"
+      ? `absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[20] flex h-[min(35vh,315px)] flex-col ${hudPanelChromeClass(true)}`
+      : `absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] z-[20] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(4.35rem+env(safe-area-inset-bottom))] left-1.5 z-[90]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6 z-[90]";
   const builderOverlayButtonsClass = isPortraitLayout
-    ? "flex flex-col items-center justify-center gap-1.5 rounded-[18px] border-2 border-white bg-white/72 p-1.5 shadow-[0_14px_34px_-22px_rgba(0,0,0,0.32)] backdrop-blur"
+    ? "flex flex-col items-center justify-center gap-1.5 rounded-[20px] border-2 border-white bg-white/82 p-1.5 shadow-[0_14px_34px_-22px_rgba(93,64,55,0.34)] backdrop-blur"
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2"
@@ -4127,15 +4127,7 @@ export default function CreateMemorialClient({
     ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
     : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
   const builderTabButtonClass = (isActive: boolean, isDisabled: boolean) =>
-    `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
-      isPortraitLayout ? "h-9 w-9 rounded-[13px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
-    } ${
-      isDisabled
-        ? "pointer-events-none cursor-not-allowed border-gray-100 bg-[#f3efec] text-[#c8beb8] opacity-55"
-        : isActive
-          ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-          : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
-    }`;
+    hudControlButtonClass(isPortraitLayout, isActive, isDisabled);
   const builderCancelButtonClass = isPortraitLayout
     ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
     : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
@@ -4146,13 +4138,13 @@ export default function CreateMemorialClient({
     ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
     : "group inline-flex min-w-[15rem] items-center justify-center rounded-xl bg-[#2d3436] px-10 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
   const builderActionTooltipClass =
-    "pointer-events-none absolute bottom-[calc(100%+0.65rem)] right-0 z-[300] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200";
+    hudTooltipClass("action");
   const builderSceneFrameClass = isPortraitLayout
     ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
     : "fixed inset-0 z-0";
   const builderPanelInnerClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 flex-col overflow-visible rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"
-    : "flex min-h-0 flex-1 flex-col overflow-visible rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]";
+    ? `flex min-h-0 flex-1 flex-col overflow-visible ${hudInnerSurfaceClass(true)}`
+    : `flex min-h-0 flex-1 flex-col overflow-visible ${hudInnerSurfaceClass(false)}`;
   const builderPanelHeaderClass = isPortraitLayout
     ? "border-b border-[#eadfd9] px-2.5 py-2"
     : "border-b border-[#eadfd9] px-4 py-3";
@@ -4175,8 +4167,8 @@ export default function CreateMemorialClient({
     return (
       <main className="min-h-[calc(100vh-var(--app-header-height,0px))] bg-[var(--bg)]">
         <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] items-center justify-center">
-          <div className="flex flex-col items-center gap-3 text-sm text-slate-600">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+          <div className="flex flex-col items-center gap-3 text-sm font-semibold text-[#8d6e63]">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
             Загружаем мемориал для редактирования...
           </div>
         </div>
@@ -4197,12 +4189,12 @@ export default function CreateMemorialClient({
     >
       {isTransitioning ? (
         <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--bg)]">
-          <div className="flex flex-col items-center gap-3 text-center text-sm text-slate-600">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+          <div className="flex flex-col items-center gap-3 text-center text-sm font-semibold text-[#8d6e63]">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
             {loadingMessage}
-            <div className="h-2 w-48 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-2 w-48 overflow-hidden rounded-full bg-[#eadfd9]">
               <div
-                className="h-full bg-slate-600 transition-[width] duration-200"
+                className="h-full bg-[#5d4037] transition-[width] duration-200"
                 style={{ width: `${loadingProgress}%` }}
               />
             </div>
@@ -4315,12 +4307,12 @@ export default function CreateMemorialClient({
                       <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
                         <input
                           type="checkbox"
-                          className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-slate-300" : "h-4 w-4 shrink-0 rounded border-slate-300"}
+                          className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]" : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"}
                           checked={giftPreviewEnabled}
                           onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
                         />
                         <span className="truncate">Посмотреть</span>
-                        <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                           При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
                         </span>
                       </label>
@@ -4370,9 +4362,9 @@ export default function CreateMemorialClient({
                           <span className="sr-only">{tab.label}</span>
                         </button>
                         {isTooltipVisible && !isPortraitLayout ? (
-                          <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
-                            <div className="font-semibold text-slate-900">{tab.label}</div>
-                            <div className="mt-1 text-slate-500">{description}</div>
+                          <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-white/95 px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
+                            <div className="font-semibold text-[#5d4037]">{tab.label}</div>
+                            <div className="mt-1 text-[#8d6e63]">{description}</div>
                           </div>
                         ) : null}
                       </div>
@@ -4596,20 +4588,20 @@ export default function CreateMemorialClient({
                 onClick={closeReview}
               />
               <div
-                className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+                className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#eadfd9] bg-white p-6 shadow-2xl transition-transform duration-200 ${
                   reviewVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-900">Проверка мемориала</h3>
+                  <h3 className="text-lg font-semibold text-[#5d4037]">Проверка мемориала</h3>
                   <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeReview}>
                     Закрыть
                   </button>
                 </div>
 
                 <div className="mt-4 grid gap-6">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <div className="grid gap-2 text-sm text-slate-700">
+                  <div className="rounded-2xl border border-[#eadfd9] bg-[#fcf8f5] p-5">
+                    <div className="grid gap-2 text-sm text-[#6f6360]">
                       <p>Имя: {form.name || "—"}</p>
                       <p>Дата рождения: {form.birthDate || "—"}</p>
                       <p>Дата ухода: {form.deathDate || "—"}</p>
@@ -4656,18 +4648,18 @@ export default function CreateMemorialClient({
                       softEdges
                       className="h-[420px]"
                     />
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                      <div className="grid gap-3 text-sm text-slate-700">
-                        <p className="font-semibold text-slate-900">
+                    <div className="rounded-2xl border border-[#eadfd9] bg-white p-5">
+                      <div className="grid gap-3 text-sm text-[#6f6360]">
+                        <p className="font-semibold text-[#5d4037]">
                           {isEditMode ? "Сохранение изменений" : "Оплата мемориала"}
                         </p>
                         {isEditMode ? (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[#8d6e63]">
                             Сохраним только домик и его детали. Остальные данные мемориала не изменятся.
                           </p>
                         ) : (
                           <>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-[#8d6e63]">
                               {form.ownerId
                                 ? `Баланс: ${walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет`
                                 : "Вы собрали мемориал без входа. Для публикации нужно войти или зарегистрироваться."}
@@ -4682,12 +4674,12 @@ export default function CreateMemorialClient({
                                     onClick={() => setMemorialPlanId(plan.id)}
                                     className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
                                       isSelected
-                                        ? "border-sky-400 bg-sky-50 text-slate-900"
-                                        : "border-slate-200 text-slate-700 hover:border-slate-300"
+                                        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                                        : "border-[#eadfd9] text-[#6f6360] hover:border-[#d3a27f]"
                                     }`}
                                   >
                                     <span className="font-semibold">{plan.label}</span>
-                                    <span className="text-slate-500">{plan.price} монет</span>
+                                    <span className="text-[#8d6e63]">{plan.price} монет</span>
                                   </button>
                                 );
                               })}
@@ -4697,7 +4689,7 @@ export default function CreateMemorialClient({
                         <button
                           type="button"
                           onClick={handleSubmit}
-                          className="group mt-2 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
+                          className="group mt-2 inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
                           disabled={loading}
                         >
                           <span className="transition-transform duration-300 group-hover:-translate-x-1">

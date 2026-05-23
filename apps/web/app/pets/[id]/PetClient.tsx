@@ -13,6 +13,14 @@ import PhotoLightbox from "../../../components/PhotoLightbox";
 import usePortraitLayout from "../../../components/usePortraitLayout";
 import { readSoulSettings } from "../../../components/PetSoul";
 import {
+  hudControlButtonClass,
+  hudInnerSurfaceClass,
+  hudPanelChromeClass,
+  hudPrimaryActionClass,
+  hudRoundButtonClass,
+  hudTooltipClass
+} from "../../../components/hudTheme";
+import {
   resolveEnvironmentModel,
   resolveHouseModel,
   resolveRoofModel,
@@ -1874,23 +1882,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
     return (
       <main className="min-h-screen bg-[#fcf8f5] px-6 py-16">
         <div className="mx-auto max-w-6xl space-y-6">
-          <div className="animate-pulse rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="h-5 w-32 rounded-full bg-slate-200" />
-            <div className="mt-4 h-8 w-64 rounded-full bg-slate-200" />
-            <div className="mt-3 h-4 w-48 rounded-full bg-slate-200" />
+          <div className="animate-pulse rounded-3xl border border-[#eadfd9] bg-white p-8 shadow-sm">
+            <div className="h-5 w-32 rounded-full bg-[#eadfd9]" />
+            <div className="mt-4 h-8 w-64 rounded-full bg-[#eadfd9]" />
+            <div className="mt-3 h-4 w-48 rounded-full bg-[#eadfd9]" />
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {Array.from({ length: 2 }).map((_, index) => (
-                <div key={`info-skeleton-${index}`} className="h-20 rounded-2xl bg-slate-100" />
+                <div key={`info-skeleton-${index}`} className="h-20 rounded-2xl bg-[#f1e7e0]" />
               ))}
             </div>
           </div>
-          <div className="animate-pulse rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <div className="h-4 w-40 rounded-full bg-slate-200" />
+          <div className="animate-pulse rounded-3xl border border-[#eadfd9] bg-white p-8 shadow-sm">
+            <div className="h-4 w-40 rounded-full bg-[#eadfd9]" />
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="h-[320px] rounded-2xl bg-slate-100" />
+              <div className="h-[320px] rounded-2xl bg-[#f1e7e0]" />
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={`gift-skeleton-${index}`} className="h-10 rounded-xl bg-slate-100" />
+                  <div key={`gift-skeleton-${index}`} className="h-10 rounded-xl bg-[#f1e7e0]" />
                 ))}
               </div>
             </div>
@@ -1904,8 +1912,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
     return (
       <main className="min-h-screen bg-[#fcf8f5] px-6 py-16">
         <div className="mx-auto max-w-6xl text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">Мемориал не найден</h1>
-          <p className="mt-3 text-slate-600">{error ?? "Проверь ссылку"}</p>
+          <h1 className="text-2xl font-semibold text-[#5d4037]">Мемориал не найден</h1>
+          <p className="mt-3 text-[#8d6e63]">{error ?? "Проверь ссылку"}</p>
         </div>
       </main>
     );
@@ -2027,32 +2035,24 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const panelBaseClass =
     isPortraitLayout
-      ? "w-[min(540px,calc(100vw-0.75rem))] max-w-[calc(100vw-0.75rem)] max-h-[min(50dvh,390px)] overflow-y-auto rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
-      : "w-[290px] max-w-[82vw] rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_56px_-26px_rgba(93,64,55,0.52)] backdrop-blur sm:w-[340px]";
+      ? `w-[min(540px,calc(100vw-0.75rem))] max-w-[calc(100vw-0.75rem)] max-h-[min(50dvh,390px)] overflow-y-auto ${hudPanelChromeClass(true)}`
+      : `w-[290px] max-w-[82vw] ${hudPanelChromeClass(false)} sm:w-[340px]`;
   const panelSectionClass =
     isPortraitLayout
-      ? "grid max-h-full gap-2 overflow-y-auto rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
-      : "grid gap-3 rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]";
+      ? `grid max-h-full gap-2 overflow-y-auto p-2.5 ${hudInnerSurfaceClass(true)}`
+      : `grid gap-3 p-4 ${hudInnerSurfaceClass(false)}`;
   const panelLabelClass =
     "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
-    `group relative flex items-center justify-center border-[3px] shadow-md transition-all ${
-      isPortraitLayout
-        ? "h-10 w-10 rounded-[14px]"
-        : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
-    } ${
-      active
-        ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-        : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
-    }`;
+    hudRoundButtonClass(isPortraitLayout, active);
   const memorialControlTooltipClass = isPortraitLayout
-    ? "pointer-events-none absolute bottom-full left-1/2 z-[120] mb-2 w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100"
-    : "pointer-events-none absolute left-full top-1/2 z-[120] ml-3 w-max max-w-[13rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
+    ? hudTooltipClass("top")
+    : hudTooltipClass("right");
   const memorialGiftTooltipClass = isPortraitLayout
     ? memorialControlTooltipClass
-    : "pointer-events-none absolute right-full top-1/2 z-[120] mr-3 w-max max-w-[13rem] -translate-y-1/2 rounded-xl border-2 border-white bg-white/95 px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
+    : hudTooltipClass("left");
   const primaryActionClass =
-    "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
+    hudPrimaryActionClass;
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = isPortraitLayout
@@ -2060,8 +2060,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
     isPortraitLayout
-      ? "pointer-events-auto absolute left-1.5 right-1.5 bottom-[calc(4.1rem+env(safe-area-inset-bottom))] flex h-[min(33dvh,300px)] flex-col rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_46px_-24px_rgba(0,0,0,0.3)]"
-      : "pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-2.5 shadow-[0_24px_70px_-22px_rgba(0,0,0,0.28)] sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]";
+      ? `pointer-events-auto absolute left-1.5 right-1.5 bottom-[calc(4.1rem+env(safe-area-inset-bottom))] flex h-[min(33dvh,300px)] flex-col ${hudPanelChromeClass(true)}`
+      : `pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`;
   const editFinishButtonClass =
     isPortraitLayout
       ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
@@ -2083,7 +2083,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? "fixed left-1.5 right-1.5 top-[calc(33dvh+0.35rem)] bottom-[calc(3.45rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden rounded-[20px] border-2 border-white bg-[#efe6e2]/95 p-1.5 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.52)] backdrop-blur"
+    ? `fixed left-1.5 right-1.5 top-[calc(33dvh+0.35rem)] bottom-[calc(3.45rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
@@ -2092,13 +2092,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
     : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
   const editTabButtonClass = (active: boolean) =>
-    `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
-      isPortraitLayout ? "h-9 w-9 rounded-[13px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
-    } ${
-      active
-        ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-        : "border-gray-100 bg-white text-gray-400 hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
-    }`;
+    hudControlButtonClass(isPortraitLayout, active);
   const editActionBarClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
     : "";
@@ -2106,7 +2100,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "fixed inset-0 z-0 overflow-hidden"
     : "fixed inset-0 z-0";
   const giftPanelInnerClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_10px_24px_rgba(126,102,93,0.08)]"
+    ? `flex min-h-0 flex-1 flex-col overflow-hidden p-2 ${hudInnerSurfaceClass(true)}`
     : `flex min-h-0 flex-1 flex-col ${panelSectionClass}`;
   const giftFlowClass = isPortraitLayout
     ? "mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
@@ -2252,8 +2246,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
             title={option.name}
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
-                ? "border-sky-400 bg-sky-50"
-                : "border-slate-200 bg-transparent hover:border-sky-400 hover:bg-sky-50"
+                ? "border-[#3bceac] bg-[#f0fffb]"
+                : "border-[#eadfd9] bg-transparent hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             }`}
           >
             {imageUrl ? (
@@ -2265,7 +2259,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 className="h-full w-full rounded-lg object-contain"
               />
             ) : (
-              <div className="text-xs text-slate-500">Нет</div>
+              <div className="text-xs text-[#8d6e63]">Нет</div>
             )}
           </button>
         );
@@ -2452,7 +2446,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       disabled={dirtLevel === 0}
                       className={`mt-3 w-full ${primaryActionClass} ${
                         dirtLevel === 0
-                          ? "cursor-not-allowed bg-slate-300 text-slate-500 shadow-none"
+                          ? "cursor-not-allowed bg-[#d8cfc9] text-white/85 shadow-none"
                           : ""
                       }`}
                     >
@@ -2721,12 +2715,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
                               key={`gift-skeleton-${index}`}
                               className={giftSkeletonClass}
                             >
-                              <div className="absolute inset-0 bg-slate-100" />
-                              <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-slate-200" />
+                              <div className="absolute inset-0 bg-[#f7f1ee]" />
+                              <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-[#eadfd9]" />
                             </div>
                           ))
                         ) : giftsWithSlots.length === 0 ? (
-                          <p className="text-sm text-slate-500">Нет доступных подарков.</p>
+                          <p className="text-sm text-[#8d6e63]">Нет доступных подарков.</p>
                         ) : (
                           giftsWithSlots.map((gift) => {
                             const iconUrl = resolveGiftIconUrl(gift);
@@ -2754,7 +2748,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 <span className="pointer-events-none absolute bottom-2 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md">
                                   {gift.price}
                                 </span>
-                                <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-slate-700 opacity-0">
+                                <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
                                   0
                                 </span>
                               </button>
@@ -2776,7 +2770,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         Подсвечивать места для подарков
                       </label>
                       {highlightSlots.length === 0 ? (
-                        <p className="text-sm text-slate-500">Свободных мест нет.</p>
+                        <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
                       ) : null}
                     </div>
 
@@ -2868,7 +2862,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       className={`px-4 py-3 ${
                         selectedGiftId && selectedSlot && selectedDuration && !giftLoading
                           ? primaryActionClass
-                          : "cursor-not-allowed rounded-[22px] bg-slate-300 text-sm font-black uppercase tracking-[0.14em] text-slate-500 shadow-none"
+                          : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
                       }`}
                       disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                     >
@@ -2967,9 +2961,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             <span className="sr-only">{tab.label}</span>
                           </button>
                           {isTooltipVisible && !isPortraitLayout ? (
-                            <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-lg">
-                              <div className="font-semibold text-slate-900">{tab.label}</div>
-                              <div className="mt-1 text-slate-500">{description}</div>
+                            <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-white/95 px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
+                              <div className="font-semibold text-[#5d4037]">{tab.label}</div>
+                              <div className="mt-1 text-[#8d6e63]">{description}</div>
                             </div>
                           ) : null}
                         </div>
@@ -2983,8 +2977,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         <div className="flex h-full min-h-0 flex-col gap-3">
                           {houseTextureOptions.length > 0 ? (
                             <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
-                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
-                                <h4 className="px-1 text-sm font-semibold text-slate-900">
+                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                                <h4 className="px-1 text-sm font-semibold text-[#5d4037]">
                                   Форма домика
                                 </h4>
                                 <div className="min-h-0 overflow-y-auto overscroll-contain">
@@ -3002,8 +2996,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                   )}
                                 </div>
                               </div>
-                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-slate-200 bg-white/75 p-2">
-                                <h4 className="px-1 text-sm font-semibold text-slate-900">
+                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                                <h4 className="px-1 text-sm font-semibold text-[#5d4037]">
                                   Текстура домика
                                 </h4>
                                 <div className="min-h-0 overflow-y-auto overscroll-contain">
@@ -3022,7 +3016,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             </div>
                           ) : (
                             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                              <h4 className="text-base font-semibold text-slate-900">
+                              <h4 className="text-base font-semibold text-[#5d4037]">
                                 Форма домика
                               </h4>
                               {renderAppearanceOptionGrid(
@@ -3123,8 +3117,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       ) : null}
 
                       {appearanceColorField ? (
-                        <div className="mx-auto mt-4 grid w-full max-w-[440px] gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:max-w-[520px]">
-                          <div className="text-sm font-semibold text-slate-900">Цвет детали</div>
+                        <div className="mx-auto mt-4 grid w-full max-w-[440px] gap-3 rounded-xl border border-[#eadfd9] bg-white p-3 sm:max-w-[520px]">
+                          <div className="text-sm font-semibold text-[#5d4037]">Цвет детали</div>
                           <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
                             {colorPalette.map((color) => {
                               const isActive = appearanceDraft[appearanceColorField] === color;
@@ -3135,8 +3129,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                   onClick={() => updateAppearanceDraft(appearanceColorField, color)}
                                   className={`h-10 w-full rounded-xl border-2 transition ${
                                     isActive
-                                      ? "border-slate-900 ring-2 ring-sky-200"
-                                      : "border-white hover:border-slate-300"
+                                      ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
+                                      : "border-white hover:border-[#d3a27f]"
                                   }`}
                                   style={{ backgroundColor: color }}
                                   aria-label={color}
@@ -3199,15 +3193,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 onClick={closeAppearanceReview}
               />
               <div
-                className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl transition-transform duration-200 ${
+                className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#eadfd9] bg-white p-6 shadow-2xl transition-transform duration-200 ${
                   appearanceReviewVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-900">Проверка мемориала</h3>
+                  <h3 className="text-lg font-semibold text-[#5d4037]">Проверка мемориала</h3>
                   <button
                     type="button"
-                    className="rounded-2xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    className="rounded-2xl border border-[#eadfd9] px-3 py-2 text-sm font-semibold text-[#6f6360] transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
                     onClick={closeAppearanceReview}
                   >
                     Вернуться
@@ -3215,8 +3209,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 </div>
 
                 <div className="mt-4 grid gap-6">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <div className="grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+                  <div className="rounded-2xl border border-[#eadfd9] bg-[#fcf8f5] p-5">
+                    <div className="grid gap-2 text-sm text-[#6f6360] md:grid-cols-2">
                       <p>Мемориал: {pet.name}</p>
                       <p>Период: {dateRange}</p>
                     </div>
@@ -3224,12 +3218,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       {appearanceReviewItems.map((item) => (
                         <div
                           key={item.label}
-                          className="rounded-2xl border border-white bg-white px-4 py-3 text-sm text-slate-700"
+                          className="rounded-2xl border border-white bg-white px-4 py-3 text-sm text-[#6f6360]"
                         >
-                          <div className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                          <div className="text-[11px] font-black uppercase tracking-[0.14em] text-[#c2a79a]">
                             {item.label}
                           </div>
-                          <div className="mt-1 font-semibold text-slate-900">{item.value}</div>
+                          <div className="mt-1 font-semibold text-[#5d4037]">{item.value}</div>
                         </div>
                       ))}
                     </div>
@@ -3254,10 +3248,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       softEdges
                       className="h-[420px]"
                     />
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                      <div className="grid gap-3 text-sm text-slate-700">
-                        <p className="font-semibold text-slate-900">Сохранение изменений</p>
-                        <p className="text-xs text-slate-500">
+                    <div className="rounded-2xl border border-[#eadfd9] bg-white p-5">
+                      <div className="grid gap-3 text-sm text-[#6f6360]">
+                        <p className="font-semibold text-[#5d4037]">Сохранение изменений</p>
+                        <p className="text-xs text-[#8d6e63]">
                           Будут обновлены только домик и его детали. Остальные данные мемориала не меняются.
                         </p>
                         {appearanceError ? (
@@ -3267,21 +3261,21 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           <button
                             type="button"
                             onClick={closeEditDialog}
-                            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            className="rounded-2xl border border-[#eadfd9] px-4 py-3 text-sm font-semibold text-[#6f6360] transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
                           >
                             Отмена
                           </button>
                           <button
                             type="button"
                             onClick={closeAppearanceReview}
-                            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            className="rounded-2xl border border-[#eadfd9] px-4 py-3 text-sm font-semibold text-[#6f6360] transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
                           >
                             Назад к редактированию
                           </button>
                           <button
                             type="button"
                             onClick={handleSaveAppearance}
-                            className="group inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
+                            className="group inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
                             disabled={savingAppearance}
                           >
                             {savingAppearance ? "Сохраняем..." : "Сохранить изменения"}
@@ -3439,7 +3433,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 type="button"
                 onClick={handleDeleteMemorial}
                 disabled={!canConfirmDelete}
-                className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-all hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-all hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:shadow-none"
               >
                 {deletingMemorial ? "Удаление..." : "Удалить"}
               </button>
