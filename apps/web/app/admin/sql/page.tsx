@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
 import { canAccessAdmin, canManageAdmins, type AccessLevel } from "../../../lib/access";
 import ErrorToast from "../../../components/ErrorToast";
+import DirtModelPreview from "../../../components/admin/DirtModelPreview";
 
 const QUICK_QUERIES = [
   {
@@ -2127,6 +2128,8 @@ export default function AdminSqlPage() {
         </div>
 
         <div className="grid gap-4">
+          <DirtModelPreview />
+
           <textarea
             value={query}
             onChange={(event) => setQuery(event.target.value)}

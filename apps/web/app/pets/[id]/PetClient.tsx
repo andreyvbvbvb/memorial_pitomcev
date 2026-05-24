@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { API_BASE } from "../../../lib/config";
+import { buildDirtSlotPlacements } from "../../../lib/dirt-models";
 import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../lib/map-preview";
 import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
@@ -1783,6 +1784,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
     () => buildDirtModelUrls(effectiveHouseId),
     [effectiveHouseId]
   );
+  const dirtSlotPlacements = useMemo(
+    () =>
+      buildDirtSlotPlacements({
+        houseId: effectiveHouseId,
+        level: dirtLevel,
+        seed: `${pet?.id ?? id}:${pet?.memorial?.dustUpdatedAt ?? pet?.createdAt ?? ""}`
+      }),
+    [dirtLevel, effectiveHouseId, id, pet?.createdAt, pet?.id, pet?.memorial?.dustUpdatedAt]
+  );
   const appearanceReviewItems = useMemo(() => {
     const items: { label: string; value: string }[] = [
       { label: "Домик", value: optionById(houseOptions, draftAppearance.houseId).name }
@@ -2281,6 +2291,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           houseId={editDialogOpen ? editPreviewHouseId : effectiveHouseId}
           parts={fullPartList}
           dirtUrls={dirtModelUrls}
+          dirtSlots={dirtSlotPlacements}
           dirtLevel={dirtLevel}
           gifts={previewGifts}
           giftSlots={giftPanelOpen ? highlightSlots : undefined}
@@ -3249,6 +3260,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       houseId={effectiveHouseId}
                       parts={fullPartList}
                       dirtUrls={dirtModelUrls}
+                      dirtSlots={dirtSlotPlacements}
                       dirtLevel={dirtLevel}
                       gifts={giftInstances}
                       colors={colorOverrides}

@@ -5,6 +5,7 @@ import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ensureDracoLoader } from "../../lib/draco";
+import type { DirtSlotPlacement } from "../../lib/dirt-models";
 import {
   getGiftCodeFromUrl,
   isGiftSlotName,
@@ -42,6 +43,7 @@ type Props = {
   parts?: { slot: string; url: string }[];
   dirtUrl?: string | null;
   dirtUrls?: string[] | null;
+  dirtSlots?: DirtSlotPlacement[] | null;
   dirtLevel?: number;
   gifts?: {
     slot: string;
@@ -121,6 +123,7 @@ type SceneAssets = {
   parts?: { slot: string; url: string }[];
   dirtUrl?: string | null;
   dirtUrls?: string[] | null;
+  dirtSlots?: DirtSlotPlacement[] | null;
   dirtLevel?: number;
   gifts?: {
     slot: string;
@@ -145,10 +148,14 @@ const buildSceneSignature = (assets: SceneAssets) => {
   const parts = assets.parts ?? [];
   const gifts = assets.gifts ?? [];
   const dirtUrls = assets.dirtUrls ?? [];
+  const dirtSlots = assets.dirtSlots ?? [];
   const colors = assets.colors ?? {};
   const partsKey = parts.map((part) => `${part.slot}:${part.url}`).join("|");
   const giftsKey = gifts.map((gift) => `${gift.slot}:${gift.url}:${gift.size ?? ""}`).join("|");
   const dirtKey = dirtUrls.join("|");
+  const dirtSlotsKey = dirtSlots
+    .map((placement) => `${placement.slot}:${placement.url}`)
+    .join("|");
   const colorsKey = Object.entries(colors)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}:${value}`)
@@ -160,6 +167,7 @@ const buildSceneSignature = (assets: SceneAssets) => {
     partsKey,
     assets.dirtUrl ?? "",
     dirtKey,
+    dirtSlotsKey,
     String(assets.dirtLevel ?? ""),
     giftsKey,
     colorsKey
@@ -844,6 +852,63 @@ function DirtStackAttachment({
   );
 }
 
+function DirtSlotAttachment({
+  terrain,
+  house,
+  placement
+}: {
+  terrain: THREE.Object3D;
+  house: THREE.Object3D;
+  placement: DirtSlotPlacement;
+}) {
+  const { scene } = useGLTF(placement.url);
+  const dirt = useMemo(() => scene.clone(true), [scene]);
+  const preferredRoot = placement.slotIndex <= 2 ? terrain : house;
+  const fallbackRoot = placement.slotIndex <= 2 ? house : terrain;
+  const anchor = preferredRoot.getObjectByName(placement.slot) ?? fallbackRoot.getObjectByName(placement.slot);
+
+  useLayoutEffect(() => {
+    if (!anchor) {
+      return;
+    }
+    dirt.name = placement.modelId;
+    dirt.position.set(0, 0, 0);
+    dirt.rotation.set(0, 0, 0);
+    anchor.add(dirt);
+    return () => {
+      anchor.remove(dirt);
+    };
+  }, [anchor, dirt, placement.modelId]);
+
+  return null;
+}
+
+function DirtSlotStackAttachment({
+  terrain,
+  house,
+  placements
+}: {
+  terrain: THREE.Object3D;
+  house: THREE.Object3D;
+  placements: DirtSlotPlacement[];
+}) {
+  if (placements.length === 0) {
+    return null;
+  }
+  return (
+    <>
+      {placements.map((placement) => (
+        <DirtSlotAttachment
+          key={`${placement.slot}-${placement.url}`}
+          terrain={terrain}
+          house={house}
+          placement={placement}
+        />
+      ))}
+    </>
+  );
+}
+
 function SoulPathCurve({
   points,
   smooth,
@@ -1084,6 +1149,7 @@ function TerrainWithHouse({
   parts,
   dirtUrl,
   dirtUrls,
+  dirtSlots,
   dirtLevel = 0,
   gifts,
   colors,
@@ -1126,6 +1192,7 @@ function TerrainWithHouse({
   parts?: { slot: string; url: string }[];
   dirtUrl?: string | null;
   dirtUrls?: string[] | null;
+  dirtSlots?: DirtSlotPlacement[] | null;
   dirtLevel?: number;
   gifts?: {
     slot: string;
@@ -1503,6 +1570,16 @@ function TerrainWithHouse({
     clearHoverHighlight();
   };
 
+  const hasDirtSlotAnchors =
+    dirtSlots?.some((placement) => {
+      const preferredRoot = placement.slotIndex <= 2 ? terrain : house;
+      const fallbackRoot = placement.slotIndex <= 2 ? house : terrain;
+      return (
+        Boolean(preferredRoot.getObjectByName(placement.slot)) ||
+        Boolean(fallbackRoot.getObjectByName(placement.slot))
+      );
+    }) ?? false;
+
   return (
     <Group
       visible={visible}
@@ -1546,7 +1623,9 @@ function TerrainWithHouse({
           houseBaseId={houseBaseId}
         />
       ))}
-      {dirtUrls && dirtUrls.length > 0 ? (
+      {dirtSlots && dirtSlots.length > 0 && hasDirtSlotAnchors ? (
+        <DirtSlotStackAttachment terrain={terrain} house={house} placements={dirtSlots} />
+      ) : dirtUrls && dirtUrls.length > 0 ? (
         <DirtStackAttachment house={house} urls={dirtUrls} level={dirtLevel} />
       ) : dirtUrl && dirtLevel > 0 ? (
         <DirtAttachment house={house} url={dirtUrl} level={dirtLevel} />
@@ -1622,6 +1701,7 @@ export default function MemorialPreview({
   parts,
   dirtUrl,
   dirtUrls,
+  dirtSlots,
   dirtLevel = 0,
   gifts,
   giftSlots,
@@ -1694,11 +1774,12 @@ export default function MemorialPreview({
       parts,
       dirtUrl,
       dirtUrls,
+      dirtSlots,
       dirtLevel,
       gifts,
       colors
     }),
-    [colors, dirtLevel, dirtUrl, dirtUrls, gifts, houseId, houseUrl, parts, terrainUrl]
+    [colors, dirtLevel, dirtSlots, dirtUrl, dirtUrls, gifts, houseId, houseUrl, parts, terrainUrl]
   );
   const currentSignature = useMemo(
     () => buildSceneSignature(currentAssets),
@@ -2026,6 +2107,7 @@ export default function MemorialPreview({
               parts={activeAssets.parts}
               dirtUrl={activeAssets.dirtUrl}
               dirtUrls={activeAssets.dirtUrls}
+              dirtSlots={activeAssets.dirtSlots}
               dirtLevel={activeAssets.dirtLevel ?? 0}
               gifts={activeAssets.gifts}
               colors={activeAssets.colors}
@@ -2103,6 +2185,7 @@ export default function MemorialPreview({
                   parts={pendingAssets.parts}
                   dirtUrl={pendingAssets.dirtUrl}
                   dirtUrls={pendingAssets.dirtUrls}
+                  dirtSlots={pendingAssets.dirtSlots}
                   dirtLevel={pendingAssets.dirtLevel ?? 0}
                   gifts={pendingAssets.gifts}
                   colors={pendingAssets.colors}

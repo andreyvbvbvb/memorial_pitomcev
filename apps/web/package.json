@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "node scripts/generate-models.mjs",
     "prebuild": "node scripts/generate-models.mjs",
+    "generate:dirt": "node scripts/generate-dirt-slot-models.mjs",
     "dev": "WATCHPACK_POLLING=1000 next dev -p 3002",
     "build": "next build",
     "start": "next start",
