@@ -31,6 +31,16 @@ const pushVec3 = (target, x, y, z) => {
   target.push(x, y, z);
 };
 
+const normalizeVec3 = (x, y, z) => {
+  const length = Math.hypot(x, y, z) || 1;
+  return [x / length, y / length, z / length];
+};
+
+const smoothstep = (edge0, edge1, value) => {
+  const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
+
 const addBlob = ({ positions, normals, indices }, random, options) => {
   const {
     centerX,
@@ -39,42 +49,114 @@ const addBlob = ({ positions, normals, indices }, random, options) => {
     radiusZ,
     height,
     segments,
+    rings,
+    bevels,
     rotation,
     roughness
   } = options;
+  const ringCount = Math.max(3, rings);
+  const bevelCount = Math.max(2, bevels);
+  const phaseA = random() * Math.PI * 2;
+  const phaseB = random() * Math.PI * 2;
+  const phaseC = random() * Math.PI * 2;
+  const harmonicA = 2 + Math.floor(random() * 3);
+  const harmonicB = 5 + Math.floor(random() * 3);
+  const harmonicC = 8 + Math.floor(random() * 4);
+  const edgeHeights = [];
+  const boundary = [];
+
+  for (let index = 0; index < segments; index += 1) {
+    const angle = (index / segments) * Math.PI * 2;
+    const wave =
+      Math.sin(angle * harmonicA + phaseA) * 0.48 +
+      Math.sin(angle * harmonicB + phaseB) * 0.32 +
+      Math.sin(angle * harmonicC + phaseC) * 0.2;
+    boundary.push(1 + wave * roughness * 0.42);
+    edgeHeights.push(height * (0.08 + random() * 0.08));
+  }
+
+  const transformPoint = (angle, radiusScale, wobble, y) => {
+    const localX = Math.cos(angle) * radiusX * radiusScale * wobble;
+    const localZ = Math.sin(angle) * radiusZ * radiusScale * wobble;
+    return [
+      centerX + localX * Math.cos(rotation) - localZ * Math.sin(rotation),
+      y,
+      centerZ + localX * Math.sin(rotation) + localZ * Math.cos(rotation)
+    ];
+  };
+
   const centerTopIndex = positions.length / 3;
   pushVec3(positions, centerX, height, centerZ);
   pushVec3(normals, 0, 1, 0);
-  const centerBottomIndex = positions.length / 3;
-  pushVec3(positions, centerX, 0, centerZ);
-  pushVec3(normals, 0, -1, 0);
 
-  const topRing = [];
-  const bottomRing = [];
-  for (let index = 0; index < segments; index += 1) {
-    const angle = (index / segments) * Math.PI * 2;
-    const wobble = 1 + (random() - 0.5) * roughness;
-    const localX = Math.cos(angle) * radiusX * wobble;
-    const localZ = Math.sin(angle) * radiusZ * wobble;
-    const x = centerX + localX * Math.cos(rotation) - localZ * Math.sin(rotation);
-    const z = centerZ + localX * Math.sin(rotation) + localZ * Math.cos(rotation);
-    const edgeHeight = height * (0.2 + random() * 0.22);
-    const topIndex = positions.length / 3;
-    pushVec3(positions, x, edgeHeight, z);
-    pushVec3(normals, 0, 1, 0);
-    topRing.push(topIndex);
-    const bottomIndex = positions.length / 3;
-    pushVec3(positions, x, 0, z);
-    pushVec3(normals, 0, -1, 0);
-    bottomRing.push(bottomIndex);
+  const topRings = [];
+  for (let ring = 1; ring <= ringCount; ring += 1) {
+    const radiusScale = ring / ringCount;
+    const edgeWeight = smoothstep(0.28, 1, radiusScale);
+    const ringIndices = [];
+    for (let index = 0; index < segments; index += 1) {
+      const angle = (index / segments) * Math.PI * 2;
+      const boundaryWeight = boundary[index];
+      const ringRipple =
+        Math.sin(angle * 4 + phaseB + ring * 0.8) * 0.018 +
+        Math.sin(angle * 7 + phaseC - ring * 0.42) * 0.012;
+      const edgeHeight = edgeHeights[index];
+      const y =
+        height * (1 - edgeWeight * 0.82) +
+        edgeHeight * edgeWeight +
+        height * ringRipple * (1 - edgeWeight * 0.6);
+      const [x, finalY, z] = transformPoint(angle, radiusScale, boundaryWeight, y);
+      const normalTilt = 0.18 * edgeWeight;
+      const [nx, ny, nz] = normalizeVec3(
+        -Math.cos(angle) * normalTilt,
+        1,
+        -Math.sin(angle) * normalTilt
+      );
+      const vertexIndex = positions.length / 3;
+      pushVec3(positions, x, Math.max(edgeHeight, finalY), z);
+      pushVec3(normals, nx, ny, nz);
+      ringIndices.push(vertexIndex);
+    }
+    topRings.push(ringIndices);
   }
 
+  const firstRing = topRings[0];
   for (let index = 0; index < segments; index += 1) {
     const next = (index + 1) % segments;
-    indices.push(centerTopIndex, topRing[index], topRing[next]);
-    indices.push(centerBottomIndex, bottomRing[next], bottomRing[index]);
-    indices.push(topRing[index], bottomRing[index], bottomRing[next]);
-    indices.push(topRing[index], bottomRing[next], topRing[next]);
+    indices.push(centerTopIndex, firstRing[index], firstRing[next]);
+  }
+  for (let ring = 1; ring < topRings.length; ring += 1) {
+    const inner = topRings[ring - 1];
+    const outer = topRings[ring];
+    for (let index = 0; index < segments; index += 1) {
+      const next = (index + 1) % segments;
+      indices.push(inner[index], outer[index], outer[next]);
+      indices.push(inner[index], outer[next], inner[next]);
+    }
+  }
+
+  const outerTop = topRings[topRings.length - 1];
+  let previousBevel = outerTop;
+  for (let bevel = 1; bevel <= bevelCount; bevel += 1) {
+    const t = bevel / bevelCount;
+    const ringIndices = [];
+    for (let index = 0; index < segments; index += 1) {
+      const angle = (index / segments) * Math.PI * 2;
+      const radiusScale = 1 + 0.035 * smoothstep(0, 1, t);
+      const y = edgeHeights[index] * (1 - smoothstep(0, 1, t));
+      const [x, finalY, z] = transformPoint(angle, radiusScale, boundary[index], y);
+      const [nx, ny, nz] = normalizeVec3(Math.cos(angle), 0.24 * (1 - t), Math.sin(angle));
+      const vertexIndex = positions.length / 3;
+      pushVec3(positions, x, finalY, z);
+      pushVec3(normals, nx, ny, nz);
+      ringIndices.push(vertexIndex);
+    }
+    for (let index = 0; index < segments; index += 1) {
+      const next = (index + 1) % segments;
+      indices.push(previousBevel[index], ringIndices[index], ringIndices[next]);
+      indices.push(previousBevel[index], ringIndices[next], previousBevel[next]);
+    }
+    previousBevel = ringIndices;
   }
 };
 
@@ -92,9 +174,11 @@ const makeGeometry = (variantSeed) => {
       radiusX: radiusBase * (1.15 + random() * 0.55),
       radiusZ: radiusBase * (0.72 + random() * 0.42),
       height: 0.026 + random() * 0.03,
-      segments: 18 + Math.floor(random() * 8),
+      segments: 42 + Math.floor(random() * 14),
+      rings: 5 + Math.floor(random() * 2),
+      bevels: 4,
       rotation: random() * Math.PI,
-      roughness: 0.34 + random() * 0.34
+      roughness: 0.24 + random() * 0.26
     });
   }
 
@@ -107,9 +191,11 @@ const makeGeometry = (variantSeed) => {
       radiusX: radiusBase * (1.1 + random() * 0.8),
       radiusZ: radiusBase * (0.72 + random() * 0.44),
       height: 0.038 + random() * 0.035,
-      segments: 10 + Math.floor(random() * 6),
+      segments: 24 + Math.floor(random() * 10),
+      rings: 4,
+      bevels: 3,
       rotation: random() * Math.PI,
-      roughness: 0.25 + random() * 0.45
+      roughness: 0.18 + random() * 0.24
     });
   }
 
