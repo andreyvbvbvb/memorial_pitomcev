@@ -5,7 +5,8 @@ import { useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { DirtSlotPlacement } from "../lib/dirt-models";
 
-const MAX_DIRT_FLAT_SIZE = 0.25;
+const MAX_TERRAIN_DIRT_SIZE = 0.7;
+const MAX_HOUSE_DIRT_SIZE = 0.5;
 
 type Props = {
   terrain: THREE.Object3D;
@@ -76,9 +77,12 @@ function DirtSlotAttachment({
       const box = new THREE.Box3().setFromObject(dirt);
       const size = new THREE.Vector3();
       box.getSize(size);
-      const maxFlatSize = Math.max(size.x, size.z);
-      if (Number.isFinite(maxFlatSize) && maxFlatSize > MAX_DIRT_FLAT_SIZE) {
-        dirt.scale.multiplyScalar(MAX_DIRT_FLAT_SIZE / maxFlatSize);
+      const maxSize =
+        placement.slotIndex <= 2 ? Math.max(size.x, size.z) : Math.max(size.x, size.y, size.z);
+      const maxAllowedSize =
+        placement.slotIndex <= 2 ? MAX_TERRAIN_DIRT_SIZE : MAX_HOUSE_DIRT_SIZE;
+      if (Number.isFinite(maxSize) && maxSize > maxAllowedSize) {
+        dirt.scale.multiplyScalar(maxAllowedSize / maxSize);
         dirt.updateMatrixWorld(true);
       }
       dirt.visible = true;
