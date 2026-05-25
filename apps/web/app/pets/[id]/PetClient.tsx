@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { API_BASE } from "../../../lib/config";
-import { buildDirtSlotPlacements } from "../../../lib/dirt-models";
+import {
+  buildDirtSlotPlacements,
+  readActiveDirtSlots,
+  type DirtSlotName
+} from "../../../lib/dirt-models";
 import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../lib/map-preview";
 import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
@@ -242,6 +246,21 @@ const readPreviewDustStage = (sceneJson?: Record<string, unknown> | null) =>
 const readPreviewDustUpdatedAt = (sceneJson?: Record<string, unknown> | null) =>
   typeof sceneJson?.previewDustUpdatedAt === "string" ? sceneJson.previewDustUpdatedAt : null;
 
+const readPreviewDirtSlots = (sceneJson?: Record<string, unknown> | null) =>
+  sceneJson && Array.isArray(sceneJson.previewDirtSlots)
+    ? readActiveDirtSlots({ activeDirtSlots: sceneJson.previewDirtSlots })
+    : null;
+
+const areDirtSlotsEqual = (
+  left: readonly DirtSlotName[] | null | undefined,
+  right: readonly DirtSlotName[]
+) => {
+  if (!left || left.length !== right.length) {
+    return false;
+  }
+  return left.every((slot, index) => slot === right[index]);
+};
+
 export default function PetClient({ id, mode = "view" }: Props) {
   const isEditMode = mode === "edit";
   const isPortraitLayout = usePortraitLayout();
@@ -329,12 +348,18 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
-  const handleCleanDirt = useCallback(async () => {
+  const activeDirtSlots = useMemo(
+    () => readActiveDirtSlots(pet?.memorial?.sceneJson, dirtLevel),
+    [dirtLevel, pet?.memorial?.sceneJson]
+  );
+  const handleCleanDirt = useCallback(async (slotName?: DirtSlotName) => {
     try {
       setCleanSuccess(null);
       const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
         method: "PATCH",
-        credentials: "include"
+        credentials: "include",
+        headers: slotName ? { "Content-Type": "application/json" } : undefined,
+        body: slotName ? JSON.stringify({ slot: slotName }) : undefined
       });
       if (!response.ok) {
         throw new Error("Не удалось очистить мемориал");
@@ -342,8 +367,20 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const data = (await response.json()) as {
         dustStage?: number | null;
         dustUpdatedAt?: string | null;
+        activeDirtSlots?: DirtSlotName[] | null;
+        dirtNextSlotIndex?: number | null;
+        remainingDirtSlots?: number | null;
+        removedCount?: number | null;
       };
       const nextStage = typeof data.dustStage === "number" ? data.dustStage : 0;
+      const nextSlots = readActiveDirtSlots(
+        { activeDirtSlots: data.activeDirtSlots ?? [] },
+        nextStage
+      );
+      const remaining =
+        typeof data.remainingDirtSlots === "number"
+          ? data.remainingDirtSlots
+          : nextSlots.length;
       setDirtLevel(nextStage);
       setPet((prev) =>
         prev?.memorial
@@ -353,21 +390,32 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 ...prev.memorial,
                 dustStage: nextStage,
                 dustUpdatedAt: data.dustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null,
+                sceneJson: {
+                  ...(prev.memorial.sceneJson ?? {}),
+                  activeDirtSlots: nextSlots,
+                  ...(typeof data.dirtNextSlotIndex === "number"
+                    ? { dirtNextSlotIndex: data.dirtNextSlotIndex }
+                    : {})
+                },
                 needsPreviewRefresh: true
               }
             }
           : prev
       );
-      setCleanSuccess("Спасибо, что поддерживаете мемориал в чистоте.");
+      setCleanSuccess(
+        remaining > 0
+          ? `Спасибо, что чистите мемориал. Осталось пятен: ${remaining}.`
+          : "Спасибо, что поддерживаете мемориал в чистоте."
+      );
     } catch {
-      setDirtLevel(0);
+      setCleanSuccess("Не удалось очистить мемориал. Попробуйте еще раз.");
     }
   }, [apiUrl, id]);
 
   const handleMemorialDetailClick = useCallback(
     (detail: { slot?: string }) => {
       if (detail.slot && detail.slot.startsWith("dirt_slot")) {
-        handleCleanDirt();
+        handleCleanDirt(detail.slot as DirtSlotName);
       }
     },
     [handleCleanDirt]
@@ -1308,6 +1356,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         url?: string;
         previewDustStage?: number | null;
         previewDustUpdatedAt?: string | null;
+        previewDirtSlots?: DirtSlotName[] | null;
       };
       setPet((prev) =>
         prev?.memorial
@@ -1324,7 +1373,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       ? data.previewDustStage
                       : prev.memorial.dustStage ?? dirtLevel,
                   previewDustUpdatedAt:
-                    data.previewDustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null
+                    data.previewDustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null,
+                  previewDirtSlots: data.previewDirtSlots ?? activeDirtSlots
                 }
               }
             }
@@ -1333,7 +1383,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     } finally {
       previewRefreshInFlightRef.current = false;
     }
-  }, [apiUrl, capturePreviewImage, dirtLevel, id]);
+  }, [activeDirtSlots, apiUrl, capturePreviewImage, dirtLevel, id]);
 
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot || !selectedDuration) {
@@ -1760,10 +1810,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const previewDirtStage = readPreviewDustStage(pet?.memorial?.sceneJson);
   const previewDirtUpdatedAt = readPreviewDustUpdatedAt(pet?.memorial?.sceneJson);
+  const previewDirtSlots = readPreviewDirtSlots(pet?.memorial?.sceneJson);
   const currentDirtUpdatedAt = pet?.memorial?.dustUpdatedAt ?? null;
   const dirtPreviewNeedsRefresh =
     Boolean(pet?.memorial) &&
-    (previewDirtStage !== dirtLevel || previewDirtUpdatedAt !== currentDirtUpdatedAt);
+    (previewDirtStage !== dirtLevel ||
+      previewDirtUpdatedAt !== currentDirtUpdatedAt ||
+      !areDirtSlotsEqual(previewDirtSlots, activeDirtSlots));
 
   useEffect(() => {
     if (
@@ -1822,9 +1875,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
       buildDirtSlotPlacements({
         houseId: effectiveHouseId,
         level: dirtLevel,
+        activeSlots: activeDirtSlots,
         seed: `${pet?.id ?? id}:${pet?.memorial?.dustUpdatedAt ?? pet?.createdAt ?? ""}`
       }),
-    [dirtLevel, effectiveHouseId, id, pet?.createdAt, pet?.id, pet?.memorial?.dustUpdatedAt]
+    [activeDirtSlots, dirtLevel, effectiveHouseId, id, pet?.createdAt, pet?.id, pet?.memorial?.dustUpdatedAt]
   );
   const appearanceReviewItems = useMemo(() => {
     const items: { label: string; value: string }[] = [
@@ -2489,7 +2543,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     </div>
                     <button
                       type="button"
-                      onClick={handleCleanDirt}
+                      onClick={() => handleCleanDirt()}
                       disabled={dirtLevel === 0}
                       className={`mt-3 w-full ${primaryActionClass} ${
                         dirtLevel === 0

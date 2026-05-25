@@ -22,6 +22,7 @@ import { AuthGuard } from "../auth/auth.guard";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
 import { AuthService } from "../auth/auth.service";
 import { CurrentUser } from "../auth/current-user.decorator";
+import { CleanMemorialDto } from "./dto/clean-memorial.dto";
 import { CreatePetDto } from "./dto/create-pet.dto";
 import { ExtendMemorialDto } from "./dto/extend-memorial.dto";
 import { SaveMemorialDraftDto } from "./dto/save-memorial-draft.dto";
@@ -169,8 +170,12 @@ export class PetsController {
 
   @Patch(":id/memorial/clean")
   @UseGuards(AuthGuard)
-  cleanMemorial(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.petsService.cleanMemorial(id, user);
+  cleanMemorial(
+    @Param("id") id: string,
+    @Body() dto: CleanMemorialDto = {},
+    @CurrentUser() user: AuthenticatedUser
+  ) {
+    return this.petsService.cleanMemorial(id, user, dto.slot);
   }
 
   @Patch(":id/memorial/extend")

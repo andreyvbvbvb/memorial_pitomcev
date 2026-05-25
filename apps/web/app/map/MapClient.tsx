@@ -45,7 +45,11 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../../lib/memorial-models";
-import { buildDirtSlotPlacements, type DirtSlotPlacement } from "../../lib/dirt-models";
+import {
+  buildDirtSlotPlacements,
+  readActiveDirtSlots,
+  type DirtSlotPlacement
+} from "../../lib/dirt-models";
 import DirtSlotAttachments from "../../components/DirtSlotAttachments";
 
 ensureDracoLoader();
@@ -1777,6 +1781,10 @@ export default function MapClient() {
       dirtSlots: buildDirtSlotPlacements({
         houseId: memorial?.houseId,
         level: memorial?.dustStage ?? 0,
+        activeSlots: readActiveDirtSlots(
+          memorial?.sceneJson as Record<string, unknown> | null,
+          memorial?.dustStage ?? 0
+        ),
         seed: `${marker.petId}:${memorial?.dustUpdatedAt ?? memorial?.createdAt ?? ""}`
       }),
       soul: soulSettings

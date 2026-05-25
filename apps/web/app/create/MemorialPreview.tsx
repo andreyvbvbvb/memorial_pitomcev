@@ -148,15 +148,9 @@ type HousePresentation = {
 const buildSceneSignature = (assets: SceneAssets) => {
   const parts = assets.parts ?? [];
   const gifts = assets.gifts ?? [];
-  const dirtUrls = assets.dirtUrls ?? [];
-  const dirtSlots = assets.dirtSlots ?? [];
   const colors = assets.colors ?? {};
   const partsKey = parts.map((part) => `${part.slot}:${part.url}`).join("|");
   const giftsKey = gifts.map((gift) => `${gift.slot}:${gift.url}:${gift.size ?? ""}`).join("|");
-  const dirtKey = dirtUrls.join("|");
-  const dirtSlotsKey = dirtSlots
-    .map((placement) => `${placement.slot}:${placement.url}`)
-    .join("|");
   const colorsKey = Object.entries(colors)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}:${value}`)
@@ -166,10 +160,6 @@ const buildSceneSignature = (assets: SceneAssets) => {
     assets.houseUrl ?? "",
     assets.houseId ?? "",
     partsKey,
-    assets.dirtUrl ?? "",
-    dirtKey,
-    dirtSlotsKey,
-    String(assets.dirtLevel ?? ""),
     giftsKey,
     colorsKey
   ].join("::");
@@ -1483,10 +1473,13 @@ function TerrainWithHouse({
         state.moved = true;
       }
     }
-    if (!enableHoverHighlight) {
+    const hoverTarget = event?.intersections?.[0]?.object ?? null;
+    const hoverSlot = findDetailSlot(hoverTarget);
+    const shouldHighlightDirt = Boolean(hoverSlot?.startsWith("dirt_slot"));
+    if (!enableHoverHighlight && !shouldHighlightDirt) {
+      clearHoverHighlight();
       return;
     }
-    const hoverTarget = event?.intersections?.[0]?.object ?? null;
     applyHoverHighlight(hoverTarget);
   };
 
@@ -1766,6 +1759,7 @@ export default function MemorialPreview({
 
   useEffect(() => {
     if (currentSignature === activeSignature) {
+      setActiveAssets(currentAssets);
       if (pendingRef.current) {
         pendingRef.current = null;
         pendingHousePresentationRef.current = null;

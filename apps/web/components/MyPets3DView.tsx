@@ -24,7 +24,11 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../lib/memorial-models";
-import { buildDirtSlotPlacements, type DirtSlotPlacement } from "../lib/dirt-models";
+import {
+  buildDirtSlotPlacements,
+  readActiveDirtSlots,
+  type DirtSlotPlacement
+} from "../lib/dirt-models";
 import DirtSlotAttachments from "./DirtSlotAttachments";
 
 ensureDracoLoader();
@@ -394,9 +398,20 @@ function MemorialInstance({
       buildDirtSlotPlacements({
         houseId: memorial?.houseId,
         level: memorial?.dustStage ?? 0,
+        activeSlots: readActiveDirtSlots(
+          memorial?.sceneJson as Record<string, unknown> | null,
+          memorial?.dustStage ?? 0
+        ),
         seed: `${item.pet.id}:${memorial?.dustUpdatedAt ?? memorial?.createdAt ?? ""}`
       }),
-    [item.pet.id, memorial?.createdAt, memorial?.dustStage, memorial?.dustUpdatedAt, memorial?.houseId]
+    [
+      item.pet.id,
+      memorial?.createdAt,
+      memorial?.dustStage,
+      memorial?.dustUpdatedAt,
+      memorial?.houseId,
+      memorial?.sceneJson
+    ]
   );
   const soulSettings = readSoulSettings(memorial?.sceneJson as Record<string, unknown> | null);
   const parts = useMemo(
