@@ -38,6 +38,8 @@ function DirtSlotAttachment({
     const anchor = explicitAnchor ?? fallbackAnchor;
     const rootForFallback = placement.slotIndex <= 2 ? terrain : house;
     const usedFallback = !explicitAnchor;
+    let firstFrameId: number | null = null;
+    let secondFrameId: number | null = null;
     if (usedFallback) {
       const basePosition = new THREE.Vector3();
       if (placement.slotIndex <= 2) {
@@ -63,17 +65,34 @@ function DirtSlotAttachment({
     dirt.position.set(0, 0, 0);
     dirt.rotation.set(0, 0, 0);
     dirt.scale.set(1, 1, 1);
+    dirt.visible = false;
     anchor.add(dirt);
-    dirt.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(dirt);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const maxFlatSize = Math.max(size.x, size.z);
-    if (Number.isFinite(maxFlatSize) && maxFlatSize > MAX_DIRT_FLAT_SIZE) {
-      dirt.scale.multiplyScalar(MAX_DIRT_FLAT_SIZE / maxFlatSize);
+    const normalizeSize = () => {
+      dirt.scale.set(1, 1, 1);
+      terrain.updateMatrixWorld(true);
+      house.updateMatrixWorld(true);
+      anchor.updateMatrixWorld(true);
       dirt.updateMatrixWorld(true);
-    }
+      const box = new THREE.Box3().setFromObject(dirt);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxFlatSize = Math.max(size.x, size.z);
+      if (Number.isFinite(maxFlatSize) && maxFlatSize > MAX_DIRT_FLAT_SIZE) {
+        dirt.scale.multiplyScalar(MAX_DIRT_FLAT_SIZE / maxFlatSize);
+        dirt.updateMatrixWorld(true);
+      }
+      dirt.visible = true;
+    };
+    firstFrameId = window.requestAnimationFrame(() => {
+      secondFrameId = window.requestAnimationFrame(normalizeSize);
+    });
     return () => {
+      if (firstFrameId !== null) {
+        window.cancelAnimationFrame(firstFrameId);
+      }
+      if (secondFrameId !== null) {
+        window.cancelAnimationFrame(secondFrameId);
+      }
       anchor.remove(dirt);
       if (usedFallback) {
         rootForFallback.remove(fallbackAnchor);

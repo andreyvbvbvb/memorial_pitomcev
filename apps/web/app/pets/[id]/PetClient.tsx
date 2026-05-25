@@ -1227,57 +1227,31 @@ export default function PetClient({ id, mode = "view" }: Props) {
       (controls?.object as THREE.PerspectiveCamera | undefined) ??
       (renderContext.camera as THREE.PerspectiveCamera | undefined);
     const perspectiveCamera = camera instanceof THREE.PerspectiveCamera ? camera : null;
-    const prevAspect = perspectiveCamera?.aspect ?? null;
-    const target = controls?.target as THREE.Vector3 | undefined;
-    let restore: (() => void) | null = null;
-    if (camera) {
-      const prevPos = camera.position.clone();
-      const prevTarget = target?.clone();
-      const baseTarget = new THREE.Vector3(0, 0.6, 0);
-      const basePosition = new THREE.Vector3(8, 5, 8);
-      const baseOffset = basePosition.sub(baseTarget);
-      const rotatedOffset = baseOffset.clone().applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        THREE.MathUtils.degToRad(-30)
-      );
-      rotatedOffset.multiplyScalar(0.84);
-      rotatedOffset.y -= 0.85;
-      const nextPos = baseTarget.clone().add(rotatedOffset);
-      const distance = nextPos.distanceTo(baseTarget);
-      const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
-      const nextTarget = baseTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
-      camera.position.copy(nextPos);
-      if (target && controls) {
-        controls.target.copy(nextTarget);
-        controls.update();
-      } else {
-        camera.lookAt(nextTarget);
-      }
-      if (perspectiveCamera) {
-        perspectiveCamera.aspect = width / height;
-        perspectiveCamera.updateProjectionMatrix();
-      }
-      restore = () => {
-        camera.position.copy(prevPos);
-        if (prevTarget && target && controls) {
-          controls.target.copy(prevTarget);
-          controls.update();
-        } else if (prevTarget) {
-          camera.lookAt(prevTarget);
-        }
-        if (perspectiveCamera && prevAspect !== null) {
-          perspectiveCamera.aspect = prevAspect;
-          perspectiveCamera.updateProjectionMatrix();
-        }
-      };
-      await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-      });
-    }
-    if (!camera) {
-      restore?.();
+    if (!perspectiveCamera) {
       return null;
     }
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+
+    const baseTarget = new THREE.Vector3(0, 0.6, 0);
+    const basePosition = new THREE.Vector3(8, 5, 8);
+    const baseOffset = basePosition.sub(baseTarget);
+    const rotatedOffset = baseOffset.clone().applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      THREE.MathUtils.degToRad(-30)
+    );
+    rotatedOffset.multiplyScalar(0.84);
+    rotatedOffset.y -= 0.85;
+    const nextPos = baseTarget.clone().add(rotatedOffset);
+    const distance = nextPos.distanceTo(baseTarget);
+    const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
+    const nextTarget = baseTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
+    const captureCamera = perspectiveCamera.clone();
+    captureCamera.aspect = width / height;
+    captureCamera.position.copy(nextPos);
+    captureCamera.lookAt(nextTarget);
+    captureCamera.updateProjectionMatrix();
 
     const { gl, scene } = renderContext;
     const renderTarget = new THREE.WebGLRenderTarget(width, height, {
@@ -1289,7 +1263,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     gl.autoClear = true;
     gl.setRenderTarget(renderTarget);
     gl.clear();
-    gl.render(scene, camera);
+    gl.render(scene, captureCamera);
     const buffer = new Uint8Array(width * height * 4);
     gl.readRenderTargetPixels(renderTarget, 0, 0, width, height, buffer);
     gl.setRenderTarget(prevTarget);
@@ -1301,7 +1275,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      restore?.();
       return null;
     }
     const toSrgbByte = (value: number) => {
@@ -1326,7 +1299,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
     }
     ctx.putImageData(imageData, 0, 0);
-    restore?.();
     return new Promise<Blob | null>((resolve) => {
       canvas.toBlob((blob) => resolve(blob), "image/png");
     });
