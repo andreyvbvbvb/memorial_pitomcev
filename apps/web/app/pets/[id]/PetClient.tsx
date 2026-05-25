@@ -1260,6 +1260,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
     });
     const prevTarget = gl.getRenderTarget();
     const prevAutoClear = gl.autoClear;
+    const prevViewport = new THREE.Vector4();
+    const prevScissor = new THREE.Vector4();
+    gl.getViewport(prevViewport);
+    gl.getScissor(prevScissor);
+    const prevScissorTest = gl.getScissorTest();
     gl.autoClear = true;
     gl.setRenderTarget(renderTarget);
     gl.clear();
@@ -1267,6 +1272,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     const buffer = new Uint8Array(width * height * 4);
     gl.readRenderTargetPixels(renderTarget, 0, 0, width, height, buffer);
     gl.setRenderTarget(prevTarget);
+    gl.setViewport(prevViewport);
+    gl.setScissor(prevScissor);
+    gl.setScissorTest(prevScissorTest);
     gl.autoClear = prevAutoClear;
     renderTarget.dispose();
 
@@ -1799,9 +1807,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ) {
       return;
     }
-    void uploadMapPreview().catch(() => {
-      // Preview refresh is best-effort; the server flag remains true until a later successful upload.
-    });
+    const timer = window.setTimeout(() => {
+      void uploadMapPreview().catch(() => {
+        // Preview refresh is best-effort; the server flag remains true until a later successful upload.
+      });
+    }, 900);
+    return () => window.clearTimeout(timer);
   }, [
     dirtPreviewNeedsRefresh,
     giftPreviewEnabled,

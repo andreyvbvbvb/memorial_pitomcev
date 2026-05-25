@@ -7,7 +7,7 @@ import type { DirtSlotPlacement } from "../lib/dirt-models";
 
 const MAX_TERRAIN_DIRT_SIZE = 0.7;
 const MAX_HOUSE_DIRT_SIZE = 0.5;
-const DIRT_MATERIAL_COLOR = "#6b3f23";
+const DIRT_MATERIAL_COLOR = "#8a6c4d";
 
 type Props = {
   terrain: THREE.Object3D;

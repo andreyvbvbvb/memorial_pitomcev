@@ -521,6 +521,7 @@ function GiftInstance({
 }
 
 function SoulAnchor({
+  root,
   terrain,
   house,
   color,
@@ -529,6 +530,7 @@ function SoulAnchor({
   enabled,
   active
 }: {
+  root: THREE.Object3D | null;
   terrain: THREE.Object3D;
   house: THREE.Object3D;
   color?: string | null;
@@ -546,18 +548,41 @@ function SoulAnchor({
   } | null>(null);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !root) {
       setAnchor(null);
       return;
     }
+    root.updateMatrixWorld(true);
+    terrain.updateMatrixWorld(true);
+
+    const toRootLocal = (value: [number, number, number]): [number, number, number] => {
+      const point = new THREE.Vector3(value[0], value[1], value[2]);
+      terrain.localToWorld(point);
+      root.worldToLocal(point);
+      return [point.x, point.y, point.z];
+    };
+
+    const terrainFloorY = resolveSoulSurfaceFloorY(terrain, house);
+    const floorPoint = new THREE.Vector3(0, terrainFloorY, 0);
+    terrain.localToWorld(floorPoint);
+    root.worldToLocal(floorPoint);
+    const orbitCenter = resolveSoulOrbitCenterPosition(terrain, house);
+    const orbitRadius = resolveSoulOrbitRadius(terrain);
+    const orbitCenterPoint = new THREE.Vector3(orbitCenter[0], orbitCenter[1], orbitCenter[2]);
+    const orbitEdgePoint = orbitCenterPoint.clone().add(new THREE.Vector3(orbitRadius, 0, 0));
+    terrain.localToWorld(orbitCenterPoint);
+    terrain.localToWorld(orbitEdgePoint);
+    root.worldToLocal(orbitCenterPoint);
+    root.worldToLocal(orbitEdgePoint);
+
     setAnchor({
-      position: resolveSoulAnchorPosition(terrain, house),
-      avoidCenter: resolveSoulObstacleCenterPosition(terrain, house),
-      orbitCenter: resolveSoulOrbitCenterPosition(terrain, house),
-      orbitRadius: resolveSoulOrbitRadius(terrain),
-      floorY: resolveSoulSurfaceFloorY(terrain, house)
+      position: toRootLocal(resolveSoulAnchorPosition(terrain, house)),
+      avoidCenter: toRootLocal(resolveSoulObstacleCenterPosition(terrain, house)),
+      orbitCenter: [orbitCenterPoint.x, orbitCenterPoint.y, orbitCenterPoint.z],
+      orbitRadius: orbitCenterPoint.distanceTo(orbitEdgePoint),
+      floorY: floorPoint.y
     });
-  }, [enabled, terrain, house]);
+  }, [enabled, root, terrain, house]);
 
   if (!enabled || !anchor) {
     return null;
@@ -590,6 +615,10 @@ function TerrainWithHouseScene({
   tone?: number;
   active?: boolean;
 }) {
+  const [sceneRoot, setSceneRoot] = useState<THREE.Group | null>(null);
+  const handleSceneRoot = useCallback((node: THREE.Group | null) => {
+    setSceneRoot(node);
+  }, []);
   const { scene: terrainScene } = useGLTF(data.terrainUrl);
   const { scene: houseScene } = useGLTF(data.houseUrl);
   const terrain = useMemo(() => {
@@ -631,7 +660,7 @@ function TerrainWithHouseScene({
   }, [terrain, house, tone]);
 
   return (
-    <Group rotation={[0, MAP_PREVIEW_ROTATION_Y, 0]}>
+    <Group ref={handleSceneRoot} rotation={[0, MAP_PREVIEW_ROTATION_Y, 0]}>
       <Primitive object={terrain} />
       {data.parts.map((part) => (
         <PartInstance
@@ -649,6 +678,7 @@ function TerrainWithHouseScene({
       <DirtSlotAttachments terrain={terrain} house={house} placements={data.dirtSlots ?? []} />
       {data.soul?.enabled !== false ? (
         <SoulAnchor
+          root={sceneRoot}
           terrain={terrain}
           house={house}
           color={data.soul?.color}
