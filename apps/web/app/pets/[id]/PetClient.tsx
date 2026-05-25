@@ -2155,8 +2155,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-1.5 right-1.5 top-[calc(33dvh+0.35rem)] bottom-[calc(3.45rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
-    : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4rem)] z-40 ${panelBaseClass} flex w-[320px] max-w-[90vw] flex-col overflow-hidden sm:w-[380px]`;
+    ? `fixed left-[3%] right-[3%] top-[calc(33dvh+0.35rem)] bottom-[calc(4.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
+    : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
@@ -2204,6 +2204,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "text-[9px] font-black uppercase tracking-[0.16em] text-[#d3a27f]"
     : "text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]";
   const floatingTitleNameClass = isPortraitLayout
+    ? "truncate text-[2rem] leading-none font-black text-[#5d4037]"
+    : "text-[2.25rem] leading-none font-black text-[#5d4037]";
+  const editFloatingTitleNameClass = isPortraitLayout
     ? "mt-0.5 truncate text-base font-black text-[#5d4037]"
     : "mt-1 text-lg font-black text-[#5d4037]";
   const floatingTitleMetaClass = isPortraitLayout
@@ -2396,9 +2399,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
           <>
         <div className={floatingTitleWrapClass}>
           <div className={floatingTitleCardClass}>
-            <div className={floatingTitleKickerClass}>
-              Мемориал
-            </div>
             <div className={floatingTitleNameClass}>{pet.name}</div>
             <div className={floatingTitleMetaClass}>{dateRange}</div>
           </div>
@@ -2982,7 +2982,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 <div className={floatingTitleKickerClass}>
                   Редактирование
                 </div>
-                <div className={floatingTitleNameClass}>{pet.name}</div>
+                <div className={editFloatingTitleNameClass}>{pet.name}</div>
                 <div className={floatingTitleMetaClass}>
                   Меняется только домик и его детали
                 </div>

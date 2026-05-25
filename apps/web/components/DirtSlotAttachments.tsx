@@ -7,6 +7,7 @@ import type { DirtSlotPlacement } from "../lib/dirt-models";
 
 const MAX_TERRAIN_DIRT_SIZE = 0.7;
 const MAX_HOUSE_DIRT_SIZE = 0.5;
+const DIRT_MATERIAL_COLOR = "#6b3f23";
 
 type Props = {
   terrain: THREE.Object3D;
@@ -24,7 +25,11 @@ function DirtSlotAttachment({
   placement: DirtSlotPlacement;
 }) {
   const { scene } = useGLTF(placement.url);
-  const dirt = useMemo(() => scene.clone(true), [scene]);
+  const dirt = useMemo(() => {
+    const cloned = scene.clone(true);
+    applyDirtMaterial(cloned);
+    return cloned;
+  }, [scene]);
   const preferredRoot = placement.slotIndex <= 2 ? terrain : house;
   const fallbackRoot = placement.slotIndex <= 2 ? house : terrain;
   const explicitAnchor =
@@ -105,6 +110,45 @@ function DirtSlotAttachment({
   }, [dirt, explicitAnchor, fallbackAnchor, house, placement.modelId, placement.slotIndex, terrain]);
 
   return null;
+}
+
+function applyDirtMaterial(root: THREE.Object3D) {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) {
+      return;
+    }
+
+    const replaceMaterial = (material: THREE.Material) => {
+      const next = material.clone() as THREE.Material & {
+        color?: THREE.Color;
+        map?: THREE.Texture | null;
+        roughness?: number;
+        metalness?: number;
+        emissive?: THREE.Color;
+        emissiveIntensity?: number;
+      };
+      next.color?.set(DIRT_MATERIAL_COLOR);
+      if ("map" in next) {
+        next.map = null;
+      }
+      if (typeof next.roughness === "number") {
+        next.roughness = 0.86;
+      }
+      if (typeof next.metalness === "number") {
+        next.metalness = 0;
+      }
+      next.emissive?.set("#120905");
+      if (typeof next.emissiveIntensity === "number") {
+        next.emissiveIntensity = 0.04;
+      }
+      next.needsUpdate = true;
+      return next;
+    };
+
+    child.material = Array.isArray(child.material)
+      ? child.material.map(replaceMaterial)
+      : replaceMaterial(child.material);
+  });
 }
 
 export default function DirtSlotAttachments({ terrain, house, placements }: Props) {
