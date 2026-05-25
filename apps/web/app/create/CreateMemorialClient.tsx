@@ -3420,7 +3420,13 @@ export default function CreateMemorialClient({
   );
 
   const renderBaseInfoForm = (centered = false) => (
-    <div className={`grid gap-4 ${centered ? "text-center justify-items-center" : ""}`}>
+    <div
+      className={
+        centered
+          ? "flex h-full min-h-[360px] w-full flex-col justify-between gap-4 text-center"
+          : "grid gap-4"
+      }
+    >
       <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
         {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
         {centered ? "Имя питомца" : null}
@@ -4212,12 +4218,12 @@ export default function CreateMemorialClient({
                     <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
                     <div className="relative grid w-full items-stretch gap-4 md:grid-cols-[minmax(280px,0.9fr)_minmax(390px,1fr)] lg:gap-5">
                       {renderSoulPicker()}
-                      <div className="relative flex w-full flex-col rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
-                        <div className="grid gap-3 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
+                      <div className="relative flex h-full w-full flex-col justify-between gap-5 rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
+                        <div className="flex min-h-0 flex-1 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
                           {renderBaseInfoForm(true)}
                         </div>
                         {renderNavButtons(
-                          "mt-auto pt-6",
+                          "shrink-0 pt-2",
                           "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
                         )}
                       </div>
