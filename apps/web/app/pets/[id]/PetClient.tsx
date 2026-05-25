@@ -186,6 +186,7 @@ type Pet = {
     sceneJson: Record<string, unknown> | null;
     dustStage?: number | null;
     dustUpdatedAt?: string | null;
+    createdAt?: string | null;
     activeUntil?: string | null;
     needsPreviewRefresh?: boolean | null;
   } | null;
@@ -234,6 +235,12 @@ type Props = {
   id: string;
   mode?: "view" | "edit";
 };
+
+const readPreviewDustStage = (sceneJson?: Record<string, unknown> | null) =>
+  typeof sceneJson?.previewDustStage === "number" ? sceneJson.previewDustStage : null;
+
+const readPreviewDustUpdatedAt = (sceneJson?: Record<string, unknown> | null) =>
+  typeof sceneJson?.previewDustUpdatedAt === "string" ? sceneJson.previewDustUpdatedAt : null;
 
 export default function PetClient({ id, mode = "view" }: Props) {
   const isEditMode = mode === "edit";
@@ -345,7 +352,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
               memorial: {
                 ...prev.memorial,
                 dustStage: nextStage,
-                dustUpdatedAt: data.dustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null
+                dustUpdatedAt: data.dustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null,
+                needsPreviewRefresh: true
               }
             }
           : prev
@@ -1296,7 +1304,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
       if (!response.ok) {
         throw new Error("Не удалось обновить обложку карты");
       }
-      const data = (await response.json()) as { url?: string };
+      const data = (await response.json()) as {
+        url?: string;
+        previewDustStage?: number | null;
+        previewDustUpdatedAt?: string | null;
+      };
       setPet((prev) =>
         prev?.memorial
           ? {
@@ -1306,7 +1318,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 needsPreviewRefresh: false,
                 sceneJson: {
                   ...(prev.memorial.sceneJson ?? {}),
-                  ...(data.url ? { previewImageUrl: data.url } : {})
+                  ...(data.url ? { previewImageUrl: data.url } : {}),
+                  previewDustStage:
+                    typeof data.previewDustStage === "number"
+                      ? data.previewDustStage
+                      : prev.memorial.dustStage ?? dirtLevel,
+                  previewDustUpdatedAt:
+                    data.previewDustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null
                 }
               }
             }
@@ -1315,7 +1333,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     } finally {
       previewRefreshInFlightRef.current = false;
     }
-  }, [apiUrl, capturePreviewImage, id]);
+  }, [apiUrl, capturePreviewImage, dirtLevel, id]);
 
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot || !selectedDuration) {
@@ -1740,10 +1758,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
   };
 
+  const previewDirtStage = readPreviewDustStage(pet?.memorial?.sceneJson);
+  const previewDirtUpdatedAt = readPreviewDustUpdatedAt(pet?.memorial?.sceneJson);
+  const currentDirtUpdatedAt = pet?.memorial?.dustUpdatedAt ?? null;
+  const dirtPreviewNeedsRefresh =
+    Boolean(pet?.memorial) &&
+    (previewDirtStage !== dirtLevel || previewDirtUpdatedAt !== currentDirtUpdatedAt);
+
   useEffect(() => {
     if (
       !previewContextReady ||
-      !pet?.memorial?.needsPreviewRefresh ||
+      (!pet?.memorial?.needsPreviewRefresh && !dirtPreviewNeedsRefresh) ||
       giftPreviewEnabled ||
       selectedGiftId
     ) {
@@ -1752,7 +1777,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
     void uploadMapPreview().catch(() => {
       // Preview refresh is best-effort; the server flag remains true until a later successful upload.
     });
-  }, [giftPreviewEnabled, pet?.id, pet?.memorial?.needsPreviewRefresh, previewContextReady, selectedGiftId, uploadMapPreview]);
+  }, [
+    dirtPreviewNeedsRefresh,
+    giftPreviewEnabled,
+    pet?.id,
+    pet?.memorial?.needsPreviewRefresh,
+    previewContextReady,
+    selectedGiftId,
+    uploadMapPreview
+  ]);
 
   const starSizeOptions: { id: GiftSize; label: string; helper: string }[] = [
     { id: "s", label: "S", helper: "Маленькая" },

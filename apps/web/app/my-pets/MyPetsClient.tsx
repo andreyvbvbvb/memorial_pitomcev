@@ -36,6 +36,9 @@ type Pet = {
     environmentId: string | null;
     houseId: string | null;
     sceneJson: Record<string, unknown> | null;
+    dustStage?: number | null;
+    dustUpdatedAt?: string | null;
+    createdAt?: string | null;
   } | null;
 };
 

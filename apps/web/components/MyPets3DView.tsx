@@ -24,6 +24,8 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../lib/memorial-models";
+import { buildDirtSlotPlacements, type DirtSlotPlacement } from "../lib/dirt-models";
+import DirtSlotAttachments from "./DirtSlotAttachments";
 
 ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
@@ -60,6 +62,9 @@ type MemorialScene = {
   environmentId: string | null;
   houseId: string | null;
   sceneJson: Record<string, unknown> | null;
+  dustStage?: number | null;
+  dustUpdatedAt?: string | null;
+  createdAt?: string | null;
 };
 
 export type MyPets3DViewPet = {
@@ -384,6 +389,15 @@ function MemorialInstance({
     parts?: SceneParts;
     colors?: Record<string, string>;
   };
+  const dirtSlots = useMemo<DirtSlotPlacement[]>(
+    () =>
+      buildDirtSlotPlacements({
+        houseId: memorial?.houseId,
+        level: memorial?.dustStage ?? 0,
+        seed: `${item.pet.id}:${memorial?.dustUpdatedAt ?? memorial?.createdAt ?? ""}`
+      }),
+    [item.pet.id, memorial?.createdAt, memorial?.dustStage, memorial?.dustUpdatedAt, memorial?.houseId]
+  );
   const soulSettings = readSoulSettings(memorial?.sceneJson as Record<string, unknown> | null);
   const parts = useMemo(
     () =>
@@ -513,6 +527,7 @@ function MemorialInstance({
           houseId={memorial?.houseId}
         />
       ))}
+      <DirtSlotAttachments terrain={terrain} house={house} placements={dirtSlots} />
       <SoulAnchor
         root={root}
         terrain={terrain}

@@ -45,6 +45,8 @@ import {
   resolveBowlFoodModel,
   resolveBowlWaterModel
 } from "../../lib/memorial-models";
+import { buildDirtSlotPlacements, type DirtSlotPlacement } from "../../lib/dirt-models";
+import DirtSlotAttachments from "../../components/DirtSlotAttachments";
 
 ensureDracoLoader();
 import {
@@ -86,6 +88,9 @@ type PetDetail = {
     environmentId: string | null;
     houseId: string | null;
     sceneJson: Record<string, unknown> | null;
+    dustStage?: number | null;
+    dustUpdatedAt?: string | null;
+    createdAt?: string | null;
   } | null;
   gifts?: {
     id: string;
@@ -106,6 +111,7 @@ type MemorialSceneData = {
   parts: { slot: string; url: string }[];
   colors?: Record<string, string>;
   gifts?: { slot: string; url: string; size?: string | null }[];
+  dirtSlots?: DirtSlotPlacement[];
   soul?: {
     enabled: boolean;
     color: string;
@@ -636,6 +642,7 @@ function TerrainWithHouseScene({
       {data.gifts?.map((gift) => (
         <GiftInstance key={`${gift.slot}-${gift.url}`} terrain={terrain} slot={gift.slot} url={gift.url} size={gift.size} />
       ))}
+      <DirtSlotAttachments terrain={terrain} house={house} placements={data.dirtSlots ?? []} />
       {data.soul?.enabled !== false ? (
         <SoulAnchor
           terrain={terrain}
@@ -1767,6 +1774,11 @@ export default function MapClient() {
       parts,
       colors: sceneJson.colors ?? undefined,
       gifts: gifts.length > 0 ? gifts : undefined,
+      dirtSlots: buildDirtSlotPlacements({
+        houseId: memorial?.houseId,
+        level: memorial?.dustStage ?? 0,
+        seed: `${marker.petId}:${memorial?.dustUpdatedAt ?? memorial?.createdAt ?? ""}`
+      }),
       soul: soulSettings
     };
   }, [petCache]);

@@ -370,9 +370,10 @@ export class PetsService {
       if (nextStage !== pet.memorial.dustStage) {
         await this.prisma.memorial.update({
           where: { id: pet.memorial.id },
-          data: { dustStage: nextStage }
+          data: { dustStage: nextStage, needsPreviewRefresh: true }
         });
         pet.memorial.dustStage = nextStage;
+        pet.memorial.needsPreviewRefresh = true;
       }
     }
     return pet;
@@ -392,7 +393,8 @@ export class PetsService {
       where: { id: pet.memorial.id },
       data: {
         dustStage: 0,
-        dustUpdatedAt: now
+        dustUpdatedAt: now,
+        needsPreviewRefresh: true
       }
     });
     return { dustStage: memorial.dustStage, dustUpdatedAt: memorial.dustUpdatedAt };
@@ -655,7 +657,9 @@ export class PetsService {
         : {};
     const nextSceneJson: Prisma.InputJsonValue = {
       ...baseSceneJson,
-      previewImageUrl: url
+      previewImageUrl: url,
+      previewDustStage: memorial.dustStage,
+      previewDustUpdatedAt: memorial.dustUpdatedAt?.toISOString() ?? null
     };
     await this.prisma.memorial.update({
       where: { petId },
@@ -665,7 +669,11 @@ export class PetsService {
         previewUpdatedAt: new Date()
       }
     });
-    return { url };
+    return {
+      url,
+      previewDustStage: memorial.dustStage,
+      previewDustUpdatedAt: memorial.dustUpdatedAt?.toISOString() ?? null
+    };
   }
 
   async setPreviewPhoto(petId: string, photoId: string, viewer: AuthenticatedUser) {
