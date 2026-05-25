@@ -3419,94 +3419,124 @@ export default function CreateMemorialClient({
     </div>
   );
 
+  const renderNameField = (centered = false) => (
+    <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
+      {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
+      {centered ? "Имя питомца" : null}
+      <input
+        className={centered
+          ? `${centeredFieldClass} min-h-[52px]`
+          : overlayInputClass}
+        value={form.name}
+        onChange={(event) => handleChange("name", event.target.value)}
+        placeholder="Барсик"
+        required
+        aria-invalid={!form.name.trim()}
+        maxLength={80}
+      />
+    </label>
+  );
+
+  const renderSpeciesField = (centered = false) => (
+    <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
+      {!centered ? <span className={overlayLabelClass}>Вид питомца</span> : null}
+      {centered ? "Вид питомца" : null}
+      <select
+        className={centered
+          ? `${centeredFieldClass} min-h-[52px]`
+          : overlayInputClass}
+        value={form.species}
+        onChange={(event) => handleSpeciesChange(event.target.value)}
+      >
+        <option value="dog">Собака</option>
+        <option value="cat">Кошка</option>
+        <option value="bird">Птица</option>
+        <option value="rat">Крыса</option>
+        <option value="gryzun">Грызун</option>
+        <option value="fish">Рыбка</option>
+        <option value="other">Другое</option>
+      </select>
+    </label>
+  );
+
+  const renderBirthDateField = (centered = false) => (
+    <label
+      className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
+      onClick={() => openDatePicker(birthDateInputRef.current)}
+    >
+      {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
+      {centered ? "Дата рождения" : null}
+      <input
+        ref={birthDateInputRef}
+        type="date"
+        className={centered
+          ? centeredDateFieldClass(hasDateFieldError)
+          : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
+        value={form.birthDate}
+        onChange={(event) => handleChange("birthDate", event.target.value)}
+        max={form.deathDate || todayInputValue}
+        aria-invalid={hasDateFieldError}
+        style={centered ? centeredDateFieldStyle : undefined}
+      />
+    </label>
+  );
+
+  const renderDeathDateField = (centered = false) => (
+    <label
+      className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
+      onClick={() => openDatePicker(deathDateInputRef.current)}
+    >
+      {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
+      {centered ? "Дата ухода" : null}
+      <input
+        ref={deathDateInputRef}
+        type="date"
+        className={centered
+          ? centeredDateFieldClass(hasDateFieldError)
+          : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
+        value={form.deathDate}
+        onChange={(event) => handleChange("deathDate", event.target.value)}
+        min={form.birthDate || undefined}
+        max={todayInputValue}
+        aria-invalid={hasDateFieldError}
+        style={centered ? centeredDateFieldStyle : undefined}
+      />
+    </label>
+  );
+
+  const renderDateValidationMessage = (className = "min-h-[16px]") => (
+    <div className={className}>
+      {dateValidationMessage ? (
+        <p className="text-xs text-red-600">{dateValidationMessage}</p>
+      ) : null}
+    </div>
+  );
+
   const renderBaseInfoForm = (centered = false) => (
     <div
       className={
         centered
-          ? "flex h-full min-h-[360px] w-full flex-col justify-between gap-4 text-center"
+          ? "relative grid h-full min-h-[360px] w-full grid-rows-[auto_1fr_auto_1fr_auto_1fr_auto] text-center"
           : "grid gap-4"
       }
     >
-      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
-        {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
-        {centered ? "Имя питомца" : null}
-        <input
-          className={centered
-            ? `${centeredFieldClass} min-h-[52px]`
-            : overlayInputClass}
-          value={form.name}
-          onChange={(event) => handleChange("name", event.target.value)}
-          placeholder="Барсик"
-          required
-          aria-invalid={!form.name.trim()}
-          maxLength={80}
-        />
-      </label>
-      <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
-        {!centered ? <span className={overlayLabelClass}>Вид питомца</span> : null}
-        {centered ? "Вид питомца" : null}
-        <select
-          className={centered
-            ? `${centeredFieldClass} min-h-[52px]`
-            : overlayInputClass}
-          value={form.species}
-          onChange={(event) => handleSpeciesChange(event.target.value)}
-        >
-          <option value="dog">Собака</option>
-          <option value="cat">Кошка</option>
-          <option value="bird">Птица</option>
-          <option value="rat">Крыса</option>
-          <option value="gryzun">Грызун</option>
-          <option value="fish">Рыбка</option>
-          <option value="other">Другое</option>
-        </select>
-      </label>
-      <div className={`grid gap-4 ${centered ? "w-full" : ""}`}>
-        <label
-          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
-          onClick={() => openDatePicker(birthDateInputRef.current)}
-        >
-          {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
-          {centered ? "Дата рождения" : null}
-          <input
-            ref={birthDateInputRef}
-            type="date"
-            className={centered
-              ? centeredDateFieldClass(hasDateFieldError)
-              : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
-            value={form.birthDate}
-            onChange={(event) => handleChange("birthDate", event.target.value)}
-            max={form.deathDate || todayInputValue}
-            aria-invalid={hasDateFieldError}
-            style={centered ? centeredDateFieldStyle : undefined}
-          />
-        </label>
-        <label
-          className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
-          onClick={() => openDatePicker(deathDateInputRef.current)}
-        >
-          {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
-          {centered ? "Дата ухода" : null}
-          <input
-            ref={deathDateInputRef}
-            type="date"
-            className={centered
-              ? centeredDateFieldClass(hasDateFieldError)
-              : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
-            value={form.deathDate}
-            onChange={(event) => handleChange("deathDate", event.target.value)}
-            min={form.birthDate || undefined}
-            max={todayInputValue}
-            aria-invalid={hasDateFieldError}
-            style={centered ? centeredDateFieldStyle : undefined}
-          />
-        </label>
-      </div>
-      <div className="min-h-[16px]">
-        {dateValidationMessage ? (
-          <p className="text-xs text-red-600">{dateValidationMessage}</p>
-        ) : null}
-      </div>
+      {renderNameField(centered)}
+      {centered ? <div aria-hidden /> : null}
+      {renderSpeciesField(centered)}
+      {centered ? <div aria-hidden /> : null}
+      {centered ? (
+        renderBirthDateField(centered)
+      ) : (
+        <div className="grid gap-4">
+          {renderBirthDateField(false)}
+          {renderDeathDateField(false)}
+        </div>
+      )}
+      {centered ? <div aria-hidden /> : null}
+      {centered ? renderDeathDateField(centered) : null}
+      {centered
+        ? renderDateValidationMessage("pointer-events-none absolute left-0 right-0 -bottom-6 min-h-[16px]")
+        : renderDateValidationMessage()}
     </div>
   );
 
@@ -4218,12 +4248,18 @@ export default function CreateMemorialClient({
                     <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
                     <div className="relative grid w-full items-stretch gap-4 md:grid-cols-[minmax(280px,0.9fr)_minmax(390px,1fr)] lg:gap-5">
                       {renderSoulPicker()}
-                      <div className="relative flex h-full w-full flex-col justify-between gap-5 rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7">
-                        <div className="flex min-h-0 flex-1 text-center [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
-                          {renderBaseInfoForm(true)}
-                        </div>
+                      <div className="relative grid h-full w-full grid-rows-[auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto] rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7 [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
+                        {renderNameField(true)}
+                        <div aria-hidden />
+                        {renderSpeciesField(true)}
+                        <div aria-hidden />
+                        {renderBirthDateField(true)}
+                        <div aria-hidden />
+                        {renderDeathDateField(true)}
+                        <div aria-hidden />
+                        {renderDateValidationMessage("pointer-events-none absolute bottom-[5.35rem] left-0 right-0 min-h-[16px] text-center sm:bottom-[5.65rem]")}
                         {renderNavButtons(
-                          "shrink-0 pt-2",
+                          "shrink-0",
                           "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
                         )}
                       </div>

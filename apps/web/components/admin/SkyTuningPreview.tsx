@@ -1,120 +1,20 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF, useTexture } from "@react-three/drei";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+import { Suspense, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import * as THREE from "three";
 import { ensureDracoLoader } from "../../lib/draco";
+import TunedSkyDome, { SKY_TUNING_SETTINGS, type SkyTuningSettings } from "../TunedSkyDome";
 
 ensureDracoLoader();
 
 const Primitive = "primitive" as unknown as ComponentType<any>;
-const Mesh = "mesh" as unknown as ComponentType<any>;
-const SphereGeometry = "sphereGeometry" as unknown as ComponentType<any>;
-const ShaderMaterial = "shaderMaterial" as unknown as ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as ComponentType<any>;
 
-type SkySettings = {
-  brightness: number;
-  contrast: number;
-  saturation: number;
-  hue: number;
-};
-
-const defaultSettings: SkySettings = {
-  brightness: 1.08,
-  contrast: 1.18,
-  saturation: 1.12,
-  hue: 0
-};
-
-const vertexShader = `
-  varying vec2 vUv;
-
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const fragmentShader = `
-  uniform sampler2D map;
-  uniform float brightness;
-  uniform float contrast;
-  uniform float saturation;
-  uniform float hue;
-  varying vec2 vUv;
-
-  vec3 hueRotate(vec3 color, float angle) {
-    float s = sin(angle);
-    float c = cos(angle);
-    mat3 weights = mat3(
-      vec3(0.299, 0.587, 0.114),
-      vec3(0.299, 0.587, 0.114),
-      vec3(0.299, 0.587, 0.114)
-    );
-    mat3 rotation = mat3(
-      vec3(0.701, -0.587, -0.114),
-      vec3(-0.299, 0.413, -0.114),
-      vec3(-0.300, -0.588, 0.886)
-    ) * c + mat3(
-      vec3(0.168, 0.330, -0.497),
-      vec3(-0.328, 0.035, 0.292),
-      vec3(1.250, -1.050, -0.203)
-    ) * s;
-    return clamp(color * (weights + rotation), 0.0, 1.0);
-  }
-
-  void main() {
-    vec4 sampled = texture2D(map, vUv);
-    vec3 color = sampled.rgb;
-    color = (color - 0.5) * contrast + 0.5;
-    color *= brightness;
-    float gray = dot(color, vec3(0.299, 0.587, 0.114));
-    color = mix(vec3(gray), color, saturation);
-    color = hueRotate(color, radians(hue));
-    gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
-  }
-`;
-
-function SkyDome({ settings }: { settings: SkySettings }) {
-  const texture = useTexture("/nebo.png");
-
-  useEffect(() => {
-    if (!texture?.image) {
-      return;
-    }
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-  }, [texture]);
-
-  const uniforms = useMemo(
-    () => ({
-      map: { value: texture },
-      brightness: { value: settings.brightness },
-      contrast: { value: settings.contrast },
-      saturation: { value: settings.saturation },
-      hue: { value: settings.hue }
-    }),
-    [settings.brightness, settings.contrast, settings.hue, settings.saturation, texture]
-  );
-
-  return (
-    <Mesh raycast={() => null}>
-      <SphereGeometry args={[80, 64, 64]} />
-      <ShaderMaterial
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        side={THREE.BackSide}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </Mesh>
-  );
-}
+const defaultSettings: SkyTuningSettings = { ...SKY_TUNING_SETTINGS };
 
 function TerrainSample() {
   const { scene } = useGLTF("/models/terrains/TERRAIN_3_summer.glb");
@@ -135,7 +35,7 @@ function TerrainSample() {
 }
 
 const sliderRows: {
-  key: keyof SkySettings;
+  key: keyof SkyTuningSettings;
   label: string;
   min: number;
   max: number;
@@ -149,9 +49,9 @@ const sliderRows: {
 ];
 
 export default function SkyTuningPreview() {
-  const [settings, setSettings] = useState<SkySettings>(defaultSettings);
+  const [settings, setSettings] = useState<SkyTuningSettings>(defaultSettings);
 
-  const updateSetting = (key: keyof SkySettings, value: number) => {
+  const updateSetting = (key: keyof SkyTuningSettings, value: number) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -167,7 +67,7 @@ export default function SkyTuningPreview() {
             3D-превью неба
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Локальная настройка картинки `/nebo.png` для подбора яркости и контраста.
+            Общая настройка картинки `/nebo.png` для всех 3D-сцен.
           </p>
         </div>
         <button
@@ -185,7 +85,7 @@ export default function SkyTuningPreview() {
             <AmbientLight intensity={0.9} />
             <DirectionalLight position={[5, 6, 4]} intensity={1.15} />
             <Suspense fallback={null}>
-              <SkyDome settings={settings} />
+              <TunedSkyDome settings={settings} radius={80} renderOrder={-20} />
               <TerrainSample />
             </Suspense>
             <OrbitControls enablePan={false} minDistance={2.2} maxDistance={7} />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, useGLTF, useTexture } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { ensureDracoLoader } from "../lib/draco";
@@ -30,6 +30,7 @@ import {
   type DirtSlotPlacement
 } from "../lib/dirt-models";
 import DirtSlotAttachments from "./DirtSlotAttachments";
+import TunedSkyDome from "./TunedSkyDome";
 
 ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
@@ -94,9 +95,6 @@ const Group = "group" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as React.ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as React.ComponentType<any>;
-const Mesh = "mesh" as unknown as React.ComponentType<any>;
-const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
-const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 
 const DEFAULT_CAMERA = new THREE.Vector3(0, 9, 18);
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
@@ -147,35 +145,10 @@ function applyHouseScale(
 }
 
 function SkyBackground() {
-  const texture = useTexture("/nebo.png");
-  const sphereRef = useRef<THREE.Mesh>(null);
-
-  useEffect(() => {
-    if (!texture?.image) {
-      return;
-    }
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-  }, [texture]);
-
-  useFrame(({ camera }) => {
-    if (!sphereRef.current) {
-      return;
-    }
-    sphereRef.current.position.copy(camera.position);
-  });
-
-  if (!texture?.image) {
-    return <Color attach="background" args={["#f3f0ee"]} />;
-  }
-
   return (
     <>
       <Color attach="background" args={["#f3f0ee"]} />
-      <Mesh ref={sphereRef} renderOrder={-20} raycast={() => null}>
-        <SphereGeometry args={[120, 64, 64]} />
-        <MeshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
-      </Mesh>
+      <TunedSkyDome radius={120} renderOrder={-20} />
     </>
   );
 }

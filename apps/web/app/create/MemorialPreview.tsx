@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Html, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
+import { Html, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ensureDracoLoader } from "../../lib/draco";
@@ -33,6 +33,7 @@ import {
   type PetSoulPath,
   type PetSoulQuality
 } from "../../components/PetSoul";
+import TunedSkyDome from "../../components/TunedSkyDome";
 
 ensureDracoLoader();
 
@@ -285,41 +286,10 @@ const collectGiftSlots = (target: THREE.Object3D) => {
 };
 
 function SceneBackground({ backgroundColor }: { backgroundColor: string }) {
-  const texture = useTexture("/nebo.png");
-  const hasTexture = Boolean(texture?.image);
-  const sphereRef = useRef<THREE.Mesh>(null);
-
-  useEffect(() => {
-    if (!hasTexture) {
-      return;
-    }
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-  }, [texture, hasTexture]);
-
-  useFrame(({ camera }) => {
-    if (!sphereRef.current) {
-      return;
-    }
-    sphereRef.current.position.copy(camera.position);
-  });
-
-  if (!hasTexture) {
-    return <Color attach="background" args={[backgroundColor]} />;
-  }
-
   return (
     <>
       <Color attach="background" args={[backgroundColor]} />
-      <Mesh ref={sphereRef} renderOrder={-10}>
-        <SphereGeometry args={[80, 64, 64]} />
-        <MeshBasicMaterial
-          map={texture}
-          side={THREE.BackSide}
-          depthWrite={false}
-          transparent
-        />
-      </Mesh>
+      <TunedSkyDome radius={80} renderOrder={-10} />
     </>
   );
 }

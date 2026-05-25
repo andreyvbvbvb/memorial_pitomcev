@@ -1,10 +1,10 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
 import type { ComponentType } from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import TunedSkyDome from "./TunedSkyDome";
 
 export type PetSoulMode = "preview" | "arrival" | "idle" | "farewell";
 export type PetSoulQuality = "full" | "light";
@@ -250,28 +250,10 @@ export function resolveSoulOrbitRadius(terrain: THREE.Object3D) {
 }
 
 function SoulPreviewBackground() {
-  const texture = useTexture("/nebo.png");
-  const hasTexture = Boolean(texture?.image);
-
-  useEffect(() => {
-    if (!hasTexture) {
-      return;
-    }
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-  }, [hasTexture, texture]);
-
-  if (!hasTexture) {
-    return <Color attach="background" args={["#eef8ff"]} />;
-  }
-
   return (
     <>
       <Color attach="background" args={["#eef8ff"]} />
-      <Mesh renderOrder={-10} raycast={() => null}>
-        <SphereGeometry args={[24, 48, 48]} />
-        <MeshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} />
-      </Mesh>
+      <TunedSkyDome radius={24} renderOrder={-10} followCamera={false} />
     </>
   );
 }
