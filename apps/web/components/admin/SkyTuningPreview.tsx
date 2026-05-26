@@ -21,7 +21,8 @@ const defaultSettings: SkyTuningSettings = { ...SKY_TUNING_SETTINGS };
 const skyOptions = [
   { id: "nebo", name: "Nebo", path: "/nebo.png", meta: "1536 x 1024" },
   { id: "nebo_2", name: "Nebo 2", path: "/nebo_2.png", meta: "1774 x 887" },
-  { id: "nebo_3", name: "Nebo 3", path: "/nebo_3.png", meta: "1672 x 941" }
+  { id: "nebo_3", name: "Nebo 3", path: "/nebo_3.png", meta: "1672 x 941" },
+  { id: "nebo_4", name: "Nebo 4", path: "/nebo_4.png", meta: "1536 x 1024" }
 ] as const;
 
 function TerrainSample() {
@@ -113,7 +114,7 @@ export default function SkyTuningPreview() {
             <div className="text-xs font-semibold uppercase text-slate-500">
               Вариант неба
             </div>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               {skyOptions.map((option) => {
                 const isActive = skyPath === option.path;
                 return (
