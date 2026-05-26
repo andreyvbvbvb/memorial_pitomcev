@@ -86,7 +86,7 @@ export default function TunedSkyDome({
   settings = SKY_TUNING_SETTINGS,
   renderOrder = -10,
   followCamera = true,
-  texturePath = "/nebo_4.png",
+  texturePath = "/nebo_5.png",
 }: TunedSkyDomeProps) {
   const texture = useTexture(texturePath);
   const sphereRef = useRef<THREE.Mesh>(null);

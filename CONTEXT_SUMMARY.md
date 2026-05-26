@@ -304,8 +304,8 @@
   - `roof`, `wall`, `sign`, `frame-left`, `frame-right`, `mat`, `bowl-food`, `bowl-water` и т.д.
 - Gifts: `apps/web/public/models/gifts/{type}`.
 - Dirt: `apps/web/public/models/dirt/{baseId}/dirt_1..4.glb` + общий fallback `models/dirt/dirt_1..4.glb`.
-- Sky textures: `apps/web/public/nebo.png`, `nebo_2.png`, `nebo_3.png`, `nebo_4.png`.
-- Дефолтное небо в 3D-сценах задается через `TunedSkyDome`: `texturePath="/nebo_4.png"`, `brightness=1.13`, `contrast=0.80`, `saturation=1.06`, `hue=-18`.
+- Sky textures: `apps/web/public/nebo.png`, `nebo_2.png`, `nebo_3.png`, `nebo_4.png`, `nebo_5.png`.
+- Дефолтное небо в 3D-сценах задается через `TunedSkyDome`: `texturePath="/nebo_5.png"`, `brightness=1.13`, `contrast=0.80`, `saturation=1.06`, `hue=-18`.
 - Превью-иконки деталей `/create`:
   - URL: `/memorial/options/{category}/{id}.png`.
   - путь: `apps/web/public/memorial/options/{category}/{id}.png`.
@@ -414,7 +414,7 @@
   - `PATCH /admin/pricing/gifts/:id`.
 - Публичный read-only endpoint тарифов: `GET /pricing/memorial-plans`.
 - `/create` и окно продления на странице мемориала подгружают актуальные тарифы с API и используют локальные fallback-цены, если endpoint недоступен.
-- В админке есть экспериментальное 3D-превью неба с выбором `nebo`, `nebo_2`, `nebo_3`, `nebo_4` и ползунками яркости/контраста/насыщенности/hue.
+- В админке есть экспериментальное 3D-превью неба с выбором `nebo`, `nebo_2`, `nebo_3`, `nebo_4`, `nebo_5` и ползунками яркости/контраста/насыщенности/hue.
 - Есть 3D-превью моделей грязи, чтобы быстро просматривать доступные dirt GLB.
 
 ## 20) Благотворительность `/charity`
