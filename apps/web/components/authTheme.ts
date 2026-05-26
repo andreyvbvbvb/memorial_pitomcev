@@ -25,7 +25,7 @@ export const authLabelClass =
   "grid gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63]";
 
 export const authInputClass =
-  "w-full rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.07)] outline-none transition-all placeholder:text-[#c2a79a] focus:border-[#3bceac] focus:bg-white";
+  "w-full rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3.5 text-base font-bold text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.07)] outline-none transition-all placeholder:text-[#c2a79a] focus:border-[#3bceac] focus:bg-white";
 
 export const authErrorTextClass = "text-xs font-bold text-[#d64550]";
 

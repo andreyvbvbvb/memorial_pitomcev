@@ -4248,7 +4248,7 @@ export default function CreateMemorialClient({
                     <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
                     <div className="relative grid w-full items-stretch gap-4 md:grid-cols-[minmax(280px,0.9fr)_minmax(390px,1fr)] lg:gap-5">
                       {renderSoulPicker()}
-                      <div className="relative grid h-full w-full grid-rows-[auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto] rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7 [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
+                      <div className="relative grid h-full w-full grid-rows-[auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto_minmax(1rem,1fr)_auto] rounded-[30px] border border-white/70 bg-[#f7f1ee] px-5 py-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(126,102,93,0.08)] sm:min-h-[500px] sm:rounded-[34px] sm:px-7 sm:py-7 [&_input]:!rounded-[20px] [&_input]:!border-[#d8cfc9] [&_input]:!bg-[#f1ebe9] [&_input]:!text-[16px] [&_input]:!font-semibold [&_input]:!text-[#6f6360] [&_label]:!text-[13px] [&_label]:!font-medium [&_label]:!text-[#8a7c77] [&_select]:!rounded-[20px] [&_select]:!border-[#d8cfc9] [&_select]:!bg-[#f1ebe9] [&_select]:!text-[16px] [&_select]:!font-semibold [&_select]:!text-[#6f6360]">
                         {renderNameField(true)}
                         <div aria-hidden />
                         {renderSpeciesField(true)}
@@ -4258,10 +4258,15 @@ export default function CreateMemorialClient({
                         {renderDeathDateField(true)}
                         <div aria-hidden />
                         {renderDateValidationMessage("pointer-events-none absolute bottom-[5.35rem] left-0 right-0 min-h-[16px] text-center sm:bottom-[5.65rem]")}
-                        {renderNavButtons(
-                          "shrink-0",
-                          "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
-                        )}
+                        <div className="grid gap-2">
+                          <span aria-hidden className="invisible text-[13px] font-medium leading-normal">
+                            Продолжить
+                          </span>
+                          {renderNavButtons(
+                            "shrink-0",
+                            "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
