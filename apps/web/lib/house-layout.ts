@@ -12,6 +12,11 @@ const BOWL_PART_SLOTS = new Set(["bowl_food_slot", "bowl_water_slot"]);
 const MAT_PART_SLOT = "mat_slot";
 const RESCALED_BUDKA_BASE_IDS = new Set(["budka_1", "budka_2", "budka_3", "budka_4", "budka_5"]);
 
+export type HousePartFitBounds = {
+  maxWidth: number;
+  maxLength: number;
+};
+
 const DEFAULT_HOUSE_TRANSFORM: HouseTransform = {
   offsetX: 0,
   offsetZ: 0,
@@ -88,6 +93,20 @@ export const getHousePartScaleMultiplier = (
     return 0.25;
   }
   return 1;
+};
+
+export const getHousePartFitBounds = (
+  houseId?: string | null,
+  slot?: string | null
+): HousePartFitBounds | null => {
+  const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  if (baseId === "budka_1" && slot === MAT_PART_SLOT) {
+    return { maxWidth: 0.33, maxLength: 0.33 };
+  }
+  if (baseId === "budka_1" && slot && BOWL_PART_SLOTS.has(slot)) {
+    return { maxWidth: 0.18, maxLength: 0.18 };
+  }
+  return null;
 };
 
 export const applyHousePlacement = (

@@ -18,6 +18,7 @@ import type { HouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
 import {
   applyHousePlacement,
+  getHousePartFitBounds,
   getHousePartScaleMultiplier,
   getHouseTransform
 } from "../../lib/house-layout";
@@ -699,12 +700,21 @@ function PartAttachment({
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
     const cloned = scene.clone(true);
+    const fitBounds = getHousePartFitBounds(houseBaseId, slot);
     if (slot === "mat_slot") {
-      const scale = getHousePartScaleMultiplier(houseBaseId, slot);
-      applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
+      if (fitBounds) {
+        applyPartFitScale(cloned, fitBounds.maxWidth, fitBounds.maxLength);
+      } else {
+        const scale = getHousePartScaleMultiplier(houseBaseId, slot);
+        applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
+      }
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseBaseId, slot), "x");
+      if (fitBounds) {
+        applyPartFitScale(cloned, fitBounds.maxWidth, fitBounds.maxLength);
+      } else {
+        applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseBaseId, slot), "x");
+      }
     }
     if (slot === "sign_slot") {
       const scale = houseBaseId === "budka_1" ? 0.85 : 1;

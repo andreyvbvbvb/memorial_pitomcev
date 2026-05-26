@@ -1626,7 +1626,7 @@ export default function CreateMemorialClient({
                   value={customSoulColorValue}
                   onInput={(event) => applySoulColor(event.currentTarget.value)}
                   onChange={(event) => applySoulColor(event.currentTarget.value)}
-                  className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-transparent p-1 shadow-inner"
+                  className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-[#f6efea]/92 p-1 shadow-inner"
                   aria-label="Выбрать свой цвет души"
                 />
               </label>
@@ -3090,7 +3090,7 @@ export default function CreateMemorialClient({
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-[#3bceac] bg-[#f0fffb]"
-                : "border-[#eadfd9] bg-transparent hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+                : "border-[#eadfd9] bg-white/82 hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             }`}
           >
             {imageUrl ? (
@@ -4239,7 +4239,7 @@ export default function CreateMemorialClient({
       ) : null}
       {!isBuilderStep ? (
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
-          <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-transparent p-5"}>
+          <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-[#f6efea]/82 p-5"}>
             {step === 0 ? (
               <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />

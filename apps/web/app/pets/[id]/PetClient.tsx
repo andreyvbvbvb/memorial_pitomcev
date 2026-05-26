@@ -2333,7 +2333,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-[#3bceac] bg-[#f0fffb]"
-                : "border-[#eadfd9] bg-transparent hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+                : "border-[#eadfd9] bg-white/82 hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             }`}
           >
             {imageUrl ? (

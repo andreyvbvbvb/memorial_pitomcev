@@ -96,8 +96,8 @@ a {
 
   .btn-ghost {
     color: var(--text);
-    background: transparent;
-    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.8);
   }
 
   .card {

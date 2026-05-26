@@ -64,6 +64,7 @@ import { getHouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
 import {
   applyHousePlacement,
+  getHousePartFitBounds,
   getHousePartScaleMultiplier,
   getHouseTransform
 } from "../../lib/house-layout";
@@ -448,12 +449,21 @@ function PartInstance({
   const part = useMemo(() => {
     const cloned = scene.clone(true);
     cloneMeshMaterials(cloned);
+    const fitBounds = getHousePartFitBounds(houseId, slot);
     if (slot === "mat_slot") {
-      const scale = getHousePartScaleMultiplier(houseId, slot);
-      applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
+      if (fitBounds) {
+        applyPartFitScale(cloned, fitBounds.maxWidth, fitBounds.maxLength);
+      } else {
+        const scale = getHousePartScaleMultiplier(houseId, slot);
+        applyPartFitScale(cloned, 1.25 * scale, 1.875 * scale);
+      }
     }
     if (slot === "bowl_food_slot" || slot === "bowl_water_slot") {
-      applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseId, slot), "x");
+      if (fitBounds) {
+        applyPartFitScale(cloned, fitBounds.maxWidth, fitBounds.maxLength);
+      } else {
+        applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseId, slot), "x");
+      }
     }
     return cloned;
   }, [houseId, scene, slot]);
