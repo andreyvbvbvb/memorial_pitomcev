@@ -6,7 +6,10 @@ import { Suspense, useMemo, useState } from "react";
 import type { ComponentType } from "react";
 import * as THREE from "three";
 import { ensureDracoLoader } from "../../lib/draco";
-import TunedSkyDome, { SKY_TUNING_SETTINGS, type SkyTuningSettings } from "../TunedSkyDome";
+import TunedSkyDome, {
+  SKY_TUNING_SETTINGS,
+  type SkyTuningSettings
+} from "../TunedSkyDome";
 
 ensureDracoLoader();
 
@@ -15,6 +18,11 @@ const AmbientLight = "ambientLight" as unknown as ComponentType<any>;
 const DirectionalLight = "directionalLight" as unknown as ComponentType<any>;
 
 const defaultSettings: SkyTuningSettings = { ...SKY_TUNING_SETTINGS };
+const skyOptions = [
+  { id: "nebo", name: "Nebo", path: "/nebo.png", meta: "1536 x 1024" },
+  { id: "nebo_2", name: "Nebo 2", path: "/nebo_2.png", meta: "1774 x 887" },
+  { id: "nebo_3", name: "Nebo 3", path: "/nebo_3.png", meta: "1672 x 941" }
+] as const;
 
 function TerrainSample() {
   const { scene } = useGLTF("/models/terrains/TERRAIN_3_summer.glb");
@@ -50,6 +58,9 @@ const sliderRows: {
 
 export default function SkyTuningPreview() {
   const [settings, setSettings] = useState<SkyTuningSettings>(defaultSettings);
+  const [skyPath, setSkyPath] = useState<(typeof skyOptions)[number]["path"]>(
+    "/nebo.png"
+  );
 
   const updateSetting = (key: keyof SkyTuningSettings, value: number) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -57,7 +68,7 @@ export default function SkyTuningPreview() {
 
   const settingsText = `brightness=${settings.brightness.toFixed(2)}, contrast=${settings.contrast.toFixed(
     2
-  )}, saturation=${settings.saturation.toFixed(2)}, hue=${settings.hue.toFixed(0)}deg`;
+  )}, saturation=${settings.saturation.toFixed(2)}, hue=${settings.hue.toFixed(0)}deg, sky=${skyPath}`;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -67,7 +78,7 @@ export default function SkyTuningPreview() {
             3D-превью неба
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Общая настройка картинки `/nebo.png` для всех 3D-сцен.
+            Экспериментальный просмотр неба. На сайте пока остается `/nebo.png`.
           </p>
         </div>
         <button
@@ -85,7 +96,12 @@ export default function SkyTuningPreview() {
             <AmbientLight intensity={0.9} />
             <DirectionalLight position={[5, 6, 4]} intensity={1.15} />
             <Suspense fallback={null}>
-              <TunedSkyDome settings={settings} radius={80} renderOrder={-20} />
+              <TunedSkyDome
+                settings={settings}
+                radius={80}
+                renderOrder={-20}
+                texturePath={skyPath}
+              />
               <TerrainSample />
             </Suspense>
             <OrbitControls enablePan={false} minDistance={2.2} maxDistance={7} />
@@ -93,6 +109,35 @@ export default function SkyTuningPreview() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-3">
+          <div className="mb-3 grid gap-2">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Вариант неба
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {skyOptions.map((option) => {
+                const isActive = skyPath === option.path;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSkyPath(option.path)}
+                    className={`rounded-xl border px-3 py-2 text-left transition ${
+                      isActive
+                        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-[#d3a27f]"
+                    }`}
+                  >
+                    <span className="block text-xs font-black uppercase tracking-[0.12em]">
+                      {option.name}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] font-semibold text-slate-400">
+                      {option.meta}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="grid gap-3">
             {sliderRows.map((row) => (
               <label key={row.key} className="grid gap-1.5 text-xs font-semibold text-slate-600">
