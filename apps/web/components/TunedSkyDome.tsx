@@ -14,10 +14,10 @@ export type SkyTuningSettings = {
 };
 
 export const SKY_TUNING_SETTINGS: SkyTuningSettings = {
-  brightness: 0.96,
-  contrast: 1.12,
-  saturation: 1.8,
-  hue: -15,
+  brightness: 1.13,
+  contrast: 0.8,
+  saturation: 1.06,
+  hue: -18,
 };
 
 const Mesh = "mesh" as unknown as ComponentType<any>;
@@ -86,7 +86,7 @@ export default function TunedSkyDome({
   settings = SKY_TUNING_SETTINGS,
   renderOrder = -10,
   followCamera = true,
-  texturePath = "/nebo.png",
+  texturePath = "/nebo_4.png",
 }: TunedSkyDomeProps) {
   const texture = useTexture(texturePath);
   const sphereRef = useRef<THREE.Mesh>(null);

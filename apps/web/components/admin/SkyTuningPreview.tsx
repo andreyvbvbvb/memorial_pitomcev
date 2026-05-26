@@ -60,7 +60,7 @@ const sliderRows: {
 export default function SkyTuningPreview() {
   const [settings, setSettings] = useState<SkyTuningSettings>(defaultSettings);
   const [skyPath, setSkyPath] = useState<(typeof skyOptions)[number]["path"]>(
-    "/nebo.png"
+    "/nebo_4.png"
   );
 
   const updateSetting = (key: keyof SkyTuningSettings, value: number) => {
@@ -79,7 +79,7 @@ export default function SkyTuningPreview() {
             3D-превью неба
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
-            Экспериментальный просмотр неба. На сайте пока остается `/nebo.png`.
+            Экспериментальный просмотр неба. На сайте по умолчанию используется `/nebo_4.png`.
           </p>
         </div>
         <button
