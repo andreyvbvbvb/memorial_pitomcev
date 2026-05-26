@@ -1981,12 +1981,12 @@ export default function MapClient() {
             </div>
           </div>
         )}
-        <div className={compact ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/80 px-3 py-2" : "mt-3 h-[clamp(4rem,15dvh,7rem)] shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/80 px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
+        <div className={compact ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee] px-3 py-2" : "mt-3 h-[clamp(4rem,15dvh,7rem)] shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee] px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
           <p className={compact ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
             &ldquo;{marker.epitaph ?? "Без эпитафии"}&rdquo;
           </p>
         </div>
-        <div className={stacked && compact ? "mt-2 min-h-[9rem] max-h-[18rem] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee]/70 px-3 py-2" : "mt-3 min-h-[3.5rem] flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee]/70 px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:min-h-[2.75rem] [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
+        <div className={stacked && compact ? "mt-2 min-h-[9rem] max-h-[18rem] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee] px-3 py-2" : compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee] px-3 py-2" : "mt-3 min-h-[3.5rem] flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee] px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:min-h-[2.75rem] [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
           <p className={compact ? "text-xs leading-snug text-[#7b6b65]" : "text-sm leading-relaxed text-[#7b6b65]"}>
             {pet?.story || "История пока не добавлена."}
           </p>
@@ -2053,11 +2053,11 @@ export default function MapClient() {
             onMouseLeave={() => setHoveredMarkerId(null)}
             onFocus={() => setHoveredMarkerId(marker.id)}
             onBlur={() => setHoveredMarkerId(null)}
-            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#eadfd9] bg-white/90 transition hover:border-[#d3a27f]"
+            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#eadfd9] bg-[#fffcf9] transition hover:border-[#d3a27f]"
           >
-            <div className="overflow-hidden rounded-2xl bg-white/90">
+            <div className="overflow-hidden rounded-2xl bg-[#fffcf9]">
               <MemorialCardPreview previewSrc={previewSrc} className="rounded-t-2xl" />
-              <div className="border-t border-[#eadfd9] bg-white/90 p-3">
+              <div className="border-t border-[#eadfd9] bg-[#fffcf9] p-3">
                 <h3 className="truncate text-sm font-semibold text-[#5d4037]">{marker.name}</h3>
                 <p className="mt-1 whitespace-nowrap text-xs text-[#8d6e63]">
                   {formatYearRange(marker.birthDate, marker.deathDate)}
@@ -2129,7 +2129,7 @@ export default function MapClient() {
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
-              className="rounded-full border border-[#eadfd9] bg-white/90 px-4 py-2 text-sm font-semibold text-[#6f6360] shadow-sm transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+              className="rounded-full border border-[#eadfd9] bg-[#fffcf9] px-4 py-2 text-sm font-semibold text-[#6f6360] shadow-sm transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             >
               Фильтры
             </button>
@@ -2245,7 +2245,7 @@ export default function MapClient() {
                     className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
                   >
                     <span
-                      className={`pointer-events-none absolute left-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                      className={`pointer-events-none absolute left-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
                         hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                       }`}
                     >
@@ -2261,7 +2261,7 @@ export default function MapClient() {
                     className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
                   >
                     <span
-                      className={`pointer-events-none absolute right-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                      className={`pointer-events-none absolute right-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
                         hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                       }`}
                     >
@@ -2466,7 +2466,7 @@ export default function MapClient() {
                   className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
                 >
                   <span
-                    className={`pointer-events-none absolute left-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                    className={`pointer-events-none absolute left-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
                       hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                     }`}
                   >
@@ -2482,7 +2482,7 @@ export default function MapClient() {
                   className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
                 >
                   <span
-                    className={`pointer-events-none absolute right-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                    className={`pointer-events-none absolute right-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
                       hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                     }`}
                   >

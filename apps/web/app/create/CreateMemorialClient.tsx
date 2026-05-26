@@ -1604,7 +1604,7 @@ export default function CreateMemorialClient({
             onMouseLeave={() => setHoveredSoulColor(null)}
             onFocus={() => setHoveredSoulColor(customSoulColorValue)}
             onBlur={() => setHoveredSoulColor(null)}
-            className={`inline-flex h-10 items-center gap-2 rounded-full border bg-white/90 px-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 ${
+            className={`inline-flex h-10 items-center gap-2 rounded-full border bg-[#fffcf9] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 ${
               !selectedSoulColorIsPreset
                 ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
                 : "border-white hover:border-[#d3a27f]"
@@ -3090,7 +3090,7 @@ export default function CreateMemorialClient({
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-[#3bceac] bg-[#f0fffb]"
-                : "border-[#eadfd9] bg-white/82 hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+                : "border-[#eadfd9] bg-[#fffcf9] hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             }`}
           >
             {imageUrl ? (
@@ -3120,7 +3120,7 @@ export default function CreateMemorialClient({
               requestFocus("dom_slot");
             })}
             {environmentSeasons.length > 0 ? (
-              <div className="grid gap-2 rounded-xl border border-[#eadfd9] bg-white/88 p-3">
+              <div className="grid gap-2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] p-3">
                 <div className="text-sm font-semibold text-[#5d4037]">Время года</div>
                 <div className="flex flex-wrap gap-2">
                   {environmentSeasons.map((season) => {
@@ -3170,7 +3170,7 @@ export default function CreateMemorialClient({
           <div className="flex h-full min-h-0 flex-col gap-3">
             {houseTextureOptions.length > 0 ? (
               <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
-                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
                   <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Форма домика</h2>
                   <div className="min-h-0 overflow-y-auto overscroll-contain">
                     {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
@@ -3180,7 +3180,7 @@ export default function CreateMemorialClient({
                     }, "house")}
                   </div>
                 </div>
-                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
                   <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Текстура домика</h2>
                   <div className="min-h-0 overflow-y-auto overscroll-contain">
                     {renderOptionGrid(
@@ -3206,7 +3206,7 @@ export default function CreateMemorialClient({
               </div>
             )}
             {canUseCalibration(accessLevel) ? (
-            <div className="grid gap-3 rounded-2xl border border-[#eadfd9] bg-white/90 p-3 text-xs text-[#6f6360]">
+            <div className="grid gap-3 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-3 text-xs text-[#6f6360]">
               <div className="text-xs font-semibold text-[#5d4037]">
                 Временная настройка положения домика
               </div>
@@ -3377,8 +3377,8 @@ export default function CreateMemorialClient({
     "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
-      ? "grid gap-2 rounded-[18px] border-2 border-white bg-white/95 p-2 shadow-[0_16px_44px_-20px_rgba(93,64,55,0.24)]"
-      : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-white/95 p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
+      ? "grid gap-2 rounded-[18px] border-2 border-white bg-[#fffcf9] p-2 shadow-[0_16px_44px_-20px_rgba(93,64,55,0.24)]"
+      : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
     "w-full rounded-2xl border border-[#d8cfc9] bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
@@ -3412,7 +3412,7 @@ export default function CreateMemorialClient({
           color={soulPreviewColor}
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
-        <div className="relative grid gap-2 rounded-[24px] border border-white/70 bg-white/78 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+        <div className="relative grid gap-2 rounded-[24px] border border-white/70 bg-[#fffcf9] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
           {renderSoulColorControls()}
         </div>
       </div>
@@ -3648,14 +3648,14 @@ export default function CreateMemorialClient({
                     () => setError("Не удалось получить геолокацию")
                   );
                 }}
-                className="rounded-xl border border-[#eadfd9] bg-white/88 px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
+                className="rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
               >
                 Моё местоположение
               </button>
               <button
                 type="button"
                 onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-                className="rounded-xl border border-[#eadfd9] bg-white/88 px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
+                className="rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
               >
                 Очистить
               </button>
@@ -3877,11 +3877,11 @@ export default function CreateMemorialClient({
     }
 
     const rowInputClass =
-      "w-16 rounded-xl border border-white bg-white/88 px-2 py-1 text-right text-[11px] font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20";
+      "w-16 rounded-xl border border-white bg-[#fffcf9] px-2 py-1 text-right text-[11px] font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20";
     const rangeClass = "h-2 w-full accent-[#3bceac]";
 
     return (
-      <div className="grid max-h-[min(48vh,420px)] gap-3 overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee]/96 p-3 text-[11px] text-[#6f6360] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+      <div className="grid max-h-[min(48vh,420px)] gap-3 overflow-y-auto rounded-[20px] border-2 border-white bg-[#f7f1ee] p-3 text-[11px] text-[#6f6360] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="font-black uppercase tracking-[0.16em] text-[#5d4037]">
@@ -3891,7 +3891,7 @@ export default function CreateMemorialClient({
               Один путь — это одно движение души. Точки задают плавную траекторию без остановок, затем душа возвращается в старт.
             </div>
           </div>
-          <label className="inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 font-black uppercase tracking-[0.1em] text-[#3b8d76]">
+          <label className="inline-flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 font-black uppercase tracking-[0.1em] text-[#3b8d76]">
             <input
               type="checkbox"
               className="h-4 w-4 rounded border-[#d8cfc9]"
@@ -3902,7 +3902,7 @@ export default function CreateMemorialClient({
           </label>
         </div>
 
-        <div className="grid gap-2 rounded-[16px] bg-white/55 p-2">
+        <div className="grid gap-2 rounded-[16px] bg-[#fffcf9] p-2">
           <label className="grid gap-1">
             <div className="flex items-center justify-between gap-3">
               <span className="font-bold">Время по точкам</span>
@@ -3991,7 +3991,7 @@ export default function CreateMemorialClient({
 
         <div className="grid gap-2">
           {form.soulPath.points.map((point, index) => (
-            <div key={point.id} className="grid gap-2 rounded-[16px] bg-white/64 p-2">
+            <div key={point.id} className="grid gap-2 rounded-[16px] bg-[#fffcf9] p-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-black uppercase tracking-[0.12em] text-[#5d4037]">
                   Точка {index + 1}
@@ -4069,7 +4069,7 @@ export default function CreateMemorialClient({
           type="button"
           onClick={addSoulPathPoint}
           disabled={form.soulPath.points.length >= 12}
-          className="rounded-[16px] border-2 border-white bg-white/88 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] transition hover:-translate-y-0.5 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-[16px] border-2 border-white bg-[#fffcf9] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] transition hover:-translate-y-0.5 hover:bg-[#fff7f2] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Добавить точку
         </button>
@@ -4081,7 +4081,7 @@ export default function CreateMemorialClient({
           <textarea
             readOnly
             value={soulPathExportJson}
-            className="min-h-28 resize-y rounded-[16px] border-2 border-white bg-white/82 p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"
+            className="min-h-28 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"
             onFocus={(event) => event.currentTarget.select()}
           />
         </label>
@@ -4151,7 +4151,7 @@ export default function CreateMemorialClient({
     ? "pointer-events-auto absolute bottom-[calc(4.35rem+env(safe-area-inset-bottom))] left-1.5 z-[90]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6 z-[90]";
   const builderOverlayButtonsClass = isPortraitLayout
-    ? "flex flex-col items-center justify-center gap-1.5 rounded-[20px] border-2 border-white bg-white/82 p-1.5 shadow-[0_14px_34px_-22px_rgba(93,64,55,0.34)] backdrop-blur"
+    ? "flex flex-col items-center justify-center gap-1.5 rounded-[20px] border-2 border-white bg-[#fffcf9] p-1.5 shadow-[0_14px_34px_-22px_rgba(93,64,55,0.34)] backdrop-blur"
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2"
@@ -4165,11 +4165,11 @@ export default function CreateMemorialClient({
   const builderTabButtonClass = (isActive: boolean, isDisabled: boolean) =>
     hudControlButtonClass(isPortraitLayout, isActive, isDisabled);
   const builderCancelButtonClass = isPortraitLayout
-    ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
-    : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
+    ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+    : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
   const builderDraftButtonClass = isPortraitLayout
-    ? "inline-flex w-[7.8rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-3 py-2.5 text-center text-[0.68rem] font-black uppercase leading-tight tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70"
-    : "inline-flex w-[9rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-3 py-2.5 text-center text-[0.72rem] font-black uppercase leading-tight tracking-[0.1em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70";
+    ? "inline-flex w-[7.8rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-3 py-2.5 text-center text-[0.68rem] font-black uppercase leading-tight tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70"
+    : "inline-flex w-[9rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-3 py-2.5 text-center text-[0.72rem] font-black uppercase leading-tight tracking-[0.1em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70";
   const builderFinishButtonClass = isPortraitLayout
     ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
     : "group inline-flex min-w-[15rem] items-center justify-center rounded-xl bg-[#2d3436] px-10 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
@@ -4244,7 +4244,7 @@ export default function CreateMemorialClient({
               <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
                 <div className="relative z-10 w-full max-w-[1120px] px-1 sm:px-0">
-                  <div className="relative overflow-visible rounded-[38px] border-[3px] border-white/80 bg-[#efe6e2]/96 p-3 shadow-[0_32px_64px_rgba(89,71,65,0.2)] transition-transform duration-300 ease-out hover:scale-[1.006] sm:rounded-[46px] sm:p-4 lg:p-5">
+                  <div className="relative overflow-visible rounded-[38px] border-[3px] border-white/80 bg-[#efe6e2] p-3 shadow-[0_32px_64px_rgba(89,71,65,0.2)] transition-transform duration-300 ease-out hover:scale-[1.006] sm:rounded-[46px] sm:p-4 lg:p-5">
                     <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
                     <div className="relative grid w-full items-stretch gap-4 md:grid-cols-[minmax(280px,0.9fr)_minmax(390px,1fr)] lg:gap-5">
                       {renderSoulPicker()}
@@ -4331,7 +4331,7 @@ export default function CreateMemorialClient({
 
           {farewellPlaying ? (
             <div className="pointer-events-none fixed inset-x-0 bottom-8 z-20 flex justify-center px-4">
-              <div className="rounded-[24px] border-[3px] border-white bg-white/82 px-5 py-3 text-center text-[11px] font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_18px_42px_-24px_rgba(93,64,55,0.55)] backdrop-blur">
+              <div className="rounded-[24px] border-[3px] border-white bg-[#fffcf9] px-5 py-3 text-center text-[11px] font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_18px_42px_-24px_rgba(93,64,55,0.55)] backdrop-blur">
                 Душа облетает мемориал
               </div>
             </div>
@@ -4347,11 +4347,11 @@ export default function CreateMemorialClient({
                     </h3>
                     <div className={isPortraitLayout ? "flex min-w-0 flex-wrap items-center justify-end gap-1.5" : "flex min-w-0 flex-wrap items-center justify-end gap-3"}>
                       {isEditMode ? (
-                        <span className={isPortraitLayout ? "rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
+                        <span className={isPortraitLayout ? "rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-[#fffcf9] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
                           Только оформление
                         </span>
                       ) : null}
-                      <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
+                      <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
                         <input
                           type="checkbox"
                           className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]" : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"}
@@ -4409,7 +4409,7 @@ export default function CreateMemorialClient({
                           <span className="sr-only">{tab.label}</span>
                         </button>
                         {isTooltipVisible && !isPortraitLayout ? (
-                          <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-white/95 px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
+                          <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
                             <div className="font-semibold text-[#5d4037]">{tab.label}</div>
                             <div className="mt-1 text-[#8d6e63]">{description}</div>
                           </div>
@@ -4810,7 +4810,7 @@ export default function CreateMemorialClient({
             onClick={closeTopUp}
           />
           <div
-            className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+            className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
               topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
