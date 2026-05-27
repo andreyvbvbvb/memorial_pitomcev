@@ -62,12 +62,22 @@ export default function MyPetsClient() {
   const [drafts, setDrafts] = useState<MemorialDraft[]>([]);
   const [showDrafts, setShowDrafts] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageNotice, setPageNotice] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<4 | 5>(4);
   const [draftToDelete, setDraftToDelete] = useState<MemorialDraft | null>(null);
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
+
+  useEffect(() => {
+    const notice = window.sessionStorage.getItem("memorial-page-toast");
+    if (!notice) {
+      return;
+    }
+    window.sessionStorage.removeItem("memorial-page-toast");
+    setPageNotice(notice);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -415,6 +425,12 @@ export default function MyPetsClient() {
             </section>
           ) : null}
           <ErrorToast message={error} onClose={() => setError(null)} />
+          <ErrorToast
+            message={pageNotice}
+            onClose={() => setPageNotice(null)}
+            offset={88}
+            variant="success"
+          />
           <ConfirmDialog
             open={Boolean(draftToDelete)}
             eyebrow="Черновик"

@@ -74,19 +74,27 @@ export default function AuthClient() {
       }
     } else {
       if (!login.trim()) {
-        setLoginError("Введите логин");
+        const message = "Введите логин";
+        setLoginError(message);
+        setError(message);
         return;
       }
       if (!email.trim()) {
-        setEmailError("Введите email");
+        const message = "Введите email";
+        setEmailError(message);
+        setError(message);
         return;
       }
       if (!/^[A-Za-z0-9_]+$/.test(login.trim())) {
-        setLoginError("Логин: только A-Z, a-z, 0-9 и _");
+        const message = "Логин: только A-Z, a-z, 0-9 и _";
+        setLoginError(message);
+        setError(message);
         return;
       }
       if (!email.includes("@")) {
-        setEmailError("Укажите корректный email");
+        const message = "Укажите корректный email";
+        setEmailError(message);
+        setError(message);
         return;
       }
     }
@@ -136,8 +144,10 @@ export default function AuthClient() {
         }
         if (mode === "register" && message.toLowerCase().includes("логин")) {
           setLoginError(message);
+          setError(message);
         } else if (mode === "register" && message.toLowerCase().includes("email")) {
           setEmailError(message);
+          setError(message);
         } else {
           setError(message || "Ошибка авторизации");
         }
@@ -320,7 +330,7 @@ export default function AuthClient() {
                       />
                       <span>
                         Я принимаю{" "}
-                        <a href="/terms" className={authLinkClass}>
+                        <a href="/terms" className={authLinkClass} target="_blank" rel="noreferrer">
                           пользовательское соглашение
                         </a>
                       </span>
@@ -334,7 +344,7 @@ export default function AuthClient() {
                       />
                       <span>
                         Я принимаю{" "}
-                        <a href="/offer" className={authLinkClass}>
+                        <a href="/offer" className={authLinkClass} target="_blank" rel="noreferrer">
                           публичную оферту
                         </a>
                       </span>
@@ -421,7 +431,7 @@ export default function AuthClient() {
                   />
                   <span>
                     Я принимаю{" "}
-                    <a href="/terms" className={authLinkClass}>
+                    <a href="/terms" className={authLinkClass} target="_blank" rel="noreferrer">
                       пользовательское соглашение
                     </a>
                   </span>
@@ -435,7 +445,7 @@ export default function AuthClient() {
                   />
                   <span>
                     Я принимаю{" "}
-                    <a href="/offer" className={authLinkClass}>
+                    <a href="/offer" className={authLinkClass} target="_blank" rel="noreferrer">
                       публичную оферту
                     </a>
                   </span>

@@ -13,6 +13,7 @@ import {
 import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../lib/map-preview";
 import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
+import AuthModal from "../../../components/AuthModal";
 import ErrorToast from "../../../components/ErrorToast";
 import PhotoLightbox from "../../../components/PhotoLightbox";
 import usePortraitLayout from "../../../components/usePortraitLayout";
@@ -294,6 +295,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
   const [giftSlotsVisible, setGiftSlotsVisible] = useState(false);
+  const [giftAuthOpen, setGiftAuthOpen] = useState(false);
+  const [giftAuthVisible, setGiftAuthVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<
     "info" | "photos" | "gifts" | "memorials" | "manage" | null
   >(null);
@@ -302,6 +305,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [ownerMemorials, setOwnerMemorials] = useState<OwnerMemorial[]>([]);
   const [dirtLevel, setDirtLevel] = useState(0);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const [lifecycleSuccess, setLifecycleSuccess] = useState<string | null>(null);
   const [extendingMemorial, setExtendingMemorial] = useState(false);
   const [deletingMemorial, setDeletingMemorial] = useState(false);
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
@@ -1016,6 +1020,20 @@ export default function PetClient({ id, mode = "view" }: Props) {
     });
   }, [availableSlots, giftCatalog]);
 
+  const visibleGiftsWithSlots = useMemo(() => {
+    if (!selectedSlot) {
+      return giftsWithSlots;
+    }
+    const slotType = getGiftSlotType(selectedSlot);
+    if (!slotType || slotType === "default") {
+      return giftsWithSlots;
+    }
+    return giftsWithSlots.filter((gift) => {
+      const types = getGiftAvailableTypes(gift);
+      return types.includes("default") || types.includes(slotType);
+    });
+  }, [giftsWithSlots, selectedSlot]);
+
   const selectedGift = giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
@@ -1028,23 +1046,25 @@ export default function PetClient({ id, mode = "view" }: Props) {
         }
         return selectedGiftTypes.includes(slotType);
       })
-    : [];
+    : availableSlots;
   const highlightSlots = selectedGift ? filteredAvailableSlots : availableSlots;
   const shouldShowGiftSlots =
-    giftPanelOpen && highlightSlots.length > 0 && (giftSlotsVisible || Boolean(selectedGift));
+    giftPanelOpen &&
+    highlightSlots.length > 0 &&
+    (giftSlotsVisible || Boolean(selectedGift) || Boolean(selectedSlot));
 
   useEffect(() => {
-    if (giftsWithSlots.length === 0) {
+    if (visibleGiftsWithSlots.length === 0) {
       setSelectedGiftId(null);
       return;
     }
     setSelectedGiftId((prev) => {
-      if (prev && giftsWithSlots.some((gift) => gift.id === prev)) {
+      if (prev && visibleGiftsWithSlots.some((gift) => gift.id === prev)) {
         return prev;
       }
       return null;
     });
-  }, [giftsWithSlots]);
+  }, [visibleGiftsWithSlots]);
 
   useEffect(() => {
     if (!selectedGiftSupportsSize) {
@@ -1067,6 +1087,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
   }, [selectedGiftId, selectedDuration]);
 
   useEffect(() => {
+    if (!selectedGift) {
+      if (selectedSlot && !availableSlots.includes(selectedSlot)) {
+        setSelectedSlot(null);
+        setSlotManuallyCleared(false);
+      }
+      return;
+    }
     if (filteredAvailableSlots.length === 0) {
       setSelectedSlot(null);
       return;
@@ -1079,7 +1106,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     if (!selectedSlot && !slotManuallyCleared) {
       setSelectedSlot(filteredAvailableSlots[0] ?? null);
     }
-  }, [filteredAvailableSlots, selectedSlot, slotManuallyCleared]);
+  }, [availableSlots, filteredAvailableSlots, selectedGift, selectedSlot, slotManuallyCleared]);
 
   useEffect(() => {
     if (!giftPanelOpen) {
@@ -1100,6 +1127,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
   };
 
   const handleSelectGift = (giftId: string) => {
+    if (selectedGiftId === giftId) {
+      setSelectedGiftId(null);
+      setGiftPreviewEnabled(false);
+      setSelectedDuration(null);
+      return;
+    }
     setSelectedGiftId(giftId);
     setGiftPreviewEnabled(true);
     setSelectedDuration(null);
@@ -1371,7 +1404,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
       return;
     }
     if (!currentUser?.id) {
-      setGiftError("Войдите, чтобы подарить подарок");
+      setGiftError(null);
+      openGiftAuth();
       return;
     }
     setGiftLoading(true);
@@ -1497,6 +1531,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setTimeout(() => setTopUpOpen(false), 180);
   };
 
+  const openGiftAuth = () => {
+    setGiftAuthOpen(true);
+    requestAnimationFrame(() => setGiftAuthVisible(true));
+  };
+
+  const closeGiftAuth = () => {
+    setGiftAuthVisible(false);
+    setTimeout(() => setGiftAuthOpen(false), 180);
+  };
+
   const topUpOptions = [
     { coins: 100, rub: 100, usd: 1 },
     { coins: 200, rub: 200, usd: 2 },
@@ -1548,6 +1592,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
       if (currentUser.id) {
         void loadWallet(currentUser.id);
       }
+      setLifecycleSuccess(
+        data.activeUntil
+          ? `Мемориал продлён до ${formatDate(data.activeUntil)}.`
+          : "Мемориал теперь не имеет ограничения по времени."
+      );
       closeExtensionDialog();
     } catch (err) {
       setLifecycleError(err instanceof Error ? err.message : "Ошибка продления");
@@ -1574,6 +1623,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || "Не удалось удалить мемориал");
+      }
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("memorial-page-toast", "Мемориал удалён.");
       }
       router.replace("/my-pets");
     } catch (err) {
@@ -2797,7 +2849,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       Закрыть
                     </button>
                   </div>
-                {currentUser ? (
                   <div className={giftFlowClass}>
                     <div className={giftCatalogSectionClass}>
                       <span>Подарок</span>
@@ -2812,10 +2863,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
                               <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-[#eadfd9]" />
                             </div>
                           ))
-                        ) : giftsWithSlots.length === 0 ? (
+                        ) : visibleGiftsWithSlots.length === 0 ? (
                           <p className="text-sm text-[#8d6e63]">Нет доступных подарков.</p>
                         ) : (
-                          giftsWithSlots.map((gift) => {
+                          visibleGiftsWithSlots.map((gift) => {
                             const iconUrl = resolveGiftIconUrl(gift);
                             const fallbackIcon =
                               "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
@@ -2919,7 +2970,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
                       Слот
                       {filteredAvailableSlots.length === 0 ? (
-                        <p className="text-sm text-[#8d6e63]">Выберите подарок.</p>
+                        <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {filteredAvailableSlots.map((slot, index) => (
@@ -2966,11 +3017,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           : "Подарить"}
                     </button>
                   </div>
-                ) : (
-                  <p className="mt-3 text-sm font-semibold text-[#8d6e63]">
-                    Войдите, чтобы дарить подарки.
-                  </p>
-                )}
                 </div>
               </div>
             ) : null}
@@ -3652,7 +3698,28 @@ export default function PetClient({ id, mode = "view" }: Props) {
         offset={152}
         variant="success"
       />
+      <ErrorToast
+        message={lifecycleSuccess}
+        onClose={() => setLifecycleSuccess(null)}
+        offset={216}
+        variant="success"
+      />
       <ErrorToast message={error} onClose={() => setError(null)} />
+      <AuthModal
+        open={giftAuthOpen}
+        visible={giftAuthVisible}
+        title="Подарить подарок"
+        helperText="Войдите или зарегистрируйтесь, чтобы отправить подарок мемориалу."
+        successRedirect={null}
+        onClose={closeGiftAuth}
+        onSuccess={(user) => {
+          setCurrentUser(user);
+          setAuthResolved(true);
+          closeGiftAuth();
+          void loadWallet(user.id);
+          setGiftSuccess("Вы вошли. Теперь можно подарить подарок.");
+        }}
+      />
     </main>
   );
 }

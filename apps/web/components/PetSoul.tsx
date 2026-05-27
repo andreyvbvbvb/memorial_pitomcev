@@ -34,25 +34,25 @@ export type PetSoulPath = {
   closed: boolean;
 };
 
-export const DEFAULT_SOUL_COLOR = "#8ee9ff";
+export const DEFAULT_SOUL_COLOR = "#d97832";
 
 export const SOUL_COLOR_OPTIONS = [
+  { id: "ginger", name: "Рыжая", color: "#d97832" },
+  { id: "apricot", name: "Абрикосовая", color: "#e7a15a" },
+  { id: "golden", name: "Золотистая", color: "#c8923e" },
+  { id: "tan", name: "Палевая", color: "#c9a16d" },
+  { id: "cream", name: "Кремовая", color: "#ead5b4" },
+  { id: "white", name: "Белая", color: "#f4eee5" },
+  { id: "russet", name: "Русая", color: "#9d7149" },
+  { id: "brown", name: "Коричневая", color: "#6f4b35" },
+  { id: "chocolate", name: "Шоколадная", color: "#44291f" },
+  { id: "black", name: "Черная", color: "#24211f" },
+  { id: "gray", name: "Серая", color: "#85827c" },
+  { id: "silver", name: "Серебристая", color: "#b9b7b0" },
   { id: "sky", name: "Небесная", color: "#8ee9ff" },
-  { id: "ocean", name: "Океанская", color: "#42c8ff" },
   { id: "aqua", name: "Аквамарин", color: "#4ee8df" },
   { id: "mint", name: "Мятная", color: "#8ff5c8" },
-  { id: "emerald", name: "Изумрудная", color: "#5df0a6" },
-  { id: "lime", name: "Лаймовая", color: "#baf76e" },
-  { id: "gold", name: "Золотая", color: "#ffd36e" },
-  { id: "amber", name: "Янтарная", color: "#ffb84d" },
-  { id: "coral", name: "Коралловая", color: "#ff8a70" },
-  { id: "rose", name: "Розовая", color: "#ff9fd2" },
-  { id: "ruby", name: "Малиновая", color: "#ff5f8f" },
-  { id: "violet", name: "Лиловая", color: "#b8a4ff" },
-  { id: "lavender", name: "Лавандовая", color: "#d6b7ff" },
-  { id: "moon", name: "Лунная", color: "#e6f2ff" },
-  { id: "dusk", name: "Сумеречная", color: "#9fb7ff" },
-  { id: "warm", name: "Тёплая", color: "#fff1bd" }
+  { id: "rose", name: "Розовая", color: "#ff9fd2" }
 ] as const;
 
 const Group = "group" as unknown as ComponentType<any>;

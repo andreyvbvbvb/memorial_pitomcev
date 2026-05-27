@@ -694,6 +694,7 @@ export default function CreateMemorialClient({
   const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [mapPreviewCaptureWithoutGifts, setMapPreviewCaptureWithoutGifts] = useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
   const [customSoulPickerOpen, setCustomSoulPickerOpen] = useState(false);
@@ -2409,7 +2410,16 @@ export default function CreateMemorialClient({
 
   const uploadMapPreview = useCallback(
     async (petId: string) => {
-      const snapshot = await capturePreviewImage();
+      setMapPreviewCaptureWithoutGifts(true);
+      let snapshot: Blob | null = null;
+      try {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        snapshot = await capturePreviewImage();
+      } finally {
+        setMapPreviewCaptureWithoutGifts(false);
+      }
       if (!snapshot) {
         return;
       }
@@ -2689,9 +2699,8 @@ export default function CreateMemorialClient({
       setReviewOpen(false);
       setActiveOverlay(null);
       setLoading(false);
-      setFarewellPlaying(true);
-      setSoulSceneMode("farewell");
-      await new Promise((resolve) => window.setTimeout(resolve, 3600));
+      setFarewellPlaying(false);
+      setSoulSceneMode("idle");
       router.push(`/pets/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания");
@@ -4325,18 +4334,22 @@ export default function CreateMemorialClient({
                 houseOffsetZ={previewHousePlacement.z}
                 houseRotationY={previewHousePlacement.rotY}
                 houseScaleMultiplier={previewHouseScale}
-                soulColor={form.soulColor}
+                soulColor={soulPreviewColor}
                 soulPath={activeSoulPath}
                 showSoulPathMarkers={canUseCalibration(accessLevel) && activeOverlay === "soul"}
                 soulMode={soulSceneMode}
                 parts={partList}
-                gifts={giftPreviewEnabled ? previewGifts : undefined}
+                gifts={!mapPreviewCaptureWithoutGifts && giftPreviewEnabled ? previewGifts : undefined}
               giftSlots={
-                giftPreviewEnabled && previewPlaceholderSlots.length > 0
+                !mapPreviewCaptureWithoutGifts && giftPreviewEnabled && previewPlaceholderSlots.length > 0
                   ? previewPlaceholderSlots
                   : undefined
               }
-              showGiftSlots={giftPreviewEnabled && previewPlaceholderSlots.length > 0}
+              showGiftSlots={
+                !mapPreviewCaptureWithoutGifts &&
+                giftPreviewEnabled &&
+                previewPlaceholderSlots.length > 0
+              }
               enableHoverHighlight
               colors={colorOverrides}
               focusSlot={focusSlot}
@@ -4715,7 +4728,7 @@ export default function CreateMemorialClient({
                       houseOffsetZ={activeHousePlacement.z}
                       houseRotationY={activeHousePlacement.rotY}
                       houseScaleMultiplier={activeHouseScale}
-                      soulColor={form.soulColor}
+                      soulColor={soulPreviewColor}
                       soulPath={activeSoulPath}
                       showSoulPathMarkers={canUseCalibration(accessLevel)}
                       soulMode="idle"
