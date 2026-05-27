@@ -52,6 +52,7 @@ import {
 } from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import AuthHelpHint from "../../components/AuthHelpHint";
 import {
@@ -763,6 +764,8 @@ export default function CreateMemorialClient({
   const [authPromptPurpose, setAuthPromptPurpose] = useState<"publish" | "draft">("publish");
   const [pendingPublishAfterAuth, setPendingPublishAfterAuth] = useState(false);
   const [pendingDraftAfterAuth, setPendingDraftAfterAuth] = useState(false);
+  const [pendingDraftRedirectHref, setPendingDraftRedirectHref] = useState<string | null>(null);
+  const [leaveConfirmHref, setLeaveConfirmHref] = useState<string | null>(null);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
@@ -1999,6 +2002,9 @@ export default function CreateMemorialClient({
       return;
     }
     const handleLinkClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
       const target = event.target as HTMLElement | null;
       const link = target?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!link || link.target === "_blank" || link.origin !== window.location.origin) {
@@ -2007,29 +2013,46 @@ export default function CreateMemorialClient({
       if (link.pathname === window.location.pathname && link.search === window.location.search) {
         return;
       }
-      const shouldSave = window.confirm(
-        "Сохранить черновик перед переходом? Для сохранения нужно войти или зарегистрироваться. Фотографии сохраняются только при публикации."
-      );
-      if (!shouldSave) {
-        return;
-      }
       event.preventDefault();
-      if (!form.ownerId.trim()) {
-        setPendingDraftAfterAuth(true);
-        openAuthPrompt("draft");
-        return;
-      }
-      void saveCurrentDraft({ redirectToMyPets: false }).then((savedId) => {
-        if (savedId) {
-          router.push(`${link.pathname}${link.search}${link.hash}`);
-        }
-      });
+      setLeaveConfirmHref(`${link.pathname}${link.search}${link.hash}`);
     };
     document.addEventListener("click", handleLinkClick, true);
     return () => {
       document.removeEventListener("click", handleLinkClick, true);
     };
-  }, [form.ownerId, hasDraftContent, isEditMode, openAuthPrompt, router, saveCurrentDraft]);
+  }, [hasDraftContent, isEditMode]);
+
+  const closeLeaveConfirm = useCallback(() => {
+    setLeaveConfirmHref(null);
+  }, []);
+
+  const continueWithoutDraft = useCallback(() => {
+    if (!leaveConfirmHref) {
+      return;
+    }
+    const href = leaveConfirmHref;
+    setLeaveConfirmHref(null);
+    router.push(href);
+  }, [leaveConfirmHref, router]);
+
+  const saveDraftBeforeNavigation = useCallback(() => {
+    if (!leaveConfirmHref) {
+      return;
+    }
+    const href = leaveConfirmHref;
+    setLeaveConfirmHref(null);
+    if (!form.ownerId.trim()) {
+      setPendingDraftRedirectHref(href);
+      setPendingDraftAfterAuth(true);
+      openAuthPrompt("draft");
+      return;
+    }
+    void saveCurrentDraft({ redirectToMyPets: false }).then((savedId) => {
+      if (savedId) {
+        router.push(href);
+      }
+    });
+  }, [form.ownerId, leaveConfirmHref, openAuthPrompt, router, saveCurrentDraft]);
 
   useEffect(() => {
     return () => {
@@ -2689,9 +2712,15 @@ export default function CreateMemorialClient({
     if (!pendingDraftAfterAuth || !form.ownerId.trim()) {
       return;
     }
+    const redirectHref = pendingDraftRedirectHref;
     setPendingDraftAfterAuth(false);
-    void saveCurrentDraft({ redirectToMyPets: true });
-  }, [form.ownerId, pendingDraftAfterAuth, saveCurrentDraft]);
+    setPendingDraftRedirectHref(null);
+    void saveCurrentDraft({ redirectToMyPets: !redirectHref }).then((savedId) => {
+      if (savedId && redirectHref) {
+        router.push(redirectHref);
+      }
+    });
+  }, [form.ownerId, pendingDraftAfterAuth, pendingDraftRedirectHref, router, saveCurrentDraft]);
 
   const toggleOverlay = (panel: "marker" | "photos" | "story" | "base" | "soul") => {
     if (isEditMode && panel !== "photos" && panel !== "soul") {
@@ -4760,6 +4789,31 @@ export default function CreateMemorialClient({
           ) : null}
         </>
       )}
+
+      <ConfirmDialog
+        open={Boolean(leaveConfirmHref)}
+        eyebrow="Черновик"
+        title="Сохранить перед переходом?"
+        message="Вы начали собирать мемориал. Можно остаться на странице, перейти без сохранения или сохранить черновик в аккаунте."
+        helperText="Для сохранения нужно войти или зарегистрироваться. Фотографии сохраняются только при публикации мемориала."
+        cancelAction={{
+          label: "Остаться",
+          onClick: closeLeaveConfirm,
+          variant: "secondary"
+        }}
+        extraAction={{
+          label: "Без сохранения",
+          onClick: continueWithoutDraft,
+          variant: "secondary"
+        }}
+        confirmAction={{
+          label: draftLoading ? "Сохранение..." : "Сохранить",
+          onClick: saveDraftBeforeNavigation,
+          disabled: draftLoading,
+          variant: "primary"
+        }}
+        onClose={closeLeaveConfirm}
+      />
 
       <AuthModal
         open={authPromptOpen}

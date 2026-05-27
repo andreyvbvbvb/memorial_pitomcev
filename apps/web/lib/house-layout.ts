@@ -101,7 +101,7 @@ export const getHousePartFitBounds = (
 ): HousePartFitBounds | null => {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   if (baseId === "budka_1" && slot === MAT_PART_SLOT) {
-    return { maxWidth: 0.33, maxLength: 0.33 };
+    return { maxWidth: 0.3465, maxLength: 0.3465 };
   }
   if (baseId === "budka_1" && slot && BOWL_PART_SLOTS.has(slot)) {
     return { maxWidth: 0.18, maxLength: 0.18 };

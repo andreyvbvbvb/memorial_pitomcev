@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
+import ConfirmDialog from "../../components/ConfirmDialog";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import AuthHelpHint from "../../components/AuthHelpHint";
 
@@ -62,6 +63,8 @@ export default function MyPetsClient() {
   const [showDrafts, setShowDrafts] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<4 | 5>(4);
+  const [draftToDelete, setDraftToDelete] = useState<MemorialDraft | null>(null);
+  const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -156,6 +159,34 @@ export default function MyPetsClient() {
       return `Ушёл: ${deathYear}`;
     }
     return "Без дат";
+  };
+  const closeDraftDeleteDialog = () => {
+    if (deletingDraftId) {
+      return;
+    }
+    setDraftToDelete(null);
+  };
+  const handleDeleteDraft = async () => {
+    if (!draftToDelete) {
+      return;
+    }
+    setDeletingDraftId(draftToDelete.id);
+    try {
+      const response = await fetch(
+        `${apiUrl}/pets/drafts/${encodeURIComponent(draftToDelete.id)}`,
+        { method: "DELETE", credentials: "include" }
+      );
+      if (!response.ok) {
+        setError("Не удалось удалить черновик");
+        return;
+      }
+      setDrafts((current) => current.filter((item) => item.id !== draftToDelete.id));
+      setDraftToDelete(null);
+    } catch {
+      setError("Не удалось удалить черновик");
+    } finally {
+      setDeletingDraftId(null);
+    }
   };
   const pageContentClass = isPortraitLayout
     ? "relative z-10 mx-auto max-w-6xl pointer-events-none px-3 pb-20 pt-3"
@@ -256,21 +287,7 @@ export default function MyPetsClient() {
                       </button>
                       <button
                         type="button"
-                        onClick={async () => {
-                          const confirmed = window.confirm("Удалить черновик?");
-                          if (!confirmed) {
-                            return;
-                          }
-                          const response = await fetch(
-                            `${apiUrl}/pets/drafts/${encodeURIComponent(draft.id)}`,
-                            { method: "DELETE", credentials: "include" }
-                          );
-                          if (!response.ok) {
-                            setError("Не удалось удалить черновик");
-                            return;
-                          }
-                          setDrafts((current) => current.filter((item) => item.id !== draft.id));
-                        }}
+                        onClick={() => setDraftToDelete(draft)}
                         className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-white/95 text-red-500 shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-red-50 hover:text-red-600"
                         aria-label="Удалить черновик"
                         title="Удалить черновик"
@@ -398,6 +415,27 @@ export default function MyPetsClient() {
             </section>
           ) : null}
           <ErrorToast message={error} onClose={() => setError(null)} />
+          <ConfirmDialog
+            open={Boolean(draftToDelete)}
+            eyebrow="Черновик"
+            title="Удалить черновик?"
+            message={`Черновик «${draftToDelete?.name ?? ""}» будет удален из списка. Это действие нельзя отменить.`}
+            cancelAction={{
+              label: "Отмена",
+              onClick: closeDraftDeleteDialog,
+              disabled: Boolean(deletingDraftId),
+              variant: "secondary"
+            }}
+            confirmAction={{
+              label: deletingDraftId ? "Удаление..." : "Удалить",
+              onClick: () => {
+                void handleDeleteDraft();
+              },
+              disabled: Boolean(deletingDraftId),
+              variant: "danger"
+            }}
+            onClose={closeDraftDeleteDialog}
+          />
         </div>
       </div>
 
