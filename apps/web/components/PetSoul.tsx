@@ -639,7 +639,7 @@ export function PetSoul({
       const canMemorialOrbit = Boolean(orbitCenter);
       const currentAction = idleActionRef.current;
       if (!currentAction || t - currentAction.startedAt >= currentAction.duration) {
-        const forceFloat = Boolean(currentAction && currentAction.kind !== "float");
+        const forceFloat = !currentAction || currentAction.kind !== "float";
         const preferMemorialOrbit =
           !forceFloat && canMemorialOrbit && !initialMemorialOrbitPlayedRef.current;
         idleActionRef.current = pickIdleSoulAction(

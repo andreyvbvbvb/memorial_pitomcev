@@ -294,7 +294,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
-  const [giftSlotsVisible, setGiftSlotsVisible] = useState(false);
+  const [giftSlotsVisible, setGiftSlotsVisible] = useState(true);
   const [giftAuthOpen, setGiftAuthOpen] = useState(false);
   const [giftAuthVisible, setGiftAuthVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<
@@ -357,6 +357,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
     [dirtLevel, pet?.memorial?.sceneJson]
   );
   const handleCleanDirt = useCallback(async (slotName?: DirtSlotName) => {
+    if (!currentUser?.id) {
+      setError("Войдите или зарегистрируйтесь, чтобы почистить мемориал.");
+      return;
+    }
     try {
       setCleanSuccess(null);
       const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
@@ -414,7 +418,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     } catch {
       setCleanSuccess("Не удалось очистить мемориал. Попробуйте еще раз.");
     }
-  }, [apiUrl, id]);
+  }, [apiUrl, currentUser?.id, id]);
 
   const handleMemorialDetailClick = useCallback(
     (detail: { slot?: string }) => {
@@ -1051,7 +1055,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const shouldShowGiftSlots =
     giftPanelOpen &&
     highlightSlots.length > 0 &&
-    (giftSlotsVisible || Boolean(selectedGift) || Boolean(selectedSlot));
+    giftSlotsVisible;
 
   useEffect(() => {
     if (visibleGiftsWithSlots.length === 0) {
@@ -1109,9 +1113,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
   }, [availableSlots, filteredAvailableSlots, selectedGift, selectedSlot, slotManuallyCleared]);
 
   useEffect(() => {
-    if (!giftPanelOpen) {
-      setGiftSlotsVisible(false);
+    if (giftPanelOpen) {
+      setGiftSlotsVisible(true);
+      return;
     }
+    setGiftSlotsVisible(false);
   }, [giftPanelOpen]);
 
   const handleSelectSlot = (slot: string) => {
@@ -2430,7 +2436,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           soulGlowColor={soulSettings.glowColor}
           soulEnabled={soulSettings.enabled}
           soulPath={soulSettings.path}
-          soulMode={editDialogOpen ? "idle" : "arrival"}
+          soulMode="idle"
           onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
           showControls={false}
           showGiftSlots={shouldShowGiftSlots}
@@ -2850,6 +2856,22 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     </button>
                   </div>
                   <div className={giftFlowClass}>
+                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-[#6f6360]">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={giftSlotsVisible}
+                          onChange={(event) => setGiftSlotsVisible(event.target.checked)}
+                          disabled={highlightSlots.length === 0}
+                        />
+                        Подсвечивать места для подарков
+                      </label>
+                      {highlightSlots.length === 0 ? (
+                        <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
+                      ) : null}
+                    </div>
+
                     <div className={giftCatalogSectionClass}>
                       <span>Подарок</span>
                       <div className={giftCatalogGridClass}>
@@ -2902,23 +2924,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </div>
                     </div>
 
-                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-[#6f6360]">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={giftSlotsVisible}
-                          onChange={(event) => setGiftSlotsVisible(event.target.checked)}
-                          disabled={highlightSlots.length === 0}
-                        />
-                        Подсвечивать места для подарков
-                      </label>
-                      {highlightSlots.length === 0 ? (
-                        <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
-                      ) : null}
-                    </div>
-
-                      {selectedGiftSupportsSize ? (
+                    {selectedGiftSupportsSize ? (
                       <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
                         Размер звезды
                         <div className="flex flex-wrap gap-2">
@@ -2965,31 +2971,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           ))}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
-                      Слот
-                      {filteredAvailableSlots.length === 0 ? (
-                        <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {filteredAvailableSlots.map((slot, index) => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => handleSelectSlot(slot)}
-                              className={`h-10 w-10 rounded-full border-[3px] text-sm font-black ${
-                                selectedSlot === slot
-                                  ? "border-[#111827] bg-[#111827] text-white"
-                                  : "border-white bg-white text-[#8d6e63]"
-                              }`}
-                              aria-label={`Слот ${index + 1}`}
-                            >
-                              {index + 1}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
 
                     <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />

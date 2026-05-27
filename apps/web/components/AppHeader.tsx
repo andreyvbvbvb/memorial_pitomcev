@@ -238,8 +238,9 @@ export default function AppHeader() {
     setBalanceSpin((prev) => ({ key: prev.key + 1, reverse }));
   };
 
-  const renderMenuIcon = (kind: "profile" | "pets" | "map" | "about" | "charity" | "admin" | "logout") => {
+  const renderMenuIcon = (kind: "login" | "profile" | "pets" | "map" | "about" | "charity" | "admin" | "logout") => {
     switch (kind) {
+      case "login":
       case "profile":
         return (
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -446,14 +447,6 @@ export default function AppHeader() {
               </>
             ) : (
               <>
-                <Link
-                  className={pillClass}
-                  href="/about"
-                  aria-label="О проекте"
-                  title="О проекте"
-                >
-                  {isPortraitLayout ? renderMenuIcon("about") : "О проекте"}
-                </Link>
                 {pathname === "/auth" ? null : (
                   <button
                     type="button"
@@ -463,6 +456,58 @@ export default function AppHeader() {
                     Войти
                   </button>
                 )}
+                <div className="relative" ref={menuRef}>
+                  <button
+                    type="button"
+                    className={iconPillClass}
+                    aria-label="Открыть меню"
+                    title="Раскрыть меню"
+                    onClick={() => (menuOpen ? closeMenu() : openMenu())}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+                      <path
+                        d="M5 7h14M5 12h14M5 17h14"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                      Раскрыть меню
+                    </span>
+                  </button>
+                  {menuOpen ? (
+                    <div className={menuPanelClass}>
+                      <div className="p-2 text-sm text-[#5d4037]">
+                        {pathname === "/auth" ? null : (
+                          <button
+                            type="button"
+                            className={menuItemClass}
+                            onClick={() => {
+                              closeMenu();
+                              openAuth();
+                            }}
+                          >
+                            <span className="text-[#d3a27f]">{renderMenuIcon("login")}</span>
+                            <span className="text-xs font-black uppercase tracking-tight">Войти</span>
+                          </button>
+                        )}
+                        <Link className={menuItemClass} href="/map">
+                          <span className="text-[#d3a27f]">{renderMenuIcon("map")}</span>
+                          <span className="text-xs font-black uppercase tracking-tight">Карта</span>
+                        </Link>
+                        <Link className={menuItemClass} href="/about">
+                          <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
+                          <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
+                        </Link>
+                        <Link className={menuItemClass} href="/charity">
+                          <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
+                          <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </>
             )}
           </div>

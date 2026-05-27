@@ -14,7 +14,6 @@ import {
   authDialogCardClass,
   authDialogInnerClass,
   authDialogOverlayClass,
-  authErrorTextClass,
   authHelperTextClass,
   authInfoPanelClass,
   authInnerShellClass,
@@ -40,8 +39,8 @@ export default function AuthClient() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const [, setEmailError] = useState<string | null>(null);
+  const [, setLoginError] = useState<string | null>(null);
   const [forgotPopupOpen, setForgotPopupOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -282,7 +281,6 @@ export default function AuthClient() {
                       }}
                       placeholder="Pet_Friend_01"
                     />
-                    {loginError ? <span className={authErrorTextClass}>{loginError}</span> : null}
                   </label>
                   <label className={authLabelClass}>
                     Email
@@ -295,7 +293,6 @@ export default function AuthClient() {
                       }}
                       placeholder="user@example.com"
                     />
-                    {emailError ? <span className={authErrorTextClass}>{emailError}</span> : null}
                   </label>
                   <label className={authLabelClass}>
                     <span className="flex items-center justify-between gap-3">

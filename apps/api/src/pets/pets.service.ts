@@ -582,8 +582,16 @@ export class PetsService {
     if (!pet?.memorial) {
       throw new NotFoundException("Memorial not found");
     }
-    this.assertCanManagePet(viewer, pet);
+    this.assertAuthenticated(viewer);
     const now = new Date();
+    if (
+      !pet.isActive ||
+      pet.memorial.deactivatedAt ||
+      (pet.memorial.activeUntil && pet.memorial.activeUntil <= now) ||
+      (!pet.isPublic && !this.canManagePet(viewer, pet))
+    ) {
+      throw new NotFoundException("Memorial not found");
+    }
     const currentState = this.calculateDirtState(pet.memorial, now);
     const wasFull = currentState.slots.length >= MAX_DUST_STAGE;
     const nextSlots = slotName

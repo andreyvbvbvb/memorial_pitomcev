@@ -186,6 +186,11 @@ const LOCKED_POLAR_ANGLE = 1.1;
 const CLICK_DRAG_THRESHOLD = 5;
 const HOVER_EMISSIVE_INTENSITY = 0.03;
 const HOVER_COLOR_LERP = 0.012;
+const DEFAULT_LOADING_TIPS = [
+  "Модели и текстуры загружаются постепенно.",
+  "После загрузки сцену можно вращать и приближать.",
+  "Если превью появилось не сразу, дождитесь окончания загрузки 3D-сцены."
+];
 
 const buildFocusTarget = (
   focus: [number, number, number] | null,
@@ -988,7 +993,6 @@ function SoulAnchor({
   return (
     <>
       <PetSoul
-        key={`${normalizedColor}-${normalizedGlowColor}-${mode}`}
         color={normalizedColor}
         glowColor={normalizedGlowColor}
         position={anchor.position}
@@ -1047,7 +1051,6 @@ function ScreenAnchoredSoul({
   return (
     <Group ref={groupRef} renderOrder={80}>
       <PetSoul
-        key={`${normalizedColor}-${normalizedGlowColor}-screen`}
         color={normalizedColor}
         glowColor={normalizedGlowColor}
         position={[0, 0, 0]}
@@ -1191,6 +1194,26 @@ function TerrainWithHouse({
   const hoveredMeshRef = useRef<THREE.Mesh | null>(null);
   const hoveredMaterialRef = useRef<THREE.Material | THREE.Material[] | null>(null);
   const hoveredOutlineRef = useRef<THREE.LineSegments | null>(null);
+  const floatGroupRef = useRef<THREE.Group | null>(null);
+  const floatPhaseRef = useRef(Math.random() * Math.PI * 2);
+
+  useFrame(({ clock }) => {
+    const group = floatGroupRef.current;
+    if (!group) {
+      return;
+    }
+    if (!visible) {
+      group.position.set(0, 0, 0);
+      return;
+    }
+    const t = clock.elapsedTime;
+    const phase = floatPhaseRef.current;
+    group.position.set(
+      Math.cos(t * 0.47 + phase) * 0.03,
+      Math.sin(t * 0.58 + phase * 0.7) * 0.018,
+      Math.sin(t * 0.41 + phase * 1.2) * 0.03
+    );
+  });
 
   const clearHoverOutline = () => {
     const outline = hoveredOutlineRef.current;
@@ -1491,6 +1514,7 @@ function TerrainWithHouse({
 
   return (
     <Group
+      ref={floatGroupRef}
       visible={visible}
       onPointerDown={onDetailClick ? handlePointerDown : undefined}
       onPointerMove={onDetailClick ? handlePointerMove : undefined}
@@ -1673,6 +1697,7 @@ export default function MemorialPreview({
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [focusDirection, setFocusDirection] = useState<[number, number, number] | null>(null);
   const [sceneReady, setSceneReady] = useState(false);
+  const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const [canvasKey, setCanvasKey] = useState(0);
   const canvasCleanupRef = useRef<(() => void) | null>(null);
   const currentAssets = useMemo<SceneAssets>(
@@ -1889,6 +1914,18 @@ export default function MemorialPreview({
   }, [activeSignature, suppressLoadingOverlay]);
 
   useEffect(() => {
+    if (sceneReady || suppressLoadingOverlay) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setLoadingTipIndex((index) => (index + 1) % DEFAULT_LOADING_TIPS.length);
+    }, 3600);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [sceneReady, suppressLoadingOverlay]);
+
+  useEffect(() => {
     if (typeof showGiftSlots === "boolean") {
       setGiftSlotsVisible(showGiftSlots);
       return;
@@ -1956,6 +1993,9 @@ export default function MemorialPreview({
           <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
             <span>{loadingLabel}</span>
+            <span className="block w-full text-center text-xs font-bold leading-snug text-[#8d6e63]">
+              {DEFAULT_LOADING_TIPS[loadingTipIndex]}
+            </span>
             <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
               <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
             </div>
