@@ -2045,7 +2045,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     );
   }
 
-  if (error || !pet) {
+  if (!pet) {
     return (
       <main className="min-h-screen bg-[#fcf8f5] px-6 py-16">
         <div className="mx-auto max-w-6xl text-center">
