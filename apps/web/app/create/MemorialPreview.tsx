@@ -57,6 +57,7 @@ type Props = {
     size?: string | null;
   }[];
   giftSlots?: string[];
+  dimmedGiftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
   onGiftSlotsDetected?: (slots: string[]) => void;
@@ -495,11 +496,13 @@ function SceneCameraRig({
 function GiftSlotsOverlay({
   target,
   visible,
-  slots
+  slots,
+  dimmedSlots
 }: {
   target: THREE.Object3D;
   visible: boolean;
   slots?: string[];
+  dimmedSlots?: string[];
 }) {
   const { scene } = useGLTF("/models/gifts/slot_placeholder.glb");
   const placeholder = useMemo(() => scene.clone(true), [scene]);
@@ -510,6 +513,7 @@ function GiftSlotsOverlay({
     }
 
     const allowed = slots && slots.length > 0 ? new Set(slots) : null;
+    const dimmed = dimmedSlots && dimmedSlots.length > 0 ? new Set(dimmedSlots) : null;
     const anchors: THREE.Object3D[] = [];
     target.traverse((node) => {
       if (!isGiftSlotName(node.name)) {
@@ -529,6 +533,9 @@ function GiftSlotsOverlay({
     const markers = anchors.map((anchor) => {
       const model = placeholder.clone(true);
       model.name = "__gift_placeholder";
+      if (dimmed?.has(anchor.name)) {
+        applyGiftSlotPlaceholderTone(model, true);
+      }
       anchor.add(model);
       return { anchor, model };
     });
@@ -538,20 +545,47 @@ function GiftSlotsOverlay({
         anchor.remove(model);
       });
     };
-  }, [target, visible, slots, placeholder]);
+  }, [target, visible, slots, dimmedSlots, placeholder]);
 
   return null;
+}
+
+function applyGiftSlotPlaceholderTone(root: THREE.Object3D, dimmed: boolean) {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) {
+      return;
+    }
+    const tuneMaterial = (material: THREE.Material) => {
+      const next = material.clone() as THREE.Material & {
+        color?: THREE.Color;
+        opacity?: number;
+        transparent?: boolean;
+      };
+      if (dimmed) {
+        next.color?.set("#9ca3af");
+        next.transparent = true;
+        next.opacity = 0.24;
+      }
+      next.needsUpdate = true;
+      return next;
+    };
+    child.material = Array.isArray(child.material)
+      ? child.material.map(tuneMaterial)
+      : tuneMaterial(child.material);
+  });
 }
 
 function GiftSlotButtons({
   terrain,
   slots,
+  dimmedSlots,
   visible,
   selectedSlot,
   onSelectSlot
 }: {
   terrain: THREE.Object3D;
   slots: string[];
+  dimmedSlots?: string[];
   visible: boolean;
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
@@ -570,8 +604,7 @@ function GiftSlotButtons({
         if (!anchor) {
           return null;
         }
-        const pos = new THREE.Vector3();
-        anchor.getWorldPosition(pos);
+        const pos = resolveObjectPositionInRenderParent(anchor, terrain);
         return { slot, position: [pos.x, pos.y, pos.z] as [number, number, number] };
       })
       .filter((item): item is { slot: string; position: [number, number, number] } => Boolean(item));
@@ -586,6 +619,7 @@ function GiftSlotButtons({
     <>
       {anchors.map((anchor) => {
         const isActive = selectedSlot === anchor.slot;
+        const isDimmed = Boolean(dimmedSlots?.includes(anchor.slot));
         return (
           <Html key={anchor.slot} position={anchor.position} center distanceFactor={8}>
             <button
@@ -597,6 +631,8 @@ function GiftSlotButtons({
               className={`h-4 w-4 rounded-full border shadow-sm transition ${
                 isActive
                   ? "border-rose-400/80 bg-rose-500/70"
+                  : isDimmed
+                    ? "border-slate-300/45 bg-slate-400/20 opacity-55"
                   : "border-white/60 bg-white/30"
               }`}
             >
@@ -643,6 +679,7 @@ function GiftPlacementAttachment({
     return cloned;
   }, [scene, url, size]);
   const [position, setPosition] = useState<[number, number, number] | null>(null);
+  const giftGroupRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
     const anchor = terrain.getObjectByName(slot);
@@ -650,8 +687,7 @@ function GiftPlacementAttachment({
       console.warn(`[MemorialPreview] gift slot '${slot}' не найден`);
       return;
     }
-    const pos = new THREE.Vector3();
-    anchor.getWorldPosition(pos);
+    const pos = resolveObjectPositionInRenderParent(anchor, terrain);
     setPosition([pos.x, pos.y, pos.z]);
   }, [terrain, slot]);
 
@@ -661,12 +697,15 @@ function GiftPlacementAttachment({
 
   return (
     <Group
+      ref={giftGroupRef}
       position={position}
       onPointerOver={(event: any) => {
         event.stopPropagation();
+        const hoverPosition = new THREE.Vector3();
+        giftGroupRef.current?.getWorldPosition(hoverPosition);
         onHover?.({
           slot,
-          position,
+          position: [hoverPosition.x, hoverPosition.y, hoverPosition.z],
           name: info?.name,
           owner: info?.owner,
           expiresAt: info?.expiresAt
@@ -689,6 +728,19 @@ function GiftPlacementAttachment({
       ) : null}
     </Group>
   );
+}
+
+function resolveObjectPositionInRenderParent(object: THREE.Object3D, terrain: THREE.Object3D) {
+  terrain.updateMatrixWorld(true);
+  object.updateMatrixWorld(true);
+  const parent = terrain.parent;
+  parent?.updateMatrixWorld(true);
+  const position = new THREE.Vector3();
+  object.getWorldPosition(position);
+  if (parent) {
+    parent.worldToLocal(position);
+  }
+  return position;
 }
 
 function PartAttachment({
@@ -1076,6 +1128,7 @@ function TerrainWithHouse({
   colors,
   showGiftSlots,
   giftSlots,
+  dimmedGiftSlots,
   selectedSlot,
   onSelectSlot,
   onSlotsDetected,
@@ -1127,6 +1180,7 @@ function TerrainWithHouse({
   colors?: Record<string, string>;
   showGiftSlots: boolean;
   giftSlots?: string[];
+  dimmedGiftSlots?: string[];
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
   onSlotsDetected?: (slots: string[]) => void;
@@ -1213,9 +1267,9 @@ function TerrainWithHouse({
     const t = clock.elapsedTime;
     const phase = floatPhaseRef.current;
     group.position.set(
-      Math.cos(t * 0.47 + phase) * 0.1,
-      Math.sin(t * 0.58 + phase * 0.7) * 0.05,
-      Math.sin(t * 0.41 + phase * 1.2) * 0.1
+      Math.cos(t * 0.47 + phase) * 0.065,
+      Math.sin(t * 0.58 + phase * 0.7) * 0.033,
+      Math.sin(t * 0.41 + phase * 1.2) * 0.065
     );
   });
 
@@ -1527,11 +1581,17 @@ function TerrainWithHouse({
     >
       <Primitive object={terrain} />
       {showMeterGrid ? <MeterGridOverlay /> : null}
-      <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
+      <GiftSlotsOverlay
+        target={terrain}
+        visible={showGiftSlots}
+        slots={giftSlots}
+        dimmedSlots={dimmedGiftSlots}
+      />
       {giftSlots && giftSlots.length > 0 && onSelectSlot ? (
         <GiftSlotButtons
           terrain={terrain}
           slots={giftSlots}
+          dimmedSlots={dimmedGiftSlots}
           visible={showGiftSlots}
           selectedSlot={selectedSlot}
           onSelectSlot={onSelectSlot}
@@ -1669,6 +1729,7 @@ export default function MemorialPreview({
   dirtLevel = 0,
   gifts,
   giftSlots,
+  dimmedGiftSlots,
   selectedSlot,
   onSelectSlot,
   onGiftSlotsDetected,
@@ -2095,6 +2156,7 @@ export default function MemorialPreview({
               colors={activeAssets.colors}
               showGiftSlots={giftSlotsVisible}
               giftSlots={giftSlots}
+              dimmedGiftSlots={dimmedGiftSlots}
               selectedSlot={selectedSlot}
               onSelectSlot={onSelectSlot}
               onSlotsDetected={onGiftSlotsDetected}
@@ -2174,6 +2236,7 @@ export default function MemorialPreview({
                   colors={pendingAssets.colors}
                   showGiftSlots={false}
                   giftSlots={undefined}
+                  dimmedGiftSlots={undefined}
                   selectedSlot={undefined}
                   onSelectSlot={undefined}
                   onSlotsDetected={undefined}

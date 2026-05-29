@@ -229,6 +229,20 @@ type OwnerMemorial = {
   } | null;
 };
 
+type GiftLike = {
+  code?: string | null;
+  modelUrl?: string | null;
+};
+
+const isGiftCompatibleWithSlot = (gift: GiftLike | null | undefined, slot: string) => {
+  if (!gift) {
+    return true;
+  }
+  const slotType = getGiftSlotType(slot);
+  const giftTypes = getGiftAvailableTypes(gift);
+  return !slotType || slotType === "default" || giftTypes.includes("default") || giftTypes.includes(slotType);
+};
+
 type AuthUser = {
   id: string;
   login?: string | null;
@@ -1049,7 +1063,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const selectedGift = giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
-  const filteredAvailableSlots = availableSlots;
+  const giftCompatibleSlots = selectedGift
+    ? availableSlots.filter((slot) => isGiftCompatibleWithSlot(selectedGift, slot))
+    : availableSlots;
+  const dimmedGiftSlots = selectedGift
+    ? availableSlots.filter((slot) => !isGiftCompatibleWithSlot(selectedGift, slot))
+    : [];
+  const filteredAvailableSlots = selectedGift ? giftCompatibleSlots : availableSlots;
   const highlightSlots = availableSlots;
   const shouldShowGiftSlots =
     giftPanelOpen &&
@@ -1124,6 +1144,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
       setSelectedSlot(null);
       setGiftPreviewEnabled(false);
       setSlotManuallyCleared(true);
+      return;
+    }
+    if (selectedGift && !isGiftCompatibleWithSlot(selectedGift, slot)) {
+      setSelectedSlot(slot);
+      setSelectedGiftId(null);
+      setSelectedDuration(null);
+      setGiftPreviewEnabled(false);
+      setSlotManuallyCleared(false);
       return;
     }
     setSelectedSlot(slot);
@@ -1406,6 +1434,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const handlePlaceGift = async () => {
     if (!selectedGiftId || !selectedSlot || !selectedDuration) {
       setGiftError("Выбери подарок, срок и слот");
+      return;
+    }
+    if (selectedGift && !isGiftCompatibleWithSlot(selectedGift, selectedSlot)) {
+      setGiftError("Этот подарок не подходит для выбранного слота");
+      setSelectedGiftId(null);
+      setSelectedDuration(null);
+      setGiftPreviewEnabled(false);
       return;
     }
     if (!currentUser?.id) {
@@ -2425,6 +2460,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           dirtLevel={dirtLevel}
           gifts={previewGifts}
           giftSlots={giftPanelOpen ? highlightSlots : undefined}
+          dimmedGiftSlots={giftPanelOpen ? dimmedGiftSlots : undefined}
           selectedSlot={giftPanelOpen ? selectedSlot : null}
           onSelectSlot={giftPanelOpen ? handleSelectSlot : undefined}
           onGiftSlotsDetected={setDetectedSlots}

@@ -24,6 +24,12 @@ export class GiftsController {
     return this.giftsService.listUserGifts(user.id);
   }
 
+  @Get("users/me/received-gifts")
+  @UseGuards(AuthGuard)
+  listReceivedGifts(@CurrentUser() user: AuthenticatedUser) {
+    return this.giftsService.listReceivedGifts(user.id);
+  }
+
   @Post("pets/:id/gifts")
   @UseGuards(AuthGuard)
   placeGift(

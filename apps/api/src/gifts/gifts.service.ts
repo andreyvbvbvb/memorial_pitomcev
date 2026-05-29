@@ -130,6 +130,44 @@ export class GiftsService {
       where: { ownerId },
       include: {
         gift: true,
+        owner: {
+          select: {
+            login: true,
+            email: true
+          }
+        },
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            owner: {
+              select: {
+                login: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { placedAt: "desc" },
+      take: 120
+    });
+  }
+
+  async listReceivedGifts(ownerId: string) {
+    await this.ensureCatalogSeeded();
+    return this.prisma.giftPlacement.findMany({
+      where: {
+        pet: { ownerId }
+      },
+      include: {
+        gift: true,
+        owner: {
+          select: {
+            login: true,
+            email: true
+          }
+        },
         pet: {
           select: {
             id: true,

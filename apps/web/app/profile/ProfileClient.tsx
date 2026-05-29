@@ -47,7 +47,13 @@ type GiftHistoryItem = {
       email?: string | null;
     } | null;
   };
+  owner?: {
+    login?: string | null;
+    email?: string | null;
+  } | null;
 };
+
+type GiftGalleryMode = "sent" | "received";
 
 function HelpHint({ text, className = "" }: { text: string; className?: string }) {
   return (
@@ -72,7 +78,9 @@ export default function ProfileClient() {
   const [newPassword, setNewPassword] = useState("");
   const [editing, setEditing] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [giftHistoryMode, setGiftHistoryMode] = useState<GiftGalleryMode>("sent");
   const [giftHistory, setGiftHistory] = useState<GiftHistoryItem[]>([]);
+  const [receivedGiftHistory, setReceivedGiftHistory] = useState<GiftHistoryItem[]>([]);
   const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -97,16 +105,27 @@ export default function ProfileClient() {
         setEditing(false);
         setGiftHistoryLoading(true);
         try {
-          const giftsResponse = await fetch(`${apiUrl}/users/me/gifts`, {
-            credentials: "include"
-          });
+          const [giftsResponse, receivedResponse] = await Promise.all([
+            fetch(`${apiUrl}/users/me/gifts`, {
+              credentials: "include"
+            }),
+            fetch(`${apiUrl}/users/me/received-gifts`, {
+              credentials: "include"
+            })
+          ]);
           if (giftsResponse.ok) {
             setGiftHistory((await giftsResponse.json()) as GiftHistoryItem[]);
           } else {
             setGiftHistory([]);
           }
+          if (receivedResponse.ok) {
+            setReceivedGiftHistory((await receivedResponse.json()) as GiftHistoryItem[]);
+          } else {
+            setReceivedGiftHistory([]);
+          }
         } catch {
           setGiftHistory([]);
+          setReceivedGiftHistory([]);
         } finally {
           setGiftHistoryLoading(false);
         }
@@ -224,6 +243,12 @@ export default function ProfileClient() {
     const ownerLabel = owner?.login ?? owner?.email ?? null;
     return ownerLabel ? `${gift.pet.name} (${ownerLabel})` : gift.pet.name;
   };
+
+  const getGiftSender = (gift: GiftHistoryItem) =>
+    gift.owner?.login ?? gift.owner?.email ?? "гость";
+
+  const activeGiftHistory =
+    giftHistoryMode === "sent" ? giftHistory : receivedGiftHistory;
 
   if (loadingProfile) {
     return (
@@ -380,11 +405,37 @@ export default function ProfileClient() {
                     Подарки
                   </p>
                   <h2 className="mt-2 text-xl font-black leading-tight text-[#5d4037]">
-                    Подаренные подарки
+                    {giftHistoryMode === "sent" ? "Подаренные подарки" : "Полученные подарки"}
                   </h2>
                 </div>
-                <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-                  {giftHistory.length}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex rounded-[18px] bg-[#f1e7e0] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setGiftHistoryMode("sent")}
+                      className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition ${
+                        giftHistoryMode === "sent"
+                          ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                          : "text-[#8d6e63] hover:bg-white/70"
+                      }`}
+                    >
+                      Дарил
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGiftHistoryMode("received")}
+                      className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition ${
+                        giftHistoryMode === "received"
+                          ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                          : "text-[#8d6e63] hover:bg-white/70"
+                      }`}
+                    >
+                      Получал
+                    </button>
+                  </div>
+                  <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                    {activeGiftHistory.length}
+                  </div>
                 </div>
               </div>
 
@@ -397,9 +448,9 @@ export default function ProfileClient() {
                     />
                   ))}
                 </div>
-              ) : giftHistory.length > 0 ? (
+              ) : activeGiftHistory.length > 0 ? (
                 <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-                  {giftHistory.map((item) => {
+                  {activeGiftHistory.map((item) => {
                     const iconUrl = resolveGiftIconUrl(item.gift);
                     const status = getGiftStatus(item);
                     return (
@@ -424,7 +475,14 @@ export default function ProfileClient() {
                         </div>
                         <div className="pointer-events-none absolute bottom-[calc(100%+0.6rem)] left-1/2 z-[1000] w-64 -translate-x-1/2 rounded-[18px] border-[3px] border-white bg-white/[0.97] px-4 py-3 text-left text-xs font-bold leading-snug text-[#6f6360] opacity-0 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.55)] backdrop-blur transition group-hover/gift:opacity-100 group-focus/gift:opacity-100">
                           <p className="text-sm font-black text-[#5d4037]">{item.gift.name}</p>
-                          <p className="mt-1">Кому: {getGiftRecipient(item)}</p>
+                          <p className="mt-1">
+                            {giftHistoryMode === "sent"
+                              ? `Кому: ${getGiftRecipient(item)}`
+                              : `От кого: ${getGiftSender(item)}`}
+                          </p>
+                          {giftHistoryMode === "received" ? (
+                            <p>Мемориал: {item.pet.name}</p>
+                          ) : null}
                           <p>Подарен: {formatDate(item.placedAt)}</p>
                           <p>{status}</p>
                         </div>
@@ -434,7 +492,9 @@ export default function ProfileClient() {
                 </div>
               ) : (
                 <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
-                  Вы пока не дарили подарки.
+                  {giftHistoryMode === "sent"
+                    ? "Вы пока не дарили подарки."
+                    : "Ваши мемориалы пока не получали подарки."}
                 </p>
               )}
             </div>
