@@ -694,6 +694,7 @@ export default function CreateMemorialClient({
   const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [showMeterGrid, setShowMeterGrid] = useState(false);
   const [mapPreviewCaptureWithoutGifts, setMapPreviewCaptureWithoutGifts] = useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
@@ -4337,6 +4338,7 @@ export default function CreateMemorialClient({
                 soulColor={soulPreviewColor}
                 soulPath={activeSoulPath}
                 showSoulPathMarkers={canUseCalibration(accessLevel) && activeOverlay === "soul"}
+                showMeterGrid={canUseCalibration(accessLevel) && showMeterGrid}
                 soulMode={soulSceneMode}
                 parts={partList}
                 gifts={!mapPreviewCaptureWithoutGifts && giftPreviewEnabled ? previewGifts : undefined}
@@ -4405,6 +4407,20 @@ export default function CreateMemorialClient({
                           При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
                         </span>
                       </label>
+                      {canUseCalibration(accessLevel) ? (
+                        <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
+                          <input
+                            type="checkbox"
+                            className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]" : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"}
+                            checked={showMeterGrid}
+                            onChange={(event) => setShowMeterGrid(event.target.checked)}
+                          />
+                          <span className="truncate">Сетка 1 м</span>
+                          <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                            Полупрозрачная сетка с шагом 1 метр для проверки размеров и расстояний.
+                          </span>
+                        </label>
+                      ) : null}
                     </div>
                   </div>
                 </div>

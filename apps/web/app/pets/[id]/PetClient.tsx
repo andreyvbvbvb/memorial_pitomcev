@@ -358,7 +358,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
   );
   const handleCleanDirt = useCallback(async (slotName?: DirtSlotName) => {
     if (!currentUser?.id) {
-      setError("Войдите или зарегистрируйтесь, чтобы почистить мемориал.");
+      setCleanSuccess(null);
+      setError("Вам требуется авторизоваться, чтобы почистить мемориал.");
       return;
     }
     try {
@@ -370,6 +371,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
         body: slotName ? JSON.stringify({ slot: slotName }) : undefined
       });
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          setError("Вам требуется авторизоваться, чтобы почистить мемориал.");
+          return;
+        }
         throw new Error("Не удалось очистить мемориал");
       }
       const data = (await response.json()) as {
@@ -416,7 +421,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           : "Спасибо, что поддерживаете мемориал в чистоте."
       );
     } catch {
-      setCleanSuccess("Не удалось очистить мемориал. Попробуйте еще раз.");
+      setError("Не удалось очистить мемориал. Попробуйте еще раз.");
     }
   }, [apiUrl, currentUser?.id, id]);
 
@@ -1025,6 +1030,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
   }, [availableSlots, giftCatalog]);
 
   const visibleGiftsWithSlots = useMemo(() => {
+    if (selectedGiftId) {
+      return giftsWithSlots;
+    }
     if (!selectedSlot) {
       return giftsWithSlots;
     }
@@ -1036,22 +1044,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const types = getGiftAvailableTypes(gift);
       return types.includes("default") || types.includes(slotType);
     });
-  }, [giftsWithSlots, selectedSlot]);
+  }, [giftsWithSlots, selectedGiftId, selectedSlot]);
 
   const selectedGift = giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
-  const selectedGiftTypes = selectedGift ? getGiftAvailableTypes(selectedGift) : [];
-  const filteredAvailableSlots = selectedGift
-    ? availableSlots.filter((slot) => {
-        const slotType = getGiftSlotType(slot);
-        if (slotType === "default" || selectedGiftTypes.includes("default")) {
-          return true;
-        }
-        return selectedGiftTypes.includes(slotType);
-      })
-    : availableSlots;
-  const highlightSlots = selectedGift ? filteredAvailableSlots : availableSlots;
+  const filteredAvailableSlots = availableSlots;
+  const highlightSlots = availableSlots;
   const shouldShowGiftSlots =
     giftPanelOpen &&
     highlightSlots.length > 0 &&

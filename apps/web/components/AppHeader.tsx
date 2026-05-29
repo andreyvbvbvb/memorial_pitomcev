@@ -211,10 +211,10 @@ export default function AppHeader() {
     : "flex items-center gap-3";
   const pillClass =
     isPortraitLayout
-      ? "group relative inline-flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-[9px] font-black uppercase tracking-[0.08em] text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
-      : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-4 text-[10px] font-black uppercase tracking-[0.12em] text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
+      ? "group relative inline-flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
+      : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-4 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const iconPillClass =
-    "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-base text-[#7c6b63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur transition hover:bg-[#d3a27f] hover:text-white";
+    "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-base text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const createButtonClass =
     isPortraitLayout
       ? "inline-flex h-[34px] shrink-0 items-center gap-1 rounded-[10px] bg-[#111827] px-2.5 text-[9px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80"

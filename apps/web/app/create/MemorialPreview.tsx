@@ -99,6 +99,7 @@ type Props = {
   soulMode?: PetSoulMode;
   soulPath?: PetSoulPath | null;
   showSoulPathMarkers?: boolean;
+  showMeterGrid?: boolean;
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   suppressLoadingOverlay?: boolean;
@@ -178,6 +179,7 @@ const TubeGeometry = "tubeGeometry" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
 const HemisphereLight = "hemisphereLight" as unknown as React.ComponentType<any>;
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
+const GridHelper = "gridHelper" as unknown as React.ComponentType<any>;
 const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
 const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
@@ -1101,6 +1103,7 @@ function TerrainWithHouse({
   soulMode,
   soulPath,
   showSoulPathMarkers,
+  showMeterGrid,
   soulQuality,
   soulAnchorMode,
   onReady,
@@ -1151,6 +1154,7 @@ function TerrainWithHouse({
   soulMode?: PetSoulMode;
   soulPath?: PetSoulPath | null;
   showSoulPathMarkers?: boolean;
+  showMeterGrid?: boolean;
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   onReady?: () => void;
@@ -1209,9 +1213,9 @@ function TerrainWithHouse({
     const t = clock.elapsedTime;
     const phase = floatPhaseRef.current;
     group.position.set(
-      Math.cos(t * 0.47 + phase) * 0.03,
-      Math.sin(t * 0.58 + phase * 0.7) * 0.018,
-      Math.sin(t * 0.41 + phase * 1.2) * 0.03
+      Math.cos(t * 0.47 + phase) * 0.1,
+      Math.sin(t * 0.58 + phase * 0.7) * 0.05,
+      Math.sin(t * 0.41 + phase * 1.2) * 0.1
     );
   });
 
@@ -1522,6 +1526,7 @@ function TerrainWithHouse({
       onPointerOut={onDetailClick ? handlePointerOut : undefined}
     >
       <Primitive object={terrain} />
+      {showMeterGrid ? <MeterGridOverlay /> : null}
       <GiftSlotsOverlay target={terrain} visible={showGiftSlots} slots={giftSlots} />
       {giftSlots && giftSlots.length > 0 && onSelectSlot ? (
         <GiftSlotButtons
@@ -1577,6 +1582,32 @@ function TerrainWithHouse({
         />
       ) : null}
     </Group>
+  );
+}
+
+function MeterGridOverlay() {
+  const helperRef = useRef<THREE.GridHelper | null>(null);
+
+  useEffect(() => {
+    const helper = helperRef.current;
+    if (!helper) {
+      return;
+    }
+    const materials = Array.isArray(helper.material) ? helper.material : [helper.material];
+    materials.forEach((material) => {
+      material.transparent = true;
+      material.opacity = 0.34;
+      material.depthWrite = false;
+      material.needsUpdate = true;
+    });
+  }, []);
+
+  return (
+    <GridHelper
+      ref={helperRef}
+      args={[20, 20, "#5d4037", "#d3a27f"]}
+      position={[0, 0.035, 0]}
+    />
   );
 }
 
@@ -1676,6 +1707,7 @@ export default function MemorialPreview({
   soulMode = "idle",
   soulPath,
   showSoulPathMarkers = false,
+  showMeterGrid = false,
   soulQuality = "full",
   soulAnchorMode = "scene",
   suppressLoadingOverlay = false,
@@ -2090,6 +2122,7 @@ export default function MemorialPreview({
               soulMode={soulMode}
               soulPath={soulPath}
               showSoulPathMarkers={showSoulPathMarkers}
+              showMeterGrid={showMeterGrid}
               soulQuality={soulQuality}
               soulAnchorMode={soulAnchorMode}
               onReady={() => setSceneReady(true)}
@@ -2163,6 +2196,7 @@ export default function MemorialPreview({
                   houseRotationY={pendingHousePresentation?.houseRotationY}
                   houseScaleMultiplier={pendingHousePresentation?.houseScaleMultiplier}
                   soulEnabled={false}
+                  showMeterGrid={false}
                   onReady={() => handlePendingReady(pendingSignature)}
                 />
               ) : pendingAssets.houseUrl ? (

@@ -5,9 +5,9 @@ import { useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { DirtSlotPlacement } from "../lib/dirt-models";
 
-const MAX_TERRAIN_DIRT_SIZE = 0.7;
+const MAX_TERRAIN_DIRT_SIZE = 1.4;
 const MAX_HOUSE_DIRT_SIZE = 0.5;
-const DIRT_MATERIAL_COLOR = "#8a6c4d";
+const DIRT_MATERIAL_COLOR = "#a88766";
 
 type Props = {
   terrain: THREE.Object3D;
@@ -137,9 +137,9 @@ function applyDirtMaterial(root: THREE.Object3D) {
       if (typeof next.metalness === "number") {
         next.metalness = 0;
       }
-      next.emissive?.set("#120905");
+      next.emissive?.set("#24160d");
       if (typeof next.emissiveIntensity === "number") {
-        next.emissiveIntensity = 0.04;
+        next.emissiveIntensity = 0.05;
       }
       next.needsUpdate = true;
       return next;

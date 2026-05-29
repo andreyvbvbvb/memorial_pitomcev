@@ -19,20 +19,20 @@ export const authTabClass = (active: boolean) =>
       : "text-[#8d6e63] hover:bg-white/70"
   }`;
 
-export const authTitleClass = "text-2xl font-black leading-tight text-[#5d4037]";
+export const authTitleClass = "text-xl font-black leading-tight text-[#5d4037] sm:text-2xl";
 
 export const authLabelClass =
   "grid gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63]";
 
 export const authInputClass =
-  "w-full rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3.5 text-base font-bold text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.07)] outline-none transition-all placeholder:text-[#c2a79a] focus:border-[#3bceac] focus:bg-white";
+  "w-full rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-base font-bold text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.07)] outline-none transition-all placeholder:text-[#c2a79a] focus:border-[#3bceac] focus:bg-white sm:py-3.5";
 
 export const authErrorTextClass = "text-xs font-bold text-[#d64550]";
 
 export const authHelperTextClass = "text-xs font-semibold leading-relaxed text-[#8d6e63]";
 
 export const authPrimaryButtonClass =
-  "inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none";
+  "inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none sm:py-4";
 
 export const authSecondaryButtonClass =
   "inline-flex w-full items-center justify-center rounded-[18px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63] shadow-[0_12px_26px_-20px_rgba(93,64,55,0.55)] transition-all hover:bg-[#fff7f1]";
@@ -55,13 +55,13 @@ export const authInfoPanelClass =
   "rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-5 py-4 text-sm font-semibold leading-relaxed text-[#6f6360] shadow-[inset_0_2px_6px_rgba(93,64,55,0.06)]";
 
 export const authDialogOverlayClass =
-  "fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/30 px-4 py-6 backdrop-blur-md";
+  "fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#111827]/30 px-2 py-2 backdrop-blur-md sm:px-4 sm:py-6";
 
 export const authDialogCardClass =
-  "relative w-full max-w-md overflow-hidden rounded-[34px] border-[4px] border-white bg-white/[0.92] p-4 shadow-[0_28px_70px_-28px_rgba(0,0,0,0.5)] backdrop-blur";
+  "relative max-h-[calc(100dvh-1rem)] w-full max-w-[min(28rem,calc(100vw-1rem))] overflow-y-auto rounded-[26px] border-[3px] border-white bg-white/[0.92] p-2 shadow-[0_28px_70px_-28px_rgba(0,0,0,0.5)] backdrop-blur sm:max-h-[calc(100dvh-3rem)] sm:rounded-[34px] sm:border-[4px] sm:p-4";
 
 export const authDialogInnerClass =
-  "rounded-[24px] bg-[#fffaf6] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]";
+  "rounded-[20px] bg-[#fffaf6] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] sm:rounded-[24px] sm:p-4";
 
 export const authCloseButtonClass =
   "inline-flex h-10 w-10 items-center justify-center rounded-[14px] border-[3px] border-white bg-[#f1e7e0] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white hover:text-[#5d4037]";

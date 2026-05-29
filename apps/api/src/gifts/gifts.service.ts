@@ -124,6 +124,30 @@ export class GiftsService {
     });
   }
 
+  async listUserGifts(ownerId: string) {
+    await this.ensureCatalogSeeded();
+    return this.prisma.giftPlacement.findMany({
+      where: { ownerId },
+      include: {
+        gift: true,
+        pet: {
+          select: {
+            id: true,
+            name: true,
+            owner: {
+              select: {
+                login: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { placedAt: "desc" },
+      take: 120
+    });
+  }
+
   async placeGift(options: {
     petId: string;
     ownerId: string;

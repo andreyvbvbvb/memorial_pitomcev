@@ -18,6 +18,12 @@ export class GiftsController {
     return this.giftsService.listCatalog();
   }
 
+  @Get("users/me/gifts")
+  @UseGuards(AuthGuard)
+  listMyGifts(@CurrentUser() user: AuthenticatedUser) {
+    return this.giftsService.listUserGifts(user.id);
+  }
+
   @Post("pets/:id/gifts")
   @UseGuards(AuthGuard)
   placeGift(

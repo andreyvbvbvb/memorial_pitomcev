@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 import AuthHelpHint from "../../components/AuthHelpHint";
@@ -30,6 +31,64 @@ import {
   authTitleClass
 } from "../../components/authTheme";
 
+function PasswordInput({
+  label,
+  value,
+  onChange,
+  visible,
+  onToggle,
+  hint
+}: {
+  label: ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  visible: boolean;
+  onToggle: () => void;
+  hint?: ReactNode;
+}) {
+  return (
+    <label className={authLabelClass}>
+      {hint ? (
+        <span className="flex items-center justify-between gap-3">
+          <span>{label}</span>
+          {hint}
+        </span>
+      ) : (
+        label
+      )}
+      <div className="relative">
+        <input
+          type={visible ? "text" : "password"}
+          className={`${authInputClass} pr-12`}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="••••••"
+        />
+        <button
+          type="button"
+          className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#8d6e63] transition hover:bg-white hover:text-[#5d4037]"
+          onClick={onToggle}
+          aria-label={visible ? "Скрыть пароль" : "Показать пароль"}
+        >
+          {visible ? (
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3 3 18 18" />
+              <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+              <path d="M9.9 4.24A10.7 10.7 0 0 1 12 4c5 0 8.7 3.2 10 8a11.5 11.5 0 0 1-2.2 4.06" />
+              <path d="M6.6 6.6A11.1 11.1 0 0 0 2 12c1.3 4.8 5 8 10 8a10.8 10.8 0 0 0 4.2-.82" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </label>
+  );
+}
+
 export default function AuthClient() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [identifier, setIdentifier] = useState("");
@@ -37,6 +96,8 @@ export default function AuthClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setEmailError] = useState<string | null>(null);
@@ -254,16 +315,13 @@ export default function AuthClient() {
                       placeholder="user@example.com"
                     />
                   </label>
-                  <label className={authLabelClass}>
-                    Пароль
-                    <input
-                      type="password"
-                      className={authInputClass}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••"
-                    />
-                  </label>
+                  <PasswordInput
+                    label="Пароль"
+                    value={password}
+                    onChange={setPassword}
+                    visible={showPassword}
+                    onToggle={() => setShowPassword((prev) => !prev)}
+                  />
                 </>
               ) : (
                 <>
@@ -294,29 +352,21 @@ export default function AuthClient() {
                       placeholder="user@example.com"
                     />
                   </label>
-                  <label className={authLabelClass}>
-                    <span className="flex items-center justify-between gap-3">
-                      <span>Пароль</span>
-                      <AuthHelpHint text="Минимум 6 символов. Пароль чувствителен к регистру, поэтому заглавные и строчные буквы считаются разными." />
-                    </span>
-                    <input
-                      type="password"
-                      className={authInputClass}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••"
-                    />
-                  </label>
-                  <label className={authLabelClass}>
-                    Подтверждение пароля
-                    <input
-                      type="password"
-                      className={authInputClass}
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      placeholder="••••••"
-                    />
-                  </label>
+                  <PasswordInput
+                    label="Пароль"
+                    value={password}
+                    onChange={setPassword}
+                    visible={showPassword}
+                    onToggle={() => setShowPassword((prev) => !prev)}
+                    hint={<AuthHelpHint text="Минимум 6 символов. Пароль чувствителен к регистру, поэтому заглавные и строчные буквы считаются разными." />}
+                  />
+                  <PasswordInput
+                    label="Подтверждение пароля"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    visible={showConfirmPassword}
+                    onToggle={() => setShowConfirmPassword((prev) => !prev)}
+                  />
                   <div className="grid gap-3">
                     <label className={authCheckboxRowClass}>
                       <input
