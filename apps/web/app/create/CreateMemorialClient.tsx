@@ -4416,9 +4416,9 @@ export default function CreateMemorialClient({
                             checked={showMeterGrid}
                             onChange={(event) => setShowMeterGrid(event.target.checked)}
                           />
-                          <span className="truncate">Сетка 0.25 м</span>
+                          <span className="truncate">Сетка 1 м</span>
                           <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                            Полупрозрачный объемный куб с сеткой 0.25 метра для проверки размеров и расстояний.
+                            Полупрозрачный объемный куб с сеткой 1 метр для проверки размеров и расстояний.
                           </span>
                         </label>
                       ) : null}

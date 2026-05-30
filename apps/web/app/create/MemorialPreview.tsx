@@ -196,7 +196,7 @@ const DEFAULT_LOADING_TIPS = [
   "Если превью появилось не сразу, дождитесь окончания загрузки 3D-сцены."
 ];
 const METER_GRID_CUBE_SIZE = 8;
-const METER_GRID_CELL_SIZE = 0.25;
+const METER_GRID_CELL_SIZE = 1;
 
 const createVolumetricGridGeometry = (size: number, cellSize: number) => {
   const divisions = Math.max(1, Math.round(size / cellSize));
@@ -1706,9 +1706,9 @@ function MeterGridOverlay() {
       </Mesh>
       <LineSegments geometry={gridGeometry} renderOrder={0} raycast={() => null}>
         <LineBasicMaterial
-          color="#8d6e63"
+          color="#5d4037"
           transparent
-          opacity={0.13}
+          opacity={0.32}
           depthWrite={false}
         />
       </LineSegments>
@@ -1716,7 +1716,7 @@ function MeterGridOverlay() {
         <LineBasicMaterial
           color="#5d4037"
           transparent
-          opacity={0.34}
+          opacity={0.52}
           depthWrite={false}
         />
       </LineSegments>
