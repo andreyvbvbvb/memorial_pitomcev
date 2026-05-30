@@ -20,6 +20,7 @@ import {
   applyHousePlacement,
   getHousePartFitBounds,
   getHousePartScaleMultiplier,
+  getHouseScaleFitSizeOverride,
   getHouseTransform
 } from "../../lib/house-layout";
 import {
@@ -390,12 +391,13 @@ function applyHouseScale(
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
   const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const maxWidth = baseId === "kotik_2" || baseId === "kotik_6" ? 2 : HOUSE_MAX_WIDTH;
-  const sizeVec = baseSize ? baseSize.clone() : (() => {
+  const sizeOverride = getHouseScaleFitSizeOverride(houseId);
+  const sizeVec = sizeOverride ?? (baseSize ? baseSize.clone() : (() => {
     const box = new THREE.Box3().setFromObject(target);
     const size = new THREE.Vector3();
     box.getSize(size);
     return size;
-  })();
+  })());
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }

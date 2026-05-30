@@ -11,6 +11,7 @@ export type HouseTransform = {
 const BOWL_PART_SLOTS = new Set(["bowl_food_slot", "bowl_water_slot"]);
 const MAT_PART_SLOT = "mat_slot";
 const RESCALED_BUDKA_BASE_IDS = new Set(["budka_1", "budka_2", "budka_3", "budka_4", "budka_5"]);
+const MAT_HOUSE_CANONICAL_FIT_SIZE = new THREE.Vector3(0.848703, 0.29245, 0.979797);
 
 export type HousePartFitBounds = {
   maxWidth: number;
@@ -75,6 +76,14 @@ export const getHouseTransform = (houseId?: string | null, terrainId?: string | 
     ...transform,
     scale: Number.isFinite(transform.scale) && transform.scale > 0 ? transform.scale : 1
   };
+};
+
+export const getHouseScaleFitSizeOverride = (houseId?: string | null) => {
+  const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
+  if (baseId.startsWith("mat_")) {
+    return MAT_HOUSE_CANONICAL_FIT_SIZE.clone();
+  }
+  return null;
 };
 
 export const getHousePartScaleMultiplier = (

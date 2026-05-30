@@ -39,6 +39,7 @@ import {
   applyHousePlacement,
   getHousePartFitBounds,
   getHousePartScaleMultiplier,
+  getHouseScaleFitSizeOverride,
   getHouseTransform
 } from "../lib/house-layout";
 import VisibilityIndicator from "./VisibilityIndicator";
@@ -133,9 +134,13 @@ function applyHouseScale(
   const maxHeight = baseId.startsWith("kotik") ? KOTIK_MAX_HEIGHT : HOUSE_MAX_HEIGHT;
   const maxWidth = baseId === "kotik_2" || baseId === "kotik_6" ? 2 : HOUSE_MAX_WIDTH;
   const { scale: scaleMultiplier } = getHouseTransform(houseId, terrainId);
-  const box = new THREE.Box3().setFromObject(target);
-  const sizeVec = new THREE.Vector3();
-  box.getSize(sizeVec);
+  const sizeOverride = getHouseScaleFitSizeOverride(houseId);
+  const sizeVec = sizeOverride ?? (() => {
+    const box = new THREE.Box3().setFromObject(target);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return size;
+  })();
   if (sizeVec.x <= 0 || sizeVec.y <= 0) {
     return;
   }
