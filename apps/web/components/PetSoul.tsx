@@ -58,7 +58,10 @@ export const SOUL_COLOR_OPTIONS = [
 const Group = "group" as unknown as ComponentType<any>;
 const Mesh = "mesh" as unknown as ComponentType<any>;
 const SphereGeometry = "sphereGeometry" as unknown as ComponentType<any>;
+const BoxGeometry = "boxGeometry" as unknown as ComponentType<any>;
+const LineSegments = "lineSegments" as unknown as ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as ComponentType<any>;
+const LineBasicMaterial = "lineBasicMaterial" as unknown as ComponentType<any>;
 const Color = "color" as unknown as ComponentType<any>;
 const AmbientLight = "ambientLight" as unknown as ComponentType<any>;
 
@@ -255,6 +258,73 @@ function SoulPreviewBackground() {
       <Color attach="background" args={["#eef8ff"]} />
       <TunedSkyDome radius={24} renderOrder={-10} followCamera={false} />
     </>
+  );
+}
+
+function createSoulPreviewGridGeometry(size: number, divisions: number) {
+  const half = size / 2;
+  const step = size / divisions;
+  const coordinates = Array.from({ length: divisions + 1 }, (_, index) => -half + index * step);
+  const points: number[] = [];
+  const pushLine = (from: [number, number, number], to: [number, number, number]) => {
+    points.push(...from, ...to);
+  };
+
+  coordinates.forEach((a) => {
+    coordinates.forEach((b) => {
+      pushLine([-half, a, b], [half, a, b]);
+      pushLine([a, -half, b], [a, half, b]);
+      pushLine([a, b, -half], [a, b, half]);
+    });
+  });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+  return geometry;
+}
+
+function SoulPreviewGridCube() {
+  const cubeSize = 2.15;
+  const boxGeometry = useMemo(() => new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), []);
+  const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(boxGeometry), [boxGeometry]);
+  const gridGeometry = useMemo(() => createSoulPreviewGridGeometry(cubeSize, 4), []);
+
+  useEffect(() => {
+    return () => {
+      gridGeometry.dispose();
+      edgeGeometry.dispose();
+      boxGeometry.dispose();
+    };
+  }, [boxGeometry, edgeGeometry, gridGeometry]);
+
+  return (
+    <Group position={[0.1, 0, 0]} rotation={[0.12, -0.26, 0.02]} raycast={() => null}>
+      <Mesh geometry={boxGeometry} renderOrder={0} raycast={() => null}>
+        <MeshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.055}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </Mesh>
+      <LineSegments geometry={gridGeometry} renderOrder={1} raycast={() => null}>
+        <LineBasicMaterial
+          color="#8d6e63"
+          transparent
+          opacity={0.16}
+          depthWrite={false}
+        />
+      </LineSegments>
+      <LineSegments geometry={edgeGeometry} renderOrder={2} raycast={() => null}>
+        <LineBasicMaterial
+          color="#5d4037"
+          transparent
+          opacity={0.34}
+          depthWrite={false}
+        />
+      </LineSegments>
+    </Group>
   );
 }
 
@@ -1134,6 +1204,7 @@ export function PetSoulPreview({
       <Canvas dpr={1} camera={{ position: [0, 0.35, 3.2], fov: 42 }}>
         <SoulPreviewBackground />
         <AmbientLight intensity={0.8} />
+        <SoulPreviewGridCube />
         <PetSoul
           key={normalizedPreviewColor}
           color={normalizedPreviewColor}
