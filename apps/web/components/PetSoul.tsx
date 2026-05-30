@@ -1193,10 +1193,12 @@ export function PetSoul({
 
 export function PetSoulPreview({
   color,
-  className
+  className,
+  showGrid = false
 }: {
   color?: string | null;
   className?: string;
+  showGrid?: boolean;
 }) {
   const normalizedPreviewColor = normalizeSoulColor(color);
   return (
@@ -1204,7 +1206,7 @@ export function PetSoulPreview({
       <Canvas dpr={1} camera={{ position: [0, 0.35, 3.2], fov: 42 }}>
         <SoulPreviewBackground />
         <AmbientLight intensity={0.8} />
-        <SoulPreviewGridCube />
+        {showGrid ? <SoulPreviewGridCube /> : null}
         <PetSoul
           key={normalizedPreviewColor}
           color={normalizedPreviewColor}

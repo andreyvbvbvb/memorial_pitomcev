@@ -177,10 +177,11 @@ const Group = "group" as unknown as React.ComponentType<any>;
 const Mesh = "mesh" as unknown as React.ComponentType<any>;
 const SphereGeometry = "sphereGeometry" as unknown as React.ComponentType<any>;
 const TubeGeometry = "tubeGeometry" as unknown as React.ComponentType<any>;
+const LineSegments = "lineSegments" as unknown as React.ComponentType<any>;
 const MeshBasicMaterial = "meshBasicMaterial" as unknown as React.ComponentType<any>;
+const LineBasicMaterial = "lineBasicMaterial" as unknown as React.ComponentType<any>;
 const HemisphereLight = "hemisphereLight" as unknown as React.ComponentType<any>;
 const PointLight = "pointLight" as unknown as React.ComponentType<any>;
-const GridHelper = "gridHelper" as unknown as React.ComponentType<any>;
 const DEFAULT_TARGET = new THREE.Vector3(0, 0.6, 0);
 const DEFAULT_CAMERA = new THREE.Vector3(4, 3, 4);
 const DEFAULT_FOCUS_OFFSET = new THREE.Vector3(2.6, 1.8, 2.6);
@@ -194,6 +195,34 @@ const DEFAULT_LOADING_TIPS = [
   "После загрузки сцену можно вращать и приближать.",
   "Если превью появилось не сразу, дождитесь окончания загрузки 3D-сцены."
 ];
+const METER_GRID_CUBE_SIZE = 8;
+const METER_GRID_CELL_SIZE = 0.25;
+
+const createVolumetricGridGeometry = (size: number, cellSize: number) => {
+  const divisions = Math.max(1, Math.round(size / cellSize));
+  const normalizedSize = divisions * cellSize;
+  const half = normalizedSize / 2;
+  const coordinates = Array.from(
+    { length: divisions + 1 },
+    (_, index) => -half + index * cellSize
+  );
+  const points: number[] = [];
+  const pushLine = (from: [number, number, number], to: [number, number, number]) => {
+    points.push(...from, ...to);
+  };
+
+  coordinates.forEach((a) => {
+    coordinates.forEach((b) => {
+      pushLine([-half, a, b], [half, a, b]);
+      pushLine([a, -half, b], [a, half, b]);
+      pushLine([a, b, -half], [a, b, half]);
+    });
+  });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+  return geometry;
+};
 
 const buildFocusTarget = (
   focus: [number, number, number] | null,
@@ -1646,28 +1675,52 @@ function TerrainWithHouse({
 }
 
 function MeterGridOverlay() {
-  const helperRef = useRef<THREE.GridHelper | null>(null);
+  const boxGeometry = useMemo(
+    () => new THREE.BoxGeometry(METER_GRID_CUBE_SIZE, METER_GRID_CUBE_SIZE, METER_GRID_CUBE_SIZE),
+    []
+  );
+  const edgeGeometry = useMemo(() => new THREE.EdgesGeometry(boxGeometry), [boxGeometry]);
+  const gridGeometry = useMemo(
+    () => createVolumetricGridGeometry(METER_GRID_CUBE_SIZE, METER_GRID_CELL_SIZE),
+    []
+  );
 
   useEffect(() => {
-    const helper = helperRef.current;
-    if (!helper) {
-      return;
-    }
-    const materials = Array.isArray(helper.material) ? helper.material : [helper.material];
-    materials.forEach((material) => {
-      material.transparent = true;
-      material.opacity = 0.34;
-      material.depthWrite = false;
-      material.needsUpdate = true;
-    });
-  }, []);
+    return () => {
+      gridGeometry.dispose();
+      edgeGeometry.dispose();
+      boxGeometry.dispose();
+    };
+  }, [boxGeometry, edgeGeometry, gridGeometry]);
 
   return (
-    <GridHelper
-      ref={helperRef}
-      args={[20, 20, "#5d4037", "#d3a27f"]}
-      position={[0, 0.035, 0]}
-    />
+    <Group position={[0, METER_GRID_CUBE_SIZE / 2, 0]} raycast={() => null}>
+      <Mesh geometry={boxGeometry} renderOrder={-1} raycast={() => null}>
+        <MeshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.035}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </Mesh>
+      <LineSegments geometry={gridGeometry} renderOrder={0} raycast={() => null}>
+        <LineBasicMaterial
+          color="#8d6e63"
+          transparent
+          opacity={0.13}
+          depthWrite={false}
+        />
+      </LineSegments>
+      <LineSegments geometry={edgeGeometry} renderOrder={1} raycast={() => null}>
+        <LineBasicMaterial
+          color="#5d4037"
+          transparent
+          opacity={0.34}
+          depthWrite={false}
+        />
+      </LineSegments>
+    </Group>
   );
 }
 

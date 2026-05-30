@@ -3449,6 +3449,7 @@ export default function CreateMemorialClient({
         </div>
         <PetSoulPreview
           color={soulPreviewColor}
+          showGrid={canUseCalibration(accessLevel)}
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
         <div className="relative grid gap-2 rounded-[24px] border border-white/70 bg-[#fffcf9] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
@@ -4415,9 +4416,9 @@ export default function CreateMemorialClient({
                             checked={showMeterGrid}
                             onChange={(event) => setShowMeterGrid(event.target.checked)}
                           />
-                          <span className="truncate">Сетка 1 м</span>
+                          <span className="truncate">Сетка 0.25 м</span>
                           <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                            Полупрозрачная сетка с шагом 1 метр для проверки размеров и расстояний.
+                            Полупрозрачный объемный куб с сеткой 0.25 метра для проверки размеров и расстояний.
                           </span>
                         </label>
                       ) : null}
