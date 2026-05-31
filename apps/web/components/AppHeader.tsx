@@ -258,7 +258,7 @@ export default function AppHeader() {
       ? "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-3 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
       : "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const menuPanelClass = isPortraitLayout
-    ? `fixed inset-0 z-[80] h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#f7f1ee] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 ${
+    ? `fixed inset-0 z-[45] h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#f7f1ee] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 ${
         menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       }`
     : `absolute right-0 mt-3 w-72 rounded-[32px] border-[4px] border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
@@ -644,70 +644,59 @@ export default function AppHeader() {
             aria-label="Основная мобильная навигация"
           >
             {user ? (
-              <Link
-                href="/my-pets"
-                className={mobileBottomItemClass(pathname === "/my-pets")}
-              >
-                <span className={mobileBottomIconClass(pathname === "/my-pets")}>
-                  {renderMenuIcon("pets")}
-                </span>
-                <span>Питомцы</span>
-              </Link>
-            ) : (
-              <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
-                <span className={mobileBottomIconClass(pathname === "/map")}>
-                  {renderMenuIcon("map")}
-                </span>
-                <span>Карта</span>
-              </Link>
-            )}
-            <Link href="/news" className={mobileBottomItemClass(pathname === "/news")}>
-              <span className={`relative ${mobileBottomIconClass(pathname === "/news")}`}>
-                {renderMenuIcon("news")}
-                {newsUnreadCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
-                    !
+              <>
+                <Link
+                  href="/my-pets"
+                  className={mobileBottomItemClass(pathname === "/my-pets")}
+                >
+                  <span className={mobileBottomIconClass(pathname === "/my-pets")}>
+                    {renderMenuIcon("pets")}
                   </span>
-                ) : null}
-              </span>
-              <span>Новости</span>
-            </Link>
-            {user ? (
-              <button
-                type="button"
-                className={mobileBottomCreateClass}
-                onClick={handleCreateClick}
-                disabled={createChecking}
-                aria-label="Создать мемориал"
-              >
-                <span className="text-xl leading-none">+</span>
-                <span>{createChecking ? "..." : "создать"}</span>
-              </button>
+                  <span>Питомцы</span>
+                </Link>
+                <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
+                  <span className={mobileBottomIconClass(pathname === "/map")}>
+                    {renderMenuIcon("map")}
+                  </span>
+                  <span>Карта</span>
+                </Link>
+                <button
+                  type="button"
+                  className={mobileBottomCreateClass}
+                  onClick={handleCreateClick}
+                  disabled={createChecking}
+                  aria-label="Создать мемориал"
+                >
+                  <span className="text-xl leading-none">+</span>
+                  <span>{createChecking ? "..." : "создать"}</span>
+                </button>
+                <Link href="/profile" className={mobileBottomItemClass(pathname === "/profile")}>
+                  <span className={mobileBottomIconClass(pathname === "/profile")}>
+                    {renderMenuIcon("profile")}
+                  </span>
+                  <span>Профиль</span>
+                </Link>
+              </>
             ) : (
-              <button
-                type="button"
-                className={mobileBottomCreateClass}
-                onClick={openAuth}
-                aria-label="Войти"
-              >
-                <span>{renderMenuIcon("login")}</span>
-                <span>войти</span>
-              </button>
-            )}
-            {user ? (
-              <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
-                <span className={mobileBottomIconClass(pathname === "/map")}>
-                  {renderMenuIcon("map")}
-                </span>
-                <span>Карта</span>
-              </Link>
-            ) : (
-              <Link href="/about" className={mobileBottomItemClass(pathname === "/about")}>
-                <span className={mobileBottomIconClass(pathname === "/about")}>
-                  {renderMenuIcon("about")}
-                </span>
-                <span>Проект</span>
-              </Link>
+              <>
+                <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
+                  <span className={mobileBottomIconClass(pathname === "/map")}>
+                    {renderMenuIcon("map")}
+                  </span>
+                  <span>Карта</span>
+                </Link>
+                <button
+                  type="button"
+                  className={mobileBottomItemClass(authOpen || pathname === "/auth")}
+                  onClick={openAuth}
+                  aria-label="Войти"
+                >
+                  <span className={mobileBottomIconClass(authOpen || pathname === "/auth")}>
+                    {renderMenuIcon("login")}
+                  </span>
+                  <span>Войти</span>
+                </button>
+              </>
             )}
             <button
               type="button"

@@ -624,6 +624,7 @@ function buildGridPositions(count: number) {
 }
 
 function SceneLoadingOverlay() {
+  const isPortraitLayout = usePortraitLayout();
   const tips = [
     "Можно вращать сцену и приближать мемориалы после появления превью.",
     "Нажмите на мемориал, чтобы открыть карточку питомца.",
@@ -639,7 +640,7 @@ function SceneLoadingOverlay() {
   }, [tips.length]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#fcf8f5]/86 backdrop-blur-sm">
+    <div className={`pointer-events-none absolute inset-0 z-30 grid bg-[#fcf8f5]/86 backdrop-blur-sm ${isPortraitLayout ? "items-start justify-items-center pt-[35dvh]" : "place-items-center"}`}>
       <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold leading-tight text-[#6f6360]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
         <span className="block w-full text-center text-xs font-bold text-[#8d6e63]">

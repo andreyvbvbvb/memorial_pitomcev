@@ -369,6 +369,7 @@ export default function AdminSqlPage() {
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsSaving, setNewsSaving] = useState(false);
+  const [deletingNewsId, setDeletingNewsId] = useState<string | null>(null);
   const [newsNotice, setNewsNotice] = useState<string | null>(null);
   const [newsTitle, setNewsTitle] = useState("");
   const [newsBody, setNewsBody] = useState("");
@@ -913,6 +914,28 @@ export default function AdminSqlPage() {
       setError(err instanceof Error ? err.message : "Ошибка новости");
     } finally {
       setNewsSaving(false);
+    }
+  };
+
+  const deleteNewsPost = async (id: string) => {
+    setDeletingNewsId(id);
+    setNewsNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/news/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось удалить новость");
+      }
+      setNewsPosts((current) => current.filter((post) => post.id !== id));
+      setNewsNotice("Новость удалена");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка удаления новости");
+    } finally {
+      setDeletingNewsId(null);
     }
   };
 
@@ -2188,7 +2211,17 @@ export default function AdminSqlPage() {
                 ) : null}
                 {newsPosts.map((post) => (
                   <div key={post.id} className="rounded-lg border border-slate-200 bg-white p-2">
-                    <div className="text-xs font-semibold text-slate-800">{post.title}</div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 text-xs font-semibold text-slate-800">{post.title}</div>
+                      <button
+                        type="button"
+                        onClick={() => deleteNewsPost(post.id)}
+                        disabled={deletingNewsId === post.id}
+                        className="shrink-0 rounded-md border border-red-200 px-2 py-1 text-[10px] font-semibold text-red-600 hover:text-red-700 disabled:opacity-60"
+                      >
+                        {deletingNewsId === post.id ? "Удаляем..." : "Удалить"}
+                      </button>
+                    </div>
                     <div className="mt-1 line-clamp-3 text-[11px] text-slate-500">{post.body}</div>
                     <div className="mt-1 text-[10px] text-slate-400">
                       {post.isActive ? "активна" : "скрыта"} · {new Date(post.createdAt).toLocaleDateString("ru-RU")}

@@ -11,8 +11,31 @@ import usePortraitLayout from "../../components/usePortraitLayout";
 import AuthHelpHint from "../../components/AuthHelpHint";
 
 const MyPets3DView = dynamic(() => import("../../components/MyPets3DView"), {
-  ssr: false
+  ssr: false,
+  loading: () => <MyPets3DLoadingFallback />
 });
+
+function MyPets3DLoadingFallback() {
+  const isPortraitLayout = usePortraitLayout();
+  return (
+    <div className="fixed inset-0 z-0 h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[#fcf8f5]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(255,255,255,0.96),rgba(252,248,245,0.7)_42%,rgba(241,231,224,0.92)_100%)]" />
+      <div
+        className={`absolute left-1/2 flex w-[min(18rem,78vw)] -translate-x-1/2 flex-col items-center gap-3 rounded-[28px] border-[3px] border-white bg-white/82 px-5 py-5 text-center text-sm font-semibold leading-tight text-[#6f6360] shadow-[0_24px_60px_-34px_rgba(93,64,55,0.55)] backdrop-blur-md ${
+          isPortraitLayout ? "top-[35dvh]" : "top-1/2 -translate-y-1/2"
+        }`}
+      >
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
+        <span className="block w-full text-center text-xs font-bold text-[#8d6e63]">
+          Можно вращать сцену и приближать мемориалы после появления превью.
+        </span>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
+          <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type PetPhoto = {
   id: string;
@@ -214,7 +237,7 @@ export default function MyPetsClient() {
   const viewModeToggle = (
     <div className={viewToggleShellClass}>
       {[
-        { mode: 4 as const, label: "Карточки" },
+        { mode: 4 as const, label: "Список" },
         { mode: 5 as const, label: "3D" }
       ].map(({ mode, label }) => (
         <button
@@ -478,7 +501,7 @@ export default function MyPetsClient() {
       </div>
 
       {isPortraitLayout && viewMode === 5 ? (
-        <div className="pointer-events-auto fixed left-3 top-3 z-20">{viewModeToggle}</div>
+        <div className="pointer-events-auto fixed right-3 top-3 z-20">{viewModeToggle}</div>
       ) : null}
       {!isPortraitLayout ? <div className={viewToggleWrapClass}>{viewModeToggle}</div> : null}
     </div>
