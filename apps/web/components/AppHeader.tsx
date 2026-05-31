@@ -228,6 +228,15 @@ export default function AppHeader() {
     { coins: 500, rub: 500, usd: 500 },
     { coins: 1000, rub: 1000, usd: 10 }
   ];
+  const immersiveMobilePath =
+    pathname === "/auth" ||
+    pathname === "/create" ||
+    pathname === "/map" ||
+    pathname.startsWith("/pets/");
+  const showMobileBottomNav = isPortraitLayout && !immersiveMobilePath;
+  const mobileMenuBottomClass = showMobileBottomNav
+    ? "bottom-[calc(5.7rem+env(safe-area-inset-bottom))]"
+    : "bottom-[calc(1rem+env(safe-area-inset-bottom))]";
 
   const headerInnerClass = isPortraitLayout
     ? "mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2"
@@ -253,7 +262,7 @@ export default function AppHeader() {
       ? "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-3 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
       : "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const menuPanelClass =
-    `absolute right-0 ${isPortraitLayout ? "mt-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-[24px] border-[3px]" : "mt-3 w-72 rounded-[32px] border-[4px]"} overflow-hidden border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
+    `${isPortraitLayout ? `fixed left-3 right-3 ${mobileMenuBottomClass} max-h-[min(70dvh,31rem)] rounded-[28px] border-[3px]` : "absolute right-0 mt-3 w-72 rounded-[32px] border-[4px]"} overflow-hidden overflow-y-auto border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 ${isPortraitLayout ? "origin-bottom" : "origin-top-right"} ${
       menuVisible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-95 opacity-0"
     }`;
   const menuItemClass =
@@ -330,6 +339,17 @@ export default function AppHeader() {
     }
   };
 
+  const mobileBottomItemClass = (active: boolean) =>
+    `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2 text-[9px] font-black uppercase leading-none tracking-[0.06em] transition ${
+      active
+        ? "bg-[#111827] text-white shadow-[0_4px_0_0_#000]"
+        : "text-[#8d6e63] hover:bg-[#fff7f2] hover:text-[#5d4037]"
+    }`;
+  const mobileBottomCreateClass =
+    "relative -mt-6 flex h-[58px] w-[58px] shrink-0 flex-col items-center justify-center rounded-[22px] bg-[#111827] text-[9px] font-black uppercase leading-none tracking-[0.06em] text-white shadow-[0_6px_0_0_#000,0_18px_34px_-20px_rgba(17,24,39,0.65)] transition active:translate-y-[4px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80";
+  const mobileBottomIconClass = (active: boolean) =>
+    active ? "text-white" : "text-[#d3a27f]";
+
   return (
     <>
       <header
@@ -346,43 +366,47 @@ export default function AppHeader() {
           <div className={navWrapClass}>
             {user ? (
               <>
-                <button
-                  type="button"
-                  className={createButtonClass}
-                  aria-label="Создать мемориал"
-                  onClick={handleCreateClick}
-                  disabled={createChecking}
-                  onMouseEnter={() => triggerCreateSpin(false)}
-                  onMouseLeave={() => triggerCreateSpin(true)}
-                >
-                  <span
-                    key={createSpin.key}
-                    className={`inline-flex text-sm leading-none ${
-                      createSpin.reverse
-                        ? "animate-[createPlusSpinReverse_0.45s_ease-in-out]"
-                        : "animate-[createPlusSpin_0.45s_ease-in-out]"
-                    }`}
-                  >
-                    +
-                  </span>
-                  <span>{createChecking ? "проверка" : "создать"}</span>
-                </button>
-                <Link
-                  className={pillClass}
-                  href="/my-pets"
-                  aria-label="Мои питомцы"
-                  title="Мои питомцы"
-                >
-                  {isPortraitLayout ? renderMenuIcon("pets") : "Мои питомцы"}
-                </Link>
-                <Link
-                  className={pillClass}
-                  href="/map"
-                  aria-label="Карта"
-                  title="Карта"
-                >
-                  {isPortraitLayout ? renderMenuIcon("map") : "Карта"}
-                </Link>
+                {!isPortraitLayout ? (
+                  <>
+                    <button
+                      type="button"
+                      className={createButtonClass}
+                      aria-label="Создать мемориал"
+                      onClick={handleCreateClick}
+                      disabled={createChecking}
+                      onMouseEnter={() => triggerCreateSpin(false)}
+                      onMouseLeave={() => triggerCreateSpin(true)}
+                    >
+                      <span
+                        key={createSpin.key}
+                        className={`inline-flex text-sm leading-none ${
+                          createSpin.reverse
+                            ? "animate-[createPlusSpinReverse_0.45s_ease-in-out]"
+                            : "animate-[createPlusSpin_0.45s_ease-in-out]"
+                        }`}
+                      >
+                        +
+                      </span>
+                      <span>{createChecking ? "проверка" : "создать"}</span>
+                    </button>
+                    <Link
+                      className={pillClass}
+                      href="/my-pets"
+                      aria-label="Мои питомцы"
+                      title="Мои питомцы"
+                    >
+                      Мои питомцы
+                    </Link>
+                    <Link
+                      className={pillClass}
+                      href="/map"
+                      aria-label="Карта"
+                      title="Карта"
+                    >
+                      Карта
+                    </Link>
+                  </>
+                ) : null}
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
@@ -581,6 +605,98 @@ export default function AppHeader() {
           </div>
         </div>
       </header>
+
+      {showMobileBottomNav ? (
+        <nav
+          className="mobile-bottom-nav fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-[31rem] items-end gap-1.5 rounded-[28px] border-[3px] border-white bg-[#fffcf9]/95 p-1.5 shadow-[0_18px_44px_-22px_rgba(93,64,55,0.55)] backdrop-blur-xl"
+          aria-label="Основная мобильная навигация"
+        >
+          {user ? (
+            <Link
+              href="/my-pets"
+              className={mobileBottomItemClass(pathname === "/my-pets")}
+            >
+              <span className={mobileBottomIconClass(pathname === "/my-pets")}>
+                {renderMenuIcon("pets")}
+              </span>
+              <span>Питомцы</span>
+            </Link>
+          ) : (
+            <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
+              <span className={mobileBottomIconClass(pathname === "/map")}>
+                {renderMenuIcon("map")}
+              </span>
+              <span>Карта</span>
+            </Link>
+          )}
+          <Link href="/news" className={mobileBottomItemClass(pathname === "/news")}>
+            <span className={`relative ${mobileBottomIconClass(pathname === "/news")}`}>
+              {renderMenuIcon("news")}
+              {newsUnreadCount > 0 ? (
+                <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
+                  !
+                </span>
+              ) : null}
+            </span>
+            <span>Новости</span>
+          </Link>
+          {user ? (
+            <button
+              type="button"
+              className={mobileBottomCreateClass}
+              onClick={handleCreateClick}
+              disabled={createChecking}
+              aria-label="Создать мемориал"
+            >
+              <span className="text-xl leading-none">+</span>
+              <span>{createChecking ? "..." : "создать"}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={mobileBottomCreateClass}
+              onClick={openAuth}
+              aria-label="Войти"
+            >
+              <span>{renderMenuIcon("login")}</span>
+              <span>войти</span>
+            </button>
+          )}
+          {user ? (
+            <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
+              <span className={mobileBottomIconClass(pathname === "/map")}>
+                {renderMenuIcon("map")}
+              </span>
+              <span>Карта</span>
+            </Link>
+          ) : (
+            <Link href="/about" className={mobileBottomItemClass(pathname === "/about")}>
+              <span className={mobileBottomIconClass(pathname === "/about")}>
+                {renderMenuIcon("about")}
+              </span>
+              <span>Проект</span>
+            </Link>
+          )}
+          {user ? (
+            <Link
+              href="/profile"
+              className={mobileBottomItemClass(pathname === "/profile")}
+            >
+              <span className={mobileBottomIconClass(pathname === "/profile")}>
+                {renderMenuIcon("profile")}
+              </span>
+              <span>Профиль</span>
+            </Link>
+          ) : (
+            <Link href="/charity" className={mobileBottomItemClass(pathname === "/charity")}>
+              <span className={mobileBottomIconClass(pathname === "/charity")}>
+                {renderMenuIcon("charity")}
+              </span>
+              <span>Добро</span>
+            </Link>
+          )}
+        </nav>
+      ) : null}
 
       <AuthModal
         open={authOpen}
