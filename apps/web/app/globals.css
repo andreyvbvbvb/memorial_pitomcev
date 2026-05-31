@@ -27,7 +27,7 @@ body {
 
 @media (max-width: 1024px) and (orientation: portrait) {
   body:has(.mobile-bottom-nav) {
-    padding-bottom: calc(5.6rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.1rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -173,4 +173,10 @@ select:focus-visible {
   transform: translateY(12px);
   animation: fadeUp 0.6s ease forwards;
   animation-delay: var(--delay, 0s);
+}
+
+@media (max-width: 1024px) and (orientation: portrait) {
+  .app-desktop-header {
+    display: none !important;
+  }
 }

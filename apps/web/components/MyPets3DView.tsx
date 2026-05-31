@@ -623,12 +623,28 @@ function buildGridPositions(count: number) {
   return positions;
 }
 
-function SceneLoadingOverlay({ label }: { label: string }) {
+function SceneLoadingOverlay() {
+  const tips = [
+    "Можно вращать сцену и приближать мемориалы после появления превью.",
+    "Нажмите на мемориал, чтобы открыть карточку питомца.",
+    "Переключайтесь между мемориалами стрелками или касанием сцены."
+  ];
+  const [tipIndex, setTipIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setTipIndex((index) => (index + 1) % tips.length);
+    }, 3600);
+    return () => window.clearInterval(timer);
+  }, [tips.length]);
+
   return (
     <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-[#fcf8f5]/86 backdrop-blur-sm">
       <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold leading-tight text-[#6f6360]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
-        <span className="block w-full text-center">{label}</span>
+        <span className="block w-full text-center text-xs font-bold text-[#8d6e63]">
+          {tips[tipIndex]}
+        </span>
         <div className="h-2 w-full overflow-hidden rounded-full bg-[#eadfd9]">
           <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8d6e63]" />
         </div>
@@ -778,10 +794,10 @@ export default function MyPets3DView({
   return (
     <div className={containerClassName}>
       {loading ? (
-        <SceneLoadingOverlay label="Загружаем ваши мемориалы..." />
+        <SceneLoadingOverlay />
       ) : null}
       {!loading && items.length > 0 && !sceneReady ? (
-        <SceneLoadingOverlay label="Загружаем 3D-превью..." />
+        <SceneLoadingOverlay />
       ) : null}
       {pets.length === 0 && !loading ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center text-sm font-semibold text-[#8d6e63]">

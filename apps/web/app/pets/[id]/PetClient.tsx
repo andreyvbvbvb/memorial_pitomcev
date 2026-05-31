@@ -2485,7 +2485,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
           cameraPosition={[10, 6.5, 10]}
           defaultCameraPosition={[10, 6.5, 10]}
           defaultTarget={[0, 0.25, 0]}
-          loadingLabel="Загружаем мемориал..."
           onControlsReady={(controls) => {
             previewControlsRef.current = controls;
           }}

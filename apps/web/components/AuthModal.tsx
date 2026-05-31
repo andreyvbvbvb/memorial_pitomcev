@@ -369,7 +369,7 @@ export default function AuthModal({
         onClick={handleClose}
       />
       <div
-        className={`relative max-h-[calc(100dvh-1rem)] w-full max-w-[min(32rem,calc(100vw-1rem))] overflow-y-auto overflow-x-visible overscroll-contain rounded-[28px] transition-transform duration-200 sm:max-h-[calc(100dvh-3rem)] sm:rounded-[38px] ${
+        className={`relative max-h-[calc(100dvh-0.5rem)] w-full max-w-[min(30rem,calc(100vw-0.5rem))] overflow-y-auto overflow-x-visible overscroll-contain rounded-[24px] transition-transform duration-200 sm:max-h-[calc(100dvh-3rem)] sm:max-w-[min(32rem,calc(100vw-1rem))] sm:rounded-[38px] ${
           visible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
         }`}
       >
@@ -396,7 +396,7 @@ export default function AuthModal({
 
             {!forgotMode ? (
               <>
-                <div className={`mt-4 sm:mt-5 ${authTabsRailClass}`}>
+                <div className={`mt-3 sm:mt-5 ${authTabsRailClass}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -419,7 +419,14 @@ export default function AuthModal({
                   </button>
                 </div>
 
-                <form className={`${showGuestCreate ? "mt-4 grid gap-3" : "mt-5 grid gap-4"}`} onSubmit={handleSubmitEvent}>
+                <form
+                  className={`${
+                    showGuestCreate
+                      ? "mt-3 grid gap-2.5 sm:mt-4 sm:gap-3"
+                      : "mt-4 grid gap-3 sm:mt-5 sm:gap-4"
+                  }`}
+                  onSubmit={handleSubmitEvent}
+                >
                   {mode === "login" ? (
                     <>
                       <label className={authLabelClass}>
@@ -486,7 +493,7 @@ export default function AuthModal({
                         visible={showConfirmPassword}
                         onToggle={() => setShowConfirmPassword((prev) => !prev)}
                       />
-                      <div className="grid gap-3">
+                      <div className="grid gap-2 sm:gap-3">
                         <label className={authCheckboxRowClass}>
                           <input
                             type="checkbox"
@@ -542,7 +549,7 @@ export default function AuthModal({
                   ) : null}
                 </form>
                 {showGuestCreate ? (
-                  <div className="mt-3 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                  <div className="mt-2.5 rounded-[18px] border-2 border-white bg-[#f7f1ee] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:mt-3 sm:rounded-[20px] sm:border-[3px] sm:p-2.5">
                     <div className="mb-2 flex items-center justify-center gap-2">
                       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63]">
                         Продолжить без входа
@@ -564,7 +571,7 @@ export default function AuthModal({
                 ) : null}
               </>
             ) : (
-              <div className="mt-5 grid gap-4">
+              <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4">
                 <div className={authInfoPanelClass}>
                   Напишите на почту memorial@gamil.com письмо с адресом почты, на который был
                   зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
@@ -579,7 +586,7 @@ export default function AuthModal({
               </div>
             )}
 
-            {notice ? <div className={`mt-4 ${authNoticeClass}`}>{notice}</div> : null}
+            {notice ? <div className={`mt-3 sm:mt-4 ${authNoticeClass}`}>{notice}</div> : null}
             <ErrorToast message={error} onClose={() => setError(null)} />
           </div>
         </div>

@@ -11,11 +11,13 @@ import {
   Post,
   Req,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { Prisma } from "@prisma/client";
 import { Request } from "express";
+import { extname } from "path";
 import { canAccessAdmin, canManageAdmins, getAccessLevel, isOwnerUser } from "../auth/access-level";
 import * as bcrypt from "bcryptjs";
 import { AuthService } from "../auth/auth.service";
@@ -109,6 +111,34 @@ export class AdminController {
     await this.prisma.loadingTip.createMany({
       data: DEFAULT_LOADING_TIPS.map((text: string) => ({ text }))
     });
+  }
+
+  private async uploadNewsPhotos(
+    files: Array<{ originalname: string; mimetype?: string; buffer: Buffer }> = []
+  ) {
+    if (!files.length) {
+      return [];
+    }
+
+    return Promise.all(
+      files.map((file) => {
+        const ext = extname(file.originalname).toLowerCase() || ".jpg";
+        const safeExt = ext.length <= 8 ? ext : ".jpg";
+        const contentType =
+          file.mimetype && file.mimetype.startsWith("image/")
+            ? file.mimetype
+            : safeExt === ".png"
+              ? "image/png"
+              : safeExt === ".webp"
+                ? "image/webp"
+                : "image/jpeg";
+        if (!contentType.startsWith("image/")) {
+          throw new BadRequestException("Можно загружать только изображения");
+        }
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${safeExt}`;
+        return this.s3.uploadPublic(`news/posts/${fileName}`, file.buffer, contentType);
+      })
+    );
   }
 
   @Post("sql")
@@ -634,13 +664,43 @@ export class AdminController {
   }
 
   @Post("news")
-  async createNews(@Req() req: Request, @Body() dto: AdminNewsDto) {
+  @UseInterceptors(
+    FilesInterceptor("photos", 8, {
+      limits: { fileSize: 6 * 1024 * 1024 }
+    })
+  )
+  async createNews(
+    @Req() req: Request,
+    @Body()
+    dto: {
+      title?: string;
+      body?: string;
+      isActive?: boolean | string;
+    },
+    @UploadedFiles()
+    files: Array<{ originalname: string; mimetype?: string; buffer: Buffer }> = []
+  ) {
     await this.ensureAdmin(req);
+    const title = dto.title?.trim();
+    const body = dto.body?.trim();
+    if (!title) {
+      throw new BadRequestException("Заголовок обязателен");
+    }
+    if (!body) {
+      throw new BadRequestException("Текст новости обязателен");
+    }
+    const photos = await this.uploadNewsPhotos(files);
     const post = await this.prisma.newsPost.create({
       data: {
-        title: dto.title.trim(),
-        body: dto.body.trim(),
-        isActive: dto.isActive ?? true
+        title,
+        body,
+        photos,
+        isActive:
+          dto.isActive === undefined ||
+          dto.isActive === true ||
+          dto.isActive === "true" ||
+          dto.isActive === "1" ||
+          dto.isActive === "on"
       }
     });
     return { post };

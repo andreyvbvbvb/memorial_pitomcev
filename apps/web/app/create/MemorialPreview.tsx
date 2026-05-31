@@ -90,7 +90,6 @@ type Props = {
   cameraPosition?: [number, number, number];
   defaultCameraPosition?: [number, number, number];
   defaultTarget?: [number, number, number];
-  loadingLabel?: string;
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
@@ -1812,7 +1811,6 @@ export default function MemorialPreview({
   cameraPosition = [4, 3, 4],
   defaultCameraPosition,
   defaultTarget,
-  loadingLabel = "Загружаем 3D-превью...",
   houseOffsetX,
   houseOffsetZ,
   houseRotationY,
@@ -2140,7 +2138,6 @@ export default function MemorialPreview({
         <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl bg-[#fcf8f5]/86 backdrop-blur-sm">
           <div className="flex w-[min(18rem,78vw)] flex-col items-center gap-3 text-center text-sm font-semibold text-[#6f6360]">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
-            <span>{loadingLabel}</span>
             <span className="block w-full text-center text-xs font-bold leading-snug text-[#8d6e63]">
               {DEFAULT_LOADING_TIPS[loadingTipIndex]}
             </span>

@@ -1,18 +1,16 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import HomeCreateButton from "./HomeCreateButton";
-import HomeHeroBackground from "./HomeHeroBackground";
 
 export default function HomeHero() {
   return (
     <section className="relative flex min-h-[calc(100dvh_-_var(--app-header-height,64px)_-_4rem)] flex-col items-center justify-center overflow-hidden px-4 pb-16 pt-10 text-center sm:px-6 lg:min-h-[calc(100dvh_-_var(--app-header-height,64px)_-_5rem)]">
       <div className="pointer-events-none absolute inset-0 z-0">
-        <HomeHeroBackground />
         <div
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at 50% 48%, rgba(252,248,245,0.96) 0%, rgba(252,248,245,0.78) 30%, rgba(252,248,245,0.2) 58%, rgba(252,248,245,0) 74%), linear-gradient(180deg, rgba(252,248,245,0.78) 0%, rgba(252,248,245,0.46) 42%, rgba(252,248,245,0.9) 100%)"
+              "radial-gradient(circle at 50% 44%, rgba(255,255,255,0.98) 0%, rgba(252,248,245,0.9) 34%, rgba(241,231,224,0.48) 68%, rgba(241,231,224,0.82) 100%), linear-gradient(180deg, #fcf8f5 0%, #fffaf6 48%, #f1e7e0 100%)"
           }}
         />
       </div>

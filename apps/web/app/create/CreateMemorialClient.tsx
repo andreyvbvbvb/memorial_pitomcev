@@ -4255,7 +4255,6 @@ export default function CreateMemorialClient({
         <div className="flex min-h-[calc(100vh-var(--app-header-height,0px))] items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-sm font-semibold text-[#8d6e63]">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#d8cfc9] border-t-[#5d4037]" />
-            Загружаем мемориал для редактирования...
           </div>
         </div>
       </main>
@@ -4277,11 +4276,8 @@ export default function CreateMemorialClient({
         <div className="fixed inset-0 z-50 grid place-items-center bg-[#f7f1ee]/72 px-4 backdrop-blur-lg">
           <div className="rounded-[28px] border-[4px] border-white bg-white/[0.92] px-7 py-6 text-center shadow-[0_24px_70px_-28px_rgba(93,64,55,0.5)]">
             <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-[#eadfd9] border-t-[#5d4037]" />
-            <p className="mt-4 text-sm font-black uppercase tracking-[0.16em] text-[#5d4037]">
-              Загружаем душу питомца
-            </p>
-            <p className="mt-2 text-xs font-semibold text-[#8d6e63]">
-              Подготавливаем 3D-превью перед вводом данных.
+            <p className="mt-4 text-xs font-semibold text-[#8d6e63]">
+              {loadingMessage}
             </p>
           </div>
         </div>

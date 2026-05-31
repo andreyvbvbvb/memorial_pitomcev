@@ -93,6 +93,10 @@ export default function AppHeader() {
       return;
     }
     const updateHeaderHeight = () => {
+      if (isPortraitLayout) {
+        document.documentElement.style.setProperty("--app-header-height", "0px");
+        return;
+      }
       const height = headerRef.current?.getBoundingClientRect().height;
       if (height) {
         document.documentElement.style.setProperty(
@@ -228,15 +232,8 @@ export default function AppHeader() {
     { coins: 500, rub: 500, usd: 500 },
     { coins: 1000, rub: 1000, usd: 10 }
   ];
-  const immersiveMobilePath =
-    pathname === "/auth" ||
-    pathname === "/create" ||
-    pathname === "/map" ||
-    pathname.startsWith("/pets/");
-  const showMobileBottomNav = isPortraitLayout && !immersiveMobilePath;
-  const mobileMenuBottomClass = showMobileBottomNav
-    ? "bottom-[calc(5.7rem+env(safe-area-inset-bottom))]"
-    : "bottom-[calc(1rem+env(safe-area-inset-bottom))]";
+  const showMobileBottomNav = isPortraitLayout;
+  const mobileMenuBottomClass = "bottom-[calc(5.1rem+env(safe-area-inset-bottom))]";
 
   const headerInnerClass = isPortraitLayout
     ? "mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2"
@@ -340,21 +337,39 @@ export default function AppHeader() {
   };
 
   const mobileBottomItemClass = (active: boolean) =>
-    `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1 py-2 text-[9px] font-black uppercase leading-none tracking-[0.06em] transition ${
+    `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[15px] px-1 py-1.5 text-[8.5px] font-black uppercase leading-none tracking-[0.04em] transition ${
       active
         ? "bg-[#111827] text-white shadow-[0_4px_0_0_#000]"
         : "text-[#8d6e63] hover:bg-[#fff7f2] hover:text-[#5d4037]"
     }`;
   const mobileBottomCreateClass =
-    "relative -mt-6 flex h-[58px] w-[58px] shrink-0 flex-col items-center justify-center rounded-[22px] bg-[#111827] text-[9px] font-black uppercase leading-none tracking-[0.06em] text-white shadow-[0_6px_0_0_#000,0_18px_34px_-20px_rgba(17,24,39,0.65)] transition active:translate-y-[4px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80";
+    "relative -mt-5 flex h-[54px] w-[54px] shrink-0 flex-col items-center justify-center rounded-[20px] bg-[#111827] text-[8.5px] font-black uppercase leading-none tracking-[0.04em] text-white shadow-[0_5px_0_0_#000,0_18px_34px_-20px_rgba(17,24,39,0.65)] transition active:translate-y-[4px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80";
   const mobileBottomIconClass = (active: boolean) =>
     active ? "text-white" : "text-[#d3a27f]";
+  const menuButtonIcon = (
+    <>
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+        <path
+          d="M5 7h14M5 12h14M5 17h14"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+      {newsUnreadCount > 0 ? (
+        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
+          !
+        </span>
+      ) : null}
+    </>
+  );
 
   return (
     <>
+      {!isPortraitLayout ? (
       <header
         ref={headerRef}
-        className="sticky top-0 z-40 bg-transparent"
+        className="app-desktop-header sticky top-0 z-40 bg-transparent"
       >
         <div className={headerInnerClass}>
           <Link
@@ -605,97 +620,182 @@ export default function AppHeader() {
           </div>
         </div>
       </header>
+      ) : null}
 
       {showMobileBottomNav ? (
-        <nav
-          className="mobile-bottom-nav fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-[31rem] items-end gap-1.5 rounded-[28px] border-[3px] border-white bg-[#fffcf9]/95 p-1.5 shadow-[0_18px_44px_-22px_rgba(93,64,55,0.55)] backdrop-blur-xl"
-          aria-label="Основная мобильная навигация"
-        >
-          {user ? (
-            <Link
-              href="/my-pets"
-              className={mobileBottomItemClass(pathname === "/my-pets")}
-            >
-              <span className={mobileBottomIconClass(pathname === "/my-pets")}>
-                {renderMenuIcon("pets")}
-              </span>
-              <span>Питомцы</span>
-            </Link>
-          ) : (
-            <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
-              <span className={mobileBottomIconClass(pathname === "/map")}>
-                {renderMenuIcon("map")}
-              </span>
-              <span>Карта</span>
-            </Link>
-          )}
-          <Link href="/news" className={mobileBottomItemClass(pathname === "/news")}>
-            <span className={`relative ${mobileBottomIconClass(pathname === "/news")}`}>
-              {renderMenuIcon("news")}
-              {newsUnreadCount > 0 ? (
-                <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
-                  !
+        <div ref={menuRef}>
+          <nav
+            className="mobile-bottom-nav fixed inset-x-2 bottom-[calc(0.45rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-[31rem] items-end gap-1 rounded-[24px] border-2 border-white bg-[#fffcf9]/95 p-1 shadow-[0_18px_44px_-22px_rgba(93,64,55,0.55)] backdrop-blur-xl"
+            aria-label="Основная мобильная навигация"
+          >
+            {user ? (
+              <Link
+                href="/my-pets"
+                className={mobileBottomItemClass(pathname === "/my-pets")}
+              >
+                <span className={mobileBottomIconClass(pathname === "/my-pets")}>
+                  {renderMenuIcon("pets")}
                 </span>
-              ) : null}
-            </span>
-            <span>Новости</span>
-          </Link>
-          {user ? (
+                <span>Питомцы</span>
+              </Link>
+            ) : (
+              <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
+                <span className={mobileBottomIconClass(pathname === "/map")}>
+                  {renderMenuIcon("map")}
+                </span>
+                <span>Карта</span>
+              </Link>
+            )}
+            <Link href="/news" className={mobileBottomItemClass(pathname === "/news")}>
+              <span className={`relative ${mobileBottomIconClass(pathname === "/news")}`}>
+                {renderMenuIcon("news")}
+                {newsUnreadCount > 0 ? (
+                  <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
+                    !
+                  </span>
+                ) : null}
+              </span>
+              <span>Новости</span>
+            </Link>
+            {user ? (
+              <button
+                type="button"
+                className={mobileBottomCreateClass}
+                onClick={handleCreateClick}
+                disabled={createChecking}
+                aria-label="Создать мемориал"
+              >
+                <span className="text-xl leading-none">+</span>
+                <span>{createChecking ? "..." : "создать"}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={mobileBottomCreateClass}
+                onClick={openAuth}
+                aria-label="Войти"
+              >
+                <span>{renderMenuIcon("login")}</span>
+                <span>войти</span>
+              </button>
+            )}
+            {user ? (
+              <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
+                <span className={mobileBottomIconClass(pathname === "/map")}>
+                  {renderMenuIcon("map")}
+                </span>
+                <span>Карта</span>
+              </Link>
+            ) : (
+              <Link href="/about" className={mobileBottomItemClass(pathname === "/about")}>
+                <span className={mobileBottomIconClass(pathname === "/about")}>
+                  {renderMenuIcon("about")}
+                </span>
+                <span>Проект</span>
+              </Link>
+            )}
             <button
               type="button"
-              className={mobileBottomCreateClass}
-              onClick={handleCreateClick}
-              disabled={createChecking}
-              aria-label="Создать мемориал"
+              className={mobileBottomItemClass(menuOpen)}
+              onClick={() => (menuOpen ? closeMenu() : openMenu())}
+              aria-label="Раскрыть меню"
             >
-              <span className="text-xl leading-none">+</span>
-              <span>{createChecking ? "..." : "создать"}</span>
+              <span className={`relative ${mobileBottomIconClass(menuOpen)}`}>
+                {menuButtonIcon}
+              </span>
+              <span>Меню</span>
             </button>
-          ) : (
-            <button
-              type="button"
-              className={mobileBottomCreateClass}
-              onClick={openAuth}
-              aria-label="Войти"
-            >
-              <span>{renderMenuIcon("login")}</span>
-              <span>войти</span>
-            </button>
-          )}
-          {user ? (
-            <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
-              <span className={mobileBottomIconClass(pathname === "/map")}>
-                {renderMenuIcon("map")}
-              </span>
-              <span>Карта</span>
-            </Link>
-          ) : (
-            <Link href="/about" className={mobileBottomItemClass(pathname === "/about")}>
-              <span className={mobileBottomIconClass(pathname === "/about")}>
-                {renderMenuIcon("about")}
-              </span>
-              <span>Проект</span>
-            </Link>
-          )}
-          {user ? (
-            <Link
-              href="/profile"
-              className={mobileBottomItemClass(pathname === "/profile")}
-            >
-              <span className={mobileBottomIconClass(pathname === "/profile")}>
-                {renderMenuIcon("profile")}
-              </span>
-              <span>Профиль</span>
-            </Link>
-          ) : (
-            <Link href="/charity" className={mobileBottomItemClass(pathname === "/charity")}>
-              <span className={mobileBottomIconClass(pathname === "/charity")}>
-                {renderMenuIcon("charity")}
-              </span>
-              <span>Добро</span>
-            </Link>
-          )}
-        </nav>
+          </nav>
+          {menuOpen ? (
+            <div className={menuPanelClass}>
+              {user ? (
+                <>
+                  <div className="p-4 pb-3">
+                    <div className="mb-3 flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#adb5bd]">Аккаунт</span>
+                      <span className="truncate text-sm font-black text-[#5d4037]">{user.login ?? user.email}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="group flex w-full items-center justify-between rounded-2xl border-2 border-[#fdf2e9] bg-[#fcf8f5] p-3 text-left transition-all hover:border-[#d3a27f]/50 hover:bg-[#fff7f2]"
+                      onClick={() => {
+                        closeMenu();
+                        openTopUp();
+                      }}
+                    >
+                      <span className="text-xs font-black uppercase text-[#8d6e63]">Баланс</span>
+                      <span className="text-base font-black text-[#5d4037]">{user.coinBalance ?? 0}</span>
+                    </button>
+                  </div>
+                  <div className="px-2 pb-2 text-sm text-[#5d4037]">
+                    <Link className={menuItemClass} href="/profile">
+                      <span className="text-[#d3a27f]">{renderMenuIcon("profile")}</span>
+                      <span className="text-xs font-black uppercase tracking-tight">Профиль</span>
+                    </Link>
+                    <Link className={menuItemClass} href="/about">
+                      <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
+                      <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
+                    </Link>
+                    <Link className={menuItemClass} href="/charity">
+                      <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
+                      <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
+                    </Link>
+                    <Link className={menuItemClass} href="/news">
+                      <span className="text-[#d3a27f]">{renderMenuIcon("news")}</span>
+                      <span className="text-xs font-black uppercase tracking-tight">Новости</span>
+                    </Link>
+                    {canAccessAdmin(user.accessLevel) ? (
+                      <Link className={menuItemClass} href="/admin/sql">
+                        <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
+                        <span className="text-xs font-black uppercase tracking-tight">Админ</span>
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left text-[#ff4d4d] transition-all hover:bg-red-50"
+                      onClick={handleLogout}
+                    >
+                      {renderMenuIcon("logout")}
+                      <span className="text-xs font-black uppercase tracking-tight">Выйти</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-2 text-sm text-[#5d4037]">
+                  {pathname === "/auth" ? null : (
+                    <button
+                      type="button"
+                      className={menuItemClass}
+                      onClick={() => {
+                        closeMenu();
+                        openAuth();
+                      }}
+                    >
+                      <span className="text-[#d3a27f]">{renderMenuIcon("login")}</span>
+                      <span className="text-xs font-black uppercase tracking-tight">Войти</span>
+                    </button>
+                  )}
+                  <Link className={menuItemClass} href="/map">
+                    <span className="text-[#d3a27f]">{renderMenuIcon("map")}</span>
+                    <span className="text-xs font-black uppercase tracking-tight">Карта</span>
+                  </Link>
+                  <Link className={menuItemClass} href="/about">
+                    <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
+                    <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
+                  </Link>
+                  <Link className={menuItemClass} href="/charity">
+                    <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
+                    <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
+                  </Link>
+                  <Link className={menuItemClass} href="/news">
+                    <span className="text-[#d3a27f]">{renderMenuIcon("news")}</span>
+                    <span className="text-xs font-black uppercase tracking-tight">Новости</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       <AuthModal
