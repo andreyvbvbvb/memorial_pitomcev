@@ -697,6 +697,7 @@ export default function CreateMemorialClient({
   const [showMeterGrid, setShowMeterGrid] = useState(false);
   const [mapPreviewCaptureWithoutGifts, setMapPreviewCaptureWithoutGifts] = useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
+  const [soulPreviewReady, setSoulPreviewReady] = useState(isEditMode);
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
   const [customSoulPickerOpen, setCustomSoulPickerOpen] = useState(false);
   const [farewellPlaying, setFarewellPlaying] = useState(false);
@@ -720,6 +721,14 @@ export default function CreateMemorialClient({
     base: false,
     soul: false
   });
+
+  useEffect(() => {
+    if (step !== 0 || soulPreviewReady) {
+      return;
+    }
+    const timeout = window.setTimeout(() => setSoulPreviewReady(true), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [step, soulPreviewReady]);
   const handleBuilderScenePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!activeOverlay || farewellPlaying) {
@@ -3450,6 +3459,7 @@ export default function CreateMemorialClient({
         <PetSoulPreview
           color={soulPreviewColor}
           showGrid={canUseCalibration(accessLevel)}
+          onReady={() => setSoulPreviewReady(true)}
           className="h-[clamp(13rem,40dvh,27rem)] w-full rounded-[28px] border-2 border-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_34px_-22px_rgba(47,107,138,0.55)]"
         />
         <div className="relative grid gap-2 rounded-[24px] border border-white/70 bg-[#fffcf9] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
@@ -4263,6 +4273,19 @@ export default function CreateMemorialClient({
       }`}
       style={mainStyle}
     >
+      {isInitialStep && !soulPreviewReady ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#f7f1ee]/72 px-4 backdrop-blur-lg">
+          <div className="rounded-[28px] border-[4px] border-white bg-white/[0.92] px-7 py-6 text-center shadow-[0_24px_70px_-28px_rgba(93,64,55,0.5)]">
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-[#eadfd9] border-t-[#5d4037]" />
+            <p className="mt-4 text-sm font-black uppercase tracking-[0.16em] text-[#5d4037]">
+              Загружаем душу питомца
+            </p>
+            <p className="mt-2 text-xs font-semibold text-[#8d6e63]">
+              Подготавливаем 3D-превью перед вводом данных.
+            </p>
+          </div>
+        </div>
+      ) : null}
       {isTransitioning ? (
         <div className="fixed inset-0 z-40 grid place-items-center bg-[var(--bg)]">
           <div className="flex flex-col items-center gap-3 text-center text-sm font-semibold text-[#8d6e63]">

@@ -330,12 +330,22 @@ export class PetsService {
       dirtNextSlotIndex: 1
     };
 
-    const [, pet] = await this.prisma.$transaction([
-      this.prisma.user.update({
+    const pet = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updatedUser = await tx.user.update({
         where: { id: owner.id },
         data: { coinBalance: { decrement: planPrice } }
-      }),
-      this.prisma.pet.create({
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId: owner.id,
+          amount: -planPrice,
+          balanceAfter: updatedUser.coinBalance,
+          type: "memorial_create",
+          title: "Создание мемориала",
+          details: `${name}: ${planYears === 0 ? "навсегда" : `${planYears} г.`}`
+        }
+      });
+      return tx.pet.create({
         data: {
           ownerId: owner.id,
           name,
@@ -371,8 +381,8 @@ export class PetsService {
               }
             : undefined
         }
-      })
-    ]);
+      });
+    });
 
     return pet;
   }
@@ -781,16 +791,27 @@ export class PetsService {
       memorialLastExtensionYears: years,
       memorialLastExtensionPrice: price
     };
-    const [updatedUser, memorial] = await this.prisma.$transaction([
-      this.prisma.user.update({
+    const { updatedUser, memorial } = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.user.update({
         where: { id: ownerId },
         data: { coinBalance: { decrement: price } }
-      }),
-      this.prisma.memorial.update({
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId: ownerId,
+          amount: -price,
+          balanceAfter: updated.coinBalance,
+          type: "memorial_extend",
+          title: years === 0 ? "Мемориал навсегда" : "Продление мемориала",
+          details: `${pet.name}: ${years === 0 ? "без ограничения времени" : `${years} г.`}`
+        }
+      });
+      const updatedMemorial = await tx.memorial.update({
         where: { petId: id },
         data: { activeUntil, sceneJson }
-      })
-    ]);
+      });
+      return { updatedUser: updated, memorial: updatedMemorial };
+    });
     return {
       activeUntil: memorial.activeUntil,
       coinBalance: updatedUser.coinBalance,

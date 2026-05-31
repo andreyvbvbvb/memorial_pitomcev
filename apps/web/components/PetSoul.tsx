@@ -1194,16 +1194,24 @@ export function PetSoul({
 export function PetSoulPreview({
   color,
   className,
-  showGrid = false
+  showGrid = false,
+  onReady
 }: {
   color?: string | null;
   className?: string;
   showGrid?: boolean;
+  onReady?: () => void;
 }) {
   const normalizedPreviewColor = normalizeSoulColor(color);
   return (
     <div className={`relative overflow-hidden rounded-[22px] bg-[#eef8ff] ${className ?? ""}`}>
-      <Canvas dpr={1} camera={{ position: [0, 0.35, 3.2], fov: 42 }}>
+      <Canvas
+        dpr={1}
+        camera={{ position: [0, 0.35, 3.2], fov: 42 }}
+        onCreated={() => {
+          requestAnimationFrame(() => onReady?.());
+        }}
+      >
         <SoulPreviewBackground />
         <AmbientLight intensity={0.8} />
         {showGrid ? <SoulPreviewGridCube /> : null}

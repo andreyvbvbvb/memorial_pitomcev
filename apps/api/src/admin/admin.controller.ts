@@ -9,8 +9,12 @@ import {
   Param,
   Patch,
   Post,
-  Req
+  Req,
+  UploadedFile,
+  UseInterceptors
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { Prisma } from "@prisma/client";
 import { Request } from "express";
 import { canAccessAdmin, canManageAdmins, getAccessLevel, isOwnerUser } from "../auth/access-level";
 import * as bcrypt from "bcryptjs";
@@ -18,6 +22,10 @@ import { AuthService } from "../auth/auth.service";
 import { GiftsService } from "../gifts/gifts.service";
 import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { S3Service } from "../storage/s3.service";
+import { AdminBulkCreateUsersDto } from "./dto/admin-bulk-create-users.dto";
+import { AdminDocumentUploadDto } from "./dto/admin-document.dto";
+import { AdminNewsDto } from "./dto/admin-news.dto";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
 import { AdminAddCoinsDto } from "./dto/admin-add-coins.dto";
 import {
@@ -69,7 +77,8 @@ export class AdminController {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(GiftsService) private readonly giftsService: GiftsService,
-    @Inject(PricingService) private readonly pricingService: PricingService
+    @Inject(PricingService) private readonly pricingService: PricingService,
+    @Inject(S3Service) private readonly s3: S3Service
   ) {}
 
   private async ensureAdmin(req: Request) {
@@ -369,12 +378,119 @@ export class AdminController {
     if (!user) {
       throw new BadRequestException("Пользователь не найден");
     }
-    const updated = await this.prisma.user.update({
-      where: { id: user.id },
-      data: { coinBalance: { increment: dto.amount } },
-      select: { id: true, email: true, login: true, coinBalance: true }
+    const updated = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: { coinBalance: { increment: dto.amount } },
+        select: { id: true, email: true, login: true, coinBalance: true }
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId: user.id,
+          amount: dto.amount,
+          balanceAfter: updatedUser.coinBalance,
+          type: "admin_add_coins",
+          title: "Админское начисление",
+          details: `Начислено администратором: ${dto.amount} монет`
+        }
+      });
+      return updatedUser;
     });
     return { user: updated, amount: dto.amount };
+  }
+
+  @Post("users/bulk-create")
+  async bulkCreateUsers(@Req() req: Request, @Body() dto: AdminBulkCreateUsersDto) {
+    await this.ensureAdmin(req);
+    const rows = Array.isArray(dto.rows) ? dto.rows : [];
+    if (rows.length === 0) {
+      throw new BadRequestException("CSV не содержит строк пользователей");
+    }
+    if (rows.length > 200) {
+      throw new BadRequestException("За один раз можно создать не больше 200 аккаунтов");
+    }
+
+    const normalizedRows = rows.map((row, index) => {
+      const login = String(row.login ?? "").trim();
+      const email = String(row.email ?? "").trim().toLowerCase();
+      const password = String(row.password ?? "").trim();
+      const initialBalance = Number(row.initialBalance ?? 0);
+      if (!/^[A-Za-z0-9_]{3,30}$/.test(login)) {
+        throw new BadRequestException(`Строка ${index + 1}: некорректный логин`);
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new BadRequestException(`Строка ${index + 1}: некорректный email`);
+      }
+      if (password.length < 6 || password.length > 200) {
+        throw new BadRequestException(`Строка ${index + 1}: пароль должен быть от 6 до 200 символов`);
+      }
+      if (!Number.isInteger(initialBalance) || initialBalance < 0 || initialBalance > 1_000_000) {
+        throw new BadRequestException(`Строка ${index + 1}: баланс должен быть целым числом от 0 до 1000000`);
+      }
+      return { login, email, password, initialBalance };
+    });
+
+    const duplicateEmails = normalizedRows
+      .map((row) => row.email)
+      .filter((email, index, emails) => emails.indexOf(email) !== index);
+    const duplicateLogins = normalizedRows
+      .map((row) => row.login.toLowerCase())
+      .filter((login, index, logins) => logins.indexOf(login) !== index);
+    if (duplicateEmails.length > 0 || duplicateLogins.length > 0) {
+      throw new BadRequestException("CSV содержит повторяющиеся email или логины");
+    }
+
+    const existing = await this.prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { in: normalizedRows.map((row) => row.email) } },
+          { login: { in: normalizedRows.map((row) => row.login) } }
+        ]
+      },
+      select: { email: true, login: true }
+    });
+    if (existing.length > 0) {
+      throw new BadRequestException(
+        `Уже существуют: ${existing
+          .map((user: { email: string; login: string | null }) => user.email || user.login)
+          .filter(Boolean)
+          .join(", ")}`
+      );
+    }
+
+    const now = new Date();
+    const created = [];
+    for (const row of normalizedRows) {
+      const passwordHash = await bcrypt.hash(row.password, 10);
+      const user = await this.prisma.user.create({
+        data: {
+          email: row.email,
+          login: row.login,
+          passwordHash,
+          coinBalance: row.initialBalance,
+          termsAccepted: true,
+          offerAccepted: true,
+          termsAcceptedAt: now,
+          offerAcceptedAt: now,
+          walletTransactions:
+            row.initialBalance > 0
+              ? {
+                  create: {
+                    amount: row.initialBalance,
+                    balanceAfter: row.initialBalance,
+                    type: "admin_initial_balance",
+                    title: "Начальный баланс",
+                    details: "Создано через CSV-импорт",
+                    createdAt: now
+                  }
+                }
+              : undefined
+        },
+        select: { id: true, email: true, login: true, coinBalance: true }
+      });
+      created.push(user);
+    }
+    return { createdCount: created.length, users: created };
   }
 
   @Get("pricing")
@@ -505,5 +621,99 @@ export class AdminController {
     await this.ensureAdmin(req);
     await this.prisma.loadingTip.delete({ where: { id } });
     return { ok: true };
+  }
+
+  @Get("news")
+  async listNews(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const posts = await this.prisma.newsPost.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 100
+    });
+    return { posts };
+  }
+
+  @Post("news")
+  async createNews(@Req() req: Request, @Body() dto: AdminNewsDto) {
+    await this.ensureAdmin(req);
+    const post = await this.prisma.newsPost.create({
+      data: {
+        title: dto.title.trim(),
+        body: dto.body.trim(),
+        isActive: dto.isActive ?? true
+      }
+    });
+    return { post };
+  }
+
+  @Patch("news/:id")
+  async updateNews(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() dto: AdminNewsDto
+  ) {
+    await this.ensureAdmin(req);
+    const post = await this.prisma.newsPost.update({
+      where: { id },
+      data: {
+        title: dto.title.trim(),
+        body: dto.body.trim(),
+        isActive: dto.isActive ?? true
+      }
+    });
+    return { post };
+  }
+
+  @Delete("news/:id")
+  async deleteNews(@Req() req: Request, @Param("id") id: string) {
+    await this.ensureAdmin(req);
+    await this.prisma.newsPost.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  @Get("documents")
+  async listDocumentRevisions(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const revisions = await this.prisma.documentRevision.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 120
+    });
+    return { revisions };
+  }
+
+  @Post("documents")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 20 * 1024 * 1024 }
+    })
+  )
+  async uploadDocumentRevision(
+    @Req() req: Request,
+    @Body() dto: AdminDocumentUploadDto,
+    @UploadedFile() file?: { originalname: string; mimetype?: string; buffer: Buffer }
+  ) {
+    const user = await this.ensureAdmin(req);
+    if (!file) {
+      throw new BadRequestException("Файл не найден");
+    }
+    const isPdf =
+      file.mimetype === "application/pdf" ||
+      file.originalname.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      throw new BadRequestException("Можно загрузить только PDF");
+    }
+    const safeName = file.originalname.replace(/[^\wа-яА-ЯёЁ.\-]+/g, "_");
+    const key = `documents/${dto.documentType}/${Date.now()}-${safeName}`;
+    const fileUrl = await this.s3.uploadPublic(key, file.buffer, "application/pdf");
+    const revision = await this.prisma.documentRevision.create({
+      data: {
+        documentType: dto.documentType,
+        title: dto.title.trim(),
+        fileUrl,
+        fileName: safeName,
+        uploadedById: user.id
+      }
+    });
+    return { revision };
   }
 }

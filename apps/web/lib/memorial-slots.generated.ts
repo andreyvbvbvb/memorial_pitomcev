@@ -2,6 +2,7 @@
 
 export const houseSlotsGenerated = {
   "budka_1__base": {
+    "mat": "mat_slot",
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
   },
@@ -97,6 +98,14 @@ export const houseSlotsGenerated = {
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
   },
+  "kotik_1__base": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "kotik_1__second": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
   "kotik_3__base": {
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
@@ -110,10 +119,6 @@ export const houseSlotsGenerated = {
     "bowlWater": "bowl_water_slot"
   },
   "mat_1__second": {
-    "bowlFood": "bowl_food_slot",
-    "bowlWater": "bowl_water_slot"
-  },
-  "mat_1__third": {
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
   }

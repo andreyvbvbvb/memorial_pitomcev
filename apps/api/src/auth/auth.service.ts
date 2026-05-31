@@ -7,6 +7,8 @@ import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { AcceptTermsDto } from "./dto/accept-terms.dto";
 
+const REGISTRATION_BONUS_COINS = 150;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -38,11 +40,22 @@ export class AuthService {
         email,
         passwordHash,
         login,
+        coinBalance: REGISTRATION_BONUS_COINS,
         createdAt: now,
         termsAccepted: true,
         offerAccepted: true,
         termsAcceptedAt: now,
-        offerAcceptedAt: now
+        offerAcceptedAt: now,
+        walletTransactions: {
+          create: {
+            amount: REGISTRATION_BONUS_COINS,
+            balanceAfter: REGISTRATION_BONUS_COINS,
+            type: "registration_bonus",
+            title: "Бонус за регистрацию",
+            details: "Стартовые монеты нового аккаунта",
+            createdAt: now
+          }
+        }
       }
     });
     return user;

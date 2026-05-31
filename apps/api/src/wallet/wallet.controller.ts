@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards
 } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { canAccessAdmin } from "../auth/access-level";
 import { AuthGuard } from "../auth/auth.guard";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
@@ -51,6 +52,17 @@ export class WalletController {
     return { ownerId: owner.id, coinBalance: owner.coinBalance };
   }
 
+  @Get("me/transactions")
+  @UseGuards(AuthGuard)
+  async getMyTransactions(@CurrentUser() user: AuthenticatedUser) {
+    const transactions = await this.prisma.walletTransaction.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 120
+    });
+    return { transactions };
+  }
+
   @Post("top-up")
   @UseGuards(AuthGuard)
   async topUp(@Body() dto: TopUpDto, @CurrentUser() user: AuthenticatedUser) {
@@ -60,19 +72,30 @@ export class WalletController {
     }
     await this.ensureOwner(ownerId);
     const charityAmount = Math.floor(dto.amount * 0.2);
-    const [updated] = await this.prisma.$transaction([
-      this.prisma.user.update({
+    const updated = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updatedUser = await tx.user.update({
         where: { id: ownerId },
         data: {
           coinBalance: { increment: dto.amount }
         }
-      }),
-      this.prisma.charityTotals.upsert({
+      });
+      await tx.charityTotals.upsert({
         where: { id: "global" },
         create: { id: "global", totalAccrued: charityAmount },
         update: { totalAccrued: { increment: charityAmount } }
-      })
-    ]);
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId: ownerId,
+          amount: dto.amount,
+          balanceAfter: updatedUser.coinBalance,
+          type: "top_up",
+          title: "Пополнение баланса",
+          details: `Пополнение на ${dto.amount} монет`
+        }
+      });
+      return updatedUser;
+    });
     return { ok: true, coinBalance: updated.coinBalance };
   }
 }

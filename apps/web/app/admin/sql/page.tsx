@@ -105,6 +105,31 @@ type GiftPrice = {
   modelUrl: string;
 };
 
+type BulkAccountRow = {
+  login: string;
+  email: string;
+  password: string;
+  initialBalance: number;
+};
+
+type NewsPost = {
+  id: string;
+  title: string;
+  body: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type DocumentRevision = {
+  id: string;
+  documentType: "terms" | "offer" | string;
+  title: string;
+  fileUrl: string;
+  fileName: string;
+  createdAt: string;
+};
+
 type AccessUser = {
   id: string;
   email: string;
@@ -330,6 +355,9 @@ export default function AdminSqlPage() {
   const [coinsAmount, setCoinsAmount] = useState("100");
   const [coinsNotice, setCoinsNotice] = useState<string | null>(null);
   const [coinsLoading, setCoinsLoading] = useState(false);
+  const [bulkAccountRows, setBulkAccountRows] = useState<BulkAccountRow[]>([]);
+  const [bulkAccountNotice, setBulkAccountNotice] = useState<string | null>(null);
+  const [bulkAccountLoading, setBulkAccountLoading] = useState(false);
   const [petId, setPetId] = useState("");
   const [loadingTips, setLoadingTips] = useState<LoadingTip[]>([]);
   const [loadingTipsLoading, setLoadingTipsLoading] = useState(false);
@@ -338,6 +366,20 @@ export default function AdminSqlPage() {
   const [savingTipId, setSavingTipId] = useState<string | null>(null);
   const [deletingTipId, setDeletingTipId] = useState<string | null>(null);
   const [creatingTip, setCreatingTip] = useState(false);
+  const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsSaving, setNewsSaving] = useState(false);
+  const [newsNotice, setNewsNotice] = useState<string | null>(null);
+  const [newsTitle, setNewsTitle] = useState("");
+  const [newsBody, setNewsBody] = useState("");
+  const [newsActive, setNewsActive] = useState(true);
+  const [documentRevisions, setDocumentRevisions] = useState<DocumentRevision[]>([]);
+  const [documentLoading, setDocumentLoading] = useState(false);
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [documentNotice, setDocumentNotice] = useState<string | null>(null);
+  const [documentType, setDocumentType] = useState<"terms" | "offer">("offer");
+  const [documentTitle, setDocumentTitle] = useState("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [memorialPlanPrices, setMemorialPlanPrices] = useState<MemorialPlanPrice[]>([]);
   const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
   const [pricingLoading, setPricingLoading] = useState(false);
@@ -432,6 +474,46 @@ export default function AdminSqlPage() {
       }
     };
     void loadSchema();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl, authChecked, isAdmin]);
+
+  useEffect(() => {
+    if (!authChecked || !isAdmin) {
+      return;
+    }
+    let isMounted = true;
+    const loadContentTools = async () => {
+      setNewsLoading(true);
+      setDocumentLoading(true);
+      try {
+        const [newsResponse, documentsResponse] = await Promise.all([
+          fetch(`${apiUrl}/admin/news`, { credentials: "include" }),
+          fetch(`${apiUrl}/admin/documents`, { credentials: "include" })
+        ]);
+        if (newsResponse.ok) {
+          const data = (await newsResponse.json()) as { posts?: NewsPost[] };
+          if (isMounted) {
+            setNewsPosts(Array.isArray(data.posts) ? data.posts : []);
+          }
+        }
+        if (documentsResponse.ok) {
+          const data = (await documentsResponse.json()) as {
+            revisions?: DocumentRevision[];
+          };
+          if (isMounted) {
+            setDocumentRevisions(Array.isArray(data.revisions) ? data.revisions : []);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setNewsLoading(false);
+          setDocumentLoading(false);
+        }
+      }
+    };
+    void loadContentTools();
     return () => {
       isMounted = false;
     };
@@ -689,6 +771,189 @@ export default function AdminSqlPage() {
       setError(err instanceof Error ? err.message : "Ошибка начисления монет");
     } finally {
       setCoinsLoading(false);
+    }
+  };
+
+  const parseCsvLine = (line: string) => {
+    const cells: string[] = [];
+    let current = "";
+    let quoted = false;
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      const next = line[index + 1];
+      if (char === '"' && quoted && next === '"') {
+        current += '"';
+        index += 1;
+        continue;
+      }
+      if (char === '"') {
+        quoted = !quoted;
+        continue;
+      }
+      if (char === "," && !quoted) {
+        cells.push(current.trim());
+        current = "";
+        continue;
+      }
+      current += char;
+    }
+    cells.push(current.trim());
+    return cells;
+  };
+
+  const handleBulkCsvFile = async (file?: File | null) => {
+    if (!file) {
+      return;
+    }
+    setBulkAccountNotice(null);
+    setError(null);
+    const text = await file.text();
+    const lines = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const dataLines = lines.filter((line, index) => {
+      if (index !== 0) {
+        return true;
+      }
+      const lower = line.toLowerCase();
+      return !(
+        lower.includes("login") ||
+        lower.includes("логин") ||
+        lower.includes("email") ||
+        lower.includes("имейл")
+      );
+    });
+    const rows = dataLines
+      .map(parseCsvLine)
+      .filter((cells) => cells.length >= 4)
+      .map((cells, index) => {
+        const [login, email, password, balance] = cells;
+        const initialBalance = Number(balance);
+        if (!login || !email || !password || !Number.isFinite(initialBalance)) {
+          throw new Error(`Строка ${index + 1}: нужен формат логин,email,пароль,начальный баланс`);
+        }
+        return {
+          login,
+          email,
+          password,
+          initialBalance: Math.trunc(initialBalance)
+        };
+      });
+    setBulkAccountRows(rows);
+    setBulkAccountNotice(`Загружено строк: ${rows.length}`);
+  };
+
+  const createBulkAccounts = async () => {
+    if (bulkAccountRows.length === 0) {
+      setError("Сначала загрузите CSV");
+      return;
+    }
+    setBulkAccountLoading(true);
+    setBulkAccountNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/users/bulk-create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ rows: bulkAccountRows })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось создать аккаунты");
+      }
+      const data = (await response.json()) as { createdCount?: number };
+      setBulkAccountRows([]);
+      setBulkAccountNotice(`Создано аккаунтов: ${data.createdCount ?? 0}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка CSV-импорта");
+    } finally {
+      setBulkAccountLoading(false);
+    }
+  };
+
+  const refreshNews = async () => {
+    const response = await fetch(`${apiUrl}/admin/news`, { credentials: "include" });
+    if (response.ok) {
+      const data = (await response.json()) as { posts?: NewsPost[] };
+      setNewsPosts(Array.isArray(data.posts) ? data.posts : []);
+    }
+  };
+
+  const createNewsPost = async () => {
+    if (!newsTitle.trim() || !newsBody.trim()) {
+      setError("Введите заголовок и текст новости");
+      return;
+    }
+    setNewsSaving(true);
+    setNewsNotice(null);
+    setError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/news`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: newsTitle.trim(),
+          body: newsBody.trim(),
+          isActive: newsActive
+        })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось создать новость");
+      }
+      setNewsTitle("");
+      setNewsBody("");
+      setNewsActive(true);
+      setNewsNotice("Новость опубликована");
+      await refreshNews();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка новости");
+    } finally {
+      setNewsSaving(false);
+    }
+  };
+
+  const refreshDocuments = async () => {
+    const response = await fetch(`${apiUrl}/admin/documents`, { credentials: "include" });
+    if (response.ok) {
+      const data = (await response.json()) as { revisions?: DocumentRevision[] };
+      setDocumentRevisions(Array.isArray(data.revisions) ? data.revisions : []);
+    }
+  };
+
+  const uploadDocumentRevision = async () => {
+    if (!documentFile || !documentTitle.trim()) {
+      setError("Выберите PDF и укажите название редакции");
+      return;
+    }
+    setDocumentUploading(true);
+    setDocumentNotice(null);
+    setError(null);
+    try {
+      const body = new FormData();
+      body.set("documentType", documentType);
+      body.set("title", documentTitle.trim());
+      body.set("file", documentFile);
+      const response = await fetch(`${apiUrl}/admin/documents`, {
+        method: "POST",
+        credentials: "include",
+        body
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось загрузить документ");
+      }
+      setDocumentTitle("");
+      setDocumentFile(null);
+      setDocumentNotice("Документ загружен");
+      await refreshDocuments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка загрузки документа");
+    } finally {
+      setDocumentUploading(false);
     }
   };
 
@@ -1488,6 +1753,51 @@ export default function AdminSqlPage() {
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="text-xs font-semibold uppercase text-slate-500">
+              CSV-аккаунты
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Формат строк: логин,email,пароль,начальный баланс. Первая строка с заголовками не нужна.
+            </p>
+            <div className="mt-3 grid gap-2">
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(event) => {
+                  void handleBulkCsvFile(event.target.files?.[0] ?? null);
+                  event.currentTarget.value = "";
+                }}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              {bulkAccountRows.length > 0 ? (
+                <div className="max-h-[120px] overflow-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
+                  {bulkAccountRows.slice(0, 8).map((row) => (
+                    <div key={`${row.email}-${row.login}`} className="truncate">
+                      {row.login} · {row.email} · {row.initialBalance} монет
+                    </div>
+                  ))}
+                  {bulkAccountRows.length > 8 ? (
+                    <div className="mt-1 text-slate-400">...и ещё {bulkAccountRows.length - 8}</div>
+                  ) : null}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={createBulkAccounts}
+                disabled={bulkAccountLoading || bulkAccountRows.length === 0}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {bulkAccountLoading ? "Создаём..." : "Создать аккаунты"}
+              </button>
+              {bulkAccountNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {bulkAccountNotice}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
               Лимит мемориалов
             </div>
             <div className="mt-3 grid gap-2">
@@ -1829,6 +2139,126 @@ export default function AdminSqlPage() {
                       </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Новости
+            </div>
+            <div className="mt-3 grid gap-2">
+              <input
+                value={newsTitle}
+                onChange={(event) => setNewsTitle(event.target.value)}
+                placeholder="Заголовок новости"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <textarea
+                value={newsBody}
+                onChange={(event) => setNewsBody(event.target.value)}
+                placeholder="Текст новости или предупреждения"
+                className="min-h-[90px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <label className="flex items-center gap-2 text-[11px] text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={newsActive}
+                  onChange={(event) => setNewsActive(event.target.checked)}
+                />
+                Активна
+              </label>
+              <button
+                type="button"
+                onClick={createNewsPost}
+                disabled={newsSaving}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {newsSaving ? "Публикуем..." : "Опубликовать новость"}
+              </button>
+              {newsNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {newsNotice}
+                </div>
+              ) : null}
+              <div className="max-h-[220px] space-y-2 overflow-auto pr-1">
+                {newsLoading && newsPosts.length === 0 ? (
+                  <div className="text-xs text-slate-500">Загрузка...</div>
+                ) : null}
+                {newsPosts.map((post) => (
+                  <div key={post.id} className="rounded-lg border border-slate-200 bg-white p-2">
+                    <div className="text-xs font-semibold text-slate-800">{post.title}</div>
+                    <div className="mt-1 line-clamp-3 text-[11px] text-slate-500">{post.body}</div>
+                    <div className="mt-1 text-[10px] text-slate-400">
+                      {post.isActive ? "активна" : "скрыта"} · {new Date(post.createdAt).toLocaleDateString("ru-RU")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Документы PDF
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Загруженные PDF попадают в историю документа на страницах соглашения и оферты.
+            </p>
+            <div className="mt-3 grid gap-2">
+              <select
+                value={documentType}
+                onChange={(event) => setDocumentType(event.target.value as "terms" | "offer")}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              >
+                <option value="terms">Пользовательское соглашение</option>
+                <option value="offer">Публичная оферта</option>
+              </select>
+              <input
+                value={documentTitle}
+                onChange={(event) => setDocumentTitle(event.target.value)}
+                placeholder="Название редакции"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <button
+                type="button"
+                onClick={uploadDocumentRevision}
+                disabled={documentUploading}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {documentUploading ? "Загружаем..." : "Загрузить новый документ"}
+              </button>
+              {documentNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {documentNotice}
+                </div>
+              ) : null}
+              <div className="max-h-[180px] space-y-2 overflow-auto pr-1">
+                {documentLoading && documentRevisions.length === 0 ? (
+                  <div className="text-xs text-slate-500">Загрузка...</div>
+                ) : null}
+                {documentRevisions.slice(0, 12).map((revision) => (
+                  <a
+                    key={revision.id}
+                    href={revision.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-600 hover:border-slate-300"
+                  >
+                    <span className="font-semibold text-slate-800">
+                      {revision.documentType === "terms" ? "Соглашение" : "Оферта"} · {revision.title}
+                    </span>
+                    <span className="mt-1 block text-slate-400">
+                      {new Date(revision.createdAt).toLocaleDateString("ru-RU")}
+                    </span>
+                  </a>
                 ))}
               </div>
             </div>

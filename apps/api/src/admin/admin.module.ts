@@ -3,10 +3,11 @@ import { AuthModule } from "../auth/auth.module";
 import { GiftsModule } from "../gifts/gifts.module";
 import { PricingModule } from "../pricing/pricing.module";
 import { PrismaModule } from "../prisma/prisma.module";
+import { StorageModule } from "../storage/storage.module";
 import { AdminController } from "./admin.controller";
 
 @Module({
-  imports: [PrismaModule, AuthModule, GiftsModule, PricingModule],
+  imports: [PrismaModule, AuthModule, GiftsModule, PricingModule, StorageModule],
   controllers: [AdminController]
 })
 export class AdminModule {}

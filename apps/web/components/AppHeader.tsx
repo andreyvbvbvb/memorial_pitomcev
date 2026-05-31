@@ -25,6 +25,7 @@ export default function AppHeader() {
   const [createLimitOpen, setCreateLimitOpen] = useState(false);
   const [createLimitVisible, setCreateLimitVisible] = useState(false);
   const [createLimitMessage, setCreateLimitMessage] = useState("");
+  const [newsUnreadCount, setNewsUnreadCount] = useState(0);
   const headerRef = useRef<HTMLElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const apiUrl = useMemo(() => API_BASE, []);
@@ -48,6 +49,34 @@ export default function AppHeader() {
   useEffect(() => {
     fetchMe();
   }, [pathname]);
+
+  useEffect(() => {
+    const loadNewsStatus = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/content/news/status`, {
+          credentials: "include"
+        });
+        if (!response.ok) {
+          setNewsUnreadCount(0);
+          return;
+        }
+        const data = (await response.json()) as { unreadCount?: number };
+        setNewsUnreadCount(Math.max(0, data.unreadCount ?? 0));
+      } catch {
+        setNewsUnreadCount(0);
+      }
+    };
+    void loadNewsStatus();
+    const handleNewsRead = () => {
+      setNewsUnreadCount(0);
+    };
+    window.addEventListener("memorial-news-read", handleNewsRead);
+    window.addEventListener("memorial-auth-changed", loadNewsStatus);
+    return () => {
+      window.removeEventListener("memorial-news-read", handleNewsRead);
+      window.removeEventListener("memorial-auth-changed", loadNewsStatus);
+    };
+  }, [apiUrl, pathname, user?.id]);
 
   useEffect(() => {
     const handleAuthChanged = () => {
@@ -238,7 +267,7 @@ export default function AppHeader() {
     setBalanceSpin((prev) => ({ key: prev.key + 1, reverse }));
   };
 
-  const renderMenuIcon = (kind: "login" | "profile" | "pets" | "map" | "about" | "charity" | "admin" | "logout") => {
+  const renderMenuIcon = (kind: "login" | "profile" | "pets" | "map" | "about" | "charity" | "news" | "admin" | "logout") => {
     switch (kind) {
       case "login":
       case "profile":
@@ -274,6 +303,13 @@ export default function AppHeader() {
         return (
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 21s-6.7-4.35-9-8.28A5.35 5.35 0 0 1 12 6.2a5.35 5.35 0 0 1 9 6.52C18.7 16.65 12 21 12 21Z" />
+          </svg>
+        );
+      case "news":
+        return (
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 4h14a1 1 0 0 1 1 1v14l-3-2-3 2-3-2-3 2-3-2-3 2V5a1 1 0 0 1 1-1Z" />
+            <path d="M8 8h8M8 12h8" />
           </svg>
         );
       case "admin":
@@ -366,6 +402,11 @@ export default function AppHeader() {
                     <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                       Раскрыть меню
                     </span>
+                    {newsUnreadCount > 0 ? (
+                      <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
+                        !
+                      </span>
+                    ) : null}
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>
@@ -425,6 +466,17 @@ export default function AppHeader() {
                           <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
                           <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
                         </Link>
+                        <Link className={menuItemClass} href="/news">
+                          <span className="relative text-[#d3a27f]">
+                            {renderMenuIcon("news")}
+                            {newsUnreadCount > 0 ? (
+                              <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
+                                !
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="text-xs font-black uppercase tracking-tight">Новости</span>
+                        </Link>
                         {canAccessAdmin(user.accessLevel) ? (
                           <Link className={menuItemClass} href="/admin/sql">
                             <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
@@ -475,6 +527,11 @@ export default function AppHeader() {
                     <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                       Раскрыть меню
                     </span>
+                    {newsUnreadCount > 0 ? (
+                      <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
+                        !
+                      </span>
+                    ) : null}
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>
@@ -503,6 +560,17 @@ export default function AppHeader() {
                         <Link className={menuItemClass} href="/charity">
                           <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
                           <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
+                        </Link>
+                        <Link className={menuItemClass} href="/news">
+                          <span className="relative text-[#d3a27f]">
+                            {renderMenuIcon("news")}
+                            {newsUnreadCount > 0 ? (
+                              <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
+                                !
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="text-xs font-black uppercase tracking-tight">Новости</span>
                         </Link>
                       </div>
                     </div>

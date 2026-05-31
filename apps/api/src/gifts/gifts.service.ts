@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { generatedGifts } from "./gifts.generated";
 
@@ -233,12 +234,22 @@ export class GiftsService {
     }
 
     const expiresAt = durationMonths ? this.addMonths(now, durationMonths) : null;
-    const [updatedUser, placement] = await this.prisma.$transaction([
-      this.prisma.user.update({
+    const { updatedUser, placement } = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const updated = await tx.user.update({
         where: { id: ownerId },
         data: { coinBalance: { decrement: totalPrice } }
-      }),
-      this.prisma.giftPlacement.create({
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId: ownerId,
+          amount: -totalPrice,
+          balanceAfter: updated.coinBalance,
+          type: "gift_purchase",
+          title: "Подарок мемориалу",
+          details: `${gift.name}: ${durationMonths} мес.`
+        }
+      });
+      const createdPlacement = await tx.giftPlacement.create({
         data: {
           petId,
           giftId,
@@ -252,12 +263,13 @@ export class GiftsService {
           gift: true,
           owner: true
         }
-      }),
-      this.prisma.memorial.update({
+      });
+      await tx.memorial.update({
         where: { petId },
         data: { needsPreviewRefresh: true }
-      })
-    ]);
+      });
+      return { updatedUser: updated, placement: createdPlacement };
+    });
 
     return {
       placement,

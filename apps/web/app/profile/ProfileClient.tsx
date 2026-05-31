@@ -55,6 +55,16 @@ type GiftHistoryItem = {
 
 type GiftGalleryMode = "sent" | "received";
 
+type WalletTransaction = {
+  id: string;
+  amount: number;
+  balanceAfter: number;
+  type: string;
+  title: string;
+  details?: string | null;
+  createdAt: string;
+};
+
 function HelpHint({ text, className = "" }: { text: string; className?: string }) {
   return (
     <span
@@ -81,6 +91,7 @@ export default function ProfileClient() {
   const [giftHistoryMode, setGiftHistoryMode] = useState<GiftGalleryMode>("sent");
   const [giftHistory, setGiftHistory] = useState<GiftHistoryItem[]>([]);
   const [receivedGiftHistory, setReceivedGiftHistory] = useState<GiftHistoryItem[]>([]);
+  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
   const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -105,11 +116,14 @@ export default function ProfileClient() {
         setEditing(false);
         setGiftHistoryLoading(true);
         try {
-          const [giftsResponse, receivedResponse] = await Promise.all([
+          const [giftsResponse, receivedResponse, walletHistoryResponse] = await Promise.all([
             fetch(`${apiUrl}/users/me/gifts`, {
               credentials: "include"
             }),
             fetch(`${apiUrl}/users/me/received-gifts`, {
+              credentials: "include"
+            }),
+            fetch(`${apiUrl}/wallet/me/transactions`, {
               credentials: "include"
             })
           ]);
@@ -123,9 +137,18 @@ export default function ProfileClient() {
           } else {
             setReceivedGiftHistory([]);
           }
+          if (walletHistoryResponse.ok) {
+            const walletData = (await walletHistoryResponse.json()) as {
+              transactions?: WalletTransaction[];
+            };
+            setWalletTransactions(Array.isArray(walletData.transactions) ? walletData.transactions : []);
+          } else {
+            setWalletTransactions([]);
+          }
         } catch {
           setGiftHistory([]);
           setReceivedGiftHistory([]);
+          setWalletTransactions([]);
         } finally {
           setGiftHistoryLoading(false);
         }
@@ -393,6 +416,62 @@ export default function ProfileClient() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+        <section>
+          <div className={authCardClass}>
+            <div className={authInnerShellClass}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
+                    Баланс
+                  </p>
+                  <h2 className="mt-2 text-xl font-black leading-tight text-[#5d4037]">
+                    История монет
+                  </h2>
+                </div>
+                <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                  {profile?.coinBalance ?? 0} монет
+                </div>
+              </div>
+              {walletTransactions.length > 0 ? (
+                <div className="mt-5 max-h-[22rem] space-y-2 overflow-auto pr-1">
+                  {walletTransactions.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid gap-2 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-sm shadow-[0_14px_30px_-24px_rgba(93,64,55,0.45)] sm:grid-cols-[1fr_auto]"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-black text-[#5d4037]">{item.title}</div>
+                        <div className="mt-1 text-xs font-semibold text-[#8d6e63]">
+                          {formatDate(item.createdAt)}
+                          {item.details ? ` · ${item.details}` : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 sm:justify-end">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-black ${
+                            item.amount >= 0
+                              ? "bg-[#e5fbf4] text-[#2a9b81]"
+                              : "bg-[#fff0ed] text-[#b66352]"
+                          }`}
+                        >
+                          {item.amount > 0 ? "+" : ""}
+                          {item.amount}
+                        </span>
+                        <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                          {item.balanceAfter}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
+                  История баланса пока пустая.
+                </p>
+              )}
             </div>
           </div>
         </section>
