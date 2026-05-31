@@ -352,6 +352,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [appearanceReviewOpen, setAppearanceReviewOpen] = useState(false);
   const [appearanceReviewVisible, setAppearanceReviewVisible] = useState(false);
   const [previewContextReady, setPreviewContextReady] = useState(false);
+  const [previewSceneReady, setPreviewSceneReady] = useState(false);
   const previewControlsRef = useRef<any>(null);
   const previewRenderRef = useRef<{
     gl: THREE.WebGLRenderer;
@@ -1893,6 +1894,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   useEffect(() => {
     if (
       !previewContextReady ||
+      !previewSceneReady ||
       (!pet?.memorial?.needsPreviewRefresh && !dirtPreviewNeedsRefresh) ||
       giftPreviewEnabled ||
       selectedGiftId
@@ -1911,6 +1913,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     pet?.id,
     pet?.memorial?.needsPreviewRefresh,
     previewContextReady,
+    previewSceneReady,
     selectedGiftId,
     uploadMapPreview
   ]);
@@ -2492,6 +2495,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
             previewRenderRef.current = context;
             setPreviewContextReady(true);
           }}
+          onSceneReadyChange={setPreviewSceneReady}
         />
       </div>
       <div className="pointer-events-none fixed right-0 top-0 z-[1] h-80 w-80 rounded-full bg-[#3bceac]/10 blur-[120px]" />

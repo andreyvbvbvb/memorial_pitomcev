@@ -29,6 +29,11 @@ body {
   body:has(.mobile-bottom-nav) {
     padding-bottom: calc(5.1rem + env(safe-area-inset-bottom));
   }
+
+  body:has(main[data-mobile-immersive="true"]) {
+    overflow: hidden;
+    padding-bottom: 0;
+  }
 }
 
 main {

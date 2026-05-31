@@ -233,7 +233,6 @@ export default function AppHeader() {
     { coins: 1000, rub: 1000, usd: 10 }
   ];
   const showMobileBottomNav = isPortraitLayout;
-  const mobileMenuBottomClass = "bottom-[calc(5.1rem+env(safe-area-inset-bottom))]";
 
   const headerInnerClass = isPortraitLayout
     ? "mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2"
@@ -258,10 +257,13 @@ export default function AppHeader() {
     isPortraitLayout
       ? "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-3 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
       : "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
-  const menuPanelClass =
-    `${isPortraitLayout ? `fixed left-3 right-3 ${mobileMenuBottomClass} max-h-[min(70dvh,31rem)] rounded-[28px] border-[3px]` : "absolute right-0 mt-3 w-72 rounded-[32px] border-[4px]"} overflow-hidden overflow-y-auto border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 ${isPortraitLayout ? "origin-bottom" : "origin-top-right"} ${
-      menuVisible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-95 opacity-0"
-    }`;
+  const menuPanelClass = isPortraitLayout
+    ? `fixed inset-0 z-[80] h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#f7f1ee] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 ${
+        menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+      }`
+    : `absolute right-0 mt-3 w-72 rounded-[32px] border-[4px] border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
+        menuVisible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-95 opacity-0"
+      }`;
   const menuItemClass =
     "flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-left text-[#5d4037] transition-all hover:bg-[#fdf2e9]";
 
@@ -347,22 +349,33 @@ export default function AppHeader() {
   const mobileBottomIconClass = (active: boolean) =>
     active ? "text-white" : "text-[#d3a27f]";
   const menuButtonIcon = (
-    <>
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
-        <path
-          d="M5 7h14M5 12h14M5 17h14"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-      {newsUnreadCount > 0 ? (
-        <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
-          !
-        </span>
-      ) : null}
-    </>
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path
+        d="M5 7h14M5 12h14M5 17h14"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
   );
+  const mobileMenuHeader = isPortraitLayout ? (
+    <div className="mb-4 flex items-center justify-between rounded-[24px] border-[3px] border-white bg-[#fffcf9] px-4 py-3 shadow-[0_18px_38px_-26px_rgba(93,64,55,0.55)]">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
+          МяуГав
+        </p>
+        <h2 className="mt-0.5 text-2xl font-black leading-none text-[#5d4037]">Меню</h2>
+      </div>
+      <button
+        type="button"
+        className="grid h-11 w-11 place-items-center rounded-[16px] border-[3px] border-white bg-[#f1e7e0] text-2xl font-black leading-none text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white"
+        onClick={closeMenu}
+        aria-label="Закрыть меню"
+      >
+        ×
+      </button>
+    </div>
+  ) : null;
 
   return (
     <>
@@ -449,6 +462,7 @@ export default function AppHeader() {
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>
+                      {mobileMenuHeader}
                       <div className="p-6 pb-4">
                         <div className="mb-4 flex justify-between items-start">
                           <div className="flex flex-col">
@@ -574,6 +588,7 @@ export default function AppHeader() {
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>
+                      {mobileMenuHeader}
                       <div className="p-2 text-sm text-[#5d4037]">
                         {pathname === "/auth" ? null : (
                           <button
@@ -700,14 +715,20 @@ export default function AppHeader() {
               onClick={() => (menuOpen ? closeMenu() : openMenu())}
               aria-label="Раскрыть меню"
             >
-              <span className={`relative ${mobileBottomIconClass(menuOpen)}`}>
+              <span className={`relative inline-flex ${mobileBottomIconClass(menuOpen)}`}>
                 {menuButtonIcon}
+                {newsUnreadCount > 0 ? (
+                  <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
+                    !
+                  </span>
+                ) : null}
               </span>
               <span>Меню</span>
             </button>
           </nav>
           {menuOpen ? (
             <div className={menuPanelClass}>
+              {mobileMenuHeader}
               {user ? (
                 <>
                   <div className="p-4 pb-3">

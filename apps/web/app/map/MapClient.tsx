@@ -1385,9 +1385,9 @@ export default function MapClient() {
     marginTop: "calc(-1 * var(--app-header-height, 56px))"
   } as const;
   const mobileMapViewportStyle = {
-    height: "calc(100dvh - var(--app-header-height, 56px))",
-    minHeight: "calc(100dvh - var(--app-header-height, 56px))",
-    maxHeight: "calc(100dvh - var(--app-header-height, 56px))"
+    height: "100dvh",
+    minHeight: "100dvh",
+    maxHeight: "100dvh"
   } as const;
   const cameraSettings = useMemo<CarouselCameraSettings>(() => ({
     distanceOffset: 16,
@@ -1548,7 +1548,7 @@ export default function MapClient() {
     ? `min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${hudSidebarChromeClass(true)}`
     : `min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 overscroll-contain ${simsSidebarClass}`;
   const mobileMapSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(11rem,28dvh,17rem)] shrink-0"
+    ? "h-[clamp(13rem,34dvh,20rem)] shrink-0"
     : "h-[38dvh] shrink-0";
   const mobileCarouselSceneHeightClass = isPortraitLayout
     ? "h-[clamp(12rem,36dvh,20rem)] shrink-0"
@@ -2051,7 +2051,7 @@ export default function MapClient() {
     : null;
 
   const memorialListContent = (
-    <div className="grid min-w-0 grid-cols-1 gap-4 overflow-x-hidden pb-1">
+    <div className={`grid min-w-0 overflow-x-hidden pb-1 ${isPortraitLayout ? "grid-cols-2 gap-2" : "grid-cols-1 gap-4"}`}>
       {loading ? <p className={hudEmptyStateTextClass}>Загрузка...</p> : null}
       {!loading && !error && listMarkers.length === 0 ? (
         <p className={hudEmptyStateTextClass}>
@@ -2078,9 +2078,9 @@ export default function MapClient() {
           >
             <div className="overflow-hidden rounded-2xl bg-[#fffcf9]">
               <MemorialCardPreview previewSrc={previewSrc} className="rounded-t-2xl" />
-              <div className="border-t border-[#eadfd9] bg-[#fffcf9] p-3">
-                <h3 className="truncate text-sm font-semibold text-[#5d4037]">{marker.name}</h3>
-                <p className="mt-1 whitespace-nowrap text-xs text-[#8d6e63]">
+              <div className={`${isPortraitLayout ? "p-2" : "p-3"} border-t border-[#eadfd9] bg-[#fffcf9]`}>
+                <h3 className={`${isPortraitLayout ? "text-xs" : "text-sm"} truncate font-semibold text-[#5d4037]`}>{marker.name}</h3>
+                <p className={`${isPortraitLayout ? "text-[10px]" : "text-xs"} mt-1 whitespace-nowrap text-[#8d6e63]`}>
                   {formatYearRange(marker.birthDate, marker.deathDate)}
                 </p>
               </div>
@@ -2138,6 +2138,7 @@ export default function MapClient() {
   if (isMobile) {
     return (
       <main
+        data-mobile-immersive="true"
         className="relative flex h-[100dvh] max-h-[100dvh] w-screen overflow-hidden bg-[#fcf8f5] overscroll-none"
         style={mobileMapViewportStyle}
       >

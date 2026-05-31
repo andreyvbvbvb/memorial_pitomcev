@@ -54,6 +54,7 @@ type GiftHistoryItem = {
 };
 
 type GiftGalleryMode = "sent" | "received";
+type ProfileSectionKey = "profile" | "balance" | "gifts";
 
 type WalletTransaction = {
   id: string;
@@ -89,6 +90,11 @@ export default function ProfileClient() {
   const [editing, setEditing] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [giftHistoryMode, setGiftHistoryMode] = useState<GiftGalleryMode>("sent");
+  const [openSections, setOpenSections] = useState<Record<ProfileSectionKey, boolean>>({
+    profile: true,
+    balance: false,
+    gifts: false
+  });
   const [giftHistory, setGiftHistory] = useState<GiftHistoryItem[]>([]);
   const [receivedGiftHistory, setReceivedGiftHistory] = useState<GiftHistoryItem[]>([]);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
@@ -272,6 +278,31 @@ export default function ProfileClient() {
 
   const activeGiftHistory =
     giftHistoryMode === "sent" ? giftHistory : receivedGiftHistory;
+  const toggleSection = (section: ProfileSectionKey) => {
+    setOpenSections((current) => ({ ...current, [section]: !current[section] }));
+  };
+  const renderSectionToggle = (section: ProfileSectionKey) => (
+    <button
+      type="button"
+      onClick={() => toggleSection(section)}
+      className="inline-flex items-center gap-2 rounded-full border-[3px] border-white bg-[#f7f1ee] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)] transition hover:bg-white"
+      aria-expanded={openSections[section]}
+    >
+      {openSections[section] ? "Свернуть" : "Открыть"}
+      <svg
+        viewBox="0 0 24 24"
+        className={`h-4 w-4 transition-transform ${openSections[section] ? "rotate-180" : ""}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
+  );
 
   if (loadingProfile) {
     return (
@@ -301,13 +332,17 @@ export default function ProfileClient() {
                   </p>
                   <h1 className={`mt-2 ${authTitleClass}`}>Настройки аккаунта</h1>
                 </div>
-                {editing ? (
-                  <div className="mr-11 rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                    Редактирование
-                  </div>
-                ) : null}
+                <div className="mr-11 flex flex-wrap items-center gap-2">
+                  {editing ? (
+                    <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                      Редактирование
+                    </div>
+                  ) : null}
+                  {renderSectionToggle("profile")}
+                </div>
               </div>
 
+              {openSections.profile ? (
               <div className="mt-6 grid gap-4">
                 <label className={authLabelClass}>
                   <span className="flex items-center justify-between gap-3">
@@ -416,6 +451,7 @@ export default function ProfileClient() {
                   )}
                 </div>
               </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -431,11 +467,15 @@ export default function ProfileClient() {
                     История монет
                   </h2>
                 </div>
-                <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-                  {profile?.coinBalance ?? 0} монет
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                    {profile?.coinBalance ?? 0} монет
+                  </div>
+                  {renderSectionToggle("balance")}
                 </div>
               </div>
-              {walletTransactions.length > 0 ? (
+              {openSections.balance ? (
+              walletTransactions.length > 0 ? (
                 <div className="mt-5 max-h-[22rem] space-y-2 overflow-auto pr-1">
                   {walletTransactions.map((item) => (
                     <div
@@ -471,7 +511,8 @@ export default function ProfileClient() {
                 <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
                   История баланса пока пустая.
                 </p>
-              )}
+              )
+              ) : null}
             </div>
           </div>
         </section>
@@ -515,10 +556,12 @@ export default function ProfileClient() {
                   <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
                     {activeGiftHistory.length}
                   </div>
+                  {renderSectionToggle("gifts")}
                 </div>
               </div>
 
-              {giftHistoryLoading ? (
+              {openSections.gifts ? (
+              giftHistoryLoading ? (
                 <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-5">
                   {Array.from({ length: 5 }).map((_, index) => (
                     <div
@@ -575,7 +618,8 @@ export default function ProfileClient() {
                     ? "Вы пока не дарили подарки."
                     : "Ваши мемориалы пока не получали подарки."}
                 </p>
-              )}
+              )
+              ) : null}
             </div>
           </div>
         </section>

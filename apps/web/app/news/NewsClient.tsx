@@ -199,7 +199,7 @@ export default function NewsClient() {
           </p>
 
           {authChecked && isAdmin ? (
-            <section className="mt-5 rounded-[24px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_16px_38px_-30px_rgba(93,64,55,0.55)] sm:mt-7 sm:p-4">
+            <section className="mt-5 min-w-0 overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_16px_38px_-30px_rgba(93,64,55,0.55)] sm:mt-7 sm:p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-lg font-black text-[#5d4037]">
                   Опубликовать новость
@@ -210,43 +210,43 @@ export default function NewsClient() {
                   </span>
                 ) : null}
               </div>
-              <div className="mt-4 grid gap-3">
-                <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+              <div className="mt-4 grid min-w-0 gap-3">
+                <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Заголовок
                   <input
-                    className="rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                    className="w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Технические работы"
                   />
                 </label>
-                <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+                <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Текст новости
                   <textarea
-                    className="min-h-[130px] rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                    className="min-h-[130px] w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
                     value={body}
                     onChange={(event) => setBody(event.target.value)}
                     placeholder="Что нужно сообщить пользователям..."
                   />
                 </label>
-                <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+                <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Фотографии
                   <input
                     type="file"
                     accept="image/*"
                     multiple
-                    className="rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-xs file:font-black file:text-white"
+                    className="block w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-3 py-3 text-xs font-bold text-[#5d4037] shadow-inner outline-none transition-all file:mr-2 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-[11px] file:font-black file:text-white sm:px-4 sm:text-sm"
                     onChange={(event) =>
                       setPhotos(event.target.files ? Array.from(event.target.files) : [])
                     }
                   />
                 </label>
                 {photos.length ? (
-                  <div className="flex flex-wrap gap-2 text-xs font-bold text-[#8d6e63]">
+                  <div className="flex min-w-0 flex-wrap gap-2 text-xs font-bold text-[#8d6e63]">
                     {photos.map((file) => (
                       <span
                         key={`${file.name}-${file.size}`}
-                        className="rounded-full border border-white bg-[#fdf2e9] px-3 py-1"
+                        className="max-w-full truncate rounded-full border border-white bg-[#fdf2e9] px-3 py-1"
                       >
                         {file.name}
                       </span>

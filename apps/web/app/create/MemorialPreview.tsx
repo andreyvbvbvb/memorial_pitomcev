@@ -86,6 +86,7 @@ type Props = {
     scene: THREE.Scene;
     camera: THREE.Camera;
   }) => void;
+  onSceneReadyChange?: (ready: boolean) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
   defaultCameraPosition?: [number, number, number];
@@ -1807,6 +1808,7 @@ export default function MemorialPreview({
   onCanvasReady,
   onControlsReady,
   onRenderContextReady,
+  onSceneReadyChange,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
   defaultCameraPosition,
@@ -2058,6 +2060,10 @@ export default function MemorialPreview({
     }
     setSceneReady(false);
   }, [activeSignature, suppressLoadingOverlay]);
+
+  useEffect(() => {
+    onSceneReadyChange?.(sceneReady || suppressLoadingOverlay);
+  }, [onSceneReadyChange, sceneReady, suppressLoadingOverlay]);
 
   useEffect(() => {
     if (sceneReady || suppressLoadingOverlay) {

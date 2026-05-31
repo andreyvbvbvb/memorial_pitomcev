@@ -207,12 +207,31 @@ export default function MyPetsClient() {
   const petCardClass = isPortraitLayout
     ? "group relative rounded-[24px] border-[3px] border-[#fdf2e9] bg-white p-2.5 shadow-[0_6px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_9px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_4px_0_0_#f0e1d1]"
     : "group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]";
-  const viewToggleWrapClass = isPortraitLayout
-    ? "pointer-events-auto fixed bottom-3 left-1/2 z-20 -translate-x-1/2"
-    : "pointer-events-auto fixed bottom-6 left-6 z-20";
+  const viewToggleWrapClass = "pointer-events-auto fixed bottom-6 left-6 z-20";
   const viewToggleShellClass = isPortraitLayout
-    ? "flex items-center gap-1 rounded-[22px] border-[3px] border-[#fdf2e9] bg-white/95 p-1 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur"
+    ? "flex items-center gap-1 rounded-[18px] border-[3px] border-[#fdf2e9] bg-white/95 p-1 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur"
     : "flex items-center gap-1 rounded-[26px] border-[3px] border-[#fdf2e9] bg-white/95 p-1.5 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur";
+  const viewModeToggle = (
+    <div className={viewToggleShellClass}>
+      {[
+        { mode: 4 as const, label: "Карточки" },
+        { mode: 5 as const, label: "3D" }
+      ].map(({ mode, label }) => (
+        <button
+          key={mode}
+          type="button"
+          onClick={() => setViewMode(mode)}
+          className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] transition sm:rounded-[18px] sm:px-4 sm:text-[11px] sm:tracking-[0.14em] ${
+            viewMode === mode
+              ? "bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63]"
+              : "text-[#8d6e63] hover:bg-[#fdf2e9]"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className={viewMode === 5 ? "relative h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#fcf8f5] overscroll-none" : "relative min-h-screen overflow-hidden bg-[#fcf8f5]"}>
@@ -235,15 +254,18 @@ export default function MyPetsClient() {
                     />
                   </div>
                 </div>
-                <label className="inline-flex cursor-pointer items-center gap-3 rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)]">
-                  <input
-                    type="checkbox"
-                    checked={showDrafts}
-                    onChange={(event) => setShowDrafts(event.target.checked)}
-                    className="h-4 w-4 accent-[#3bceac]"
-                  />
-                  Показывать черновики
-                </label>
+                <div className={isPortraitLayout ? "flex items-center justify-between gap-2" : "contents"}>
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-[18px] border-[3px] border-white bg-[#f7f1ee] px-3 py-2 text-[10px] font-black uppercase tracking-[0.1em] text-[#5d4037] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)] sm:gap-3 sm:px-4 sm:py-3 sm:tracking-[0.12em]">
+                    <input
+                      type="checkbox"
+                      checked={showDrafts}
+                      onChange={(event) => setShowDrafts(event.target.checked)}
+                      className="h-4 w-4 accent-[#3bceac]"
+                    />
+                    {isPortraitLayout ? "Черновики" : "Показывать черновики"}
+                  </label>
+                  {isPortraitLayout ? viewModeToggle : null}
+                </div>
               </div>
               {loading ? <p className="text-sm text-slate-500">Загрузка...</p> : null}
 
@@ -455,27 +477,10 @@ export default function MyPetsClient() {
         </div>
       </div>
 
-      <div className={viewToggleWrapClass}>
-        <div className={viewToggleShellClass}>
-          {[
-            { mode: 4 as const, label: "Карточки" },
-            { mode: 5 as const, label: "3D" }
-          ].map(({ mode, label }) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setViewMode(mode)}
-              className={`rounded-[18px] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] transition ${
-                viewMode === mode
-                  ? "bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63]"
-                  : "text-[#8d6e63] hover:bg-[#fdf2e9]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {isPortraitLayout && viewMode === 5 ? (
+        <div className="pointer-events-auto fixed left-3 top-3 z-20">{viewModeToggle}</div>
+      ) : null}
+      {!isPortraitLayout ? <div className={viewToggleWrapClass}>{viewModeToggle}</div> : null}
     </div>
   );
 }
