@@ -698,13 +698,12 @@ export default function AppHeader() {
                 </button>
               </>
             )}
-            <button
-              type="button"
-              className={mobileBottomItemClass(menuOpen)}
-              onClick={() => (menuOpen ? closeMenu() : openMenu())}
-              aria-label="Раскрыть меню"
+            <Link
+              href="/menu"
+              className={mobileBottomItemClass(pathname === "/menu")}
+              aria-label="Открыть меню"
             >
-              <span className={`relative inline-flex ${mobileBottomIconClass(menuOpen)}`}>
+              <span className={`relative inline-flex ${mobileBottomIconClass(pathname === "/menu")}`}>
                 {menuButtonIcon}
                 {newsUnreadCount > 0 ? (
                   <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
@@ -713,98 +712,8 @@ export default function AppHeader() {
                 ) : null}
               </span>
               <span>Меню</span>
-            </button>
+            </Link>
           </nav>
-          {menuOpen ? (
-            <div className={menuPanelClass}>
-              {mobileMenuHeader}
-              {user ? (
-                <>
-                  <div className="p-4 pb-3">
-                    <div className="mb-3 flex flex-col">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#adb5bd]">Аккаунт</span>
-                      <span className="truncate text-sm font-black text-[#5d4037]">{user.login ?? user.email}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="group flex w-full items-center justify-between rounded-2xl border-2 border-[#fdf2e9] bg-[#fcf8f5] p-3 text-left transition-all hover:border-[#d3a27f]/50 hover:bg-[#fff7f2]"
-                      onClick={() => {
-                        closeMenu();
-                        openTopUp();
-                      }}
-                    >
-                      <span className="text-xs font-black uppercase text-[#8d6e63]">Баланс</span>
-                      <span className="text-base font-black text-[#5d4037]">{user.coinBalance ?? 0}</span>
-                    </button>
-                  </div>
-                  <div className="px-2 pb-2 text-sm text-[#5d4037]">
-                    <Link className={menuItemClass} href="/profile">
-                      <span className="text-[#d3a27f]">{renderMenuIcon("profile")}</span>
-                      <span className="text-xs font-black uppercase tracking-tight">Профиль</span>
-                    </Link>
-                    <Link className={menuItemClass} href="/about">
-                      <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
-                      <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
-                    </Link>
-                    <Link className={menuItemClass} href="/charity">
-                      <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
-                      <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
-                    </Link>
-                    <Link className={menuItemClass} href="/news">
-                      <span className="text-[#d3a27f]">{renderMenuIcon("news")}</span>
-                      <span className="text-xs font-black uppercase tracking-tight">Новости</span>
-                    </Link>
-                    {canAccessAdmin(user.accessLevel) ? (
-                      <Link className={menuItemClass} href="/admin/sql">
-                        <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
-                        <span className="text-xs font-black uppercase tracking-tight">Админ</span>
-                      </Link>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left text-[#ff4d4d] transition-all hover:bg-red-50"
-                      onClick={handleLogout}
-                    >
-                      {renderMenuIcon("logout")}
-                      <span className="text-xs font-black uppercase tracking-tight">Выйти</span>
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="p-2 text-sm text-[#5d4037]">
-                  {pathname === "/auth" ? null : (
-                    <button
-                      type="button"
-                      className={menuItemClass}
-                      onClick={() => {
-                        closeMenu();
-                        openAuth();
-                      }}
-                    >
-                      <span className="text-[#d3a27f]">{renderMenuIcon("login")}</span>
-                      <span className="text-xs font-black uppercase tracking-tight">Войти</span>
-                    </button>
-                  )}
-                  <Link className={menuItemClass} href="/map">
-                    <span className="text-[#d3a27f]">{renderMenuIcon("map")}</span>
-                    <span className="text-xs font-black uppercase tracking-tight">Карта</span>
-                  </Link>
-                  <Link className={menuItemClass} href="/about">
-                    <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
-                    <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
-                  </Link>
-                  <Link className={menuItemClass} href="/charity">
-                    <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
-                    <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
-                  </Link>
-                  <Link className={menuItemClass} href="/news">
-                    <span className="text-[#d3a27f]">{renderMenuIcon("news")}</span>
-                    <span className="text-xs font-black uppercase tracking-tight">Новости</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          ) : null}
         </div>
       ) : null}
 
