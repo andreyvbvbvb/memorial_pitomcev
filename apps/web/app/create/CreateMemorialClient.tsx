@@ -4009,14 +4009,14 @@ export default function CreateMemorialClient({
 
         <div className={isPortraitLayout ? `${markerPanelTab !== "marker" ? "hidden" : "grid"} h-full min-h-0 min-w-0 overflow-hidden` : "grid min-h-0 min-w-0 content-start gap-2"}>
           <div className={isPortraitLayout ? "grid h-full min-h-0 grid-cols-[44px_minmax(0,1fr)] gap-2 overflow-hidden" : "grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2"}>
-            <div className={isPortraitLayout ? "flex h-full min-h-0 w-11 flex-col items-center gap-1.5 overflow-y-auto overscroll-contain pr-0.5" : "flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1"}>
+            <div className={isPortraitLayout ? "flex h-full min-h-0 w-11 touch-pan-y snap-y snap-mandatory flex-col items-center gap-1.5 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 [overscroll-behavior-x:none]" : "flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1"}>
               {markerStyles.map((style) => {
                 const isActive = markerCategory === style.id;
                 const categoryIconUrl =
                   markerVariants.find((variant) => variant.id === style.id)?.iconUrl ??
                   markerIconUrl(style.id);
                 return (
-                  <div key={style.id} className="group relative">
+                  <div key={style.id} className={isPortraitLayout ? "group relative w-10 shrink-0 snap-start" : "group relative"}>
                     <button
                       type="button"
                       onClick={() => {
@@ -4042,7 +4042,7 @@ export default function CreateMemorialClient({
                         className="h-full w-full scale-[1.12] object-contain p-0.5"
                       />
                     </button>
-                    <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#eadfd9] bg-white px-2 py-1 text-[10px] text-[#6f6360] opacity-0 shadow-sm transition group-hover:opacity-100">
+                    <span className={isPortraitLayout ? "hidden" : "pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#eadfd9] bg-white px-2 py-1 text-[10px] text-[#6f6360] opacity-0 shadow-sm transition group-hover:opacity-100"}>
                       {style.name}
                     </span>
                   </div>
@@ -4429,7 +4429,11 @@ export default function CreateMemorialClient({
         <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
         Душа питомца
         <AuthHelpHint
-          className="relative z-[120] h-6 w-6 border-2 text-[10px] normal-case tracking-normal"
+          className={`relative z-[120] h-6 w-6 border-2 text-[10px] normal-case tracking-normal ${
+            isPortraitLayout
+              ? "[&>span]:!fixed [&>span]:!left-14 [&>span]:!right-3 [&>span]:!top-[calc(3.75rem+env(safe-area-inset-top))] [&>span]:!z-[2000] [&>span]:!w-auto"
+              : ""
+          }`}
           placement={isPortraitLayout ? "bottom" : "top"}
           text="Цвет души меняет ядро и мягкое свечение вокруг него."
         />
@@ -4536,7 +4540,7 @@ export default function CreateMemorialClient({
     ? "flex flex-col items-center justify-center gap-1.5 rounded-[20px] border-2 border-white bg-[#fffcf9] p-1.5 shadow-[0_14px_34px_-22px_rgba(93,64,55,0.34)] backdrop-blur"
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
-    ? "pointer-events-auto absolute right-2 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95] w-[min(94vw,420px)]"
+    ? "pointer-events-auto absolute left-0 right-0 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3 sm:right-4";
   const builderEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
@@ -5048,18 +5052,18 @@ export default function CreateMemorialClient({
 
             <div className={builderActionBarClass}>
               {isPortraitLayout ? (
-                <div className="flex items-center justify-end gap-2">
+                <div className="relative flex h-11 items-start justify-center px-2">
                   <button
                     type="button"
                     onClick={openMobileBuilderActions}
-                    className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.86rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                    className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
                   >
                     {isEditMode ? "Сохранить" : "Сохранить/Продолжить"}
                   </button>
                   <button
                     type="button"
                     onClick={openMobileBuilderMenu}
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+                    className="absolute right-2 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
                     aria-label="Меню"
                     title="Меню"
                   >

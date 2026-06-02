@@ -3397,18 +3397,19 @@ export default function PetClient({ id, mode = "view" }: Props) {
             </div>
 
             {isPortraitLayout ? (
-              <div className="pointer-events-auto absolute right-2 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95] flex w-[min(94vw,420px)] items-center justify-end gap-2">
+              <div className="pointer-events-auto absolute left-0 right-0 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95]">
+                <div className="relative flex h-11 items-start justify-center px-2">
                 <button
                   type="button"
                   onClick={openMobileEditActions}
-                  className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.86rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                  className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
                 >
                   Сохранить
                 </button>
                 <button
                   type="button"
                   onClick={openMobileEditMenu}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+                  className="absolute right-2 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
                   aria-label="Меню"
                   title="Меню"
                 >
@@ -3416,6 +3417,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     <path d="M5 7h14M5 12h14M5 17h14" />
                   </svg>
                 </button>
+                </div>
               </div>
             ) : (
               <>
