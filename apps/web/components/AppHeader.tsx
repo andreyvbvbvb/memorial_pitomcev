@@ -232,7 +232,7 @@ export default function AppHeader() {
     { coins: 500, rub: 500, usd: 500 },
     { coins: 1000, rub: 1000, usd: 10 }
   ];
-  const showMobileBottomNav = isPortraitLayout;
+  const showMobileBottomNav = isPortraitLayout && pathname !== "/create";
 
   const headerInnerClass = isPortraitLayout
     ? "mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2"

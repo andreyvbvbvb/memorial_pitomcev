@@ -2403,9 +2403,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
     options: OptionItem[],
     selectedId: string,
     onSelect: (id: string) => void,
-    imageCategory: string = category
+    imageCategory: string = category,
+    gridClassName = "grid grid-cols-2 place-items-center gap-0.5"
   ) => (
-    <div className="grid grid-cols-2 place-items-center gap-0.5">
+    <div className={gridClassName}>
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = appearanceOptionImage(imageCategory, option.id);
@@ -2452,9 +2453,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const renderHouseTextureSwatches = (
     options: OptionItem[],
     selectedId: string,
-    onSelect: (id: string) => void
+    onSelect: (id: string) => void,
+    vertical = false
   ) => (
-    <div className="flex flex-wrap gap-2">
+    <div className={vertical ? "flex max-h-full flex-col gap-2 overflow-y-auto pr-0.5" : "flex flex-wrap gap-2"}>
       {options.map((option, index) => {
         const isSelected = selectedId === option.id;
         return (
@@ -3174,50 +3176,54 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       {appearanceTab === "house" ? (
                         <div className="flex h-full min-h-0 flex-col gap-3">
                           {houseTextureOptions.length > 0 ? (
-                            <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
-                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
-                                <h4 className="px-1 text-sm font-semibold text-[#5d4037]">
-                                  Форма домика
-                                </h4>
-                                <div className="min-h-0 overflow-y-auto overscroll-contain">
-                                  {renderAppearanceOptionGrid(
-                                    "house-base",
-                                    houseBaseOptions,
-                                    selectedHouseBaseId,
-                                    (baseId) => {
-                                      const nextVariant =
-                                        houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
-                                      updateAppearanceDraft("houseId", nextVariant);
-                                      requestAppearanceFocus("dom_slot");
-                                    },
-                                    "house"
-                                  )}
+                            <div className="grid min-h-0 flex-1 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                              <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
+                                  <h4 className="px-1 text-sm font-semibold text-[#5d4037]">
+                                    Форма домика
+                                  </h4>
+                                  <div className="min-h-0 overflow-y-auto overscroll-contain">
+                                    {renderAppearanceOptionGrid(
+                                      "house-base",
+                                      houseBaseOptions,
+                                      selectedHouseBaseId,
+                                      (baseId) => {
+                                        const nextVariant =
+                                          houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
+                                        updateAppearanceDraft("houseId", nextVariant);
+                                        requestAppearanceFocus("dom_slot");
+                                      },
+                                      "house"
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
-                                <h4 className="px-1 text-sm font-semibold text-[#5d4037]">
-                                  Текстура домика
-                                </h4>
-                                <div className="min-h-0 overflow-y-auto overscroll-contain">
-                                  {isPortraitLayout
-                                    ? renderHouseTextureSwatches(
-                                        houseTextureOptions,
-                                        appearanceDraft.houseId,
-                                        (variantId) => {
-                                          updateAppearanceDraft("houseId", variantId);
-                                          requestAppearanceFocus("dom_slot");
-                                        }
-                                      )
-                                    : renderAppearanceOptionGrid(
-                                        "house-texture",
-                                        houseTextureOptions,
-                                        appearanceDraft.houseId,
-                                        (variantId) => {
-                                          updateAppearanceDraft("houseId", variantId);
-                                          requestAppearanceFocus("dom_slot");
-                                        },
-                                        "house-texture"
-                                      )}
+                                <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1.5">
+                                  <h4 className="justify-self-center text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] [writing-mode:vertical-rl]">
+                                    Текстура
+                                  </h4>
+                                  <div className="min-h-0 overflow-hidden">
+                                    {isPortraitLayout
+                                      ? renderHouseTextureSwatches(
+                                          houseTextureOptions,
+                                          appearanceDraft.houseId,
+                                          (variantId) => {
+                                            updateAppearanceDraft("houseId", variantId);
+                                            requestAppearanceFocus("dom_slot");
+                                          },
+                                          true
+                                        )
+                                      : renderAppearanceOptionGrid(
+                                          "house-texture",
+                                          houseTextureOptions,
+                                          appearanceDraft.houseId,
+                                          (variantId) => {
+                                            updateAppearanceDraft("houseId", variantId);
+                                            requestAppearanceFocus("dom_slot");
+                                          },
+                                          "house-texture",
+                                          "grid grid-cols-1 place-items-center gap-1"
+                                        )}
+                                  </div>
                                 </div>
                               </div>
                             </div>

@@ -250,6 +250,9 @@ type Step3Tab = {
   focusSlot?: string | null;
 };
 
+type BuilderOverlayId = "marker" | "photos" | "story" | "base" | "soul";
+type MarkerPanelTab = "marker" | "map";
+
 type CameraOffset = {
   x: number;
   y: number;
@@ -378,6 +381,48 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     default:
       return null;
+  }
+};
+
+const BuilderOverlayIcon = ({ id }: { id: BuilderOverlayId }) => {
+  switch (id) {
+    case "soul":
+      return (
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
+          <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
+        </svg>
+      );
+    case "base":
+      return (
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5" />
+          <circle cx="12" cy="8" r="1" />
+        </svg>
+      );
+    case "story":
+      return (
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 5h8a3 3 0 0 1 3 3v11" />
+          <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
+        </svg>
+      );
+    case "marker":
+      return (
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
+          <circle cx="12" cy="10" r="2.5" />
+        </svg>
+      );
+    case "photos":
+      return (
+        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <circle cx="9" cy="11" r="2" />
+          <path d="M21 15l-4-4-4 4-3-3-5 5" />
+        </svg>
+      );
   }
 };
 
@@ -712,9 +757,8 @@ export default function CreateMemorialClient({
     scene: THREE.Scene;
     camera: THREE.Camera;
   } | null>(null);
-  const [activeOverlay, setActiveOverlay] = useState<
-    "marker" | "photos" | "story" | "base" | "soul" | null
-  >(null);
+  const [activeOverlay, setActiveOverlay] = useState<BuilderOverlayId | null>(null);
+  const [markerPanelTab, setMarkerPanelTab] = useState<MarkerPanelTab>("marker");
   const [visitedOverlays, setVisitedOverlays] = useState({
     marker: false,
     photos: false,
@@ -1722,6 +1766,9 @@ export default function CreateMemorialClient({
     if (isEditMode && tab.id === "environment") {
       return;
     }
+    setActiveOverlay(null);
+    clearStep3TooltipTimer();
+    setTooltipTabId(null);
     setActiveStep3Tab(tab.id);
     requestFocus(tab.focusSlot ?? null);
   };
@@ -2742,10 +2789,12 @@ export default function CreateMemorialClient({
     });
   }, [form.ownerId, pendingDraftAfterAuth, pendingDraftRedirectHref, router, saveCurrentDraft]);
 
-  const toggleOverlay = (panel: "marker" | "photos" | "story" | "base" | "soul") => {
+  const toggleOverlay = (panel: BuilderOverlayId) => {
     if (isEditMode && panel !== "photos" && panel !== "soul") {
       return;
     }
+    clearStep3TooltipTimer();
+    setTooltipTabId(null);
     setVisitedOverlays((prev) => ({ ...prev, [panel]: true }));
     setActiveOverlay((prev) => (prev === panel ? null : panel));
   };
@@ -3113,9 +3162,10 @@ export default function CreateMemorialClient({
     options: OptionItem[],
     selectedId: string,
     onSelect: (id: string) => void,
-    imageCategory: string = category
+    imageCategory: string = category,
+    gridClassName = "grid grid-cols-2 place-items-center gap-0.5"
   ) => (
-    <div className="grid grid-cols-2 place-items-center gap-0.5">
+    <div className={gridClassName}>
       {options.map((option) => {
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
@@ -3162,9 +3212,10 @@ export default function CreateMemorialClient({
   const renderHouseTextureSwatches = (
     options: OptionItem[],
     selectedId: string,
-    onSelect: (id: string) => void
+    onSelect: (id: string) => void,
+    vertical = false
   ) => (
-    <div className="flex flex-wrap gap-2">
+    <div className={vertical ? "flex max-h-full flex-col gap-2 overflow-y-auto pr-0.5" : "flex flex-wrap gap-2"}>
       {options.map((option, index) => {
         const isSelected = selectedId === option.id;
         return (
@@ -3200,94 +3251,112 @@ export default function CreateMemorialClient({
     switch (activeStep3Tab) {
       case "environment":
         return (
-          <div className="grid gap-3">
-            {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
-              handleChange("environmentId", id);
-              requestFocus("dom_slot");
-            })}
-            {environmentSeasons.length > 0 ? (
-              <div className="grid gap-2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] p-3">
-                <div className="text-sm font-semibold text-[#5d4037]">Время года</div>
-                <div className="flex flex-wrap gap-2">
-                  {environmentSeasons.map((season) => {
-                    const isActive = form.environmentSeason === season;
-                    const swatch = SEASON_SWATCHES[season];
-                    return (
-                      <button
-                        key={season}
-                        type="button"
-                        onClick={() => {
-                          void preloadEnvironmentSeason(season).then(() =>
-                            handleChange("environmentSeason", season)
-                          );
-                        }}
-                        aria-label={swatch.label}
-                        title={swatch.label}
-                        className={`h-8 w-8 rounded-lg border transition ${
-                          isActive
-                            ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
-                            : "border-[#eadfd9] hover:border-[#d3a27f]"
-                        }`}
-                        style={{ backgroundColor: swatch.color }}
-                      />
-                    );
-                  })}
-                </div>
-                <label className="group relative flex items-center gap-2 text-xs text-[#6f6360]">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4"
-                    checked={form.environmentSeasonAuto}
-                    onChange={(event) =>
-                      handleChange("environmentSeasonAuto", event.target.checked)
-                    }
-                  />
-                  Автосмена сезонов
-                  <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                    Если включить, поверхность будет меняться по текущей дате.
-                  </span>
-                </label>
+          <div className="min-h-0 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
+            <div className={environmentSeasons.length > 0 ? "grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2" : "min-h-0"}>
+              <div className="min-h-0 overflow-y-auto overscroll-contain">
+                {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
+                  handleChange("environmentId", id);
+                  requestFocus("dom_slot");
+                })}
               </div>
-            ) : null}
+              {environmentSeasons.length > 0 ? (
+                <div className="sticky top-0 grid w-11 content-start justify-items-center gap-2 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1.5">
+                  <div className="group relative">
+                    <span className="grid h-7 w-7 place-items-center rounded-full border border-white bg-[#fffcf9] text-[12px] font-black text-[#8d6e63] shadow-sm">
+                      ?
+                    </span>
+                    <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-52 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                      Выбор времени года для поверхности мемориала.
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {environmentSeasons.map((season) => {
+                      const isActive = form.environmentSeason === season;
+                      const swatch = SEASON_SWATCHES[season];
+                      return (
+                        <button
+                          key={season}
+                          type="button"
+                          onClick={() => {
+                            void preloadEnvironmentSeason(season).then(() =>
+                              handleChange("environmentSeason", season)
+                            );
+                          }}
+                          aria-label={swatch.label}
+                          title={swatch.label}
+                          className={`h-8 w-8 rounded-lg border transition ${
+                            isActive
+                              ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
+                              : "border-[#eadfd9] hover:border-[#d3a27f]"
+                          }`}
+                          style={{ backgroundColor: swatch.color }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <label className="group relative flex items-center justify-center text-xs text-[#6f6360]">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={form.environmentSeasonAuto}
+                      onChange={(event) =>
+                        handleChange("environmentSeasonAuto", event.target.checked)
+                      }
+                      aria-label="Автосмена сезонов"
+                      title="Автосмена сезонов"
+                    />
+                    <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-56 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                      Если включить, поверхность будет меняться по текущей дате.
+                    </span>
+                  </label>
+                </div>
+              ) : null}
+            </div>
           </div>
         );
       case "house":
         return (
           <div className="flex h-full min-h-0 flex-col gap-3">
             {houseTextureOptions.length > 0 ? (
-              <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,65fr)_minmax(0,35fr)] gap-3">
-                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
-                  <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Форма домика</h2>
-                  <div className="min-h-0 overflow-y-auto overscroll-contain">
-                    {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
-                      const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
-                      handleChange("houseId", nextVariant);
-                      requestFocus("dom_slot");
-                    }, "house")}
+              <div className="grid min-h-0 flex-1 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
+                <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
+                  <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
+                    <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Форма домика</h2>
+                    <div className="min-h-0 overflow-y-auto overscroll-contain">
+                      {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
+                        const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
+                        handleChange("houseId", nextVariant);
+                        requestFocus("dom_slot");
+                      }, "house")}
+                    </div>
                   </div>
-                </div>
-                <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
-                  <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Текстура домика</h2>
-                  <div className="min-h-0 overflow-y-auto overscroll-contain">
-                    {isPortraitLayout
-                      ? renderHouseTextureSwatches(
-                          houseTextureOptions,
-                          form.houseId,
-                          (id) => {
-                            handleChange("houseId", id);
-                            requestFocus("dom_slot");
-                          }
-                        )
-                      : renderOptionGrid(
-                          "house-texture",
-                          houseTextureOptions,
-                          form.houseId,
-                          (id) => {
-                            handleChange("houseId", id);
-                            requestFocus("dom_slot");
-                          },
-                          "house-texture"
-                        )}
+                  <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1.5">
+                    <h2 className="justify-self-center text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] [writing-mode:vertical-rl]">
+                      Текстура
+                    </h2>
+                    <div className="min-h-0 overflow-hidden">
+                      {isPortraitLayout
+                        ? renderHouseTextureSwatches(
+                            houseTextureOptions,
+                            form.houseId,
+                            (id) => {
+                              handleChange("houseId", id);
+                              requestFocus("dom_slot");
+                            },
+                            true
+                          )
+                        : renderOptionGrid(
+                            "house-texture",
+                            houseTextureOptions,
+                            form.houseId,
+                            (id) => {
+                              handleChange("houseId", id);
+                              requestFocus("dom_slot");
+                            },
+                            "house-texture",
+                            "grid grid-cols-1 place-items-center gap-1"
+                          )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3467,9 +3536,13 @@ export default function CreateMemorialClient({
   const overlayLabelClass =
     "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
   const overlayInputClass =
-    "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    isPortraitLayout
+      ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#f7f1ee] px-3 py-2 text-[12px] font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+      : "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayTextareaClass =
-    "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    isPortraitLayout
+      ? "min-h-[92px] w-full rounded-xl border-b-[3px] border-transparent bg-[#f7f1ee] px-3 py-2 text-[12px] font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+      : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
       ? "grid gap-2 rounded-[18px] border-2 border-white bg-[#fffcf9] p-2 shadow-[0_16px_44px_-20px_rgba(93,64,55,0.24)]"
@@ -3624,7 +3697,7 @@ export default function CreateMemorialClient({
       {centered ? (
         renderBirthDateField(centered)
       ) : (
-        <div className="grid gap-4">
+        <div className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid gap-4"}>
           {renderBirthDateField(false)}
           {renderDeathDateField(false)}
         </div>
@@ -3647,8 +3720,29 @@ export default function CreateMemorialClient({
           <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
           Маркер и карта
         </h3>
+        {isPortraitLayout ? (
+          <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1">
+            {([
+              ["marker", "Выбор маркера"],
+              ["map", "Точка на карте"]
+            ] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setMarkerPanelTab(tab)}
+                className={`rounded-xl px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                  markerPanelTab === tab
+                    ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                    : "bg-[#fffcf9] text-[#8d6e63]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)] [@media(max-height:640px)]:!grid-cols-1 [@media(max-height:640px)]:gap-2">
-        <div className="grid content-start gap-3 [@media(max-height:640px)]:gap-2">
+        <div className={`${isPortraitLayout && markerPanelTab !== "map" ? "hidden" : "grid"} content-start gap-3 [@media(max-height:640px)]:gap-2`}>
           <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2">
             {!apiKey ? (
               <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]">
@@ -3776,7 +3870,7 @@ export default function CreateMemorialClient({
           </div>
         </div>
 
-        <div className="grid min-h-0 min-w-0 content-start gap-2">
+        <div className={`${isPortraitLayout && markerPanelTab !== "marker" ? "hidden" : "grid"} min-h-0 min-w-0 content-start gap-2`}>
           <p className="text-sm font-black uppercase tracking-[0.16em] text-[#5d4037]">Маркер на карте</p>
           <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2">
             <div className="flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1">
@@ -4204,6 +4298,23 @@ export default function CreateMemorialClient({
     </div>
   );
 
+  const renderActiveOverlayContent = () => {
+    switch (activeOverlay) {
+      case "base":
+        return renderBaseInfoPanel();
+      case "marker":
+        return renderMarkerPanel();
+      case "photos":
+        return renderPhotosPanel();
+      case "soul":
+        return renderSoulColorPanel();
+      case "story":
+        return renderStoryPanel();
+      default:
+        return null;
+    }
+  };
+
   const isBuilderStep = step === 1;
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
@@ -4237,21 +4348,19 @@ export default function CreateMemorialClient({
   const builderAttentionBadgeClass = isPortraitLayout
     ? "absolute -right-0.5 -top-0.5 flex h-[1.125rem] w-[1.125rem] items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow"
     : "absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow";
-  const builderEditorPanelClass = `${
-    activeOverlay && isPortraitLayout ? "pointer-events-none opacity-0" : "pointer-events-auto"
-  } ${
+  const builderEditorPanelClass = `pointer-events-auto ${
     isPortraitLayout
-      ? `absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[20] flex h-[min(35vh,315px)] flex-col ${hudPanelChromeClass(true)}`
+      ? `absolute left-1.5 right-1.5 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-[20] flex h-[min(42dvh,380px)] flex-col ${hudPanelChromeClass(true)}`
       : `absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] z-[20] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(4.35rem+env(safe-area-inset-bottom))] left-1.5 z-[90]"
+    ? "hidden"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6 z-[90]";
   const builderOverlayButtonsClass = isPortraitLayout
     ? "flex flex-col items-center justify-center gap-1.5 rounded-[20px] border-2 border-white bg-[#fffcf9] p-1.5 shadow-[0_14px_34px_-22px_rgba(93,64,55,0.34)] backdrop-blur"
     : "flex flex-col gap-2";
   const builderActionBarClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2"
+    ? "pointer-events-auto absolute right-2 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95] w-[min(94vw,420px)]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3 sm:right-4";
   const builderEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
@@ -4273,7 +4382,7 @@ export default function CreateMemorialClient({
   const builderActionTooltipClass =
     hudTooltipClass("action");
   const builderSceneFrameClass = isPortraitLayout
-    ? "fixed left-0 right-0 top-0 z-0 h-[60dvh] overflow-hidden"
+    ? "fixed left-0 right-0 top-0 z-0 h-[58dvh] overflow-hidden"
     : "fixed inset-0 z-0";
   const builderPanelInnerClass = isPortraitLayout
     ? `flex min-h-0 flex-1 flex-col overflow-visible ${hudInnerSurfaceClass(true)}`
@@ -4295,6 +4404,43 @@ export default function CreateMemorialClient({
         ? 0
         : `calc(${headerOffset} + 24px)`
   };
+  const mobileOverlayTabs: Array<{
+    id: BuilderOverlayId;
+    label: string;
+    disabled: boolean;
+    highlight: boolean;
+  }> = [
+    {
+      id: "base",
+      label: "Основные данные",
+      disabled: isEditMode,
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.base
+    },
+    {
+      id: "story",
+      label: "История",
+      disabled: isEditMode,
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.story
+    },
+    {
+      id: "marker",
+      label: "Маркер на карте",
+      disabled: isEditMode,
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.marker
+    },
+    {
+      id: "photos",
+      label: "Фотографии",
+      disabled: false,
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.photos
+    },
+    {
+      id: "soul",
+      label: "Цвет души",
+      disabled: false,
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.soul
+    }
+  ];
 
   if (isEditMode && (!authReady || !editReady)) {
     return (
@@ -4493,8 +4639,31 @@ export default function CreateMemorialClient({
                 </div>
                 <div className={builderEditorBodyClass}>
                   <div className={builderTabRailClass}>
+                  {isPortraitLayout
+                    ? mobileOverlayTabs.map((tab) => {
+                        const isActive = activeOverlay === tab.id;
+                        return (
+                          <div key={tab.id} className="relative">
+                            <button
+                              type="button"
+                              onClick={() => toggleOverlay(tab.id)}
+                              disabled={tab.disabled}
+                              aria-label={tab.label}
+                              title={tab.label}
+                              className={`${builderTabButtonClass(isActive, tab.disabled)} ${tab.disabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                            >
+                              <BuilderOverlayIcon id={tab.id} />
+                              <span className="sr-only">{tab.label}</span>
+                              {tab.highlight ? (
+                                <span className={builderAttentionBadgeClass}>!</span>
+                              ) : null}
+                            </button>
+                          </div>
+                        );
+                      })
+                    : null}
                   {step3Tabs.map((tab) => {
-                    const isActive = activeStep3Tab === tab.id;
+                    const isActive = activeStep3Tab === tab.id && (!isPortraitLayout || !activeOverlay);
                     const isDisabled = isEditMode && tab.id === "environment";
                     const isTooltipVisible = tooltipTabId === tab.id;
                     const description = STEP3_TAB_DESCRIPTIONS[tab.id];
@@ -4546,24 +4715,18 @@ export default function CreateMemorialClient({
 
                 <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
                   <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3">
-                    {renderStep3TabContent()}
+                    {isPortraitLayout && activeOverlay
+                      ? renderActiveOverlayContent()
+                      : renderStep3TabContent()}
                   </div>
                 </div>
               </div>
             </div>
             </div>
 
-            {activeOverlay ? (
+            {activeOverlay && !isPortraitLayout ? (
               <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : activeOverlay === "soul" ? "soul" : undefined)}>
-                {activeOverlay === "base"
-                  ? renderBaseInfoPanel()
-                  : activeOverlay === "marker"
-                    ? renderMarkerPanel()
-                    : activeOverlay === "photos"
-                      ? renderPhotosPanel()
-                      : activeOverlay === "soul"
-                        ? renderSoulColorPanel()
-                        : renderStoryPanel()}
+                {renderActiveOverlayContent()}
               </div>
             ) : null}
 
@@ -4694,7 +4857,7 @@ export default function CreateMemorialClient({
             </div>
 
             <div className={builderActionBarClass}>
-              <div className={isPortraitLayout ? `flex items-center gap-2 ${isEditMode ? "justify-between" : "justify-end"}` : "flex items-center gap-3"}>
+              <div className={isPortraitLayout ? `flex items-center justify-end gap-2` : "flex items-center gap-3"}>
                 {isEditMode && editId ? (
                   <button
                     type="button"
@@ -4726,6 +4889,19 @@ export default function CreateMemorialClient({
                       Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
                     </span>
                   </div>
+                ) : null}
+                {isPortraitLayout ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/menu")}
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+                    aria-label="Меню"
+                    title="Меню"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                      <path d="M5 7h14M5 12h14M5 17h14" />
+                    </svg>
+                  </button>
                 ) : null}
                 <div className="group/finish-action relative min-w-0 flex-1 sm:flex-none">
                   <button
