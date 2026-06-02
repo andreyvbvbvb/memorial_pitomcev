@@ -52,6 +52,7 @@ import {
   buildHouseVariantGroup,
   splitHouseVariantId
 } from "../../../lib/house-variants";
+import { getHouseTextureSwatchBackground } from "../../../lib/house-texture-swatches";
 import {
   bowlFoodOptions as allBowlFoodOptions,
   bowlWaterOptions as allBowlWaterOptions,
@@ -2448,6 +2449,45 @@ export default function PetClient({ id, mode = "view" }: Props) {
     </div>
   );
 
+  const renderHouseTextureSwatches = (
+    options: OptionItem[],
+    selectedId: string,
+    onSelect: (id: string) => void
+  ) => (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option, index) => {
+        const isSelected = selectedId === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => {
+              void handleAppearanceOptionSelect("house-texture", option.id, () =>
+                onSelect(option.id)
+              );
+            }}
+            onMouseEnter={() => {
+              void handleAppearanceOptionHover("house-texture", option.id);
+            }}
+            onMouseLeave={() => handleAppearanceOptionLeave("house-texture")}
+            onFocus={() => {
+              void handleAppearanceOptionHover("house-texture", option.id);
+            }}
+            onBlur={() => handleAppearanceOptionLeave("house-texture")}
+            aria-label={option.name}
+            title={option.name}
+            className={`h-8 w-8 rounded-lg border transition ${
+              isSelected
+                ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
+                : "border-[#eadfd9] hover:border-[#d3a27f]"
+            }`}
+            style={{ background: getHouseTextureSwatchBackground(option.id, index) }}
+          />
+        );
+      })}
+    </div>
+  );
+
   return (
     <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#fcf8f5]">
       <div className={memorialSceneFrameClass}>
@@ -3159,16 +3199,25 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                   Текстура домика
                                 </h4>
                                 <div className="min-h-0 overflow-y-auto overscroll-contain">
-                                  {renderAppearanceOptionGrid(
-                                    "house-texture",
-                                    houseTextureOptions,
-                                    appearanceDraft.houseId,
-                                    (variantId) => {
-                                      updateAppearanceDraft("houseId", variantId);
-                                      requestAppearanceFocus("dom_slot");
-                                    },
-                                    "house-texture"
-                                  )}
+                                  {isPortraitLayout
+                                    ? renderHouseTextureSwatches(
+                                        houseTextureOptions,
+                                        appearanceDraft.houseId,
+                                        (variantId) => {
+                                          updateAppearanceDraft("houseId", variantId);
+                                          requestAppearanceFocus("dom_slot");
+                                        }
+                                      )
+                                    : renderAppearanceOptionGrid(
+                                        "house-texture",
+                                        houseTextureOptions,
+                                        appearanceDraft.houseId,
+                                        (variantId) => {
+                                          updateAppearanceDraft("houseId", variantId);
+                                          requestAppearanceFocus("dom_slot");
+                                        },
+                                        "house-texture"
+                                      )}
                                 </div>
                               </div>
                             </div>

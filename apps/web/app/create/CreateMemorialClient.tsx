@@ -39,6 +39,7 @@ import {
   buildHouseVariantGroup,
   splitHouseVariantId
 } from "../../lib/house-variants";
+import { getHouseTextureSwatchBackground } from "../../lib/house-texture-swatches";
 import { buildHouseLayoutKey, getHouseTransform, normalizeTerrainLayoutId } from "../../lib/house-layout";
 import {
   firstMarkerVariantId,
@@ -3158,6 +3159,43 @@ export default function CreateMemorialClient({
     </div>
   );
 
+  const renderHouseTextureSwatches = (
+    options: OptionItem[],
+    selectedId: string,
+    onSelect: (id: string) => void
+  ) => (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option, index) => {
+        const isSelected = selectedId === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => {
+              void handleOptionSelect("house-texture", option.id, () => onSelect(option.id));
+            }}
+            onMouseEnter={() => {
+              void handleOptionHover("house-texture", option.id);
+            }}
+            onMouseLeave={() => handleOptionLeave("house-texture")}
+            onFocus={() => {
+              void handleOptionHover("house-texture", option.id);
+            }}
+            onBlur={() => handleOptionLeave("house-texture")}
+            aria-label={option.name}
+            title={option.name}
+            className={`h-8 w-8 rounded-lg border transition ${
+              isSelected
+                ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
+                : "border-[#eadfd9] hover:border-[#d3a27f]"
+            }`}
+            style={{ background: getHouseTextureSwatchBackground(option.id, index) }}
+          />
+        );
+      })}
+    </div>
+  );
+
   const renderStep3TabContent = () => {
     switch (activeStep3Tab) {
       case "environment":
@@ -3231,16 +3269,25 @@ export default function CreateMemorialClient({
                 <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
                   <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Текстура домика</h2>
                   <div className="min-h-0 overflow-y-auto overscroll-contain">
-                    {renderOptionGrid(
-                      "house-texture",
-                      houseTextureOptions,
-                      form.houseId,
-                      (id) => {
-                        handleChange("houseId", id);
-                        requestFocus("dom_slot");
-                      },
-                      "house-texture"
-                    )}
+                    {isPortraitLayout
+                      ? renderHouseTextureSwatches(
+                          houseTextureOptions,
+                          form.houseId,
+                          (id) => {
+                            handleChange("houseId", id);
+                            requestFocus("dom_slot");
+                          }
+                        )
+                      : renderOptionGrid(
+                          "house-texture",
+                          houseTextureOptions,
+                          form.houseId,
+                          (id) => {
+                            handleChange("houseId", id);
+                            requestFocus("dom_slot");
+                          },
+                          "house-texture"
+                        )}
                   </div>
                 </div>
               </div>
