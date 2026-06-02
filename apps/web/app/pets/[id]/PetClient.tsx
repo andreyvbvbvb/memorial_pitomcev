@@ -2269,7 +2269,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = isPortraitLayout
-    ? "fixed left-1/2 bottom-[calc(3.95rem+env(safe-area-inset-bottom))] -translate-x-1/2"
+    ? "fixed left-1/2 bottom-[calc(8.15rem+env(safe-area-inset-bottom))] -translate-x-1/2"
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
     isPortraitLayout
@@ -2284,13 +2284,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
       ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
       : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
   const memorialControlsWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1.5 right-[3.7rem]"
+    ? "pointer-events-auto absolute bottom-[calc(4.65rem+env(safe-area-inset-bottom))] left-1.5 right-[3.7rem]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4";
   const memorialControlsClass = isPortraitLayout
     ? "flex flex-row flex-wrap items-center gap-1.5"
     : "flex flex-col gap-2";
   const giftButtonWrapClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] right-1.5"
+    ? "pointer-events-auto absolute bottom-[calc(4.65rem+env(safe-area-inset-bottom))] right-1.5"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4";
   const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-all ${
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
@@ -3401,7 +3401,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 <button
                   type="button"
                   onClick={openMobileEditActions}
-                  className="group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.86rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                  className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.86rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
                 >
                   Сохранить
                 </button>
@@ -3455,12 +3455,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 }`}
               >
                 <div className="flex items-center justify-between gap-3 rounded-[22px] bg-[#fffcf9] px-4 py-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                      Навигация
-                    </p>
-                    <h3 className="text-xl font-black text-[#5d4037]">Меню</h3>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateFromMobileEditMenu("/")}
+                    className="text-xl font-black uppercase tracking-[0.02em] text-[#5d4037]"
+                  >
+                    МЯУГАВ
+                  </button>
                   <button
                     type="button"
                     onClick={closeMobileEditMenu}
