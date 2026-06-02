@@ -746,6 +746,7 @@ export default function CreateMemorialClient({
   const [soulPreviewReady, setSoulPreviewReady] = useState(isEditMode);
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
   const [customSoulPickerOpen, setCustomSoulPickerOpen] = useState(false);
+  const [soulColorTab, setSoulColorTab] = useState<"standard" | "custom">("standard");
   const [farewellPlaying, setFarewellPlaying] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
   const previewControlsRef = useRef<any>(null);
@@ -1625,37 +1626,92 @@ export default function CreateMemorialClient({
 
   const renderSoulColorControls = (compact = false) => {
     const swatchClass = compact ? "h-10 w-10" : "h-9 w-9";
+    const standardPalette = (
+      <div className="relative flex flex-wrap items-center gap-2">
+        {SOUL_COLOR_OPTIONS.map((option) => {
+          const isSelected = form.soulColor.toLowerCase() === option.color.toLowerCase();
+          const isPreviewed = soulPreviewColor.toLowerCase() === option.color.toLowerCase();
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => applySoulColor(option.color)}
+              onMouseEnter={() => setHoveredSoulColor(option.color)}
+              onMouseLeave={() => setHoveredSoulColor(null)}
+              onFocus={() => setHoveredSoulColor(option.color)}
+              onBlur={() => setHoveredSoulColor(null)}
+              className={`${swatchClass} rounded-full border transition ${
+                isSelected
+                  ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+                  : isPreviewed
+                    ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
+                    : "border-white hover:scale-105 hover:border-[#d3a27f]"
+              }`}
+              style={{ backgroundColor: option.color }}
+              aria-label={option.name}
+              title={option.name}
+            />
+          );
+        })}
+      </div>
+    );
+
+    if (compact) {
+      return (
+        <div className="relative grid gap-2">
+          <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1">
+            {([
+              ["standard", "Стандартные"],
+              ["custom", "Свой цвет"]
+            ] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setSoulColorTab(tab)}
+                className={`rounded-xl px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] transition ${
+                  soulColorTab === tab
+                    ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                    : "bg-[#fffcf9] text-[#8d6e63]"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {soulColorTab === "standard" ? (
+            standardPalette
+          ) : (
+            <div className="grid gap-3 rounded-2xl bg-[#f7f1ee] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                  Свой цвет
+                </span>
+                <span
+                  className="h-9 w-9 rounded-full border-2 border-white shadow-inner"
+                  style={{ backgroundColor: customSoulColorValue }}
+                />
+              </div>
+              <input
+                type="color"
+                value={customSoulColorValue}
+                onInput={(event) => applySoulColor(event.currentTarget.value)}
+                onChange={(event) => applySoulColor(event.currentTarget.value)}
+                className="h-14 w-full min-w-0 cursor-pointer rounded-2xl border-2 border-white bg-[#fffcf9] p-1 shadow-inner"
+                aria-label="Выбрать свой цвет души"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="relative grid gap-2">
         <div className={compact ? overlayLabelClass : "text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]"}>
           Цвет души
         </div>
         <div className="relative flex flex-wrap items-center gap-2">
-          {SOUL_COLOR_OPTIONS.map((option) => {
-            const isSelected = form.soulColor.toLowerCase() === option.color.toLowerCase();
-            const isPreviewed = soulPreviewColor.toLowerCase() === option.color.toLowerCase();
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => applySoulColor(option.color)}
-                onMouseEnter={() => setHoveredSoulColor(option.color)}
-                onMouseLeave={() => setHoveredSoulColor(null)}
-                onFocus={() => setHoveredSoulColor(option.color)}
-                onBlur={() => setHoveredSoulColor(null)}
-                className={`${swatchClass} rounded-full border transition ${
-                  isSelected
-                    ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
-                    : isPreviewed
-                      ? "border-[#d3a27f] ring-2 ring-[#d3a27f]/30"
-                      : "border-white hover:scale-105 hover:border-[#d3a27f]"
-                }`}
-                style={{ backgroundColor: option.color }}
-                aria-label={option.name}
-                title={option.name}
-              />
-            );
-          })}
+          {standardPalette}
           <button
             type="button"
             onClick={() => setCustomSoulPickerOpen((open) => !open)}
@@ -3251,8 +3307,8 @@ export default function CreateMemorialClient({
     switch (activeStep3Tab) {
       case "environment":
         return (
-          <div className="min-h-0 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
-            <div className={environmentSeasons.length > 0 ? "grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2" : "min-h-0"}>
+          <div className="grid h-full min-h-0 rounded-2xl bg-[#fffcf9] p-2">
+            <div className={environmentSeasons.length > 0 ? "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2" : "min-h-0"}>
               <div className="min-h-0 overflow-y-auto overscroll-contain">
                 {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
                   handleChange("environmentId", id);
@@ -3260,7 +3316,7 @@ export default function CreateMemorialClient({
                 })}
               </div>
               {environmentSeasons.length > 0 ? (
-                <div className="sticky top-0 grid w-11 content-start justify-items-center gap-2 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1.5">
+                <div className="grid w-11 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] content-start justify-items-center gap-2 p-1.5">
                   <div className="group relative">
                     <span className="grid h-7 w-7 place-items-center rounded-full border border-white bg-[#fffcf9] text-[12px] font-black text-[#8d6e63] shadow-sm">
                       ?
@@ -3269,7 +3325,7 @@ export default function CreateMemorialClient({
                       Выбор времени года для поверхности мемориала.
                     </span>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain pr-0.5">
                     {environmentSeasons.map((season) => {
                       const isActive = form.environmentSeason === season;
                       const swatch = SEASON_SWATCHES[season];
@@ -3318,10 +3374,10 @@ export default function CreateMemorialClient({
         return (
           <div className="flex h-full min-h-0 flex-col gap-3">
             {houseTextureOptions.length > 0 ? (
-              <div className="grid min-h-0 flex-1 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-2">
+              <div className="grid min-h-0 flex-1 rounded-2xl bg-[#fffcf9] p-2">
                 <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
                   <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
-                    <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Форма домика</h2>
+                    <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Домик</h2>
                     <div className="min-h-0 overflow-y-auto overscroll-contain">
                       {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
                         const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
@@ -3330,11 +3386,16 @@ export default function CreateMemorialClient({
                       }, "house")}
                     </div>
                   </div>
-                  <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1.5">
-                    <h2 className="justify-self-center text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] [writing-mode:vertical-rl]">
-                      Текстура
-                    </h2>
-                    <div className="min-h-0 overflow-hidden">
+                  <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 p-1.5">
+                    <div className="group relative justify-self-center">
+                      <span className="grid h-7 w-7 place-items-center rounded-full border border-white bg-[#fffcf9] text-[12px] font-black text-[#8d6e63] shadow-sm">
+                        ?
+                      </span>
+                      <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-44 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        Это текстура домика.
+                      </span>
+                    </div>
+                    <div className="min-h-0 overflow-y-auto overscroll-contain">
                       {isPortraitLayout
                         ? renderHouseTextureSwatches(
                             houseTextureOptions,
@@ -3537,15 +3598,15 @@ export default function CreateMemorialClient({
     "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
   const overlayInputClass =
     isPortraitLayout
-      ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#f7f1ee] px-3 py-2 text-[12px] font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+      ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#f7f1ee] px-2.5 py-1.5 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
       : "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayTextareaClass =
     isPortraitLayout
-      ? "min-h-[92px] w-full rounded-xl border-b-[3px] border-transparent bg-[#f7f1ee] px-3 py-2 text-[12px] font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+      ? "min-h-[76px] w-full rounded-xl border-b-[3px] border-transparent bg-[#f7f1ee] px-2.5 py-1.5 text-[16px] font-bold leading-snug text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
       : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
-      ? "grid gap-2 rounded-[18px] border-2 border-white bg-[#fffcf9] p-2 shadow-[0_16px_44px_-20px_rgba(93,64,55,0.24)]"
+      ? "grid gap-2 bg-[#f7f1ee] p-1"
       : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
@@ -3718,13 +3779,13 @@ export default function CreateMemorialClient({
       <div className={overlayShellClass}>
         <h3 className={overlaySectionTitleClass}>
           <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
-          Маркер и карта
+          Место в мире
         </h3>
         {isPortraitLayout ? (
           <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1">
             {([
-              ["marker", "Выбор маркера"],
-              ["map", "Точка на карте"]
+              ["marker", "Маркер"],
+              ["map", "Карта"]
             ] as const).map(([tab, label]) => (
               <button
                 key={tab}
@@ -3798,7 +3859,7 @@ export default function CreateMemorialClient({
           </div>
 
           <div className="grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2">
-            <div className="grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1">
+            <div className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1"}>
               <label className="grid gap-2">
                 <span className={overlayLabelClass}>Широта</span>
                 <input
@@ -3860,20 +3921,19 @@ export default function CreateMemorialClient({
                 onChange={(event) => handleChange("isPublic", event.target.checked)}
               />
               Публичный мемориал
+              <span className="grid h-5 w-5 place-items-center rounded-full border border-white bg-[#fffcf9] text-[10px] font-black text-[#8d6e63]">
+                ?
+              </span>
               <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                Публичный мемориал виден на карте всем пользователям. Приватные доступны только по ссылке.
+                Кликни на карте, чтобы выбрать точку. Публичный мемориал виден на карте всем пользователям, приватные доступны только по ссылке.
               </span>
             </label>
-            <p className="text-[11px] text-[#8d6e63]">
-              Кликни на карте, чтобы выбрать точку. Приватные мемориалы остаются скрытыми.
-            </p>
           </div>
         </div>
 
         <div className={`${isPortraitLayout && markerPanelTab !== "marker" ? "hidden" : "grid"} min-h-0 min-w-0 content-start gap-2`}>
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-[#5d4037]">Маркер на карте</p>
-          <div className="grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2">
-            <div className="flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1">
+          <div className={isPortraitLayout ? "grid grid-cols-[44px_minmax(0,1fr)] gap-2" : "grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2"}>
+            <div className={isPortraitLayout ? "flex w-11 flex-col items-center gap-1.5 overflow-y-auto pr-0.5" : "flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1"}>
               {markerStyles.map((style) => {
                 const isActive = markerCategory === style.id;
                 const categoryIconUrl =
@@ -3889,7 +3949,11 @@ export default function CreateMemorialClient({
                           handleChange("markerStyle", firstMarkerVariantId(style.id));
                         }
                       }}
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border p-0 transition sm:h-14 sm:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10 [@media(max-height:640px)]:rounded-xl ${
+                      className={`flex shrink-0 items-center justify-center overflow-hidden border p-0 transition ${
+                        isPortraitLayout
+                          ? "h-10 w-10 rounded-xl"
+                          : "h-12 w-12 rounded-2xl sm:h-14 sm:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10 [@media(max-height:640px)]:rounded-xl"
+                      } ${
                         isActive
                           ? "border-[#5d4037] bg-[#5d4037] text-white"
                           : "border-[#eadfd9] bg-white text-[#8d6e63] hover:border-[#d3a27f]"
@@ -4067,8 +4131,9 @@ export default function CreateMemorialClient({
       return null;
     }
 
-    const rowInputClass =
-      "w-16 rounded-xl border border-white bg-[#fffcf9] px-2 py-1 text-right text-[11px] font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20";
+    const rowInputClass = isPortraitLayout
+      ? "w-20 rounded-xl border border-white bg-[#fffcf9] px-2 py-1 text-right text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20"
+      : "w-16 rounded-xl border border-white bg-[#fffcf9] px-2 py-1 text-right text-[11px] font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20";
     const rangeClass = "h-2 w-full accent-[#3bceac]";
 
     return (
@@ -4272,7 +4337,9 @@ export default function CreateMemorialClient({
           <textarea
             readOnly
             value={soulPathExportJson}
-            className="min-h-28 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"
+            className={isPortraitLayout
+              ? "min-h-24 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[16px] leading-snug text-[#5d4037] outline-none"
+              : "min-h-28 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"}
             onFocus={(event) => event.currentTarget.select()}
           />
         </label>
@@ -4350,7 +4417,7 @@ export default function CreateMemorialClient({
     : "absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow";
   const builderEditorPanelClass = `pointer-events-auto ${
     isPortraitLayout
-      ? `absolute left-1.5 right-1.5 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-[20] flex h-[min(42dvh,380px)] flex-col ${hudPanelChromeClass(true)}`
+      ? "absolute left-0 right-0 bottom-0 z-[20] flex h-[44dvh] flex-col bg-[#f7f1ee]"
       : `absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] z-[20] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
@@ -4363,7 +4430,7 @@ export default function CreateMemorialClient({
     ? "pointer-events-auto absolute right-2 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95] w-[min(94vw,420px)]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-3 sm:right-4";
   const builderEditorBodyClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
+    ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const builderTabRailClass = isPortraitLayout
     ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
@@ -4382,13 +4449,13 @@ export default function CreateMemorialClient({
   const builderActionTooltipClass =
     hudTooltipClass("action");
   const builderSceneFrameClass = isPortraitLayout
-    ? "fixed left-0 right-0 top-0 z-0 h-[58dvh] overflow-hidden"
+    ? "fixed left-0 right-0 top-0 z-0 h-[56dvh] overflow-hidden"
     : "fixed inset-0 z-0";
   const builderPanelInnerClass = isPortraitLayout
-    ? `flex min-h-0 flex-1 flex-col overflow-visible ${hudInnerSurfaceClass(true)}`
+    ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f7f1ee]"
     : `flex min-h-0 flex-1 flex-col overflow-visible ${hudInnerSurfaceClass(false)}`;
   const builderPanelHeaderClass = isPortraitLayout
-    ? "border-b border-[#eadfd9] px-2.5 py-2"
+    ? "px-2 py-1"
     : "border-b border-[#eadfd9] px-4 py-3";
   const markerMapHeight = isPortraitLayout
     ? "clamp(160px, 24dvh, 230px)"
@@ -4638,83 +4705,111 @@ export default function CreateMemorialClient({
                   </div>
                 </div>
                 <div className={builderEditorBodyClass}>
-                  <div className={builderTabRailClass}>
-                  {isPortraitLayout
-                    ? mobileOverlayTabs.map((tab) => {
-                        const isActive = activeOverlay === tab.id;
+                  {isPortraitLayout ? (
+                    <>
+                      <div className={builderTabRailClass}>
+                        {mobileOverlayTabs.map((tab) => {
+                          const isActive = activeOverlay === tab.id;
+                          return (
+                            <div key={tab.id} className="relative">
+                              <button
+                                type="button"
+                                onClick={() => toggleOverlay(tab.id)}
+                                disabled={tab.disabled}
+                                aria-label={tab.label}
+                                title={tab.label}
+                                className={`${builderTabButtonClass(isActive, tab.disabled)} ${tab.disabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                              >
+                                <BuilderOverlayIcon id={tab.id} />
+                                <span className="sr-only">{tab.label}</span>
+                                {tab.highlight ? (
+                                  <span className={builderAttentionBadgeClass}>!</span>
+                                ) : null}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className={builderTabRailClass}>
+                        {step3Tabs.map((tab) => {
+                          const isActive = activeStep3Tab === tab.id && !activeOverlay;
+                          const isDisabled = isEditMode && tab.id === "environment";
+                          return (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => handleStep3TabSelect(tab)}
+                              disabled={isDisabled}
+                              aria-label={tab.label}
+                              title={tab.label}
+                              className={builderTabButtonClass(isActive, isDisabled)}
+                            >
+                              <Step3TabIcon id={tab.id} />
+                              <span className="sr-only">{tab.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <div className={builderTabRailClass}>
+                      {step3Tabs.map((tab) => {
+                        const isActive = activeStep3Tab === tab.id;
+                        const isDisabled = isEditMode && tab.id === "environment";
+                        const isTooltipVisible = tooltipTabId === tab.id;
+                        const description = STEP3_TAB_DESCRIPTIONS[tab.id];
                         return (
                           <div key={tab.id} className="relative">
                             <button
                               type="button"
-                              onClick={() => toggleOverlay(tab.id)}
-                              disabled={tab.disabled}
+                              onClick={() => handleStep3TabSelect(tab)}
+                              disabled={isDisabled}
+                              onMouseEnter={() => {
+                                if (isDisabled) {
+                                  return;
+                                }
+                                clearStep3TooltipTimer();
+                                setTooltipTabId(tab.id);
+                              }}
+                              onMouseLeave={() => {
+                                clearStep3TooltipTimer();
+                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
+                              }}
+                              onFocus={() => {
+                                if (isDisabled) {
+                                  return;
+                                }
+                                clearStep3TooltipTimer();
+                                setTooltipTabId(tab.id);
+                              }}
+                              onBlur={() => {
+                                clearStep3TooltipTimer();
+                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
+                              }}
                               aria-label={tab.label}
                               title={tab.label}
-                              className={`${builderTabButtonClass(isActive, tab.disabled)} ${tab.disabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                              className={builderTabButtonClass(isActive, isDisabled)}
                             >
-                              <BuilderOverlayIcon id={tab.id} />
+                              <Step3TabIcon id={tab.id} />
                               <span className="sr-only">{tab.label}</span>
-                              {tab.highlight ? (
-                                <span className={builderAttentionBadgeClass}>!</span>
-                              ) : null}
                             </button>
+                            {isTooltipVisible ? (
+                              <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
+                                <div className="font-semibold text-[#5d4037]">{tab.label}</div>
+                                <div className="mt-1 text-[#8d6e63]">{description}</div>
+                              </div>
+                            ) : null}
                           </div>
                         );
-                      })
-                    : null}
-                  {step3Tabs.map((tab) => {
-                    const isActive = activeStep3Tab === tab.id && (!isPortraitLayout || !activeOverlay);
-                    const isDisabled = isEditMode && tab.id === "environment";
-                    const isTooltipVisible = tooltipTabId === tab.id;
-                    const description = STEP3_TAB_DESCRIPTIONS[tab.id];
-                    return (
-                      <div key={tab.id} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => handleStep3TabSelect(tab)}
-                          disabled={isDisabled}
-                          onMouseEnter={() => {
-                            if (isDisabled) {
-                              return;
-                            }
-                            clearStep3TooltipTimer();
-                            setTooltipTabId(tab.id);
-                          }}
-                          onMouseLeave={() => {
-                            clearStep3TooltipTimer();
-                            setTooltipTabId((prev) => (prev === tab.id ? null : prev));
-                          }}
-                          onFocus={() => {
-                            if (isDisabled) {
-                              return;
-                            }
-                            clearStep3TooltipTimer();
-                            setTooltipTabId(tab.id);
-                          }}
-                          onBlur={() => {
-                            clearStep3TooltipTimer();
-                            setTooltipTabId((prev) => (prev === tab.id ? null : prev));
-                          }}
-                          aria-label={tab.label}
-                          title={tab.label}
-                          className={builderTabButtonClass(isActive, isDisabled)}
-                        >
-                          <Step3TabIcon id={tab.id} />
-                          <span className="sr-only">{tab.label}</span>
-                        </button>
-                        {isTooltipVisible && !isPortraitLayout ? (
-                          <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
-                            <div className="font-semibold text-[#5d4037]">{tab.label}</div>
-                            <div className="mt-1 text-[#8d6e63]">{description}</div>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
+                      })}
+                    </div>
+                  )}
 
                 <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
-                  <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3">
+                  <div
+                    key={isPortraitLayout && activeOverlay ? `overlay-${activeOverlay}` : `detail-${activeStep3Tab}`}
+                    className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3"
+                  >
                     {isPortraitLayout && activeOverlay
                       ? renderActiveOverlayContent()
                       : renderStep3TabContent()}

@@ -2239,7 +2239,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
     isPortraitLayout
-      ? `pointer-events-auto absolute left-1.5 right-1.5 bottom-[calc(4.1rem+env(safe-area-inset-bottom))] flex h-[min(33dvh,300px)] flex-col ${hudPanelChromeClass(true)}`
+      ? "pointer-events-auto absolute left-0 right-0 bottom-0 flex h-[44dvh] flex-col bg-[#f7f1ee]"
       : `pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`;
   const editFinishButtonClass =
     isPortraitLayout
@@ -2265,7 +2265,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? `fixed left-[3%] right-[3%] top-[calc(33dvh+0.35rem)] bottom-[calc(4.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1.5"
+    ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const editTabRailClass = isPortraitLayout
     ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
@@ -3108,8 +3108,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
             </div>
 
             <div className={editEditorPanelClass}>
-              <div className={isPortraitLayout ? "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[17px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]" : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"}>
-                <div className={isPortraitLayout ? "border-b border-[#eadfd9] px-2.5 py-2" : "border-b border-[#eadfd9] px-4 py-3"}>
+              <div className={isPortraitLayout ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f7f1ee]" : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"}>
+                <div className={isPortraitLayout ? "px-2 py-1" : "border-b border-[#eadfd9] px-4 py-3"}>
                   <div className="flex items-center justify-between gap-3">
                     <h3 className={isPortraitLayout ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]" : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"}>
                       Редактор мемориала
@@ -3176,11 +3176,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       {appearanceTab === "house" ? (
                         <div className="flex h-full min-h-0 flex-col gap-3">
                           {houseTextureOptions.length > 0 ? (
-                            <div className="grid min-h-0 flex-1 rounded-2xl border border-[#eadfd9] bg-white/78 p-2">
+                            <div className="grid min-h-0 flex-1 rounded-2xl bg-white/78 p-2">
                               <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
                                 <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
                                   <h4 className="px-1 text-sm font-semibold text-[#5d4037]">
-                                    Форма домика
+                                    Домик
                                   </h4>
                                   <div className="min-h-0 overflow-y-auto overscroll-contain">
                                     {renderAppearanceOptionGrid(
@@ -3197,11 +3197,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                     )}
                                   </div>
                                 </div>
-                                <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1.5">
-                                  <h4 className="justify-self-center text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] [writing-mode:vertical-rl]">
-                                    Текстура
-                                  </h4>
-                                  <div className="min-h-0 overflow-hidden">
+                                <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 p-1.5">
+                                  <div className="group relative justify-self-center">
+                                    <span className="grid h-7 w-7 place-items-center rounded-full border border-white bg-[#fffcf9] text-[12px] font-black text-[#8d6e63] shadow-sm">
+                                      ?
+                                    </span>
+                                    <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-44 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                                      Это текстура домика.
+                                    </span>
+                                  </div>
+                                  <div className="min-h-0 overflow-y-auto overscroll-contain">
                                     {isPortraitLayout
                                       ? renderHouseTextureSwatches(
                                           houseTextureOptions,
@@ -3628,7 +3633,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
               type="text"
               value={deleteConfirmationName}
               onChange={(event) => setDeleteConfirmationName(event.target.value)}
-              className="mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"
+              className={isPortraitLayout
+                ? "mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"
+                : "mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"}
               placeholder={pet.name}
               autoComplete="off"
             />
