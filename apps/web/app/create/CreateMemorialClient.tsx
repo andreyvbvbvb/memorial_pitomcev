@@ -17,7 +17,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../lib/map-preview";
-import { canUseCalibration, type AccessLevel, type AuthUser } from "../../lib/access";
+import { canAccessAdmin, canUseCalibration, type AccessLevel, type AuthUser } from "../../lib/access";
 import AuthModal from "../../components/AuthModal";
 import {
   getAllMemorialModelUrls,
@@ -816,6 +816,10 @@ export default function CreateMemorialClient({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
+  const [mobileBuilderMenuOpen, setMobileBuilderMenuOpen] = useState(false);
+  const [mobileBuilderMenuVisible, setMobileBuilderMenuVisible] = useState(false);
+  const [mobileBuilderActionsOpen, setMobileBuilderActionsOpen] = useState(false);
+  const [mobileBuilderActionsVisible, setMobileBuilderActionsVisible] = useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
   const [authPromptVisible, setAuthPromptVisible] = useState(false);
   const [authPromptPurpose, setAuthPromptPurpose] = useState<"publish" | "draft">("publish");
@@ -2877,6 +2881,43 @@ export default function CreateMemorialClient({
   const closeReview = () => {
     setReviewVisible(false);
     setTimeout(() => setReviewOpen(false), 180);
+  };
+
+  const openMobileBuilderMenu = () => {
+    setMobileBuilderMenuOpen(true);
+    requestAnimationFrame(() => setMobileBuilderMenuVisible(true));
+  };
+
+  const closeMobileBuilderMenu = () => {
+    setMobileBuilderMenuVisible(false);
+    setTimeout(() => setMobileBuilderMenuOpen(false), 180);
+  };
+
+  const openMobileBuilderActions = () => {
+    setMobileBuilderActionsOpen(true);
+    requestAnimationFrame(() => setMobileBuilderActionsVisible(true));
+  };
+
+  const closeMobileBuilderActions = () => {
+    setMobileBuilderActionsVisible(false);
+    setTimeout(() => setMobileBuilderActionsOpen(false), 180);
+  };
+
+  const navigateFromMobileMenu = (href: string) => {
+    closeMobileBuilderMenu();
+    window.setTimeout(() => router.push(href), 120);
+  };
+
+  const handleMobileSaveDraftAction = () => {
+    closeMobileBuilderActions();
+    window.setTimeout(() => {
+      void saveCurrentDraft({ redirectToMyPets: true });
+    }, 120);
+  };
+
+  const handleMobileFinishAction = () => {
+    closeMobileBuilderActions();
+    window.setTimeout(openReview, 120);
   };
 
   const renderArrowIcon = (className?: string) => (
@@ -4952,43 +4993,18 @@ export default function CreateMemorialClient({
             </div>
 
             <div className={builderActionBarClass}>
-              <div className={isPortraitLayout ? `flex items-center justify-end gap-2` : "flex items-center gap-3"}>
-                {isEditMode && editId ? (
+              {isPortraitLayout ? (
+                <div className="flex items-center justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => router.push(`/pets/${editId}`)}
-                    className={builderCancelButtonClass}
+                    onClick={openMobileBuilderActions}
+                    className="group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.86rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
                   >
-                    Отмена
+                    {isEditMode ? "Сохранить" : "Сохранить/Продолжить"}
                   </button>
-                ) : null}
-                {!isEditMode ? (
-                  <div className="group/draft-action relative shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => void saveCurrentDraft({ redirectToMyPets: true })}
-                      className={builderDraftButtonClass}
-                      disabled={draftLoading}
-                    >
-                      {draftLoading ? (
-                        "Сохраняем..."
-                      ) : (
-                        <>
-                          Сохранить
-                          <br />
-                          черновик
-                        </>
-                      )}
-                    </button>
-                    <span className={`${builderActionTooltipClass} group-hover/draft-action:opacity-100 group-focus-within/draft-action:opacity-100`}>
-                      Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
-                    </span>
-                  </div>
-                ) : null}
-                {isPortraitLayout ? (
                   <button
                     type="button"
-                    onClick={() => router.push("/menu")}
+                    onClick={openMobileBuilderMenu}
                     className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
                     aria-label="Меню"
                     title="Меню"
@@ -4997,26 +5013,202 @@ export default function CreateMemorialClient({
                       <path d="M5 7h14M5 12h14M5 17h14" />
                     </svg>
                   </button>
-                ) : null}
-                <div className="group/finish-action relative min-w-0 flex-1 sm:flex-none">
-                  <button
-                    type="button"
-                    onClick={openReview}
-                    className={builderFinishButtonClass}
-                  >
-                    <span className="transition-transform duration-300 group-hover:-translate-x-1">
-                      {isEditMode ? "Сохранить" : "Завершить"}
-                    </span>
-                    {renderArrowIcon()}
-                  </button>
-                  <span className={`${builderActionTooltipClass} group-hover/finish-action:opacity-100 group-focus-within/finish-action:opacity-100`}>
-                    Далее откроется проверка мемориала, после которой можно будет оплатить и опубликовать его.
-                  </span>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {isEditMode && editId ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/pets/${editId}`)}
+                      className={builderCancelButtonClass}
+                    >
+                      Отмена
+                    </button>
+                  ) : null}
+                  {!isEditMode ? (
+                    <div className="group/draft-action relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => void saveCurrentDraft({ redirectToMyPets: true })}
+                        className={builderDraftButtonClass}
+                        disabled={draftLoading}
+                      >
+                        {draftLoading ? (
+                          "Сохраняем..."
+                        ) : (
+                          <>
+                            Сохранить
+                            <br />
+                            черновик
+                          </>
+                        )}
+                      </button>
+                      <span className={`${builderActionTooltipClass} group-hover/draft-action:opacity-100 group-focus-within/draft-action:opacity-100`}>
+                        Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="group/finish-action relative min-w-0 flex-1 sm:flex-none">
+                    <button
+                      type="button"
+                      onClick={openReview}
+                      className={builderFinishButtonClass}
+                    >
+                      <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                        {isEditMode ? "Сохранить" : "Завершить"}
+                      </span>
+                      {renderArrowIcon()}
+                    </button>
+                    <span className={`${builderActionTooltipClass} group-hover/finish-action:opacity-100 group-focus-within/finish-action:opacity-100`}>
+                      Далее откроется проверка мемориала, после которой можно будет оплатить и опубликовать его.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           )}
+
+          {mobileBuilderMenuOpen ? (
+            <div
+              className={`fixed inset-0 z-[980] flex items-center justify-center px-4 transition-opacity duration-200 ${
+                mobileBuilderMenuVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <button
+                type="button"
+                aria-label="Закрыть меню"
+                className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
+                onClick={closeMobileBuilderMenu}
+              />
+              <div
+                className={`relative grid w-full max-w-sm gap-2 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+                  mobileBuilderMenuVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 rounded-[22px] bg-[#fffcf9] px-4 py-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                      Навигация
+                    </p>
+                    <h3 className="text-xl font-black text-[#5d4037]">Меню</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeMobileBuilderMenu}
+                    className="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-[#f7f1ee] text-xl font-black text-[#8d6e63]"
+                    aria-label="Закрыть"
+                  >
+                    ×
+                  </button>
+                </div>
+                {form.ownerId ? (
+                  <button type="button" onClick={() => navigateFromMobileMenu("/my-pets")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                    Мои питомцы
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMobileBuilderMenu();
+                      window.setTimeout(() => openAuthPrompt("draft"), 120);
+                    }}
+                    className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                  >
+                    Войти
+                  </button>
+                )}
+                <button type="button" onClick={() => navigateFromMobileMenu("/map")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Карта
+                </button>
+                {form.ownerId ? (
+                  <button type="button" onClick={() => navigateFromMobileMenu("/profile")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                    Профиль
+                  </button>
+                ) : null}
+                <button type="button" onClick={() => navigateFromMobileMenu("/news")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Новости
+                </button>
+                <button type="button" onClick={() => navigateFromMobileMenu("/about")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  О проекте
+                </button>
+                <button type="button" onClick={() => navigateFromMobileMenu("/charity")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Благотворительность
+                </button>
+                {canAccessAdmin(accessLevel) ? (
+                  <button type="button" onClick={() => navigateFromMobileMenu("/admin/sql")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                    Админ-панель
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {mobileBuilderActionsOpen ? (
+            <div
+              className={`fixed inset-0 z-[980] flex items-center justify-center px-4 transition-opacity duration-200 ${
+                mobileBuilderActionsVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <button
+                type="button"
+                aria-label="Закрыть выбор действия"
+                className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
+                onClick={closeMobileBuilderActions}
+              />
+              <div
+                className={`relative grid w-full max-w-sm gap-3 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+                  mobileBuilderActionsVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                }`}
+              >
+                <div className="rounded-[22px] bg-[#fffcf9] px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                    Действие
+                  </p>
+                  <h3 className="text-xl font-black text-[#5d4037]">
+                    {isEditMode ? "Сохранить изменения?" : "Что сделать дальше?"}
+                  </h3>
+                </div>
+                {!isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={handleMobileSaveDraftAction}
+                    disabled={draftLoading}
+                    className="rounded-[20px] border-[3px] border-white bg-[#fffcf9] px-4 py-4 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)] disabled:cursor-wait disabled:opacity-70"
+                  >
+                    {draftLoading ? "Сохраняем..." : "Сохранить черновик"}
+                    <span className="mt-1 block text-[11px] font-semibold normal-case tracking-normal text-[#8d6e63]">
+                      Фотографии сохраняются только при публикации.
+                    </span>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handleMobileFinishAction}
+                  className="rounded-[20px] bg-[#2d3436] px-4 py-4 text-left text-sm font-black uppercase tracking-[0.12em] text-white shadow-[0_5px_0_0_#111827] active:translate-y-[4px] active:shadow-none"
+                >
+                  {isEditMode ? "Сохранить" : "Завершить"}
+                  <span className="mt-1 block text-[11px] font-semibold normal-case tracking-normal text-white/75">
+                    {isEditMode
+                      ? "Откроется проверка изменений перед сохранением."
+                      : "Откроется проверка мемориала перед публикацией."}
+                  </span>
+                </button>
+                {isEditMode && editId ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMobileBuilderActions();
+                      window.setTimeout(() => router.push(`/pets/${editId}`), 120);
+                    }}
+                    className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-sm font-black uppercase tracking-[0.12em] text-[#8d6e63]"
+                  >
+                    Отмена
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           {reviewOpen ? (
             <div

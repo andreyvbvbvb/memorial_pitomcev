@@ -352,6 +352,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [appearanceReviewOpen, setAppearanceReviewOpen] = useState(false);
   const [appearanceReviewVisible, setAppearanceReviewVisible] = useState(false);
+  const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
+  const [mobileEditMenuVisible, setMobileEditMenuVisible] = useState(false);
+  const [mobileEditActionsOpen, setMobileEditActionsOpen] = useState(false);
+  const [mobileEditActionsVisible, setMobileEditActionsVisible] = useState(false);
   const [previewContextReady, setPreviewContextReady] = useState(false);
   const [previewSceneReady, setPreviewSceneReady] = useState(false);
   const previewControlsRef = useRef<any>(null);
@@ -1223,6 +1227,36 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const closeAppearanceReview = () => {
     setAppearanceReviewVisible(false);
     setTimeout(() => setAppearanceReviewOpen(false), 180);
+  };
+
+  const openMobileEditMenu = () => {
+    setMobileEditMenuOpen(true);
+    requestAnimationFrame(() => setMobileEditMenuVisible(true));
+  };
+
+  const closeMobileEditMenu = () => {
+    setMobileEditMenuVisible(false);
+    setTimeout(() => setMobileEditMenuOpen(false), 180);
+  };
+
+  const openMobileEditActions = () => {
+    setMobileEditActionsOpen(true);
+    requestAnimationFrame(() => setMobileEditActionsVisible(true));
+  };
+
+  const closeMobileEditActions = () => {
+    setMobileEditActionsVisible(false);
+    setTimeout(() => setMobileEditActionsOpen(false), 180);
+  };
+
+  const navigateFromMobileEditMenu = (href: string) => {
+    closeMobileEditMenu();
+    window.setTimeout(() => router.push(href), 120);
+  };
+
+  const handleMobileEditFinishAction = () => {
+    closeMobileEditActions();
+    window.setTimeout(openAppearanceReview, 120);
   };
 
   const updateAppearanceDraft = <K extends keyof AppearanceDraft>(
@@ -2272,9 +2306,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
     : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
   const editTabButtonClass = (active: boolean) =>
     hudControlButtonClass(isPortraitLayout, active);
-  const editActionBarClass = isPortraitLayout
-    ? "pointer-events-auto absolute bottom-[calc(0.55rem+env(safe-area-inset-bottom))] left-1/2 flex w-[calc(100vw-0.75rem)] max-w-[520px] -translate-x-1/2 items-center gap-2"
-    : "";
   const memorialSceneFrameClass = isPortraitLayout
     ? "fixed inset-0 z-0 overflow-hidden"
     : "fixed inset-0 z-0";
@@ -3366,16 +3397,24 @@ export default function PetClient({ id, mode = "view" }: Props) {
             </div>
 
             {isPortraitLayout ? (
-              <div className={editActionBarClass}>
-                <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
-                  Отмена
+              <div className="pointer-events-auto absolute right-2 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95] flex w-[min(94vw,420px)] items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={openMobileEditActions}
+                  className="group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.86rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                >
+                  Сохранить
                 </button>
                 <button
                   type="button"
-                  onClick={openAppearanceReview}
-                  className={editFinishButtonClass}
+                  onClick={openMobileEditMenu}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+                  aria-label="Меню"
+                  title="Меню"
                 >
-                  Завершить
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                    <path d="M5 7h14M5 12h14M5 17h14" />
+                  </svg>
                 </button>
               </div>
             ) : (
@@ -3397,6 +3436,113 @@ export default function PetClient({ id, mode = "view" }: Props) {
               </>
             )}
           </div>
+
+          {mobileEditMenuOpen ? (
+            <div
+              className={`fixed inset-0 z-[1000] flex items-center justify-center px-4 transition-opacity duration-200 ${
+                mobileEditMenuVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <button
+                type="button"
+                aria-label="Закрыть меню"
+                className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
+                onClick={closeMobileEditMenu}
+              />
+              <div
+                className={`relative grid w-full max-w-sm gap-2 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+                  mobileEditMenuVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3 rounded-[22px] bg-[#fffcf9] px-4 py-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                      Навигация
+                    </p>
+                    <h3 className="text-xl font-black text-[#5d4037]">Меню</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeMobileEditMenu}
+                    className="grid h-10 w-10 place-items-center rounded-full border-2 border-white bg-[#f7f1ee] text-xl font-black text-[#8d6e63]"
+                    aria-label="Закрыть"
+                  >
+                    ×
+                  </button>
+                </div>
+                <button type="button" onClick={() => navigateFromMobileEditMenu(`/pets/${id}`)} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Мемориал
+                </button>
+                <button type="button" onClick={() => navigateFromMobileEditMenu("/my-pets")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Мои питомцы
+                </button>
+                <button type="button" onClick={() => navigateFromMobileEditMenu("/map")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Карта
+                </button>
+                <button type="button" onClick={() => navigateFromMobileEditMenu("/profile")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Профиль
+                </button>
+                <button type="button" onClick={() => navigateFromMobileEditMenu("/news")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Новости
+                </button>
+                <button type="button" onClick={() => navigateFromMobileEditMenu("/about")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  О проекте
+                </button>
+                <button type="button" onClick={() => navigateFromMobileEditMenu("/charity")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  Благотворительность
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {mobileEditActionsOpen ? (
+            <div
+              className={`fixed inset-0 z-[1000] flex items-center justify-center px-4 transition-opacity duration-200 ${
+                mobileEditActionsVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <button
+                type="button"
+                aria-label="Закрыть выбор действия"
+                className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
+                onClick={closeMobileEditActions}
+              />
+              <div
+                className={`relative grid w-full max-w-sm gap-3 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
+                  mobileEditActionsVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                }`}
+              >
+                <div className="rounded-[22px] bg-[#fffcf9] px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                    Действие
+                  </p>
+                  <h3 className="text-xl font-black text-[#5d4037]">
+                    Сохранить изменения?
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleMobileEditFinishAction}
+                  className="rounded-[20px] bg-[#2d3436] px-4 py-4 text-left text-sm font-black uppercase tracking-[0.12em] text-white shadow-[0_5px_0_0_#111827] active:translate-y-[4px] active:shadow-none"
+                >
+                  Завершить
+                  <span className="mt-1 block text-[11px] font-semibold normal-case tracking-normal text-white/75">
+                    Откроется проверка изменений перед сохранением.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMobileEditActions();
+                    window.setTimeout(closeEditDialog, 120);
+                  }}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-sm font-black uppercase tracking-[0.12em] text-[#8d6e63]"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {appearanceReviewOpen ? (
             <div
