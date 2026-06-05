@@ -573,7 +573,7 @@ export default function AuthModal({
             ) : (
               <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4">
                 <div className={authInfoPanelClass}>
-                  Напишите на почту memorial@gamil.com письмо с адресом почты, на который был
+                  Напишите на почту meowgav.service@mail.ru письмо с адресом почты, на который был
                   зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
                 </div>
                 <button

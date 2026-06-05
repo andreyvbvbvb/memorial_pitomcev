@@ -1441,13 +1441,14 @@ export default function CreateMemorialClient({
     [detectedGiftSlots, environmentPreviewId]
   );
   const previewGiftCandidates = useMemo(() => Object.keys(giftModelsGenerated), []);
-  const previewGiftByType = useMemo(() => {
-    const map = new Map<string, string>();
+  const previewGiftAssignmentsRef = useRef(new Map<string, { code: string; resolveType: string }>());
+  const previewGiftCodesByType = useMemo(() => {
+    const map = new Map<string, string[]>();
     previewGiftCandidates.forEach((code) => {
       getGiftAvailableTypes({ code }).forEach((type) => {
-        if (!map.has(type)) {
-          map.set(type, code);
-        }
+        const items = map.get(type) ?? [];
+        items.push(code);
+        map.set(type, items);
       });
     });
     return map;
@@ -1459,28 +1460,35 @@ export default function CreateMemorialClient({
     if (terrainGiftSlots.length === 0) {
       return [];
     }
-    const fallbackCode = previewGiftCandidates[0] ?? null;
     return terrainGiftSlots
       .map((slot) => {
         const slotType = getGiftSlotType(slot);
-        let code: string | null = null;
-        let resolveType: string | null = null;
-        if (slotType === "default") {
-          code = fallbackCode;
-          if (code) {
-            const types = getGiftAvailableTypes({ code });
-            resolveType = types[0] ?? null;
-          }
-        } else if (slotType) {
-          code = previewGiftByType.get(slotType) ?? null;
-          resolveType = slotType;
+        if (!slotType) {
+          return null;
         }
-        if (!code || !resolveType) {
+        const assignmentKey = `${slot}:${slotType}`;
+        let assignment = previewGiftAssignmentsRef.current.get(assignmentKey);
+        if (!assignment) {
+          const candidates =
+            slotType === "default"
+              ? previewGiftCandidates
+              : previewGiftCodesByType.get(slotType) ?? [];
+          const code = candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+          const resolveType =
+            code && slotType === "default"
+              ? getGiftAvailableTypes({ code })[0] ?? null
+              : slotType;
+          if (code && resolveType) {
+            assignment = { code, resolveType };
+            previewGiftAssignmentsRef.current.set(assignmentKey, assignment);
+          }
+        }
+        if (!assignment) {
           return null;
         }
         const url = resolveGiftModelUrl({
-          gift: { code },
-          slotType: resolveType,
+          gift: { code: assignment.code },
+          slotType: assignment.resolveType,
           fallbackUrl: null
         });
         if (!url) {
@@ -1491,7 +1499,7 @@ export default function CreateMemorialClient({
       .filter(
         (gift): gift is { slot: string; url: string; name: string } => Boolean(gift)
       );
-  }, [giftPreviewEnabled, previewGiftByType, previewGiftCandidates, terrainGiftSlots]);
+  }, [giftPreviewEnabled, previewGiftCodesByType, previewGiftCandidates, terrainGiftSlots]);
   const previewPlaceholderSlots = useMemo(() => {
     if (!giftPreviewEnabled) {
       return [];
@@ -1505,18 +1513,18 @@ export default function CreateMemorialClient({
       { id: "environment", label: "Поверхность", focusSlot: "dom_slot" },
       { id: "house", label: "Домик", focusSlot: "dom_slot" }
     ];
-    if (houseSlots.roof) tabs.push({ id: "roof", label: "Крыша", focusSlot: houseSlots.roof });
-    if (houseSlots.wall) tabs.push({ id: "wall", label: "Стены", focusSlot: houseSlots.wall });
-    if (houseSlots.sign) tabs.push({ id: "sign", label: "Украшение", focusSlot: houseSlots.sign });
+    if (houseSlots.roof) tabs.push({ id: "roof", label: "Крыша" });
+    if (houseSlots.wall) tabs.push({ id: "wall", label: "Стены" });
+    if (houseSlots.sign) tabs.push({ id: "sign", label: "Украшение" });
     if (houseSlots.frameLeft)
-      tabs.push({ id: "frameLeft", label: "Рамка слева", focusSlot: houseSlots.frameLeft });
+      tabs.push({ id: "frameLeft", label: "Рамка слева" });
     if (houseSlots.frameRight)
-      tabs.push({ id: "frameRight", label: "Рамка справа", focusSlot: houseSlots.frameRight });
-    if (houseSlots.mat) tabs.push({ id: "mat", label: "Коврик", focusSlot: houseSlots.mat });
+      tabs.push({ id: "frameRight", label: "Рамка справа" });
+    if (houseSlots.mat) tabs.push({ id: "mat", label: "Коврик" });
     if (houseSlots.bowlFood)
-      tabs.push({ id: "bowlFood", label: "Миска (еда)", focusSlot: houseSlots.bowlFood });
+      tabs.push({ id: "bowlFood", label: "Миска (еда)" });
     if (houseSlots.bowlWater)
-      tabs.push({ id: "bowlWater", label: "Миска (вода)", focusSlot: houseSlots.bowlWater });
+      tabs.push({ id: "bowlWater", label: "Миска (вода)" });
     return tabs;
   }, [houseSlots]);
   const step3TabBySlot = useMemo(() => {
@@ -1840,7 +1848,7 @@ export default function CreateMemorialClient({
     clearStep3TooltipTimer();
     setTooltipTabId(null);
     setActiveStep3Tab(tab.id);
-    requestFocus(tab.focusSlot ?? null);
+    requestFocus(tab.id === "environment" || tab.id === "house" ? tab.focusSlot ?? null : null);
   };
 
   const handleMobileDetailsTabSelect = (tab: Step3Tab) => {
@@ -1851,7 +1859,7 @@ export default function CreateMemorialClient({
     setTooltipTabId(null);
     setActiveOverlay("details");
     setActiveStep3Tab(tab.id);
-    requestFocus(tab.focusSlot ?? null);
+    requestFocus(tab.id === "environment" || tab.id === "house" ? tab.focusSlot ?? null : null);
   };
 
   const handlePreviewDetailClick = (detail: { slot?: string; area?: "environment" | "house" }) => {
@@ -1862,7 +1870,7 @@ export default function CreateMemorialClient({
           setActiveOverlay("details");
         }
         setActiveStep3Tab(tabId);
-        requestFocus(detail.slot);
+        requestFocus(null);
         return;
       }
     }
@@ -3594,7 +3602,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
               handleChange("roofId", id);
-              requestFocus(houseSlots.roof ?? null);
             })}
           </div>
         );
@@ -3603,7 +3610,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
               handleChange("wallId", id);
-              requestFocus(houseSlots.wall ?? null);
             })}
           </div>
         );
@@ -3612,7 +3618,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("sign", signOptions, form.signId, (id) => {
               handleChange("signId", id);
-              requestFocus(houseSlots.sign ?? null);
             })}
           </div>
         );
@@ -3621,7 +3626,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
               handleChange("frameLeftId", id);
-              requestFocus(houseSlots.frameLeft ?? null);
             })}
           </div>
         );
@@ -3630,7 +3634,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
               handleChange("frameRightId", id);
-              requestFocus(houseSlots.frameRight ?? null);
             })}
           </div>
         );
@@ -3639,7 +3642,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("mat", matOptions, form.matId, (id) => {
               handleChange("matId", id);
-              requestFocus(houseSlots.mat ?? null);
             })}
           </div>
         );
@@ -3648,7 +3650,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
               handleChange("bowlFoodId", id);
-              requestFocus(houseSlots.bowlFood ?? null);
             })}
           </div>
         );
@@ -3657,7 +3658,6 @@ export default function CreateMemorialClient({
           <div className="grid gap-3">
             {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
               handleChange("bowlWaterId", id);
-              requestFocus(houseSlots.bowlWater ?? null);
             })}
           </div>
         );
@@ -3879,7 +3879,13 @@ export default function CreateMemorialClient({
           </div>
         ) : null}
         <div className={isPortraitLayout ? "grid h-full min-h-0 gap-2 overflow-hidden" : "grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)] [@media(max-height:640px)]:!grid-cols-1 [@media(max-height:640px)]:gap-2"}>
-        <div className={`${isPortraitLayout && markerPanelTab !== "map" ? "hidden" : "grid"} content-start gap-3 [@media(max-height:640px)]:gap-2`}>
+        <div
+          className={
+            isPortraitLayout
+              ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 content-start gap-3 overflow-y-auto overscroll-contain pr-1`
+              : "grid content-start gap-3 [@media(max-height:640px)]:gap-2"
+          }
+        >
           <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2">
             {!apiKey ? (
               <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]">

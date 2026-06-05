@@ -2259,7 +2259,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const panelButtonClass = (active: boolean) =>
     hudRoundButtonClass(isPortraitLayout, active);
   const memorialControlTooltipClass = isPortraitLayout
-    ? hudTooltipClass("top")
+    ? "pointer-events-none absolute bottom-[calc(100%+0.55rem)] left-1/2 z-[80] w-max max-w-[10rem] -translate-x-1/2 rounded-[14px] border-2 border-white bg-[#fffcf9] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] opacity-0 shadow-[0_14px_28px_-18px_rgba(93,64,55,0.55)] transition-opacity group-hover/control:opacity-100 group-focus-visible/control:opacity-100"
     : hudTooltipClass("right");
   const memorialGiftTooltipClass = isPortraitLayout
     ? memorialControlTooltipClass
@@ -2269,7 +2269,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = isPortraitLayout
-    ? "fixed left-1/2 bottom-[calc(8.15rem+env(safe-area-inset-bottom))] -translate-x-1/2"
+    ? "fixed left-1/2 bottom-[calc(9.35rem+env(safe-area-inset-bottom))] -translate-x-1/2"
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
   const editEditorPanelClass =
     isPortraitLayout
@@ -2296,7 +2296,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-[3%] right-[3%] top-[calc(33dvh+0.35rem)] bottom-[calc(4.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
+    ? `fixed left-[3%] right-[3%] top-[calc(33dvh+0.35rem)] bottom-[calc(8.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
@@ -2313,16 +2313,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? `flex min-h-0 flex-1 flex-col overflow-hidden p-2 ${hudInnerSurfaceClass(true)}`
     : `flex min-h-0 flex-1 flex-col ${panelSectionClass}`;
   const giftFlowClass = isPortraitLayout
-    ? "mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
+    ? "mt-1.5 flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden"
     : "mt-4 flex min-h-0 flex-1 flex-col gap-3";
   const giftCatalogSectionClass = isPortraitLayout
-    ? "flex shrink-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]"
+    ? "flex shrink-0 flex-col gap-1 text-xs font-semibold text-[#6f6360]"
     : "flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
   const giftCatalogGridClass = isPortraitLayout
-    ? "grid h-[clamp(136px,20dvh,190px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(72px,9dvh,86px)] content-start gap-1.5 overflow-y-auto overscroll-contain pr-1"
-    : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pr-1";
+    ? "grid h-[clamp(116px,17dvh,148px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(58px,7.5dvh,70px)] content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
+    : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
-    `relative flex w-full items-center justify-center overflow-hidden border transition ${
+    `relative flex w-full items-center justify-center overflow-visible border transition ${
       isPortraitLayout ? "h-full min-h-0 rounded-[16px] border-2" : "h-28 rounded-[22px] border-[3px]"
     } ${
       selected
@@ -2330,8 +2330,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
         : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/50"
     }`;
   const giftSkeletonClass = isPortraitLayout
-    ? "relative h-full min-h-0 w-full animate-pulse overflow-hidden rounded-[16px] border border-white bg-white"
-    : "relative h-28 w-full animate-pulse overflow-hidden rounded-[22px] border border-white bg-white";
+    ? "relative h-full min-h-0 w-full animate-pulse overflow-visible rounded-[16px] border border-white bg-white"
+    : "relative h-28 w-full animate-pulse overflow-visible rounded-[22px] border border-white bg-white";
   const floatingTitleWrapClass = isPortraitLayout
     ? "pointer-events-none absolute left-1/2 z-10 w-[min(18rem,calc(100vw-1rem))] -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.35rem)]"
     : "pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.75rem)]";
@@ -2993,7 +2993,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                               className={giftSkeletonClass}
                             >
                               <div className="absolute inset-0 bg-[#f7f1ee]" />
-                              <div className="absolute bottom-2 left-1/2 h-7 w-7 -translate-x-1/2 rounded-full bg-[#eadfd9]" />
+                              <div className="absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#eadfd9]" />
                             </div>
                           ))
                         ) : visibleGiftsWithSlots.length === 0 ? (
@@ -3014,7 +3014,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                   <img
                                     src={iconUrl ?? undefined}
                                     alt=""
-                                    className="h-full w-full object-cover"
+                                    className="h-full w-full rounded-[inherit] object-cover"
                                     loading="lazy"
                                     onError={(event) => {
                                       event.currentTarget.onerror = null;
@@ -3022,7 +3022,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                     }}
                                   />
                                 ) : null}
-                                <span className="pointer-events-none absolute bottom-2 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md">
+                                <span className="pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md">
                                   {gift.price}
                                 </span>
                                 <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
@@ -3058,30 +3058,49 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </div>
                     ) : null}
 
-                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
-                      Срок подарка
-                      <div className="grid gap-2">
-                        <div className="text-sm font-black text-[#5d4037]">
-                          {selectedDuration ? `${selectedDuration} мес` : "Выберите срок"}
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={DURATION_OPTIONS.length - 1}
-                          step={1}
-                          value={durationIndex}
-                          onChange={(event) => {
-                            const index = Number(event.target.value);
-                            setSelectedDuration(DURATION_OPTIONS[index] ?? DURATION_OPTIONS[0]);
-                          }}
-                          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9]"
-                        />
-                        <div className="flex justify-between text-[11px] font-semibold text-[#adb5bd]">
-                          {DURATION_OPTIONS.map((value) => (
-                            <span key={value}>{value}м</span>
-                          ))}
+                    <div className={isPortraitLayout ? "grid grid-cols-[minmax(0,1fr)_minmax(6.8rem,0.9fr)] items-end gap-2" : "grid gap-2"}>
+                      <div className={isPortraitLayout ? "grid gap-1 text-xs font-semibold text-[#6f6360]" : "grid gap-2 text-sm font-semibold text-[#6f6360]"}>
+                        Срок подарка
+                        <div className="grid gap-1.5">
+                          <div className={isPortraitLayout ? "text-xs font-black text-[#5d4037]" : "text-sm font-black text-[#5d4037]"}>
+                            {selectedDuration ? `${selectedDuration} мес` : "Выберите срок"}
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={DURATION_OPTIONS.length - 1}
+                            step={1}
+                            value={durationIndex}
+                            onChange={(event) => {
+                              const index = Number(event.target.value);
+                              setSelectedDuration(DURATION_OPTIONS[index] ?? DURATION_OPTIONS[0]);
+                            }}
+                            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9]"
+                          />
+                          <div className={isPortraitLayout ? "flex justify-between text-[9px] font-semibold text-[#adb5bd]" : "flex justify-between text-[11px] font-semibold text-[#adb5bd]"}>
+                            {DURATION_OPTIONS.map((value) => (
+                              <span key={value}>{value}м</span>
+                            ))}
+                          </div>
                         </div>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={handlePlaceGift}
+                        className={`${
+                          selectedGiftId && selectedSlot && selectedDuration && !giftLoading
+                            ? primaryActionClass
+                            : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
+                        } ${isPortraitLayout ? "!min-h-[3rem] !px-2 !py-2 !text-[10px] !leading-tight" : "px-4 py-3"}`}
+                        disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
+                      >
+                        {giftLoading
+                          ? "Покупка..."
+                          : selectedGift && totalPrice !== null
+                            ? `Подарить (${totalPrice} монет)`
+                            : "Подарить"}
+                      </button>
                     </div>
 
                     <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />
@@ -3091,23 +3110,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       offset={88}
                       variant="success"
                     />
-
-                    <button
-                      type="button"
-                      onClick={handlePlaceGift}
-                      className={`px-4 py-3 ${
-                        selectedGiftId && selectedSlot && selectedDuration && !giftLoading
-                          ? primaryActionClass
-                          : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
-                      }`}
-                      disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
-                    >
-                      {giftLoading
-                        ? "Покупка..."
-                        : selectedGift && totalPrice !== null
-                          ? `Подарить (${totalPrice} монет)`
-                          : "Подарить"}
-                    </button>
                   </div>
                 </div>
               </div>

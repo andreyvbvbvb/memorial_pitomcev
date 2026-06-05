@@ -65,7 +65,7 @@ export default function PhotoLightbox({
       <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-72 w-72 rounded-full bg-white/30 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-8rem] left-[-6rem] h-80 w-80 rounded-full bg-[#fdf2e9]/70 blur-[120px]" />
       <div
-        className="relative w-full max-w-5xl overflow-hidden rounded-[38px] border-[8px] border-white bg-white/96 p-3 shadow-[0_40px_100px_rgba(0,0,0,0.28)] sm:rounded-[46px] sm:p-4"
+        className="relative max-h-[80dvh] w-full max-w-5xl overflow-y-auto rounded-[38px] border-[8px] border-white bg-white/96 p-3 shadow-[0_40px_100px_rgba(0,0,0,0.28)] sm:rounded-[46px] sm:p-4"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -83,7 +83,7 @@ export default function PhotoLightbox({
               <img
                 src={photoUrl}
                 alt={title ?? "Фотография"}
-                className="max-h-[74vh] w-full object-contain bg-[#f8f9fa]"
+                className="max-h-[calc(80dvh-8.5rem)] w-full object-contain bg-[#f8f9fa]"
               />
             ) : (
               <div className="py-20 text-center text-sm font-semibold text-[#8d6e63]">

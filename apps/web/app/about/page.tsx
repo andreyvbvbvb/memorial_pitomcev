@@ -16,6 +16,21 @@ export default function AboutPage() {
         </p>
 
         <section className="mt-8 rounded-[30px] border-[4px] border-white bg-white/90 p-5 shadow-[0_24px_60px_-34px_rgba(93,64,55,0.55)] sm:p-6">
+          <h2 className="text-xl font-black text-[#5d4037]">Контакты</h2>
+          <p className="mt-3 text-sm font-semibold leading-relaxed text-[#7b6a63]">
+            По вопросам аккаунта, восстановления доступа и работы сервиса можно написать на
+            почту{" "}
+            <a
+              href="mailto:meowgav.service@mail.ru"
+              className="font-black text-[#5d4037] underline decoration-[#d3a27f] underline-offset-4"
+            >
+              meowgav.service@mail.ru
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="mt-8 rounded-[30px] border-[4px] border-white bg-white/90 p-5 shadow-[0_24px_60px_-34px_rgba(93,64,55,0.55)] sm:p-6">
           <h2 className="text-xl font-black text-[#5d4037]">Документы сервиса</h2>
           <p className="mt-3 text-sm font-semibold leading-relaxed text-[#7b6a63]">
             Юридические документы вынесены на отдельные страницы, чтобы страница о проекте

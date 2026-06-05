@@ -111,7 +111,7 @@ export const resolveGiftIconUrl = (gift?: { code?: string | null; modelUrl?: str
 const giftWidthRules = [
   { prefix: "flower_", width: 0.6 },
   { prefix: "toy_", width: 0.5 },
-  { prefix: "meal_", width: 0.5 }
+  { prefix: "meal_", width: 0.45 }
 ];
 const starSizeMultipliers: Record<GiftSize, number> = {
   s: 0.35,

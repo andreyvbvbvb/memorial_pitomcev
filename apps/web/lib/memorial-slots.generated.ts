@@ -15,6 +15,7 @@ export const houseSlotsGenerated = {
     "bowlWater": "bowl_water_slot"
   },
   "budka_3__base": {
+    "mat": "mat_slot",
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
   },

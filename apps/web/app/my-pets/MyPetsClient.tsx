@@ -296,7 +296,7 @@ export default function MyPetsClient() {
                 <p className="text-sm text-slate-500">Пока нет мемориалов.</p>
               ) : null}
 
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3">
                 {visibleDrafts.map((draft) => (
                   <div key={draft.id} className={petCardClass}>
                     <div className="block">

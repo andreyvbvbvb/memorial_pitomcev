@@ -54,7 +54,7 @@ export const hudRoundButtonClass = (compact: boolean, active: boolean) =>
 
 export const hudTooltipClass = (placement: "right" | "left" | "top" | "action" = "right") => {
   const base =
-    "pointer-events-none absolute z-[300] w-max max-w-[13rem] rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-within/control:opacity-100";
+    "pointer-events-none absolute z-[300] w-max max-w-[13rem] rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover/control:opacity-100 group-focus-visible/control:opacity-100";
 
   if (placement === "left") {
     return `${base} right-full top-1/2 mr-3 -translate-y-1/2`;
