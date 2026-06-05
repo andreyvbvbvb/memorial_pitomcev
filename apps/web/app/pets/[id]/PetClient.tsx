@@ -2296,7 +2296,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-[3%] right-[3%] top-[calc(33dvh+0.35rem)] bottom-[calc(8.75rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
+    ? `fixed left-[3%] right-[3%] top-[calc(29dvh+0.25rem)] bottom-[calc(7.8rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
@@ -2310,16 +2310,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "fixed inset-0 z-0 overflow-hidden"
     : "fixed inset-0 z-0";
   const giftPanelInnerClass = isPortraitLayout
-    ? `flex min-h-0 flex-1 flex-col overflow-hidden p-2 ${hudInnerSurfaceClass(true)}`
+    ? `flex min-h-0 flex-1 flex-col overflow-hidden p-1.5 ${hudInnerSurfaceClass(true)}`
     : `flex min-h-0 flex-1 flex-col ${panelSectionClass}`;
   const giftFlowClass = isPortraitLayout
-    ? "mt-1.5 flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden"
+    ? "mt-1 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden"
     : "mt-4 flex min-h-0 flex-1 flex-col gap-3";
   const giftCatalogSectionClass = isPortraitLayout
-    ? "flex shrink-0 flex-col gap-1 text-xs font-semibold text-[#6f6360]"
+    ? "flex shrink-0 flex-col gap-0.5 text-[11px] font-semibold text-[#6f6360]"
     : "flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
   const giftCatalogGridClass = isPortraitLayout
-    ? "grid h-[clamp(116px,17dvh,148px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(58px,7.5dvh,70px)] content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
+    ? "grid h-[clamp(96px,14dvh,124px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(50px,6.4dvh,62px)] content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
     `relative flex w-full items-center justify-center overflow-visible border transition ${

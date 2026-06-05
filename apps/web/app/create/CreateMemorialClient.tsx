@@ -738,6 +738,7 @@ export default function CreateMemorialClient({
   const deathDateInputRef = useRef<HTMLInputElement | null>(null);
   const [markerCategory, setMarkerCategory] = useState(form.species);
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
+  const [cameraFocusKey, setCameraFocusKey] = useState<string | null>(null);
   const [focusRequestId, setFocusRequestId] = useState(0);
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
   const hoverIntentRef = useRef<{ category: string; id: string } | null>(null);
@@ -1539,22 +1540,19 @@ export default function CreateMemorialClient({
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
     return mapping;
   }, [houseSlots]);
-  const activeFocusSlot = useMemo(
-    () => step3Tabs.find((tab) => tab.id === activeStep3Tab)?.focusSlot ?? null,
-    [activeStep3Tab, step3Tabs]
-  );
-  const activeCameraKey = useMemo(() => {
-    if (!activeFocusSlot) {
+  const getCameraFocusKey = (slot: string | null, tabId: Step3TabId = activeStep3Tab) => {
+    if (!slot) {
       return null;
     }
-    if (activeStep3Tab === "environment") {
+    if (tabId === "environment") {
       return "dom_slot_environment";
     }
-    if (activeStep3Tab === "house") {
+    if (tabId === "house") {
       return "dom_slot_house";
     }
-    return activeFocusSlot;
-  }, [activeFocusSlot, activeStep3Tab]);
+    return slot;
+  };
+  const activeCameraKey = cameraFocusKey;
   const roofUrl = resolveRoofModel(roofPreviewId);
   const wallUrl = resolveWallModel(wallPreviewId);
   const signUrl = resolveSignModel(signPreviewId);
@@ -1825,8 +1823,9 @@ export default function CreateMemorialClient({
     }
   }, [step3Tabs, activeStep3Tab]);
 
-  const requestFocus = (slot: string | null) => {
+  const requestFocus = (slot: string | null, tabId: Step3TabId = activeStep3Tab) => {
     setFocusSlot(slot);
+    setCameraFocusKey(getCameraFocusKey(slot, tabId));
     setFocusRequestId((prev) => prev + 1);
   };
 
@@ -1848,7 +1847,9 @@ export default function CreateMemorialClient({
     clearStep3TooltipTimer();
     setTooltipTabId(null);
     setActiveStep3Tab(tab.id);
-    requestFocus(tab.id === "environment" || tab.id === "house" ? tab.focusSlot ?? null : null);
+    if (tab.id === "environment" || tab.id === "house") {
+      requestFocus(tab.focusSlot ?? null, tab.id);
+    }
   };
 
   const handleMobileDetailsTabSelect = (tab: Step3Tab) => {
@@ -1859,7 +1860,9 @@ export default function CreateMemorialClient({
     setTooltipTabId(null);
     setActiveOverlay("details");
     setActiveStep3Tab(tab.id);
-    requestFocus(tab.id === "environment" || tab.id === "house" ? tab.focusSlot ?? null : null);
+    if (tab.id === "environment" || tab.id === "house") {
+      requestFocus(tab.focusSlot ?? null, tab.id);
+    }
   };
 
   const handlePreviewDetailClick = (detail: { slot?: string; area?: "environment" | "house" }) => {
@@ -1870,7 +1873,6 @@ export default function CreateMemorialClient({
           setActiveOverlay("details");
         }
         setActiveStep3Tab(tabId);
-        requestFocus(null);
         return;
       }
     }
@@ -1879,12 +1881,12 @@ export default function CreateMemorialClient({
         return;
       }
       setActiveStep3Tab("environment");
-      requestFocus("dom_slot");
+      requestFocus("dom_slot", "environment");
       return;
     }
     if (detail.area === "house") {
       setActiveStep3Tab("house");
-      requestFocus("dom_slot");
+      requestFocus("dom_slot", "house");
     }
   };
 
@@ -3852,7 +3854,7 @@ export default function CreateMemorialClient({
       ? markerGroups.primary
       : markerGroups.all;
     return (
-      <div className={`${overlayShellClass} ${isPortraitLayout ? "h-full min-h-0 overflow-hidden" : ""}`}>
+      <div className={`${overlayShellClass} ${isPortraitLayout ? "grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden" : ""}`}>
         <h3 className={overlaySectionTitleClass}>
           <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
           Место в мире
@@ -3882,7 +3884,7 @@ export default function CreateMemorialClient({
         <div
           className={
             isPortraitLayout
-              ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 content-start gap-3 overflow-y-auto overscroll-contain pr-1`
+              ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 content-start gap-3 overflow-y-auto overscroll-contain pb-4 pr-1`
               : "grid content-start gap-3 [@media(max-height:640px)]:gap-2"
           }
         >
@@ -4577,7 +4579,7 @@ export default function CreateMemorialClient({
     ? "px-2 py-1"
     : "border-b border-[#eadfd9] px-4 py-3";
   const markerMapHeight = isPortraitLayout
-    ? "clamp(160px, 24dvh, 230px)"
+    ? "clamp(132px, 18dvh, 190px)"
     : "clamp(170px, 32dvh, 320px)";
   const loadingMessage =
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
@@ -4687,6 +4689,15 @@ export default function CreateMemorialClient({
             {step === 0 ? (
               <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
+                {isPortraitLayout ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/")}
+                    className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+0.65rem)] z-20 -translate-x-1/2 rounded-full border-[3px] border-white bg-[#fffcf9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_12px_28px_-18px_rgba(93,64,55,0.55)] transition hover:bg-[#fff7f2]"
+                  >
+                    На главную
+                  </button>
+                ) : null}
                 <div className="relative z-10 w-full max-w-[1120px] px-1 sm:px-0">
                   <div className="relative overflow-visible rounded-[38px] border-[3px] border-white/80 bg-[#efe6e2] p-3 shadow-[0_32px_64px_rgba(89,71,65,0.2)] transition-transform duration-300 ease-out hover:scale-[1.006] sm:rounded-[46px] sm:p-4 lg:p-5">
                     <div className="pointer-events-none absolute left-1/2 top-0 hidden h-24 w-[44%] -translate-x-1/2 -translate-y-[46%] rounded-t-[140px] border border-b-0 border-white/70 bg-[#efe6e2] shadow-[0_-6px_18px_rgba(255,255,255,0.35)] md:block" />
@@ -4924,7 +4935,7 @@ export default function CreateMemorialClient({
             </div>
             </div>
 
-            {activeOverlay && !isPortraitLayout ? (
+            {activeOverlay && activeOverlay !== "details" && !isPortraitLayout ? (
               <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : activeOverlay === "soul" ? "soul" : undefined)}>
                 {renderActiveOverlayContent()}
               </div>

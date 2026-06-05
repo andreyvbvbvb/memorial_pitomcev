@@ -65,7 +65,7 @@ export default function PhotoLightbox({
       <div className="pointer-events-none absolute right-[-8rem] top-[-6rem] h-72 w-72 rounded-full bg-white/30 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-8rem] left-[-6rem] h-80 w-80 rounded-full bg-[#fdf2e9]/70 blur-[120px]" />
       <div
-        className="relative max-h-[80dvh] w-full max-w-5xl overflow-y-auto rounded-[38px] border-[8px] border-white bg-white/96 p-3 shadow-[0_40px_100px_rgba(0,0,0,0.28)] sm:rounded-[46px] sm:p-4"
+        className="relative flex max-h-[80dvh] w-full max-w-5xl flex-col overflow-hidden rounded-[30px] border-[6px] border-white bg-white/96 p-2 shadow-[0_40px_100px_rgba(0,0,0,0.28)] sm:rounded-[46px] sm:border-[8px] sm:p-4"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -77,13 +77,13 @@ export default function PhotoLightbox({
           <CloseIcon />
         </button>
 
-        <div className="rounded-[30px] bg-[#fffaf6] p-3 sm:rounded-[36px] sm:p-4">
-          <div className="overflow-hidden rounded-[24px] border-[4px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
+        <div className="flex min-h-0 flex-1 flex-col rounded-[24px] bg-[#fffaf6] p-2 sm:rounded-[36px] sm:p-4">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)] sm:rounded-[24px] sm:border-[4px]">
             {photoUrl ? (
               <img
                 src={photoUrl}
                 alt={title ?? "Фотография"}
-                className="max-h-[calc(80dvh-8.5rem)] w-full object-contain bg-[#f8f9fa]"
+                className="h-full max-h-[calc(80dvh-8rem)] w-full object-contain bg-[#f8f9fa] sm:max-h-[calc(80dvh-9rem)]"
               />
             ) : (
               <div className="py-20 text-center text-sm font-semibold text-[#8d6e63]">
@@ -92,7 +92,7 @@ export default function PhotoLightbox({
             )}
           </div>
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-2 flex shrink-0 flex-col gap-2 sm:mt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <div className="min-w-0">
               {title ? (
                 <p className="truncate text-sm font-black uppercase tracking-[0.18em] text-[#8d6e63]">
@@ -104,12 +104,12 @@ export default function PhotoLightbox({
               </p>
             </div>
 
-            <div className="flex items-center gap-3 sm:justify-end">
+            <div className="flex items-center gap-2 sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={onPrev}
                 disabled={!canNavigate}
-                className={`inline-flex items-center gap-2 rounded-[22px] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all ${
+                className={`inline-flex items-center gap-2 rounded-[18px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-all sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-[11px] sm:tracking-[0.18em] ${
                   canNavigate
                     ? "border-[3px] border-white bg-white text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] hover:bg-[#fff7f1]"
                     : "cursor-not-allowed border-[3px] border-white bg-white/70 text-[#d2b7aa] shadow-none"
@@ -122,7 +122,7 @@ export default function PhotoLightbox({
                 type="button"
                 onClick={onNext}
                 disabled={!canNavigate}
-                className={`inline-flex items-center gap-2 rounded-[22px] px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] transition-all ${
+                className={`inline-flex items-center gap-2 rounded-[18px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-all sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-[11px] sm:tracking-[0.18em] ${
                   canNavigate
                     ? "bg-[#548ca8] text-white shadow-[0_6px_0_0_#3d667a] hover:bg-[#4b7f99] active:translate-y-[3px] active:shadow-none"
                     : "cursor-not-allowed bg-[#b9ced9] text-white/80 shadow-none"
