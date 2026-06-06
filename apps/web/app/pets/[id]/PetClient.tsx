@@ -1177,9 +1177,22 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setSelectedDuration(null);
   };
 
-  const toggleGiftPanel = () => setGiftPanelOpen((prev) => !prev);
+  const toggleGiftPanel = () =>
+    setGiftPanelOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setActivePanel(null);
+      }
+      return next;
+    });
   const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials" | "manage") =>
-    setActivePanel((prev) => (prev === panel ? null : panel));
+    setActivePanel((prev) => {
+      const next = prev === panel ? null : panel;
+      if (next) {
+        setGiftPanelOpen(false);
+      }
+      return next;
+    });
   const openEditDialog = () => {
     setAppearanceError(null);
     setAppearanceReviewOpen(false);
@@ -2296,7 +2309,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-[3%] right-[3%] top-[calc(29dvh+0.25rem)] bottom-[calc(7.8rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
+    ? `fixed left-[3%] right-[3%] top-[calc(29dvh+0.25rem)] bottom-[calc(5.55rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
@@ -2319,7 +2332,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "flex shrink-0 flex-col gap-0.5 text-[11px] font-semibold text-[#6f6360]"
     : "flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
   const giftCatalogGridClass = isPortraitLayout
-    ? "grid h-[clamp(96px,14dvh,124px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(50px,6.4dvh,62px)] content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
+    ? "grid h-[clamp(112px,16dvh,140px)] min-h-0 shrink-0 grid-cols-4 auto-rows-[clamp(54px,7dvh,66px)] content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
     `relative flex w-full items-center justify-center overflow-visible border transition ${
@@ -2967,6 +2980,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     </button>
                   </div>
                   <div className={giftFlowClass}>
+                    {!isPortraitLayout ? (
                     <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
                       <label className="flex items-center gap-2 text-sm font-semibold text-[#6f6360]">
                         <input
@@ -2982,6 +2996,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
                       ) : null}
                     </div>
+                    ) : highlightSlots.length === 0 ? (
+                      <p className="text-[11px] font-semibold text-[#8d6e63]">Свободных мест нет.</p>
+                    ) : null}
 
                     <div className={giftCatalogSectionClass}>
                       <span>Подарок</span>

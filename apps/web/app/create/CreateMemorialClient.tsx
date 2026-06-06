@@ -3942,7 +3942,7 @@ export default function CreateMemorialClient({
             )}
           </div>
 
-          <div className="grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2">
+          <div className={isPortraitLayout ? "hidden" : "grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2"}>
             <div className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1"}>
               <label className="grid gap-2">
                 <span className={overlayLabelClass}>Широта</span>
@@ -4093,6 +4093,83 @@ export default function CreateMemorialClient({
       </div>
     );
   };
+
+  const renderFloatingMapControls = () => (
+    <div className="pointer-events-auto absolute bottom-[calc(49dvh+0.55rem)] right-2 z-[75] w-[min(17rem,calc(100vw-4rem))] rounded-[22px] border-[3px] border-white bg-[#fffcf9]/95 p-2 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.5)] backdrop-blur">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1">
+          <span className="text-[8px] font-black uppercase tracking-[0.14em] text-[#c2a79a]">
+            Широта
+          </span>
+          <input
+            inputMode="decimal"
+            className="min-w-0 rounded-[14px] border-2 border-white bg-[#f7f1ee] px-2 py-1.5 text-[16px] font-bold text-[#6f6360] outline-none"
+            placeholder="55.755826"
+            value={form.lat}
+            onChange={(event) => handleChange("lat", event.target.value)}
+          />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-[8px] font-black uppercase tracking-[0.14em] text-[#c2a79a]">
+            Долгота
+          </span>
+          <input
+            inputMode="decimal"
+            className="min-w-0 rounded-[14px] border-2 border-white bg-[#f7f1ee] px-2 py-1.5 text-[16px] font-bold text-[#6f6360] outline-none"
+            placeholder="37.617299"
+            value={form.lng}
+            onChange={(event) => handleChange("lng", event.target.value)}
+          />
+        </label>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            if (!navigator.geolocation) {
+              setError("Геолокация не поддерживается в этом браузере");
+              return;
+            }
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                setForm((prev) => ({
+                  ...prev,
+                  lat: pos.coords.latitude.toFixed(6),
+                  lng: pos.coords.longitude.toFixed(6)
+                }));
+              },
+              () => setError("Не удалось получить геолокацию")
+            );
+          }}
+          className="rounded-xl border border-[#eadfd9] bg-white px-2 py-1 text-[9px] font-bold text-[#6f6360]"
+        >
+          Моё место
+        </button>
+        <button
+          type="button"
+          onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
+          className="rounded-xl border border-[#eadfd9] bg-white px-2 py-1 text-[9px] font-bold text-[#6f6360]"
+        >
+          Очистить
+        </button>
+      </div>
+      <label className="group relative mt-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.08em] text-[#6f6360]">
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5"
+          checked={form.isPublic}
+          onChange={(event) => handleChange("isPublic", event.target.checked)}
+        />
+        Публичный
+        <span className="grid h-5 w-5 place-items-center rounded-full border border-white bg-[#f7f1ee] text-[10px] font-black text-[#8d6e63]">
+          ?
+        </span>
+        <span className="pointer-events-none fixed left-4 right-4 top-[calc(3.75rem+env(safe-area-inset-top))] z-[2200] rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-semibold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          Кликни на карте, чтобы выбрать точку. Публичный мемориал виден на карте всем пользователям, приватные доступны только по ссылке.
+        </span>
+      </label>
+    </div>
+  );
 
   const renderStoryPanel = () => (
     <div className={overlayShellClass}>
@@ -4538,7 +4615,7 @@ export default function CreateMemorialClient({
     : "absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[13px] font-bold text-white shadow";
   const builderEditorPanelClass = `pointer-events-auto ${
     isPortraitLayout
-      ? "absolute left-0 right-0 bottom-0 z-[20] flex h-[44dvh] flex-col bg-[#f7f1ee]"
+      ? "absolute left-0 right-0 bottom-0 z-[20] flex h-[49dvh] flex-col bg-[#f7f1ee]"
       : `absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] z-[20] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`
   }`;
   const builderOverlayButtonsWrapClass = isPortraitLayout
@@ -4570,7 +4647,7 @@ export default function CreateMemorialClient({
   const builderActionTooltipClass =
     hudTooltipClass("action");
   const builderSceneFrameClass = isPortraitLayout
-    ? "fixed left-0 right-0 top-0 z-0 h-[56dvh] overflow-hidden"
+    ? "fixed left-0 right-0 top-0 z-0 h-[51dvh] overflow-hidden"
     : "fixed inset-0 z-0";
   const builderPanelInnerClass = isPortraitLayout
     ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f7f1ee]"
@@ -4687,13 +4764,19 @@ export default function CreateMemorialClient({
         <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
           <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-[#f6efea]/82 p-5"}>
             {step === 0 ? (
-              <div className="relative box-border flex min-h-[100dvh] items-center justify-center overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 pt-[calc(var(--app-header-height,56px)+0.8rem)] sm:px-4">
+              <div
+                className={`relative box-border flex min-h-[100dvh] overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 sm:px-4 ${
+                  isPortraitLayout
+                    ? "flex-col items-center justify-start gap-3 pt-[calc(env(safe-area-inset-top)+0.75rem)]"
+                    : "items-center justify-center pt-[calc(var(--app-header-height,56px)+0.8rem)]"
+                }`}
+              >
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.3),transparent_35%,rgba(214,190,176,0.18)_100%)]" />
                 {isPortraitLayout ? (
                   <button
                     type="button"
                     onClick={() => router.push("/")}
-                    className="absolute left-1/2 top-[calc(env(safe-area-inset-top)+0.65rem)] z-20 -translate-x-1/2 rounded-full border-[3px] border-white bg-[#fffcf9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_12px_28px_-18px_rgba(93,64,55,0.55)] transition hover:bg-[#fff7f2]"
+                    className="relative z-20 shrink-0 rounded-full border-[3px] border-white bg-[#fffcf9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_12px_28px_-18px_rgba(93,64,55,0.55)] transition hover:bg-[#fff7f2]"
                   >
                     На главную
                   </button>
@@ -4746,7 +4829,7 @@ export default function CreateMemorialClient({
                 houseUrl={houseUrl}
                 houseId={housePreviewId}
                 suppressLoadingOverlay
-                cameraPosition={[8, 5, 8]}
+                cameraPosition={isPortraitLayout ? [10, 6, 10] : [8, 5, 8]}
                 houseOffsetX={previewHousePlacement.x}
                 houseOffsetZ={previewHousePlacement.z}
                 houseRotationY={previewHousePlacement.rotY}
@@ -4797,6 +4880,9 @@ export default function CreateMemorialClient({
             </div>
           ) : (
           <div className="pointer-events-none fixed inset-0 z-10">
+            {isPortraitLayout && activeOverlay === "marker" && markerPanelTab === "map"
+              ? renderFloatingMapControls()
+              : null}
 
             <div className={builderEditorPanelClass}>
               <div className={builderPanelInnerClass}>

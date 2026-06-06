@@ -234,8 +234,12 @@ export default function MenuClient() {
     <main className="min-h-[100dvh] bg-[#f7f1ee] px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4 text-[#5d4037] sm:px-6 sm:pt-8">
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <div className="rounded-[28px] border-[3px] border-white bg-[#fffcf9] px-4 py-4 shadow-[0_20px_44px_-32px_rgba(93,64,55,0.55)] sm:px-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">МяуГав</p>
-          <h1 className="mt-1 text-3xl font-black leading-none text-[#5d4037]">Меню</h1>
+          <Link
+            href="/"
+            className="inline-flex text-3xl font-black uppercase leading-none tracking-[0.02em] text-[#5d4037] transition hover:text-[#8d6e63]"
+          >
+            МЯУГАВ
+          </Link>
           <p className="mt-2 text-sm font-semibold leading-snug text-[#8d6e63]">
             Быстрый доступ к основным разделам сервиса.
           </p>
