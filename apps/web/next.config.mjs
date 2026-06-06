@@ -1,4 +1,4 @@
-const internalApiUrl = process.env.INTERNAL_API_URL ?? "http://api:3001";
+const internalApiUrl = process.env.INTERNAL_API_URL?.trim() || "http://api:3001";
 
 const nextConfig = {
   reactStrictMode: true,

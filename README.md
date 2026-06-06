@@ -24,6 +24,19 @@ Create `.env` in `apps/api`:
 DATABASE_URL="postgresql://memorial:memorial_password@localhost:5433/memorial_dev?schema=public"
 ```
 
+## Production domain
+Primary public domain: `https://мяугав.com`.
+
+Use the ASCII/punycode form in server env values when a platform does not handle IDN domains reliably:
+`https://xn--80aeb9a9a9d.com`.
+
+Recommended production values when web and API are served through the same domain:
+```
+FRONTEND_URL=https://xn--80aeb9a9a9d.com
+NEXT_PUBLIC_API_URL=/api
+INTERNAL_API_URL=http://api:3001
+```
+
 ## Apps
 - `apps/web` - Next.js frontend
 - `apps/api` - NestJS backend

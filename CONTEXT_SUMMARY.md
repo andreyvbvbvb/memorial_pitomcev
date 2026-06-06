@@ -45,6 +45,9 @@
   - `apps/api` — NestJS + Prisma + PostgreSQL.
   - `packages` — общие модули, используется минимально.
 - **Деплой**: Timeweb Apps через Docker Compose, сервисы `web` и `api`.
+- **Основной публичный домен**: `https://мяугав.com`.
+  - ASCII/punycode форма для server env и Docker/Timeweb: `https://xn--80aeb9a9a9d.com`.
+  - При общем домене web+api фронт должен ходить на API через `NEXT_PUBLIC_API_URL=/api`, а Next proxy прокидывает `/api/*` во внутренний `INTERNAL_API_URL=http://api:3001`.
 - **Локально**: web `3002`, api `3001`.
 - **Хранилище**: Timeweb Object Storage / S3-compatible.
 - **3D**: React Three Fiber + drei + three, Draco decoder лежит локально в `apps/web/public/draco`, без зависимости от внешнего CDN.
@@ -502,17 +505,24 @@
 - `JWT_SECRET`
 - `JWT_EXPIRES`
 - `FRONTEND_URL`
+  - production default: `https://xn--80aeb9a9a9d.com`
+  - человекочитаемый домен: `https://мяугав.com`
 - `S3_*`
 - `SMTP_*`
 - `MAINTENANCE_INTERVAL_MS` — опционально, интервал фоновой деактивации истекших мемориалов/подарков.
 
 ### WEB
 - `NEXT_PUBLIC_API_URL`
+  - production default для одного домена: `/api`
+  - локально обычно `http://localhost:3001`
 - `INTERNAL_API_URL`
+  - production default: `http://api:3001`
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
 
 ## 24) Частые проблемы
 - Timeweb: env нужны и для build, и для runtime.
+- Если Timeweb подставляет unset env как пустые строки, код web теперь трактует пустой `NEXT_PUBLIC_API_URL` как отсутствующий и в production падает обратно на `/api`; `next.config.mjs` так же fallback-ит пустой `INTERNAL_API_URL` на `http://api:3001`.
+- Для кириллического IDN в backend/server env лучше использовать punycode `xn--80aeb9a9a9d.com`, потому что часть платформ сериализует origin именно в ASCII-форме.
 - Prisma migrations применяются через существующий deploy/build flow; если миграция уже применена, нужен мягкий fallback.
 - После изменения Prisma schema локально нужно запускать `pnpm --filter @memorial/api prisma:generate`, иначе API build может не увидеть новые модели.
 - Новая миграция wallet/news/documents: `apps/api/prisma/migrations/20260531090000_add_wallet_news_documents/migration.sql`.
@@ -577,4 +587,4 @@
   - `apps/web/scripts/generate-models.mjs`
 
 ---
-Обновлено: 2026-05-31.
+Обновлено: 2026-06-06.
