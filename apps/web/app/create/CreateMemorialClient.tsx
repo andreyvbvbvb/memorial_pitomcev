@@ -3682,7 +3682,7 @@ export default function CreateMemorialClient({
       : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
-      ? "grid gap-2 bg-[#f7f1ee] p-1"
+      ? "grid h-full min-h-0 gap-2 overflow-hidden bg-[#f7f1ee] p-1"
       : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
@@ -3884,21 +3884,21 @@ export default function CreateMemorialClient({
         <div
           className={
             isPortraitLayout
-              ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 content-start gap-3 overflow-y-auto overscroll-contain pb-4 pr-1`
+              ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 grid-rows-[minmax(0,1fr)] gap-2 overflow-hidden`
               : "grid content-start gap-3 [@media(max-height:640px)]:gap-2"
           }
         >
-          <div className="overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2">
+          <div className={`${isPortraitLayout ? "h-full min-h-0" : ""} overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2`}>
             {!apiKey ? (
-              <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]">
+              <div className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]`}>
                 Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
               </div>
             ) : loadError ? (
-              <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-red-600">
+              <div className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-red-600`}>
                 Ошибка загрузки карты
               </div>
             ) : !isLoaded ? (
-              <div className="flex min-h-[220px] items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]">
+              <div className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]`}>
                 Загрузка карты...
               </div>
             ) : (
@@ -4656,7 +4656,7 @@ export default function CreateMemorialClient({
     ? "px-2 py-1"
     : "border-b border-[#eadfd9] px-4 py-3";
   const markerMapHeight = isPortraitLayout
-    ? "clamp(132px, 18dvh, 190px)"
+    ? "100%"
     : "clamp(170px, 32dvh, 320px)";
   const loadingMessage =
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
