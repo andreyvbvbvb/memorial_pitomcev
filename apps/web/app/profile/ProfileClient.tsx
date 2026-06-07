@@ -343,9 +343,9 @@ export default function ProfileClient() {
               })}
             </div>
 
-            <div className="mt-5 min-h-[30rem] rounded-[30px] border-[3px] border-white bg-[#fffcf9]/86 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_28px_-24px_rgba(93,64,55,0.45)] sm:p-5">
+            <div className="mt-5 h-[min(70dvh,38rem)] overflow-hidden rounded-[30px] border-[3px] border-white bg-[#fffcf9]/86 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_28px_-24px_rgba(93,64,55,0.45)] sm:p-5">
               {activeProfileTab === "profile" ? (
-                <div className="relative">
+                <div className="relative h-full overflow-y-auto pr-1">
                   <span className="absolute right-0 top-0">
                     <HelpHint text="Здесь можно изменить логин, email и пароль аккаунта." />
                   </span>
@@ -475,7 +475,7 @@ export default function ProfileClient() {
               ) : null}
 
               {activeProfileTab === "balance" ? (
-                <div>
+                <div className="h-full overflow-y-auto pr-1">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
@@ -530,7 +530,7 @@ export default function ProfileClient() {
               ) : null}
 
               {activeProfileTab === "gifts" ? (
-                <div>
+                <div className="h-full overflow-y-auto pr-1">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
