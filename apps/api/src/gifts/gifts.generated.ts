@@ -38,6 +38,12 @@ export const generatedGifts = [
     "modelUrl": "/models/gifts/candle/candle_12.glb"
   },
   {
+    "code": "candle_13",
+    "name": "Свеча 13",
+    "price": 50,
+    "modelUrl": "/models/gifts/candle/candle_13.glb"
+  },
+  {
     "code": "candle_2",
     "name": "Свеча 2",
     "price": 30,
