@@ -2157,7 +2157,7 @@ export default function MemorialPreview({
       ) : null}
       <Canvas
         key={canvasKey}
-        dpr={1}
+        dpr={[1, 2]}
         camera={{ position: cameraPosition, fov: 45 }}
         gl={preserveDrawingBuffer ? { preserveDrawingBuffer: true } : undefined}
         onCreated={({ gl }) => {

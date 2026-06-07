@@ -1319,7 +1319,7 @@ function CarouselScene({
     <div className="relative h-full w-full">
       <Canvas
         className="h-full w-full"
-        dpr={1}
+        dpr={[1, 2]}
         camera={{ position: initialCameraPosition, fov: 45 }}
         onCreated={({ camera }) => {
           applyCarouselCamera(camera, items.length, activeIndex, cameraSettings);

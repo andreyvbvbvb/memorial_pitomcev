@@ -1206,7 +1206,7 @@ export function PetSoulPreview({
   return (
     <div className={`relative overflow-hidden rounded-[22px] bg-[#eef8ff] ${className ?? ""}`}>
       <Canvas
-        dpr={1}
+        dpr={[1, 2]}
         camera={{ position: [0, 0.35, 3.2], fov: 42 }}
         onCreated={() => {
           requestAnimationFrame(() => onReady?.());

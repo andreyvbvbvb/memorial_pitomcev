@@ -809,7 +809,7 @@ export default function MyPets3DView({
       <div className={canvasFrameClass}>
         <Canvas
           className="h-full w-full"
-          dpr={1}
+          dpr={[1, 2]}
           camera={{ position: [DEFAULT_CAMERA.x, DEFAULT_CAMERA.y, DEFAULT_CAMERA.z], fov: 45 }}
         >
           <SkyBackground />
