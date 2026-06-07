@@ -313,7 +313,7 @@ export default function ProfileClient() {
       <div className="relative z-10 mx-auto w-full max-w-4xl -translate-y-[calc(var(--app-header-height,56px)/2)]">
         <section className={authCardClass}>
           <div className={`${authInnerShellClass} relative overflow-visible`}>
-            <div className="flex gap-1 overflow-x-auto rounded-[28px] border-[3px] border-white bg-[#efe6e2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+            <div className="flex gap-1 overflow-x-auto rounded-[22px] border-2 border-white bg-[#fffcf9] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
               {profileTabs.map((tab) => {
                 const isActive = activeProfileTab === tab.id;
                 return (
@@ -321,18 +321,18 @@ export default function ProfileClient() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveProfileTab(tab.id)}
-                    className={`min-w-[7rem] flex-1 rounded-[22px] px-3 py-3 text-left transition ${
+                    className={`min-w-[6.2rem] flex-1 rounded-[17px] px-2.5 py-2 text-left transition ${
                       isActive
-                        ? "bg-[#111827] text-white shadow-[0_4px_0_0_#000]"
-                        : "bg-[#fffcf9] text-[#8d6e63] hover:bg-white"
+                        ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                        : "bg-[#f7f1ee] text-[#8d6e63] hover:bg-white"
                     }`}
                     aria-selected={isActive}
                   >
-                    <span className="block text-[11px] font-black uppercase tracking-[0.14em]">
+                    <span className="block text-[10px] font-black uppercase tracking-[0.12em]">
                       {tab.label}
                     </span>
                     <span
-                      className={`mt-1 block truncate text-[10px] font-black uppercase tracking-[0.1em] ${
+                      className={`mt-0.5 block truncate text-[9px] font-black uppercase tracking-[0.08em] ${
                         isActive ? "text-white/70" : "text-[#c2a79a]"
                       }`}
                     >

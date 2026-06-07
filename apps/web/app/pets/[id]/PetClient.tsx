@@ -3075,7 +3075,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </div>
                     ) : null}
 
-                    <div className={isPortraitLayout ? "grid grid-cols-[minmax(0,1fr)_minmax(6.8rem,0.9fr)] items-end gap-2" : "grid gap-2"}>
+                    <div className={isPortraitLayout ? "grid grid-cols-[minmax(0,1fr)_minmax(7.35rem,0.9fr)] items-end gap-2" : "grid gap-2"}>
                       <div className={isPortraitLayout ? "grid gap-1 text-xs font-semibold text-[#6f6360]" : "grid gap-2 text-sm font-semibold text-[#6f6360]"}>
                         Срок подарка
                         <div className="grid gap-1.5">
@@ -3109,13 +3109,21 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           selectedGiftId && selectedSlot && selectedDuration && !giftLoading
                             ? primaryActionClass
                             : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
-                        } ${isPortraitLayout ? "!min-h-[2.7rem] !px-2 !py-1.5 !text-[9px] !leading-tight" : "px-4 py-3"}`}
+                        } ${isPortraitLayout ? "!min-h-[2.55rem] !px-2 !py-1 !text-[8.5px] !leading-[1.05]" : "px-4 py-3"}`}
                         disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                       >
                         {giftLoading
                           ? "Покупка..."
                           : selectedGift && totalPrice !== null
-                            ? `Подарить (${totalPrice} монет)`
+                            ? isPortraitLayout
+                              ? (
+                                <>
+                                  Подарить
+                                  <br />
+                                  {totalPrice} монет
+                                </>
+                              )
+                              : `Подарить (${totalPrice} монет)`
                             : "Подарить"}
                       </button>
                     </div>

@@ -242,9 +242,6 @@ export default function MenuClient() {
           >
             МЯУГАВ
           </Link>
-          <p className="mt-2 text-sm font-semibold leading-snug text-[#8d6e63]">
-            Быстрый доступ к основным разделам сервиса.
-          </p>
         </div>
 
         {authChecked && user ? (

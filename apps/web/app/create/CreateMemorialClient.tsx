@@ -3684,7 +3684,7 @@ export default function CreateMemorialClient({
       : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
-      ? "grid h-full min-h-0 gap-1.5 overflow-hidden bg-[#f7f1ee] p-1"
+      ? "flex h-full min-h-0 flex-col gap-1.5 overflow-hidden bg-[#f7f1ee] p-1"
       : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
@@ -3828,7 +3828,9 @@ export default function CreateMemorialClient({
       className={
         centered
           ? "relative grid h-full min-h-[360px] w-full grid-rows-[auto_1fr_auto_1fr_auto_1fr_auto] text-center"
-          : "grid gap-4"
+          : isPortraitLayout
+            ? "grid content-start gap-2.5"
+            : "grid gap-4"
       }
     >
       {renderNameField(centered)}
@@ -3856,7 +3858,7 @@ export default function CreateMemorialClient({
       ? markerGroups.primary
       : markerGroups.all;
     return (
-      <div className={`${overlayShellClass} ${isPortraitLayout ? "grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden" : ""}`}>
+      <div className={`${overlayShellClass} ${isPortraitLayout ? "!grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden" : ""}`}>
         <h3 className={overlaySectionTitleClass}>
           <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
           Место в мире
@@ -4063,7 +4065,7 @@ export default function CreateMemorialClient({
               <p className="text-[10px] uppercase tracking-[0.2em] text-[#c2a79a]">
                 Маркеры выбранного вида
               </p>
-              <div className={isPortraitLayout ? "grid min-h-0 flex-1 grid-cols-3 content-start gap-1 overflow-y-auto overscroll-contain pr-1" : "flex w-full flex-wrap gap-1 [@media(max-height:640px)]:max-h-32 [@media(max-height:640px)]:overflow-y-auto"}>
+              <div className={isPortraitLayout ? "grid min-h-0 flex-1 grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] content-start gap-1 overflow-y-auto overscroll-contain pr-1" : "flex w-full flex-wrap gap-1 [@media(max-height:640px)]:max-h-32 [@media(max-height:640px)]:overflow-y-auto"}>
                 {markerDisplay.map((marker) => {
                   const markerName = markerStyleById(marker.baseId).name;
                   return (
@@ -4077,7 +4079,7 @@ export default function CreateMemorialClient({
                           : "border-[#eadfd9] bg-white text-[#6f6360]"
                       }`}
                     >
-                      <span className="h-14 w-14 overflow-hidden rounded-lg bg-[#f7f1ee] [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10">
+                      <span className={isPortraitLayout ? "h-12 w-12 overflow-hidden rounded-lg bg-[#f7f1ee] min-[390px]:h-14 min-[390px]:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10" : "h-14 w-14 overflow-hidden rounded-lg bg-[#f7f1ee] [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10"}>
                         <img
                           src={marker.iconUrl}
                           alt={markerName}
@@ -4525,7 +4527,7 @@ export default function CreateMemorialClient({
           text="Цвет души меняет ядро и мягкое свечение вокруг него."
         />
       </h3>
-      <div className="grid gap-4">
+      <div className={isPortraitLayout ? "grid content-start gap-2.5 overflow-y-auto overscroll-contain pr-1" : "grid gap-4"}>
         {renderSoulColorControls(true)}
         {renderSoulPathCalibrationPanel()}
       </div>
