@@ -3077,7 +3077,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </div>
                     ) : null}
 
-                    <div className={isPortraitLayout ? "grid grid-cols-[minmax(0,1fr)_minmax(7.35rem,0.9fr)] items-end gap-2" : "grid gap-2"}>
+                    <div className={isPortraitLayout ? "grid grid-cols-[minmax(0,1fr)_minmax(7.35rem,0.9fr)] items-center gap-2 pb-1 pt-0.5" : "grid gap-2"}>
                       <div className={isPortraitLayout ? "grid gap-1 text-xs font-semibold text-[#6f6360]" : "grid gap-2 text-sm font-semibold text-[#6f6360]"}>
                         Срок подарка
                         <div className="grid gap-1.5">
@@ -3111,7 +3111,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           selectedGiftId && selectedSlot && selectedDuration && !giftLoading
                             ? primaryActionClass
                             : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
-                        } ${isPortraitLayout ? "flex !min-h-[2.55rem] flex-col items-center justify-center !px-2 !py-1 text-center !text-[10px] !font-black !leading-[1.05] !tracking-[0.045em]" : "px-4 py-3"}`}
+                        } ${isPortraitLayout ? "flex !min-h-[2.4rem] self-center flex-col items-center justify-center !px-2 !py-1 text-center !text-[10px] !font-black !leading-[1.05] !tracking-[0.045em]" : "px-4 py-3"}`}
                         disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                       >
                         {giftLoading

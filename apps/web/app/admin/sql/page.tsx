@@ -103,6 +103,48 @@ const FONT_PREVIEW_OPTIONS = [
     note: "Компактный webfont с выраженными формами. Удобен для кнопок и коротких заголовков."
   },
   {
+    id: "roboto-condensed",
+    label: "Roboto Condensed",
+    badge: "Сжатый",
+    family: "var(--font-roboto-condensed)",
+    note: "Самый близкий к Roboto вариант, но уже по ширине. Подходит, когда нужно больше текста в кнопках и панелях."
+  },
+  {
+    id: "noto-sans",
+    label: "Noto Sans",
+    badge: "Надёжный",
+    family: "var(--font-noto-sans)",
+    note: "Нейтральный мягкий гротеск с сильной поддержкой кириллицы. Хороший вариант для стабильного вида на всех платформах."
+  },
+  {
+    id: "pt-sans-narrow",
+    label: "PT Sans Narrow",
+    badge: "Узкий",
+    family: "var(--font-pt-sans-narrow)",
+    note: "Сжатый кириллический webfont. Может быть полезен для компактных кнопок, но крупные заголовки лучше проверять отдельно."
+  },
+  {
+    id: "source-sans",
+    label: "Source Sans 3",
+    badge: "Мягкий",
+    family: "var(--font-source-sans)",
+    note: "Мягкий интерфейсный шрифт с хорошей читаемостью. Менее плотный, чем Roboto Condensed, но спокойнее визуально."
+  },
+  {
+    id: "onest",
+    label: "Onest",
+    badge: "Современный",
+    family: "var(--font-onest)",
+    note: "Современный кириллический webfont: компактный, но не слишком жёсткий. Хорошо подходит для мобильного UI."
+  },
+  {
+    id: "commissioner",
+    label: "Commissioner",
+    badge: "Гибкий",
+    family: "var(--font-commissioner)",
+    note: "Плотный и аккуратный гротеск с мягкими формами. Хорош для интерфейса, где нужно сохранить дружелюбный тон."
+  },
+  {
     id: "system",
     label: "Системный стек",
     badge: "Сравнение",

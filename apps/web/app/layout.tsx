@@ -1,6 +1,18 @@
 import "./globals.css";
 import type { ReactNode } from "react";
-import { Inter, Manrope, Nunito_Sans, Roboto, Rubik } from "next/font/google";
+import {
+  Commissioner,
+  Inter,
+  Manrope,
+  Noto_Sans,
+  Nunito_Sans,
+  Onest,
+  PT_Sans_Narrow,
+  Roboto,
+  Roboto_Condensed,
+  Rubik,
+  Source_Sans_3
+} from "next/font/google";
 import AppHeader from "../components/AppHeader";
 
 const inter = Inter({
@@ -34,6 +46,43 @@ const rubik = Rubik({
   variable: "--font-rubik"
 });
 
+const robotoCondensed = Roboto_Condensed({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-roboto-condensed"
+});
+
+const notoSans = Noto_Sans({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-noto-sans"
+});
+
+const ptSansNarrow = PT_Sans_Narrow({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-pt-sans-narrow"
+});
+
+const sourceSans = Source_Sans_3({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-source-sans"
+});
+
+const onest = Onest({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-onest"
+});
+
+const commissioner = Commissioner({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-commissioner"
+});
+
 export const metadata = {
   title: "МяуГав",
   description: "Create pet memorials and place them on a map."
@@ -42,7 +91,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
-      <body className={`${inter.variable} ${manrope.variable} ${roboto.variable} ${nunitoSans.variable} ${rubik.variable}`}>
+      <body
+        className={`${inter.variable} ${manrope.variable} ${roboto.variable} ${nunitoSans.variable} ${rubik.variable} ${robotoCondensed.variable} ${notoSans.variable} ${ptSansNarrow.variable} ${sourceSans.variable} ${onest.variable} ${commissioner.variable}`}
+      >
         <AppHeader />
         {children}
       </body>
