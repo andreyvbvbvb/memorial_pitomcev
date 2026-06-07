@@ -3111,7 +3111,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           selectedGiftId && selectedSlot && selectedDuration && !giftLoading
                             ? primaryActionClass
                             : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
-                        } ${isPortraitLayout ? "!min-h-[2.55rem] !px-2 !py-1 !text-[8.5px] !leading-[1.05]" : "px-4 py-3"}`}
+                        } ${isPortraitLayout ? "flex !min-h-[2.55rem] flex-col items-center justify-center !px-2 !py-1 text-center !text-[10px] !font-black !leading-[1.05] !tracking-[0.045em]" : "px-4 py-3"}`}
                         disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                       >
                         {giftLoading
@@ -3120,9 +3120,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             ? isPortraitLayout
                               ? (
                                 <>
-                                  Подарить
-                                  <br />
-                                  {totalPrice} монет
+                                  <span>Подарить</span>
+                                  <span className="mt-0.5">{totalPrice} монет</span>
                                 </>
                               )
                               : `Подарить (${totalPrice} монет)`

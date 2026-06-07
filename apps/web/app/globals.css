@@ -23,6 +23,15 @@ body {
   color: var(--text);
   font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-body), system-ui, sans-serif;
 }
 
 @media (max-width: 1024px) and (orientation: portrait) {

@@ -66,6 +66,53 @@ const SYNTHETIC_SCENARIOS = [
   { id: "edit", label: "Редактирование", weight: 5 }
 ] as const;
 
+const FONT_PREVIEW_OPTIONS = [
+  {
+    id: "inter",
+    label: "Inter",
+    badge: "Текущий",
+    family: "var(--font-ui)",
+    note: "Основной шрифт сайта. Загружается как webfont через Next и должен выглядеть одинаково на iOS и Android."
+  },
+  {
+    id: "manrope",
+    label: "Manrope",
+    badge: "Webfont",
+    family: "var(--font-manrope)",
+    note: "Более мягкий и широкий гротеск, хорошо подходит для интерфейсов и крупной кириллицы."
+  },
+  {
+    id: "roboto",
+    label: "Roboto",
+    badge: "Android-like",
+    family: "var(--font-roboto)",
+    note: "Похож на стандартный Android-шрифт, но здесь загружается как webfont и одинаково работает на всех устройствах."
+  },
+  {
+    id: "nunito",
+    label: "Nunito Sans",
+    badge: "Мягкий",
+    family: "var(--font-nunito)",
+    note: "Более дружелюбный округлый вариант. Может лучше смотреться в карточках и подсказках."
+  },
+  {
+    id: "rubik",
+    label: "Rubik",
+    badge: "Плотный",
+    family: "var(--font-rubik)",
+    note: "Компактный webfont с выраженными формами. Удобен для кнопок и коротких заголовков."
+  },
+  {
+    id: "system",
+    label: "Системный стек",
+    badge: "Сравнение",
+    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    note: "Только для сравнения: на iPhone будет ближе к San Francisco, на Android — к Roboto, поэтому вид отличается."
+  }
+] as const;
+
+type FontPreviewId = (typeof FONT_PREVIEW_OPTIONS)[number]["id"];
+
 type SqlResult = {
   type: "select" | "delete" | "update";
   rowCount?: number;
@@ -407,6 +454,7 @@ export default function AdminSqlPage() {
   const [syntheticError, setSyntheticError] = useState<string | null>(null);
   const [syntheticProgress, setSyntheticProgress] = useState<SyntheticRunProgress | null>(null);
   const [syntheticSummary, setSyntheticSummary] = useState<SyntheticRunSummary | null>(null);
+  const [fontPreviewId, setFontPreviewId] = useState<FontPreviewId>("inter");
 
   useEffect(() => {
     let isMounted = true;
@@ -1687,6 +1735,9 @@ export default function AdminSqlPage() {
         return haystack.includes(normalizedGiftPriceFilter);
       })
     : giftPrices;
+  const selectedFontPreview =
+    FONT_PREVIEW_OPTIONS.find((option) => option.id === fontPreviewId) ??
+    FONT_PREVIEW_OPTIONS[0];
 
   let content: ReactNode = null;
   if (!authChecked) {
@@ -1966,6 +2017,65 @@ export default function AdminSqlPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Шрифты интерфейса
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Сейчас сайт использует Inter как webfont. Варианты ниже загружаются приложением, поэтому не зависят от шрифтов iPhone или Android. Системный стек оставлен только для сравнения.
+            </p>
+            <div className="mt-3 grid gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                {FONT_PREVIEW_OPTIONS.map((option) => {
+                  const isActive = selectedFontPreview.id === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setFontPreviewId(option.id)}
+                      className={`rounded-lg border px-3 py-2 text-left transition ${
+                        isActive
+                          ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      }`}
+                      style={{ fontFamily: option.family }}
+                    >
+                      <span className="block text-sm font-black">{option.label}</span>
+                      <span className="mt-1 inline-flex rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-slate-500">
+                        {option.badge}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div
+                className="rounded-xl border border-white bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
+                style={{ fontFamily: selectedFontPreview.family }}
+              >
+                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
+                  Пример выбранного шрифта
+                </div>
+                <div className="mt-2 text-2xl font-black leading-tight text-[#5d4037]">
+                  МЯУГАВ создаёт тёплые 3D‑мемориалы
+                </div>
+                <p className="mt-2 text-sm font-semibold leading-snug text-[#8d6e63]">
+                  Барсик, 2014 — 2026. Создавайте памятные страницы, дарите подарки и отмечайте питомцев на карте.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-[#111827] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-white">
+                    + создать
+                  </span>
+                  <span className="rounded-full border border-[#eadfd9] bg-[#fffcf9] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#8d6e63]">
+                    открыть мемориал
+                  </span>
+                </div>
+                <p className="mt-3 text-[11px] font-semibold leading-snug text-slate-500">
+                  {selectedFontPreview.note}
+                </p>
               </div>
             </div>
           </div>
