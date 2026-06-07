@@ -51,6 +51,7 @@ import {
   type DirtSlotPlacement
 } from "../../lib/dirt-models";
 import DirtSlotAttachments from "../../components/DirtSlotAttachments";
+import GiftFlames from "../../components/GiftFlames";
 import TunedSkyDome from "../../components/TunedSkyDome";
 
 ensureDracoLoader();
@@ -532,7 +533,7 @@ function GiftInstance({
     };
   }, [terrain, slot, gift]);
 
-  return null;
+  return <GiftFlames root={gift} />;
 }
 
 function SoulAnchor({

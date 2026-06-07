@@ -7,6 +7,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { ensureDracoLoader } from "../../lib/draco";
 import type { DirtSlotPlacement } from "../../lib/dirt-models";
 import DirtSlotAttachments from "../../components/DirtSlotAttachments";
+import GiftFlames from "../../components/GiftFlames";
 import {
   getGiftCodeFromUrl,
   isGiftSlotName,
@@ -748,6 +749,7 @@ function GiftPlacementAttachment({
       }}
     >
       <Primitive object={gift} />
+      <GiftFlames root={gift} />
       {isStarGift ? (
         <PointLight
           intensity={0.6}
