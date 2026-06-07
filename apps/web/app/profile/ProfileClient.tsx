@@ -54,7 +54,7 @@ type GiftHistoryItem = {
 };
 
 type GiftGalleryMode = "sent" | "received";
-type ProfileSectionKey = "profile" | "balance" | "gifts";
+type ProfileTabKey = "profile" | "balance" | "gifts";
 
 type WalletTransaction = {
   id: string;
@@ -90,11 +90,7 @@ export default function ProfileClient() {
   const [editing, setEditing] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [giftHistoryMode, setGiftHistoryMode] = useState<GiftGalleryMode>("sent");
-  const [openSections, setOpenSections] = useState<Record<ProfileSectionKey, boolean>>({
-    profile: true,
-    balance: false,
-    gifts: false
-  });
+  const [activeProfileTab, setActiveProfileTab] = useState<ProfileTabKey>("profile");
   const [giftHistory, setGiftHistory] = useState<GiftHistoryItem[]>([]);
   const [receivedGiftHistory, setReceivedGiftHistory] = useState<GiftHistoryItem[]>([]);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
@@ -278,31 +274,27 @@ export default function ProfileClient() {
 
   const activeGiftHistory =
     giftHistoryMode === "sent" ? giftHistory : receivedGiftHistory;
-  const toggleSection = (section: ProfileSectionKey) => {
-    setOpenSections((current) => ({ ...current, [section]: !current[section] }));
-  };
-  const renderSectionToggle = (section: ProfileSectionKey) => (
-    <button
-      type="button"
-      onClick={() => toggleSection(section)}
-      className="inline-flex items-center gap-2 rounded-full border-[3px] border-white bg-[#f7f1ee] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.45)] transition hover:bg-white"
-      aria-expanded={openSections[section]}
-    >
-      {openSections[section] ? "Свернуть" : "Открыть"}
-      <svg
-        viewBox="0 0 24 24"
-        className={`h-4 w-4 transition-transform ${openSections[section] ? "rotate-180" : ""}`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-    </button>
-  );
+  const profileTabs: Array<{
+    id: ProfileTabKey;
+    label: string;
+    meta: string;
+  }> = [
+    {
+      id: "profile",
+      label: "Профиль",
+      meta: editing ? "редактирование" : "аккаунт"
+    },
+    {
+      id: "balance",
+      label: "Баланс",
+      meta: `${profile?.coinBalance ?? 0} монет`
+    },
+    {
+      id: "gifts",
+      label: "Подарки",
+      meta: `${activeGiftHistory.length}`
+    }
+  ];
 
   if (loadingProfile) {
     return (
@@ -318,307 +310,328 @@ export default function ProfileClient() {
       <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
       <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-3xl -translate-y-[calc(var(--app-header-height,56px)/2)] gap-5">
-        <section>
-          <div className={authCardClass}>
-            <div className={`${authInnerShellClass} relative`}>
-              <span className="absolute right-4 top-4">
-                <HelpHint text="Здесь можно изменить логин, email и пароль аккаунта." />
-              </span>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="pr-12">
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
-                    Профиль
-                  </p>
-                  <h1 className={`mt-2 ${authTitleClass}`}>Настройки аккаунта</h1>
-                </div>
-                <div className="mr-11 flex flex-wrap items-center gap-2">
-                  {editing ? (
-                    <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                      Редактирование
-                    </div>
-                  ) : null}
-                  {renderSectionToggle("profile")}
-                </div>
-              </div>
+      <div className="relative z-10 mx-auto w-full max-w-4xl -translate-y-[calc(var(--app-header-height,56px)/2)]">
+        <section className={authCardClass}>
+          <div className={`${authInnerShellClass} relative overflow-visible`}>
+            <div className="flex gap-1 overflow-x-auto rounded-[28px] border-[3px] border-white bg-[#efe6e2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              {profileTabs.map((tab) => {
+                const isActive = activeProfileTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveProfileTab(tab.id)}
+                    className={`min-w-[7rem] flex-1 rounded-[22px] px-3 py-3 text-left transition ${
+                      isActive
+                        ? "bg-[#111827] text-white shadow-[0_4px_0_0_#000]"
+                        : "bg-[#fffcf9] text-[#8d6e63] hover:bg-white"
+                    }`}
+                    aria-selected={isActive}
+                  >
+                    <span className="block text-[11px] font-black uppercase tracking-[0.14em]">
+                      {tab.label}
+                    </span>
+                    <span
+                      className={`mt-1 block truncate text-[10px] font-black uppercase tracking-[0.1em] ${
+                        isActive ? "text-white/70" : "text-[#c2a79a]"
+                      }`}
+                    >
+                      {tab.meta}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-              {openSections.profile ? (
-              <div className="mt-6 grid gap-4">
-                <label className={authLabelClass}>
-                  <span className="flex items-center justify-between gap-3">
-                    <span>Логин</span>
-                    <HelpHint
-                      text="Можно менять. Допустимы латинские буквы A-Z и a-z, цифры 0-9 и подчёркивание."
-                      className="h-7 w-7 text-[11px]"
-                    />
+            <div className="mt-5 min-h-[30rem] rounded-[30px] border-[3px] border-white bg-[#fffcf9]/86 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_28px_-24px_rgba(93,64,55,0.45)] sm:p-5">
+              {activeProfileTab === "profile" ? (
+                <div className="relative">
+                  <span className="absolute right-0 top-0">
+                    <HelpHint text="Здесь можно изменить логин, email и пароль аккаунта." />
                   </span>
-                  <input
-                    className={authInputClass}
-                    value={login}
-                    onChange={(event) => setLogin(event.target.value)}
-                    placeholder="login"
-                    disabled={!profile || !editing}
-                  />
-                </label>
+                  <div className="flex flex-wrap items-start justify-between gap-4 pr-12">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
+                        Профиль
+                      </p>
+                      <h1 className={`mt-2 ${authTitleClass}`}>Настройки аккаунта</h1>
+                    </div>
+                    {editing ? (
+                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
+                        Редактирование
+                      </div>
+                    ) : null}
+                  </div>
 
-                <label className={authLabelClass}>
-                  Email
-                  <input
-                    className={authInputClass}
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="user@example.com"
-                    disabled={!profile || !editing}
-                  />
-                </label>
-
-                {editing ? (
-                  <>
+                  <div className="mt-6 grid gap-4">
                     <label className={authLabelClass}>
-                      Текущий пароль
+                      <span className="flex items-center justify-between gap-3">
+                        <span>Логин</span>
+                        <HelpHint
+                          text="Можно менять. Допустимы латинские буквы A-Z и a-z, цифры 0-9 и подчёркивание."
+                          className="h-7 w-7 text-[11px]"
+                        />
+                      </span>
                       <input
-                        type="password"
                         className={authInputClass}
-                        value={currentPassword}
-                        onChange={(event) => setCurrentPassword(event.target.value)}
-                        placeholder="••••••"
-                        disabled={!profile}
+                        value={login}
+                        onChange={(event) => setLogin(event.target.value)}
+                        placeholder="login"
+                        disabled={!profile || !editing}
                       />
                     </label>
+
                     <label className={authLabelClass}>
-                      Новый пароль
+                      Email
                       <input
-                        type="password"
                         className={authInputClass}
-                        value={newPassword}
-                        onChange={(event) => setNewPassword(event.target.value)}
-                        placeholder="••••••"
-                        disabled={!profile}
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="user@example.com"
+                        disabled={!profile || !editing}
                       />
                     </label>
-                  </>
-                ) : null}
 
-                {notice ? <div className={authNoticeClass}>{notice}</div> : null}
-                <ErrorToast message={error} onClose={() => setError(null)} />
+                    {editing ? (
+                      <>
+                        <label className={authLabelClass}>
+                          Текущий пароль
+                          <input
+                            type="password"
+                            className={authInputClass}
+                            value={currentPassword}
+                            onChange={(event) => setCurrentPassword(event.target.value)}
+                            placeholder="••••••"
+                            disabled={!profile}
+                          />
+                        </label>
+                        <label className={authLabelClass}>
+                          Новый пароль
+                          <input
+                            type="password"
+                            className={authInputClass}
+                            value={newPassword}
+                            onChange={(event) => setNewPassword(event.target.value)}
+                            placeholder="••••••"
+                            disabled={!profile}
+                          />
+                        </label>
+                      </>
+                    ) : null}
 
-                <div className="flex flex-wrap gap-3 pt-2">
-                  {!editing ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (profile) {
-                            setEditing(true);
-                            setError(null);
-                            setNotice(null);
-                          }
-                        }}
-                        className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
-                        disabled={!profile}
-                      >
-                        Редактировать профиль
-                      </button>
-                      {profile ? (
-                        <button
-                          type="button"
-                          onClick={handleLogout}
-                          className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-all hover:bg-[#fff4f4]"
+                    {notice ? <div className={authNoticeClass}>{notice}</div> : null}
+                    <ErrorToast message={error} onClose={() => setError(null)} />
+
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      {!editing ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (profile) {
+                                setEditing(true);
+                                setError(null);
+                                setNotice(null);
+                              }
+                            }}
+                            className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                            disabled={!profile}
+                          >
+                            Редактировать профиль
+                          </button>
+                          {profile ? (
+                            <button
+                              type="button"
+                              onClick={handleLogout}
+                              className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-all hover:bg-[#fff4f4]"
+                            >
+                              Выйти
+                            </button>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleSave}
+                            className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                            disabled={!profile || saving}
+                          >
+                            {saving ? "Сохранение..." : "Сохранить изменения"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEditing}
+                            className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-all hover:bg-[#fff7f1]"
+                            disabled={!profile || saving}
+                          >
+                            Отменить
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {activeProfileTab === "balance" ? (
+                <div>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
+                        Баланс
+                      </p>
+                      <h2 className="mt-2 text-xl font-black leading-tight text-[#5d4037]">
+                        История монет
+                      </h2>
+                    </div>
+                    <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                      {profile?.coinBalance ?? 0} монет
+                    </div>
+                  </div>
+                  {walletTransactions.length > 0 ? (
+                    <div className="mt-5 max-h-[min(52dvh,31rem)] space-y-2 overflow-auto pr-1">
+                      {walletTransactions.map((item) => (
+                        <div
+                          key={item.id}
+                          className="grid gap-2 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-sm shadow-[0_14px_30px_-24px_rgba(93,64,55,0.45)] sm:grid-cols-[1fr_auto]"
                         >
-                          Выйти
-                        </button>
-                      ) : null}
-                    </>
+                          <div className="min-w-0">
+                            <div className="font-black text-[#5d4037]">{item.title}</div>
+                            <div className="mt-1 text-xs font-semibold text-[#8d6e63]">
+                              {formatDate(item.createdAt)}
+                              {item.details ? ` · ${item.details}` : ""}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 sm:justify-end">
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                                item.amount >= 0
+                                  ? "bg-[#e5fbf4] text-[#2a9b81]"
+                                  : "bg-[#fff0ed] text-[#b66352]"
+                              }`}
+                            >
+                              {item.amount > 0 ? "+" : ""}
+                              {item.amount}
+                            </span>
+                            <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                              {item.balanceAfter}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
-                        disabled={!profile || saving}
-                      >
-                        {saving ? "Сохранение..." : "Сохранить изменения"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCancelEditing}
-                        className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-all hover:bg-[#fff7f1]"
-                        disabled={!profile || saving}
-                      >
-                        Отменить
-                      </button>
-                    </>
+                    <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
+                      История баланса пока пустая.
+                    </p>
                   )}
                 </div>
-              </div>
               ) : null}
-            </div>
-          </div>
-        </section>
-        <section>
-          <div className={authCardClass}>
-            <div className={authInnerShellClass}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+
+              {activeProfileTab === "gifts" ? (
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
-                    Баланс
-                  </p>
-                  <h2 className="mt-2 text-xl font-black leading-tight text-[#5d4037]">
-                    История монет
-                  </h2>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-                    {profile?.coinBalance ?? 0} монет
-                  </div>
-                  {renderSectionToggle("balance")}
-                </div>
-              </div>
-              {openSections.balance ? (
-              walletTransactions.length > 0 ? (
-                <div className="mt-5 max-h-[22rem] space-y-2 overflow-auto pr-1">
-                  {walletTransactions.map((item) => (
-                    <div
-                      key={item.id}
-                      className="grid gap-2 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-3 text-sm shadow-[0_14px_30px_-24px_rgba(93,64,55,0.45)] sm:grid-cols-[1fr_auto]"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-black text-[#5d4037]">{item.title}</div>
-                        <div className="mt-1 text-xs font-semibold text-[#8d6e63]">
-                          {formatDate(item.createdAt)}
-                          {item.details ? ` · ${item.details}` : ""}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between gap-3 sm:justify-end">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-black ${
-                            item.amount >= 0
-                              ? "bg-[#e5fbf4] text-[#2a9b81]"
-                              : "bg-[#fff0ed] text-[#b66352]"
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
+                        Подарки
+                      </p>
+                      <h2 className="mt-2 text-xl font-black leading-tight text-[#5d4037]">
+                        {giftHistoryMode === "sent" ? "Подаренные подарки" : "Полученные подарки"}
+                      </h2>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex rounded-[18px] bg-[#f1e7e0] p-1">
+                        <button
+                          type="button"
+                          onClick={() => setGiftHistoryMode("sent")}
+                          className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition ${
+                            giftHistoryMode === "sent"
+                              ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                              : "text-[#8d6e63] hover:bg-white/70"
                           }`}
                         >
-                          {item.amount > 0 ? "+" : ""}
-                          {item.amount}
-                        </span>
-                        <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8d6e63]">
-                          {item.balanceAfter}
-                        </span>
+                          Дарил
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGiftHistoryMode("received")}
+                          className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition ${
+                            giftHistoryMode === "received"
+                              ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                              : "text-[#8d6e63] hover:bg-white/70"
+                          }`}
+                        >
+                          Получал
+                        </button>
+                      </div>
+                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                        {activeGiftHistory.length}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
-                  История баланса пока пустая.
-                </p>
-              )
-              ) : null}
-            </div>
-          </div>
-        </section>
-        <section>
-          <div className={authCardClass}>
-            <div className={authInnerShellClass}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
-                    Подарки
-                  </p>
-                  <h2 className="mt-2 text-xl font-black leading-tight text-[#5d4037]">
-                    {giftHistoryMode === "sent" ? "Подаренные подарки" : "Полученные подарки"}
-                  </h2>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex rounded-[18px] bg-[#f1e7e0] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setGiftHistoryMode("sent")}
-                      className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition ${
-                        giftHistoryMode === "sent"
-                          ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
-                          : "text-[#8d6e63] hover:bg-white/70"
-                      }`}
-                    >
-                      Дарил
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGiftHistoryMode("received")}
-                      className={`rounded-[14px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] transition ${
-                        giftHistoryMode === "received"
-                          ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
-                          : "text-[#8d6e63] hover:bg-white/70"
-                      }`}
-                    >
-                      Получал
-                    </button>
                   </div>
-                  <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-                    {activeGiftHistory.length}
-                  </div>
-                  {renderSectionToggle("gifts")}
-                </div>
-              </div>
 
-              {openSections.gifts ? (
-              giftHistoryLoading ? (
-                <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-5">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <div
-                      key={`gift-history-skeleton-${index}`}
-                      className="aspect-square animate-pulse rounded-[22px] border-[3px] border-white bg-[#f7f1ee]"
-                    />
-                  ))}
-                </div>
-              ) : activeGiftHistory.length > 0 ? (
-                <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-                  {activeGiftHistory.map((item) => {
-                    const iconUrl = resolveGiftIconUrl(item.gift);
-                    const status = getGiftStatus(item);
-                    return (
-                      <div
-                        key={item.id}
-                        className="group/gift relative aspect-square rounded-[24px] border-[3px] border-white bg-[#f7f1ee] p-2 shadow-[0_14px_30px_-22px_rgba(93,64,55,0.55)] transition hover:-translate-y-1 hover:bg-white"
-                        tabIndex={0}
-                      >
-                        <div className="grid h-full place-items-center overflow-hidden rounded-[18px] bg-white">
-                          {iconUrl ? (
-                            <img
-                              src={iconUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63]">
-                              Подарок
-                            </span>
-                          )}
-                        </div>
-                        <div className="pointer-events-none absolute bottom-[calc(100%+0.6rem)] left-1/2 z-[1000] w-64 -translate-x-1/2 rounded-[18px] border-[3px] border-white bg-white/[0.97] px-4 py-3 text-left text-xs font-bold leading-snug text-[#6f6360] opacity-0 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.55)] backdrop-blur transition group-hover/gift:opacity-100 group-focus/gift:opacity-100">
-                          <p className="text-sm font-black text-[#5d4037]">{item.gift.name}</p>
-                          <p className="mt-1">
-                            {giftHistoryMode === "sent"
-                              ? `Кому: ${getGiftRecipient(item)}`
-                              : `От кого: ${getGiftSender(item)}`}
-                          </p>
-                          {giftHistoryMode === "received" ? (
-                            <p>Мемориал: {item.pet.name}</p>
-                          ) : null}
-                          <p>Подарен: {formatDate(item.placedAt)}</p>
-                          <p>{status}</p>
-                        </div>
+                  {giftHistoryLoading ? (
+                    <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={`gift-history-skeleton-${index}`}
+                          className="aspect-square animate-pulse rounded-[22px] border-[3px] border-white bg-[#f7f1ee]"
+                        />
+                      ))}
+                    </div>
+                  ) : activeGiftHistory.length > 0 ? (
+                    <div className="mt-5 max-h-[min(52dvh,31rem)] overflow-auto pr-1">
+                      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+                        {activeGiftHistory.map((item) => {
+                          const iconUrl = resolveGiftIconUrl(item.gift);
+                          const status = getGiftStatus(item);
+                          return (
+                            <div
+                              key={item.id}
+                              className="group/gift relative aspect-square rounded-[24px] border-[3px] border-white bg-[#f7f1ee] p-2 shadow-[0_14px_30px_-22px_rgba(93,64,55,0.55)] transition hover:-translate-y-1 hover:bg-white"
+                              tabIndex={0}
+                            >
+                              <div className="grid h-full place-items-center overflow-hidden rounded-[18px] bg-white">
+                                {iconUrl ? (
+                                  <img
+                                    src={iconUrl}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                                    Подарок
+                                  </span>
+                                )}
+                              </div>
+                              <div className="pointer-events-none absolute bottom-[calc(100%+0.6rem)] left-1/2 z-[1000] w-64 -translate-x-1/2 rounded-[18px] border-[3px] border-white bg-white/[0.97] px-4 py-3 text-left text-xs font-bold leading-snug text-[#6f6360] opacity-0 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.55)] backdrop-blur transition group-hover/gift:opacity-100 group-focus/gift:opacity-100">
+                                <p className="text-sm font-black text-[#5d4037]">{item.gift.name}</p>
+                                <p className="mt-1">
+                                  {giftHistoryMode === "sent"
+                                    ? `Кому: ${getGiftRecipient(item)}`
+                                    : `От кого: ${getGiftSender(item)}`}
+                                </p>
+                                {giftHistoryMode === "received" ? (
+                                  <p>Мемориал: {item.pet.name}</p>
+                                ) : null}
+                                <p>Подарен: {formatDate(item.placedAt)}</p>
+                                <p>{status}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ) : (
+                    <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
+                      {giftHistoryMode === "sent"
+                        ? "Вы пока не дарили подарки."
+                        : "Ваши мемориалы пока не получали подарки."}
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <p className="mt-5 rounded-[20px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
-                  {giftHistoryMode === "sent"
-                    ? "Вы пока не дарили подарки."
-                    : "Ваши мемориалы пока не получали подарки."}
-                </p>
-              )
               ) : null}
             </div>
           </div>

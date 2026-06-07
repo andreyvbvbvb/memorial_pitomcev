@@ -96,15 +96,17 @@ function MenuItem({
   badge?: number;
   onClick?: () => void;
 }) {
+  const newsBadge =
+    badge && badge > 0 ? (
+      <span className="pointer-events-none absolute right-0 top-0 z-10 grid h-[18px] w-[18px] translate-x-1/3 -translate-y-1/3 place-items-center rounded-full border-2 border-white bg-[#3bceac] text-[10px] font-black leading-none text-white shadow-[0_10px_22px_-12px_rgba(59,206,172,0.95)]">
+        !
+      </span>
+    ) : null;
   const content = (
     <>
       <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-[16px] border-2 border-white bg-[#f6efea] text-[#d3a27f] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
         <MenuIcon kind={icon} />
-        {badge && badge > 0 ? (
-          <span className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black leading-none text-white shadow-[0_0_0_2px_white]">
-            !
-          </span>
-        ) : null}
+        {newsBadge}
       </span>
       <span className="min-w-0 flex-1 text-left text-xs font-black uppercase tracking-[0.08em] text-[#5d4037]">
         {label}

@@ -3668,10 +3668,12 @@ export default function CreateMemorialClient({
     }
   };
 
-  const overlaySectionTitleClass =
-    "mb-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.28em] text-[#8d6e63]";
-  const overlayLabelClass =
-    "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
+  const overlaySectionTitleClass = isPortraitLayout
+    ? "mb-0 flex min-h-[1.15rem] items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]"
+    : "mb-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.28em] text-[#8d6e63]";
+  const overlayLabelClass = isPortraitLayout
+    ? "text-[9px] font-black uppercase tracking-[0.14em] text-[#9f938e]"
+    : "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
   const overlayInputClass =
     isPortraitLayout
       ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
@@ -3682,7 +3684,7 @@ export default function CreateMemorialClient({
       : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
   const overlayShellClass =
     isPortraitLayout
-      ? "grid h-full min-h-0 gap-2 overflow-hidden bg-[#f7f1ee] p-1"
+      ? "grid h-full min-h-0 gap-1.5 overflow-hidden bg-[#f7f1ee] p-1"
       : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
@@ -3729,7 +3731,7 @@ export default function CreateMemorialClient({
   );
 
   const renderNameField = (centered = false) => (
-    <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
+    <label className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
       {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
       {centered ? "Имя питомца" : null}
       <input
@@ -3747,7 +3749,7 @@ export default function CreateMemorialClient({
   );
 
   const renderSpeciesField = (centered = false) => (
-    <label className={`grid gap-2 ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
+    <label className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
       {!centered ? <span className={overlayLabelClass}>Вид питомца</span> : null}
       {centered ? "Вид питомца" : null}
       <select
@@ -3770,7 +3772,7 @@ export default function CreateMemorialClient({
 
   const renderBirthDateField = (centered = false) => (
     <label
-      className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
+      className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
       onClick={() => openDatePicker(birthDateInputRef.current)}
     >
       {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
@@ -3792,7 +3794,7 @@ export default function CreateMemorialClient({
 
   const renderDeathDateField = (centered = false) => (
     <label
-      className={`grid gap-2 cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
+      className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
       onClick={() => openDatePicker(deathDateInputRef.current)}
     >
       {!centered ? <span className={overlayLabelClass}>Дата ухода</span> : null}
@@ -3944,20 +3946,20 @@ export default function CreateMemorialClient({
 
           <div className={isPortraitLayout ? "hidden" : "grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2"}>
             <div className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1"}>
-              <label className="grid gap-2">
+              <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
                 <span className={overlayLabelClass}>Широта</span>
                 <input
-                  inputMode="decimal"
+                  inputMode={isPortraitLayout ? "text" : "decimal"}
                   className={overlayInputClass}
                   placeholder="55.755826"
                   value={form.lat}
                   onChange={(event) => handleChange("lat", event.target.value)}
                 />
               </label>
-              <label className="grid gap-2">
+              <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
                 <span className={overlayLabelClass}>Долгота</span>
                 <input
-                  inputMode="decimal"
+                  inputMode={isPortraitLayout ? "text" : "decimal"}
                   className={overlayInputClass}
                   placeholder="37.617299"
                   value={form.lng}
@@ -4102,7 +4104,7 @@ export default function CreateMemorialClient({
             Широта
           </span>
           <input
-            inputMode="decimal"
+            inputMode="text"
             className="min-w-0 rounded-[14px] border-2 border-white bg-[#f7f1ee] px-2 py-1.5 text-[16px] font-bold text-[#6f6360] outline-none"
             placeholder="55.755826"
             value={form.lat}
@@ -4114,7 +4116,7 @@ export default function CreateMemorialClient({
             Долгота
           </span>
           <input
-            inputMode="decimal"
+            inputMode="text"
             className="min-w-0 rounded-[14px] border-2 border-white bg-[#f7f1ee] px-2 py-1.5 text-[16px] font-bold text-[#6f6360] outline-none"
             placeholder="37.617299"
             value={form.lng}
@@ -4177,7 +4179,7 @@ export default function CreateMemorialClient({
         <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
         История и эпитафия
       </h3>
-      <label className="grid gap-2">
+      <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
         <span className={overlayLabelClass}>Эпитафия (до 200 символов)</span>
         <input
           className={overlayInputClass}
@@ -4187,7 +4189,7 @@ export default function CreateMemorialClient({
           placeholder="Самый лучший друг"
         />
       </label>
-      <label className="grid gap-2">
+      <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
         <span className={overlayLabelClass}>История питомца</span>
         <textarea
           className={overlayTextareaClass}

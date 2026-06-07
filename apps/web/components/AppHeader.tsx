@@ -358,6 +358,10 @@ export default function AppHeader() {
       />
     </svg>
   );
+  const newsBadgeClass =
+    "pointer-events-none absolute right-0 top-0 z-30 grid h-[18px] w-[18px] translate-x-1/3 -translate-y-1/3 place-items-center rounded-full border-2 border-white bg-[#3bceac] text-[10px] font-black leading-none text-white shadow-[0_10px_22px_-12px_rgba(59,206,172,0.95)]";
+  const renderNewsBadge = () =>
+    newsUnreadCount > 0 ? <span className={newsBadgeClass}>!</span> : null;
   const mobileMenuHeader = isPortraitLayout ? (
     <div className="mb-4 flex items-center justify-between rounded-[24px] border-[3px] border-white bg-[#fffcf9] px-4 py-3 shadow-[0_18px_38px_-26px_rgba(93,64,55,0.55)]">
       <div>
@@ -454,11 +458,7 @@ export default function AppHeader() {
                     <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                       Раскрыть меню
                     </span>
-                    {newsUnreadCount > 0 ? (
-                      <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
-                        !
-                      </span>
-                    ) : null}
+                    {renderNewsBadge()}
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>
@@ -520,13 +520,9 @@ export default function AppHeader() {
                           <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
                         </Link>
                         <Link className={menuItemClass} href="/news">
-                          <span className="relative text-[#d3a27f]">
+                          <span className="relative inline-flex text-[#d3a27f]">
                             {renderMenuIcon("news")}
-                            {newsUnreadCount > 0 ? (
-                              <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
-                                !
-                              </span>
-                            ) : null}
+                            {renderNewsBadge()}
                           </span>
                           <span className="text-xs font-black uppercase tracking-tight">Новости</span>
                         </Link>
@@ -580,11 +576,7 @@ export default function AppHeader() {
                     <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                       Раскрыть меню
                     </span>
-                    {newsUnreadCount > 0 ? (
-                      <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
-                        !
-                      </span>
-                    ) : null}
+                    {renderNewsBadge()}
                   </button>
                   {menuOpen ? (
                     <div className={menuPanelClass}>
@@ -616,13 +608,9 @@ export default function AppHeader() {
                           <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
                         </Link>
                         <Link className={menuItemClass} href="/news">
-                          <span className="relative text-[#d3a27f]">
+                          <span className="relative inline-flex text-[#d3a27f]">
                             {renderMenuIcon("news")}
-                            {newsUnreadCount > 0 ? (
-                              <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white">
-                                !
-                              </span>
-                            ) : null}
+                            {renderNewsBadge()}
                           </span>
                           <span className="text-xs font-black uppercase tracking-tight">Новости</span>
                         </Link>
@@ -705,11 +693,7 @@ export default function AppHeader() {
             >
               <span className={`relative inline-flex ${mobileBottomIconClass(pathname === "/menu")}`}>
                 {menuButtonIcon}
-                {newsUnreadCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full bg-[#3bceac] text-[10px] font-black text-white shadow-[0_0_0_2px_white]">
-                    !
-                  </span>
-                ) : null}
+                {renderNewsBadge()}
               </span>
               <span>Меню</span>
             </Link>

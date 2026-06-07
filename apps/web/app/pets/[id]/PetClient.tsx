@@ -2309,7 +2309,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-[3%] right-[3%] top-[calc(29dvh+0.25rem)] bottom-[calc(7.35rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
+    ? `fixed left-[3%] right-[3%] top-[calc(26dvh+0.25rem)] bottom-[calc(8.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
     : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
@@ -2332,18 +2332,18 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "flex min-h-0 flex-1 flex-col gap-0.5 text-[11px] font-semibold text-[#6f6360]"
     : "flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
   const giftCatalogGridClass = isPortraitLayout
-    ? "grid min-h-0 flex-1 grid-cols-4 auto-rows-[clamp(52px,6.6dvh,64px)] content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
+    ? "grid min-h-0 flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
     `relative flex w-full items-center justify-center overflow-visible border transition ${
-      isPortraitLayout ? "h-full min-h-0 rounded-[16px] border-2" : "h-28 rounded-[22px] border-[3px]"
+      isPortraitLayout ? "aspect-[1/1.18] flex-col justify-start rounded-[16px] border-2 bg-white p-0.5 pb-6" : "h-28 rounded-[22px] border-[3px]"
     } ${
       selected
         ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-sm"
         : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/50"
     }`;
   const giftSkeletonClass = isPortraitLayout
-    ? "relative h-full min-h-0 w-full animate-pulse overflow-visible rounded-[16px] border border-white bg-white"
+    ? "relative aspect-[1/1.18] w-full animate-pulse overflow-visible rounded-[16px] border border-white bg-white"
     : "relative h-28 w-full animate-pulse overflow-visible rounded-[22px] border border-white bg-white";
   const floatingTitleWrapClass = isPortraitLayout
     ? "pointer-events-none absolute left-1/2 z-10 w-[min(18rem,calc(100vw-1rem))] -translate-x-1/2 text-center top-[calc(var(--app-header-height,0px)+0.35rem)]"
@@ -3009,8 +3009,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                               key={`gift-skeleton-${index}`}
                               className={giftSkeletonClass}
                             >
-                              <div className="absolute inset-0 bg-[#f7f1ee]" />
-                              <div className="absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#eadfd9]" />
+                              <div className={isPortraitLayout ? "aspect-square w-full rounded-[14px] bg-[#f7f1ee]" : "absolute inset-0 bg-[#f7f1ee]"} />
+                              <div className={isPortraitLayout ? "absolute bottom-1 left-1/2 h-6 w-6 -translate-x-1/2 rounded-full bg-[#eadfd9]" : "absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#eadfd9]"} />
                             </div>
                           ))
                         ) : visibleGiftsWithSlots.length === 0 ? (
@@ -3031,7 +3031,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                   <img
                                     src={iconUrl ?? undefined}
                                     alt=""
-                                    className="h-full w-full rounded-[inherit] object-cover"
+                                    className={isPortraitLayout ? "aspect-square w-full rounded-[14px] object-cover" : "h-full w-full rounded-[inherit] object-cover"}
                                     loading="lazy"
                                     onError={(event) => {
                                       event.currentTarget.onerror = null;
@@ -3039,7 +3039,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                     }}
                                   />
                                 ) : null}
-                                <span className="pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md">
+                                <span className={isPortraitLayout ? "pointer-events-none absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[8px] font-black text-white shadow-md" : "pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md"}>
                                   {gift.price}
                                 </span>
                                 <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
@@ -3109,7 +3109,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           selectedGiftId && selectedSlot && selectedDuration && !giftLoading
                             ? primaryActionClass
                             : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
-                        } ${isPortraitLayout ? "!min-h-[3rem] !px-2 !py-2 !text-[10px] !leading-tight" : "px-4 py-3"}`}
+                        } ${isPortraitLayout ? "!min-h-[2.7rem] !px-2 !py-1.5 !text-[9px] !leading-tight" : "px-4 py-3"}`}
                         disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
                       >
                         {giftLoading
