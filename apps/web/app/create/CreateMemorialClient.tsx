@@ -4635,10 +4635,12 @@ export default function CreateMemorialClient({
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const builderTabRailClass = isPortraitLayout
-    ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
-    : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
+    ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto rounded-[15px] bg-[#fffcf9] p-0.5"
+    : "flex w-[58px] flex-col items-center gap-1.5 overflow-visible rounded-[22px] border-2 border-white bg-[#fffcf9] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:w-[62px]";
   const builderTabButtonClass = (isActive: boolean, isDisabled: boolean) =>
-    hudControlButtonClass(isPortraitLayout, isActive, isDisabled);
+    `${hudControlButtonClass(isPortraitLayout, isActive, isDisabled)} ${
+      isPortraitLayout ? "" : "!h-11 !w-11 sm:!h-12 sm:!w-12"
+    }`;
   const builderCancelButtonClass = isPortraitLayout
     ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
     : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";

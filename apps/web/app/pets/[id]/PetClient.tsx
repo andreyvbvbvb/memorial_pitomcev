@@ -2315,10 +2315,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const editTabRailClass = isPortraitLayout
-    ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto pr-0.5"
-    : "flex w-[56px] flex-col items-center gap-2 overflow-visible sm:w-[60px] sm:gap-2.5";
+    ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto rounded-[15px] bg-[#fffcf9] p-0.5"
+    : "flex w-[58px] flex-col items-center gap-1.5 overflow-visible rounded-[22px] border-2 border-white bg-[#fffcf9] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:w-[62px]";
   const editTabButtonClass = (active: boolean) =>
-    hudControlButtonClass(isPortraitLayout, active);
+    `${hudControlButtonClass(isPortraitLayout, active)} ${
+      isPortraitLayout ? "" : "!h-11 !w-11 sm:!h-12 sm:!w-12"
+    }`;
   const memorialSceneFrameClass = isPortraitLayout
     ? "fixed inset-0 z-0 overflow-hidden"
     : "fixed inset-0 z-0";
