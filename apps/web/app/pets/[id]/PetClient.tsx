@@ -72,6 +72,24 @@ ensureDracoLoader();
 
 const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
 const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
+type GiftCatalogItem = {
+  id: string;
+  code?: string | null;
+  name: string;
+  description?: string | null;
+  price: number;
+  modelUrl: string;
+};
+
+type GiftTooltipState = {
+  id: string;
+  name: string;
+  description: string;
+  left: number;
+  top: number;
+  width: number;
+};
+
 const MEMORIAL_EXTENSION_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
@@ -293,16 +311,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [topUpVisible, setTopUpVisible] = useState(false);
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
-  const [giftCatalog, setGiftCatalog] = useState<
-    {
-      id: string;
-      code?: string | null;
-      name: string;
-      description?: string | null;
-      price: number;
-      modelUrl: string;
-    }[]
-  >([]);
+  const [giftCatalog, setGiftCatalog] = useState<GiftCatalogItem[]>([]);
+  const [giftTooltip, setGiftTooltip] = useState<GiftTooltipState | null>(null);
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftSuccess, setGiftSuccess] = useState<string | null>(null);
   const [cleanSuccess, setCleanSuccess] = useState<string | null>(null);
@@ -1185,6 +1195,42 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setGiftPreviewEnabled(true);
     setSelectedDuration(null);
   };
+
+  const getGiftDescription = useCallback(
+    (gift: GiftCatalogItem) =>
+      gift.description?.trim() ||
+      "Подарок памяти, который добавляет мемориалу тёплую деталь.",
+    []
+  );
+
+  const showGiftCatalogTooltip = useCallback(
+    (gift: GiftCatalogItem, element: HTMLElement) => {
+      const width = isPortraitLayout ? 210 : 230;
+      const maxHeight = isPortraitLayout ? 132 : 146;
+      const gap = 10;
+      const margin = 8;
+      const rect = element.getBoundingClientRect();
+      const hasLeftSpace = rect.left >= width + gap + margin;
+      const preferredLeft = hasLeftSpace ? rect.left - width - gap : rect.right + gap;
+      const maxLeft = window.innerWidth - width - margin;
+      const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
+      const maxTop = Math.max(margin, window.innerHeight - maxHeight - margin);
+      const top = Math.max(margin, Math.min(rect.top, maxTop));
+      setGiftTooltip({
+        id: gift.id,
+        name: gift.name,
+        description: getGiftDescription(gift),
+        left,
+        top,
+        width
+      });
+    },
+    [getGiftDescription, isPortraitLayout]
+  );
+
+  const hideGiftCatalogTooltip = useCallback(() => {
+    setGiftTooltip(null);
+  }, []);
 
   const toggleGiftPanel = () =>
     setGiftPanelOpen((prev) => {
@@ -2556,6 +2602,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   return (
     <main className="relative min-h-[calc(100vh-var(--app-header-height,0px))] overflow-hidden bg-[#fcf8f5]">
+      {giftTooltip ? (
+        <div
+          className="pointer-events-none fixed z-[5000] rounded-[14px] border-2 border-white bg-[#fffcf9] px-3 py-2 text-left shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur"
+          style={{
+            left: giftTooltip.left,
+            top: giftTooltip.top,
+            width: giftTooltip.width
+          }}
+        >
+          <p className="text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5d4037]">
+            {giftTooltip.name}
+          </p>
+          <p className="mt-1 text-[10px] font-bold leading-snug text-[#8d6e63]">
+            {giftTooltip.description}
+          </p>
+        </div>
+      ) : null}
       <div className={memorialSceneFrameClass}>
         <MemorialPreview
           className="h-full w-full rounded-none border-transparent bg-transparent"
@@ -3044,15 +3107,20 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             const iconUrl = resolveGiftIconUrl(gift);
                             const fallbackIcon =
                               "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
-                            const giftDescription =
-                              gift.description?.trim() ||
-                              "Подарок памяти, который добавляет мемориалу тёплую деталь.";
+                            const giftDescription = getGiftDescription(gift);
                             return (
                               <button
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
-                                title={`${gift.name}\n${giftDescription}`}
+                                onMouseEnter={(event) =>
+                                  showGiftCatalogTooltip(gift, event.currentTarget)
+                                }
+                                onMouseLeave={hideGiftCatalogTooltip}
+                                onFocus={(event) =>
+                                  showGiftCatalogTooltip(gift, event.currentTarget)
+                                }
+                                onBlur={hideGiftCatalogTooltip}
                                 aria-label={`${gift.name}. ${giftDescription}`}
                                 className={giftCardClass(selectedGiftId === gift.id)}
                               >
@@ -3070,14 +3138,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 ) : null}
                                 <span className={isPortraitLayout ? "pointer-events-none absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[8px] font-black text-white shadow-md" : "pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md"}>
                                   {gift.price}
-                                </span>
-                                <span className="pointer-events-none absolute inset-1 z-20 flex flex-col items-center justify-center rounded-[14px] border border-white/75 bg-[#fffcf9]/95 px-2 py-2 text-center opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.55)] backdrop-blur transition-opacity duration-150 group-hover/gift-card:opacity-100 group-focus-visible/gift-card:opacity-100">
-                                  <span className="line-clamp-2 text-[9px] font-black uppercase leading-tight tracking-[0.06em] text-[#5d4037]">
-                                    {gift.name}
-                                  </span>
-                                  <span className="mt-1 line-clamp-3 text-[8px] font-bold normal-case leading-tight tracking-normal text-[#8d6e63]">
-                                    {giftDescription}
-                                  </span>
                                 </span>
                                 <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
                                   0
