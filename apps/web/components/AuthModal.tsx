@@ -8,6 +8,7 @@ import { API_BASE } from "../lib/config";
 import type { AuthUser } from "../lib/access";
 import AuthHelpHint from "./AuthHelpHint";
 import ErrorToast from "./ErrorToast";
+import ForgotPasswordRequest from "./ForgotPasswordRequest";
 import {
   authCardClass,
   authCheckboxInputClass,
@@ -16,7 +17,6 @@ import {
   authDialogCardClass,
   authDialogInnerClass,
   authHelperTextClass,
-  authInfoPanelClass,
   authInnerShellClass,
   authInputClass,
   authLabelClass,
@@ -571,19 +571,7 @@ export default function AuthModal({
                 ) : null}
               </>
             ) : (
-              <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4">
-                <div className={authInfoPanelClass}>
-                  Напишите на почту meowgav.service@mail.ru письмо с адресом почты, на который был
-                  зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setForgotMode(false)}
-                  className={`text-left ${authTextButtonClass}`}
-                >
-                  Назад к входу
-                </button>
-              </div>
+              <ForgotPasswordRequest onBack={() => setForgotMode(false)} />
             )}
 
             {notice ? <div className={`mt-3 sm:mt-4 ${authNoticeClass}`}>{notice}</div> : null}

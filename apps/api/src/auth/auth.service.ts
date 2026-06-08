@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { MailService } from "../mail/mail.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
@@ -97,6 +98,7 @@ export class AuthService {
     }
     const nextPassword = this.generateRandomPassword();
     const passwordHash = await bcrypt.hash(nextPassword, 10);
+    const previousPasswordHash = user.passwordHash;
     await this.prisma.user.update({
       where: { id: user.id },
       data: { passwordHash }
@@ -104,6 +106,10 @@ export class AuthService {
     try {
       await this.mailService.sendPasswordReset(user.email, nextPassword);
     } catch (err) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: previousPasswordHash }
+      });
       throw err instanceof Error
         ? err
         : new BadRequestException("Не удалось отправить письмо");
@@ -138,6 +144,8 @@ export class AuthService {
   }
 
   private generateRandomPassword() {
-    return Math.random().toString(36).slice(-10);
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    const bytes = randomBytes(12);
+    return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
   }
 }

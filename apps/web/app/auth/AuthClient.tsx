@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { API_BASE } from "../../lib/config";
 import AuthHelpHint from "../../components/AuthHelpHint";
 import ErrorToast from "../../components/ErrorToast";
+import ForgotPasswordRequest from "../../components/ForgotPasswordRequest";
 import {
   authBackdropGlowClass,
   authCardClass,
@@ -16,7 +17,6 @@ import {
   authDialogInnerClass,
   authDialogOverlayClass,
   authHelperTextClass,
-  authInfoPanelClass,
   authInnerShellClass,
   authInputClass,
   authLabelClass,
@@ -24,7 +24,6 @@ import {
   authNoticeClass,
   authPageShellClass,
   authPrimaryButtonClass,
-  authSecondaryButtonClass,
   authTabClass,
   authTabsRailClass,
   authTextButtonClass,
@@ -444,17 +443,7 @@ export default function AuthClient() {
                   ×
                 </button>
               </div>
-              <div className={`mt-4 ${authInfoPanelClass}`}>
-                Напишите на почту meowgav.service@mail.ru письмо с адресом почты, на который был
-                зарегистрирован аккаунт. Мы вышлем новый пароль в ответном письме.
-              </div>
-              <button
-                type="button"
-                onClick={() => setForgotPopupOpen(false)}
-                className={`mt-5 ${authSecondaryButtonClass}`}
-              >
-                Понятно
-              </button>
+              <ForgotPasswordRequest onBack={() => setForgotPopupOpen(false)} />
             </div>
           </div>
         </div>

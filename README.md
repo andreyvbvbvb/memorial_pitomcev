@@ -22,6 +22,12 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_KEY_HERE
 Create `.env` in `apps/api`:
 ```
 DATABASE_URL="postgresql://memorial:memorial_password@localhost:5433/memorial_dev?schema=public"
+SMTP_HOST="smtp.timeweb.ru"
+SMTP_PORT="465"
+SMTP_USER="meowgav.service@xn--80aeb9a9a9d.com"
+SMTP_PASS="SET_IN_SERVER_ENV"
+SMTP_FROM="МЯУГАВ <meowgav.service@xn--80aeb9a9a9d.com>"
+SMTP_SECURE="true"
 ```
 
 ## Production domain
