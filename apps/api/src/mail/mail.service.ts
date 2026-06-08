@@ -29,15 +29,16 @@ export class MailService {
     return this.transporter;
   }
 
-  async sendPasswordReset(email: string, tempPassword: string) {
+  async sendPasswordResetLink(email: string, resetUrl: string) {
     const transporter = this.getTransporter();
     const from = process.env.SMTP_FROM ?? process.env.SMTP_USER ?? "no-reply@memorial.local";
     const text = [
       "Здравствуйте!",
       "",
-      `Ваш новый временный пароль для входа в МЯУГАВ: ${tempPassword}`,
+      "Для сброса пароля МЯУГАВ откройте ссылку:",
+      resetUrl,
       "",
-      "После входа рекомендуем сразу изменить пароль в профиле.",
+      "Ссылка действует 1 час. Если срок истек, запросите восстановление пароля еще раз.",
       "Если вы не запрашивали восстановление пароля, напишите нам: meowgav.service@mail.ru"
     ].join("\n");
 
@@ -49,9 +50,11 @@ export class MailService {
       html: `
         <div style="font-family: Arial, sans-serif; color: #5d4037; line-height: 1.55;">
           <h2 style="margin: 0 0 16px;">Восстановление пароля МЯУГАВ</h2>
-          <p>Ваш новый временный пароль:</p>
-          <p style="display: inline-block; margin: 8px 0 18px; padding: 12px 18px; border-radius: 14px; background: #f7f1ee; font-size: 20px; font-weight: 700; letter-spacing: 0.08em;">${tempPassword}</p>
-          <p>После входа рекомендуем сразу изменить пароль в профиле.</p>
+          <p>Нажмите на кнопку ниже, чтобы задать новый пароль:</p>
+          <p style="margin: 20px 0;">
+            <a href="${resetUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Сбросить пароль</a>
+          </p>
+          <p>Ссылка действует 1 час. Если срок истек, запросите восстановление пароля еще раз.</p>
           <p style="color: #8d6e63;">Если вы не запрашивали восстановление пароля, напишите нам: meowgav.service@mail.ru</p>
         </div>
       `

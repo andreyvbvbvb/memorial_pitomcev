@@ -34,6 +34,21 @@ model User {
   walletTransactions WalletTransaction[]
   newsRead     NewsRead?
   documentRevisions DocumentRevision[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([expiresAt])
 }
 
 model Pet {

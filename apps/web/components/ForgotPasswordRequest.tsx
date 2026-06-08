@@ -71,7 +71,7 @@ export default function ForgotPasswordRequest({ onBack }: ForgotPasswordRequestP
         throw new Error(await parseErrorMessage(response));
       }
       setNotice(
-        "Если аккаунт с такой почтой есть, мы отправили новый временный пароль. Проверьте входящие и спам."
+        "Если аккаунт с такой почтой есть, мы отправили ссылку для сброса пароля. Проверьте входящие и спам."
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось отправить письмо");
@@ -83,8 +83,8 @@ export default function ForgotPasswordRequest({ onBack }: ForgotPasswordRequestP
   return (
     <form className="mt-4 grid gap-3 sm:mt-5 sm:gap-4" onSubmit={handleSubmit}>
       <div className={authInfoPanelClass}>
-        Введите email аккаунта. Мы отправим новый временный пароль, после входа его можно
-        поменять в профиле.
+        Введите email аккаунта. Мы отправим ссылку, по которой можно задать новый пароль.
+        Ссылка действует 1 час.
       </div>
       <label className={authLabelClass}>
         Email аккаунта
@@ -99,7 +99,7 @@ export default function ForgotPasswordRequest({ onBack }: ForgotPasswordRequestP
         />
       </label>
       <button type="submit" className={authPrimaryButtonClass} disabled={loading}>
-        {loading ? "Отправляем..." : "Отправить новый пароль"}
+        {loading ? "Отправляем..." : "Отправить ссылку"}
       </button>
       <button type="button" onClick={onBack} className={`text-left ${authTextButtonClass}`}>
         Назад к входу
