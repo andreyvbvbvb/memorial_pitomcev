@@ -18,7 +18,7 @@ import AppHeader from "../components/AppHeader";
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   display: "swap",
-  variable: "--font-ui"
+  variable: "--font-inter"
 });
 
 const manrope = Manrope({
@@ -54,8 +54,8 @@ const robotoCondensed = Roboto_Condensed({
 
 const notoSans = Noto_Sans({
   subsets: ["latin", "cyrillic"],
-  display: "swap",
-  variable: "--font-noto-sans"
+  display: "block",
+  variable: "--font-ui"
 });
 
 const ptSansNarrow = PT_Sans_Narrow({

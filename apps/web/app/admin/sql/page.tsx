@@ -70,9 +70,9 @@ const FONT_PREVIEW_OPTIONS = [
   {
     id: "inter",
     label: "Inter",
-    badge: "Текущий",
-    family: "var(--font-ui)",
-    note: "Основной шрифт сайта. Загружается как webfont через Next и должен выглядеть одинаково на iOS и Android."
+    badge: "Webfont",
+    family: "var(--font-inter)",
+    note: "Нейтральный интерфейсный webfont. Оставлен для сравнения с текущим шрифтом сайта."
   },
   {
     id: "manrope",
@@ -112,9 +112,9 @@ const FONT_PREVIEW_OPTIONS = [
   {
     id: "noto-sans",
     label: "Noto Sans",
-    badge: "Надёжный",
-    family: "var(--font-noto-sans)",
-    note: "Нейтральный мягкий гротеск с сильной поддержкой кириллицы. Хороший вариант для стабильного вида на всех платформах."
+    badge: "Текущий",
+    family: "var(--font-ui)",
+    note: "Основной шрифт сайта. Загружается как webfont через Next, поэтому не зависит от San Francisco на iPhone или Roboto на Android."
   },
   {
     id: "pt-sans-narrow",
@@ -496,7 +496,7 @@ export default function AdminSqlPage() {
   const [syntheticError, setSyntheticError] = useState<string | null>(null);
   const [syntheticProgress, setSyntheticProgress] = useState<SyntheticRunProgress | null>(null);
   const [syntheticSummary, setSyntheticSummary] = useState<SyntheticRunSummary | null>(null);
-  const [fontPreviewId, setFontPreviewId] = useState<FontPreviewId>("inter");
+  const [fontPreviewId, setFontPreviewId] = useState<FontPreviewId>("noto-sans");
 
   useEffect(() => {
     let isMounted = true;
@@ -2068,7 +2068,7 @@ export default function AdminSqlPage() {
               Шрифты интерфейса
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Сейчас сайт использует Inter как webfont. Варианты ниже загружаются приложением, поэтому не зависят от шрифтов iPhone или Android. Системный стек оставлен только для сравнения.
+              Сейчас сайт использует Noto Sans как webfont. Он загружается приложением и одинаково применяется на iPhone, Android и десктопе. Системный стек оставлен только для сравнения.
             </p>
             <div className="mt-3 grid gap-2">
               <div className="grid grid-cols-2 gap-2">

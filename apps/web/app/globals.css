@@ -4,8 +4,8 @@
 
 :root {
   color-scheme: light;
-  --font-body: var(--font-ui), "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
-  --font-display: var(--font-ui), "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-body: var(--font-ui), "Noto Sans", sans-serif;
+  --font-display: var(--font-ui), "Noto Sans", sans-serif;
   --bg: #fcf8f5;
   --surface: #ffffff;
   --primary: #2f6b8a;
@@ -21,17 +21,18 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-synthesis: none;
 }
 
 button,
 input,
 textarea,
 select {
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
 @media (max-width: 1024px) and (orientation: portrait) {
@@ -56,7 +57,7 @@ h4,
 h5,
 h6 {
   color: var(--text);
-  font-family: var(--font-display), var(--font-body), sans-serif;
+  font-family: var(--font-display);
   letter-spacing: 0.015em;
 }
 
