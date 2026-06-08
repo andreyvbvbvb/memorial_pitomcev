@@ -13,6 +13,9 @@ const DEFAULT_GIFTS = [
   }
 ];
 
+const genericGiftNamePattern =
+  /^(Свеча|Цветок|Еда|Игрушка|Звезда|Птица|Подарок)(?:\s+\d+)?$/;
+
 @Injectable()
 export class GiftsService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -42,12 +45,12 @@ export class GiftsService {
       await this.prisma.giftCatalog.upsert({
         where: { code: gift.code },
         update: {
-          name: metadata.name,
           modelUrl: gift.modelUrl
         },
         create: {
           ...gift,
-          name: metadata.name
+          name: metadata.name,
+          description: metadata.description
         }
       });
     }
@@ -105,12 +108,12 @@ export class GiftsService {
         await this.prisma.giftCatalog.upsert({
           where: { code },
           update: {
-            name: metadata.name,
             modelUrl: `/models/gifts/${type}/${file}`
           },
           create: {
             code,
             name: metadata.name,
+            description: metadata.description,
             price: type === "candle" ? 30 : 20,
             modelUrl: `/models/gifts/${type}/${file}`
           }
@@ -125,12 +128,12 @@ export class GiftsService {
       await this.prisma.giftCatalog.upsert({
         where: { code: gift.code },
         update: {
-          name: metadata.name,
           modelUrl: gift.modelUrl
         },
         create: {
           code: gift.code,
           name: metadata.name,
+          description: metadata.description,
           price: gift.price,
           modelUrl: gift.modelUrl
         }
@@ -145,7 +148,12 @@ export class GiftsService {
     });
     return gifts.map((gift) => ({
       ...gift,
-      description: getGiftMetadata(gift.code, gift.name).description
+      name:
+        !gift.description.trim() && genericGiftNamePattern.test(gift.name)
+          ? getGiftMetadata(gift.code, gift.name).name
+          : gift.name,
+      description:
+        gift.description.trim() || getGiftMetadata(gift.code, gift.name).description
     }));
   }
 

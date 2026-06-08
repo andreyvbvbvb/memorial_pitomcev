@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsInt, Max, Min } from "class-validator";
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
 
 export class AdminUpdateMemorialPlanPriceDto {
   @Type(() => Number)
@@ -21,4 +21,14 @@ export class AdminUpdateGiftPriceDto {
   @Min(0)
   @Max(1_000_000)
   price!: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(260)
+  description?: string;
 }

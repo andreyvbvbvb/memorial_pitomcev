@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
 import { canAccessAdmin, canManageAdmins, type AccessLevel } from "../../../lib/access";
+import { resolveGiftIconUrl } from "../../../lib/gifts";
 import ErrorToast from "../../../components/ErrorToast";
 import DirtModelPreview from "../../../components/admin/DirtModelPreview";
 import SkyTuningPreview from "../../../components/admin/SkyTuningPreview";
@@ -37,7 +38,7 @@ const QUICK_QUERIES = [
   {
     label: "Подарки (10)",
     query:
-      'SELECT id, code, name, price, "createdAt" FROM "GiftCatalog" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, code, name, description, price, "createdAt" FROM "GiftCatalog" ORDER BY "createdAt" DESC LIMIT 10;'
   },
   {
     label: "Размещения подарков (10)",
@@ -190,6 +191,7 @@ type GiftPrice = {
   id: string;
   code: string;
   name: string;
+  description?: string | null;
   price: number;
   modelUrl: string;
 };
@@ -1115,13 +1117,22 @@ export default function AdminSqlPage() {
     }
   };
 
-  const updateGiftPriceDraft = (id: string, price: number) => {
+  const updateGiftDraft = (
+    id: string,
+    patch: Partial<Pick<GiftPrice, "name" | "description" | "price">>
+  ) => {
     setGiftPrices((prev) =>
-      prev.map((gift) => (gift.id === id ? { ...gift, price } : gift))
+      prev.map((gift) => (gift.id === id ? { ...gift, ...patch } : gift))
     );
   };
 
   const saveGiftPrice = async (gift: GiftPrice) => {
+    const name = gift.name.trim();
+    const description = gift.description?.trim() ?? "";
+    if (!name) {
+      setPricingError("Название подарка обязательно");
+      return;
+    }
     if (!Number.isInteger(gift.price) || gift.price < 0) {
       setPricingError("Цена подарка должна быть целым числом от 0");
       return;
@@ -1134,7 +1145,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ price: gift.price })
+        body: JSON.stringify({ price: gift.price, name, description })
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1146,7 +1157,7 @@ export default function AdminSqlPage() {
           prev.map((item) => (item.id === data.gift?.id ? data.gift : item))
         );
       }
-      setPricingNotice("Цена подарка обновлена");
+      setPricingNotice("Подарок обновлён");
     } catch (err) {
       setPricingError(
         err instanceof Error ? err.message : "Ошибка сохранения цены подарка"
@@ -1773,7 +1784,7 @@ export default function AdminSqlPage() {
   const normalizedGiftPriceFilter = giftPriceFilter.trim().toLowerCase();
   const filteredGiftPrices = normalizedGiftPriceFilter
     ? giftPrices.filter((gift) => {
-        const haystack = `${gift.name} ${gift.code}`.toLowerCase();
+        const haystack = `${gift.name} ${gift.code} ${gift.description ?? ""}`.toLowerCase();
         return haystack.includes(normalizedGiftPriceFilter);
       })
     : giftPrices;
@@ -2011,54 +2022,111 @@ export default function AdminSqlPage() {
             </div>
             <div className="mt-4 grid gap-2">
               <div className="text-[11px] font-semibold uppercase text-slate-500">
-                Цены подарков
+                Подарки
               </div>
+              <p className="text-[11px] text-slate-500">
+                Настройте название, описание и цену. Карточка слева показывает,
+                какой подарок редактируется.
+              </p>
               <input
                 value={giftPriceFilter}
                 onChange={(event) => setGiftPriceFilter(event.target.value)}
-                placeholder="Фильтр по названию или code"
+                placeholder="Фильтр по названию, описанию или code"
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
               />
-              <div className="max-h-[300px] space-y-2 overflow-auto pr-1">
+              <div className="max-h-[520px] space-y-3 overflow-auto pr-1">
                 {filteredGiftPrices.length === 0 && !pricingLoading ? (
                   <div className="text-xs text-slate-500">Подарки не найдены</div>
                 ) : null}
-                {filteredGiftPrices.map((gift) => (
-                  <div
-                    key={gift.id}
-                    className="rounded-lg border border-slate-200 bg-white p-2"
-                  >
-                    <div className="flex items-start justify-between gap-2">
+                {filteredGiftPrices.map((gift) => {
+                  const iconUrl = resolveGiftIconUrl(gift);
+                  const fallbackIcon =
+                    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23f7f1ee'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%23d3a27f'/></svg>";
+                  return (
+                    <div
+                      key={gift.id}
+                      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-[104px_1fr]"
+                    >
                       <div className="min-w-0">
-                        <div className="truncate text-xs font-semibold text-slate-800">
-                          {gift.name}
+                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#fffcf9] p-1 shadow-sm">
+                          <img
+                            src={iconUrl ?? fallbackIcon}
+                            alt=""
+                            className="aspect-square w-full rounded-xl object-cover"
+                            loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = fallbackIcon;
+                            }}
+                          />
+                          <div className="mt-1 truncate px-1 text-center text-[10px] font-semibold text-slate-500">
+                            {gift.code}
+                          </div>
                         </div>
-                        <div className="truncate text-[10px] text-slate-500">
-                          {gift.code}
+                      </div>
+                      <div className="grid min-w-0 gap-2">
+                        <label className="grid gap-1">
+                          <span className="text-[10px] font-semibold uppercase text-slate-500">
+                            Название
+                          </span>
+                          <input
+                            value={gift.name}
+                            onChange={(event) =>
+                              updateGiftDraft(gift.id, { name: event.target.value })
+                            }
+                            maxLength={80}
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800"
+                          />
+                        </label>
+                        <label className="grid gap-1">
+                          <span className="text-[10px] font-semibold uppercase text-slate-500">
+                            Описание
+                          </span>
+                          <textarea
+                            value={gift.description ?? ""}
+                            onChange={(event) =>
+                              updateGiftDraft(gift.id, {
+                                description: event.target.value
+                              })
+                            }
+                            maxLength={260}
+                            rows={3}
+                            className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700"
+                          />
+                        </label>
+                        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+                          <label className="grid gap-1">
+                            <span className="text-[10px] font-semibold uppercase text-slate-500">
+                              Цена, монеты
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={gift.price}
+                              onChange={(event) =>
+                                updateGiftDraft(gift.id, {
+                                  price: Number(event.target.value)
+                                })
+                              }
+                              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => saveGiftPrice(gift)}
+                            disabled={savingGiftId === gift.id}
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-60"
+                          >
+                            {savingGiftId === gift.id ? "Сохраняем..." : "Сохранить"}
+                          </button>
+                        </div>
+                        <div className="truncate text-[10px] text-slate-400">
+                          Модель: {gift.modelUrl}
                         </div>
                       </div>
                     </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        value={gift.price}
-                        onChange={(event) =>
-                          updateGiftPriceDraft(gift.id, Number(event.target.value))
-                        }
-                        className="min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-700"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => saveGiftPrice(gift)}
-                        disabled={savingGiftId === gift.id}
-                        className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-60"
-                      >
-                        {savingGiftId === gift.id ? "Сохраняем..." : "Сохранить"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

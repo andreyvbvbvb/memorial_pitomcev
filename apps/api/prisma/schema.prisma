@@ -156,6 +156,7 @@ model GiftCatalog {
   id        String   @id @default(cuid())
   code      String   @unique
   name      String
+  description String   @default("")
   price     Int
   modelUrl  String
   createdAt DateTime @default(now())

@@ -553,9 +553,15 @@ export class AdminController {
     @Body() dto: AdminUpdateGiftPriceDto
   ) {
     await this.ensureAdmin(req);
+    const name = dto.name?.trim();
+    const description = dto.description?.trim();
     const gift = await this.prisma.giftCatalog.update({
       where: { id },
-      data: { price: dto.price }
+      data: {
+        price: dto.price,
+        ...(name ? { name } : {}),
+        ...(typeof description === "string" ? { description } : {})
+      }
     });
     return { gift };
   }
