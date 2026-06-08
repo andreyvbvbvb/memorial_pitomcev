@@ -1,7 +1,8 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma, type GiftCatalog } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { generatedGifts } from "./gifts.generated";
+import { getGiftMetadata } from "./gift-metadata";
 
 const DEFAULT_GIFTS = [
   {
@@ -37,13 +38,17 @@ export class GiftsService {
 
   private async ensureCatalogSeeded() {
     for (const gift of DEFAULT_GIFTS) {
+      const metadata = getGiftMetadata(gift.code, gift.name);
       await this.prisma.giftCatalog.upsert({
         where: { code: gift.code },
         update: {
-          name: gift.name,
+          name: metadata.name,
           modelUrl: gift.modelUrl
         },
-        create: gift
+        create: {
+          ...gift,
+          name: metadata.name
+        }
       });
     }
     await this.syncCatalogFromAssets();
@@ -81,17 +86,31 @@ export class GiftsService {
         const code = path.basename(file, ".glb");
         const numeric = code.match(/_(\d+)$/);
         const number = numeric ? Number(numeric[1]) : null;
-        const titlePrefix = type === "candle" ? "Свеча" : type === "flower" ? "Цветок" : "Подарок";
-        const name = number ? `${titlePrefix} ${number}` : titlePrefix;
+        const titlePrefix =
+          type === "candle"
+            ? "Свеча"
+            : type === "flower"
+              ? "Цветок"
+              : type === "meal"
+                ? "Еда"
+                : type === "toy"
+                  ? "Игрушка"
+                  : type === "star"
+                    ? "Звезда"
+                    : type === "bird"
+                      ? "Птица"
+                      : "Подарок";
+        const generatedName = number ? `${titlePrefix} ${number}` : titlePrefix;
+        const metadata = getGiftMetadata(code, generatedName);
         await this.prisma.giftCatalog.upsert({
           where: { code },
           update: {
-            name,
+            name: metadata.name,
             modelUrl: `/models/gifts/${type}/${file}`
           },
           create: {
             code,
-            name,
+            name: metadata.name,
             price: type === "candle" ? 30 : 20,
             modelUrl: `/models/gifts/${type}/${file}`
           }
@@ -102,15 +121,16 @@ export class GiftsService {
 
   private async syncGeneratedGifts() {
     for (const gift of generatedGifts) {
+      const metadata = getGiftMetadata(gift.code, gift.name);
       await this.prisma.giftCatalog.upsert({
         where: { code: gift.code },
         update: {
-          name: gift.name,
+          name: metadata.name,
           modelUrl: gift.modelUrl
         },
         create: {
           code: gift.code,
-          name: gift.name,
+          name: metadata.name,
           price: gift.price,
           modelUrl: gift.modelUrl
         }
@@ -120,9 +140,13 @@ export class GiftsService {
 
   async listCatalog() {
     await this.ensureCatalogSeeded();
-    return this.prisma.giftCatalog.findMany({
+    const gifts: GiftCatalog[] = await this.prisma.giftCatalog.findMany({
       orderBy: { price: "asc" }
     });
+    return gifts.map((gift) => ({
+      ...gift,
+      description: getGiftMetadata(gift.code, gift.name).description
+    }));
   }
 
   async listUserGifts(ownerId: string) {

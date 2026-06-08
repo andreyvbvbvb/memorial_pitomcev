@@ -294,7 +294,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [topUpCurrency, setTopUpCurrency] = useState<"RUB" | "USD">("RUB");
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [giftCatalog, setGiftCatalog] = useState<
-    { id: string; code?: string | null; name: string; price: number; modelUrl: string }[]
+    {
+      id: string;
+      code?: string | null;
+      name: string;
+      description?: string | null;
+      price: number;
+      modelUrl: string;
+    }[]
   >([]);
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftSuccess, setGiftSuccess] = useState<string | null>(null);
@@ -650,6 +657,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           id: string;
           code?: string | null;
           name: string;
+          description?: string | null;
           price: number;
           modelUrl: string;
         }[];
@@ -2347,7 +2355,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "grid min-h-0 flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
-    `relative flex w-full items-center justify-center overflow-visible border transition ${
+    `group/gift-card relative flex w-full items-center justify-center overflow-visible border transition ${
       isPortraitLayout ? "aspect-[1/1.18] flex-col justify-start rounded-[16px] border-2 bg-white p-0.5 pb-6" : "h-28 rounded-[22px] border-[3px]"
     } ${
       selected
@@ -3036,11 +3044,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             const iconUrl = resolveGiftIconUrl(gift);
                             const fallbackIcon =
                               "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                            const giftDescription =
+                              gift.description?.trim() ||
+                              "Подарок памяти, который добавляет мемориалу тёплую деталь.";
                             return (
                               <button
                                 key={gift.id}
                                 type="button"
                                 onClick={() => handleSelectGift(gift.id)}
+                                title={`${gift.name}\n${giftDescription}`}
+                                aria-label={`${gift.name}. ${giftDescription}`}
                                 className={giftCardClass(selectedGiftId === gift.id)}
                               >
                                 {iconUrl ? (
@@ -3057,6 +3070,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 ) : null}
                                 <span className={isPortraitLayout ? "pointer-events-none absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[8px] font-black text-white shadow-md" : "pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md"}>
                                   {gift.price}
+                                </span>
+                                <span className="pointer-events-none absolute inset-1 z-20 flex flex-col items-center justify-center rounded-[14px] border border-white/75 bg-[#fffcf9]/95 px-2 py-2 text-center opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.55)] backdrop-blur transition-opacity duration-150 group-hover/gift-card:opacity-100 group-focus-visible/gift-card:opacity-100">
+                                  <span className="line-clamp-2 text-[9px] font-black uppercase leading-tight tracking-[0.06em] text-[#5d4037]">
+                                    {gift.name}
+                                  </span>
+                                  <span className="mt-1 line-clamp-3 text-[8px] font-bold normal-case leading-tight tracking-normal text-[#8d6e63]">
+                                    {giftDescription}
+                                  </span>
                                 </span>
                                 <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
                                   0
