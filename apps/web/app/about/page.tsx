@@ -21,10 +21,10 @@ export default function AboutPage() {
             По вопросам аккаунта, восстановления доступа и работы сервиса можно написать на
             почту{" "}
             <a
-              href="mailto:meowgav.service@mail.ru"
+              href="mailto:support@мяугав.com"
               className="font-black text-[#5d4037] underline decoration-[#d3a27f] underline-offset-4"
             >
-              meowgav.service@mail.ru
+              support@мяугав.com
             </a>
             .
           </p>

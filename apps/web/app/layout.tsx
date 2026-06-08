@@ -54,6 +54,7 @@ const robotoCondensed = Roboto_Condensed({
 
 const notoSans = Noto_Sans({
   subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "block",
   variable: "--font-ui"
 });
@@ -92,7 +93,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
       <body
-        className={`${inter.variable} ${manrope.variable} ${roboto.variable} ${nunitoSans.variable} ${rubik.variable} ${robotoCondensed.variable} ${notoSans.variable} ${ptSansNarrow.variable} ${sourceSans.variable} ${onest.variable} ${commissioner.variable}`}
+        className={`${notoSans.className} ${notoSans.variable} ${inter.variable} ${manrope.variable} ${roboto.variable} ${nunitoSans.variable} ${rubik.variable} ${robotoCondensed.variable} ${ptSansNarrow.variable} ${sourceSans.variable} ${onest.variable} ${commissioner.variable}`}
       >
         <AppHeader />
         {children}

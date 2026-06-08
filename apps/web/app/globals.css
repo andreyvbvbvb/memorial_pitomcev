@@ -28,10 +28,16 @@ body {
   font-synthesis: none;
 }
 
+html,
+body {
+  font-family: var(--font-body);
+}
+
 button,
 input,
 textarea,
-select {
+select,
+option {
   font-family: var(--font-body);
 }
 

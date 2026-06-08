@@ -39,7 +39,7 @@ export class MailService {
       resetUrl,
       "",
       "Ссылка действует 1 час. Если срок истек, запросите восстановление пароля еще раз.",
-      "Если вы не запрашивали восстановление пароля, напишите нам: meowgav.service@mail.ru"
+      "Если вы не запрашивали восстановление пароля, напишите нам: support@мяугав.com"
     ].join("\n");
 
     await transporter.sendMail({
@@ -48,14 +48,14 @@ export class MailService {
       subject: "Восстановление пароля — МЯУГАВ",
       text,
       html: `
-        <div style="font-family: Arial, sans-serif; color: #5d4037; line-height: 1.55;">
+        <div style="font-family: 'Noto Sans', Arial, sans-serif; color: #5d4037; line-height: 1.55;">
           <h2 style="margin: 0 0 16px;">Восстановление пароля МЯУГАВ</h2>
           <p>Нажмите на кнопку ниже, чтобы задать новый пароль:</p>
           <p style="margin: 20px 0;">
             <a href="${resetUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Сбросить пароль</a>
           </p>
           <p>Ссылка действует 1 час. Если срок истек, запросите восстановление пароля еще раз.</p>
-          <p style="color: #8d6e63;">Если вы не запрашивали восстановление пароля, напишите нам: meowgav.service@mail.ru</p>
+          <p style="color: #8d6e63;">Если вы не запрашивали восстановление пароля, напишите нам: support@мяугав.com</p>
         </div>
       `
     });
