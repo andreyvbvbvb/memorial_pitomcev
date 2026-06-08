@@ -227,10 +227,10 @@ export default function AppHeader() {
   };
 
   const topUpOptions = [
-    { coins: 100, rub: 100, usd: 1 },
-    { coins: 200, rub: 200, usd: 2 },
-    { coins: 500, rub: 500, usd: 500 },
-    { coins: 1000, rub: 1000, usd: 10 }
+    { coins: 100, rub: 99, usd: 1.49 },
+    { coins: 300, rub: 299, usd: 4.49 },
+    { coins: 800, rub: 699, usd: 9.99 },
+    { coins: 2000, rub: 1799, usd: 22.99 }
   ];
   const showMobileBottomNav = isPortraitLayout && pathname !== "/create";
 

@@ -310,6 +310,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
   const [giftSlotsVisible, setGiftSlotsVisible] = useState(true);
+  const [mapPreviewCaptureWithoutGiftUi, setMapPreviewCaptureWithoutGiftUi] = useState(false);
   const [giftAuthOpen, setGiftAuthOpen] = useState(false);
   const [giftAuthVisible, setGiftAuthVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<
@@ -1433,7 +1434,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
     previewRefreshInFlightRef.current = true;
     try {
-      const snapshot = await capturePreviewImage();
+      setMapPreviewCaptureWithoutGiftUi(true);
+      let snapshot: Blob | null = null;
+      try {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        });
+        snapshot = await capturePreviewImage();
+      } finally {
+        setMapPreviewCaptureWithoutGiftUi(false);
+      }
       if (!snapshot) {
         return;
       }
@@ -1631,10 +1641,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
   };
 
   const topUpOptions = [
-    { coins: 100, rub: 100, usd: 1 },
-    { coins: 200, rub: 200, usd: 2 },
-    { coins: 500, rub: 500, usd: 500 },
-    { coins: 1000, rub: 1000, usd: 10 }
+    { coins: 100, rub: 99, usd: 1.49 },
+    { coins: 300, rub: 299, usd: 4.49 },
+    { coins: 800, rub: 699, usd: 9.99 },
+    { coins: 2000, rub: 1799, usd: 22.99 }
   ];
 
   const isOwner = Boolean(currentUser?.id && pet?.ownerId === currentUser.id);
@@ -2550,10 +2560,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
           dirtSlots={dirtSlotPlacements}
           dirtLevel={dirtLevel}
           gifts={previewGifts}
-          giftSlots={giftPanelOpen ? highlightSlots : undefined}
-          dimmedGiftSlots={giftPanelOpen ? dimmedGiftSlots : undefined}
-          selectedSlot={giftPanelOpen ? selectedSlot : null}
-          onSelectSlot={giftPanelOpen ? handleSelectSlot : undefined}
+          giftSlots={!mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? highlightSlots : undefined}
+          dimmedGiftSlots={
+            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? dimmedGiftSlots : undefined
+          }
+          selectedSlot={!mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? selectedSlot : null}
+          onSelectSlot={
+            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? handleSelectSlot : undefined
+          }
           onGiftSlotsDetected={setDetectedSlots}
           preloadGiftUrl={pendingPreviewUrl}
           onGiftPreloaded={handleGiftPreloaded}
@@ -2565,7 +2579,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           soulMode="idle"
           onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
           showControls={false}
-          showGiftSlots={shouldShowGiftSlots}
+          showGiftSlots={!mapPreviewCaptureWithoutGiftUi && shouldShowGiftSlots}
           enableHoverHighlight={editDialogOpen}
           focusSlot={editDialogOpen ? appearanceFocusSlot ?? activeAppearanceFocusSlot : null}
           focusRequestId={editDialogOpen ? appearanceFocusRequestId : undefined}

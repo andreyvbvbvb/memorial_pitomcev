@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { API_BASE } from "../lib/config";
 
@@ -47,6 +48,14 @@ export default function DocumentPageClient({
   return (
     <main className="min-h-[calc(100vh-var(--app-header-height,0px))] bg-[#fcf8f5] px-6 py-10">
       <article className="mx-auto w-full max-w-3xl rounded-[34px] border-[4px] border-white bg-white/90 p-5 shadow-[0_24px_60px_-34px_rgba(93,64,55,0.55)] sm:p-8">
+        <Link
+          href="/about"
+          aria-label="Вернуться на страницу о проекте"
+          title="О проекте"
+          className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#f7f1ee] text-2xl font-black leading-none text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-x-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-[#3bceac]/30"
+        >
+          ←
+        </Link>
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
           Документ
         </p>
@@ -106,4 +115,3 @@ export default function DocumentPageClient({
     </main>
   );
 }
-
