@@ -1803,7 +1803,7 @@ export default function AdminSqlPage() {
     );
   } else {
     content = (
-      <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(340px,34%)_minmax(0,1fr)]">
         <div className="grid gap-4">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="text-xs font-semibold uppercase text-slate-500">
@@ -2853,7 +2853,7 @@ export default function AdminSqlPage() {
 
   return (
     <main className="min-h-[calc(100vh-var(--app-header-height,56px))] bg-[#fcf8f5] px-6 py-10">
-      <div className="mx-auto w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mx-auto w-full max-w-[90vw] rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-900">Админ · SQL консоль</h1>
         <p className="mt-2 text-sm text-slate-600">
           Разрешены только SELECT, DELETE и UPDATE. Выполняется на сервере API.
