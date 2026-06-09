@@ -160,6 +160,15 @@ type SoulPathState = {
   points: SoulPathPointState[];
 };
 
+type DetailTooltipState = {
+  id: string;
+  name: string;
+  description: string;
+  left: number;
+  top: number;
+  width: number;
+};
+
 type PhotoDraft = {
   id: string;
   file: File | null;
@@ -741,6 +750,7 @@ export default function CreateMemorialClient({
   const [cameraFocusKey, setCameraFocusKey] = useState<string | null>(null);
   const [focusRequestId, setFocusRequestId] = useState(0);
   const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
+  const [detailTooltip, setDetailTooltip] = useState<DetailTooltipState | null>(null);
   const hoverIntentRef = useRef<{ category: string; id: string } | null>(null);
   const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
   const tooltipTimerRef = useRef<number | null>(null);
@@ -3278,6 +3288,35 @@ export default function CreateMemorialClient({
     setHoveredOption((prev) => (prev?.category === category ? null : prev));
   }, []);
 
+  const showDetailTooltip = useCallback(
+    (option: OptionItem, element: HTMLElement) => {
+      const width = isPortraitLayout ? 210 : 230;
+      const maxHeight = isPortraitLayout ? 132 : 146;
+      const gap = 10;
+      const margin = 8;
+      const rect = element.getBoundingClientRect();
+      const hasLeftSpace = rect.left >= width + gap + margin;
+      const preferredLeft = hasLeftSpace ? rect.left - width - gap : rect.right + gap;
+      const maxLeft = window.innerWidth - width - margin;
+      const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
+      const maxTop = Math.max(margin, window.innerHeight - maxHeight - margin);
+      const top = Math.max(margin, Math.min(rect.top, maxTop));
+      setDetailTooltip({
+        id: option.id,
+        name: option.name,
+        description: option.description.trim() || "Деталь оформления мемориала.",
+        left,
+        top,
+        width
+      });
+    },
+    [isPortraitLayout]
+  );
+
+  const hideDetailTooltip = useCallback(() => {
+    setDetailTooltip(null);
+  }, []);
+
   const handleOptionSelect = useCallback(
     async (category: string, id: string, apply: () => void) => {
       await preloadOptionModel(category, id);
@@ -3310,22 +3349,29 @@ export default function CreateMemorialClient({
         const isSelected = selectedId === option.id;
         const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
         return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => {
-                void handleOptionSelect(category, option.id, () => onSelect(option.id));
-              }}
-              onMouseEnter={() => {
-                void handleOptionHover(category, option.id);
-              }}
-            onMouseLeave={() => handleOptionLeave(category)}
-            onFocus={() => {
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => {
+              void handleOptionSelect(category, option.id, () => onSelect(option.id));
+            }}
+            onMouseEnter={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleOptionHover(category, option.id);
             }}
-            onBlur={() => handleOptionLeave(category)}
+            onMouseLeave={() => {
+              hideDetailTooltip();
+              handleOptionLeave(category);
+            }}
+            onFocus={(event) => {
+              showDetailTooltip(option, event.currentTarget);
+              void handleOptionHover(category, option.id);
+            }}
+            onBlur={() => {
+              hideDetailTooltip();
+              handleOptionLeave(category);
+            }}
             aria-label={option.name}
-            title={option.name}
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-[#3bceac] bg-[#f0fffb]"
@@ -3365,16 +3411,23 @@ export default function CreateMemorialClient({
             onClick={() => {
               void handleOptionSelect("house-texture", option.id, () => onSelect(option.id));
             }}
-            onMouseEnter={() => {
+            onMouseEnter={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleOptionHover("house-texture", option.id);
             }}
-            onMouseLeave={() => handleOptionLeave("house-texture")}
-            onFocus={() => {
+            onMouseLeave={() => {
+              hideDetailTooltip();
+              handleOptionLeave("house-texture");
+            }}
+            onFocus={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleOptionHover("house-texture", option.id);
             }}
-            onBlur={() => handleOptionLeave("house-texture")}
+            onBlur={() => {
+              hideDetailTooltip();
+              handleOptionLeave("house-texture");
+            }}
             aria-label={option.name}
-            title={option.name}
             className={`h-8 w-8 rounded-lg border transition ${
               isSelected
                 ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
@@ -4742,6 +4795,23 @@ export default function CreateMemorialClient({
       }`}
       style={mainStyle}
     >
+      {detailTooltip ? (
+        <div
+          className="pointer-events-none fixed z-[5000] rounded-[14px] border-2 border-white bg-[#fffcf9] px-3 py-2 text-left shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur"
+          style={{
+            left: detailTooltip.left,
+            top: detailTooltip.top,
+            width: detailTooltip.width
+          }}
+        >
+          <p className="text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5d4037]">
+            {detailTooltip.name}
+          </p>
+          <p className="mt-1 text-[10px] font-bold leading-snug text-[#8d6e63]">
+            {detailTooltip.description}
+          </p>
+        </div>
+      ) : null}
       {isInitialStep && !soulPreviewReady ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-[#f7f1ee]/72 px-4 backdrop-blur-lg">
           <div className="rounded-[28px] border-[4px] border-white bg-white/[0.92] px-7 py-6 text-center shadow-[0_24px_70px_-28px_rgba(93,64,55,0.5)]">

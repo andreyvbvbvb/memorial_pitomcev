@@ -313,6 +313,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [giftCatalog, setGiftCatalog] = useState<GiftCatalogItem[]>([]);
   const [giftTooltip, setGiftTooltip] = useState<GiftTooltipState | null>(null);
+  const [detailTooltip, setDetailTooltip] = useState<GiftTooltipState | null>(null);
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftSuccess, setGiftSuccess] = useState<string | null>(null);
   const [cleanSuccess, setCleanSuccess] = useState<string | null>(null);
@@ -1029,6 +1030,35 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
     setHoveredAppearanceOption((prev) => (prev?.category === category ? null : prev));
   }, []);
+  const showDetailTooltip = useCallback(
+    (option: OptionItem, element: HTMLElement) => {
+      const width = isPortraitLayout ? 210 : 230;
+      const maxHeight = isPortraitLayout ? 132 : 146;
+      const gap = 10;
+      const margin = 8;
+      const rect = element.getBoundingClientRect();
+      const hasLeftSpace = rect.left >= width + gap + margin;
+      const preferredLeft = hasLeftSpace ? rect.left - width - gap : rect.right + gap;
+      const maxLeft = window.innerWidth - width - margin;
+      const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
+      const maxTop = Math.max(margin, window.innerHeight - maxHeight - margin);
+      const top = Math.max(margin, Math.min(rect.top, maxTop));
+      setDetailTooltip({
+        id: option.id,
+        name: option.name,
+        description: option.description.trim() || "Деталь оформления мемориала.",
+        left,
+        top,
+        width
+      });
+    },
+    [isPortraitLayout]
+  );
+
+  const hideDetailTooltip = useCallback(() => {
+    setDetailTooltip(null);
+  }, []);
+
   const handleAppearanceOptionSelect = useCallback(
     async (category: string, optionId: string, apply: () => void) => {
       await preloadAppearanceOptionModel(category, optionId);
@@ -2527,16 +2557,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
             onClick={() => {
               void handleAppearanceOptionSelect(category, option.id, () => onSelect(option.id));
             }}
-            onMouseEnter={() => {
+            onMouseEnter={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleAppearanceOptionHover(category, option.id);
             }}
-            onMouseLeave={() => handleAppearanceOptionLeave(category)}
-            onFocus={() => {
+            onMouseLeave={() => {
+              hideDetailTooltip();
+              handleAppearanceOptionLeave(category);
+            }}
+            onFocus={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleAppearanceOptionHover(category, option.id);
             }}
-            onBlur={() => handleAppearanceOptionLeave(category)}
+            onBlur={() => {
+              hideDetailTooltip();
+              handleAppearanceOptionLeave(category);
+            }}
             aria-label={option.name}
-            title={option.name}
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-[#3bceac] bg-[#f0fffb]"
@@ -2578,16 +2615,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 onSelect(option.id)
               );
             }}
-            onMouseEnter={() => {
+            onMouseEnter={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleAppearanceOptionHover("house-texture", option.id);
             }}
-            onMouseLeave={() => handleAppearanceOptionLeave("house-texture")}
-            onFocus={() => {
+            onMouseLeave={() => {
+              hideDetailTooltip();
+              handleAppearanceOptionLeave("house-texture");
+            }}
+            onFocus={(event) => {
+              showDetailTooltip(option, event.currentTarget);
               void handleAppearanceOptionHover("house-texture", option.id);
             }}
-            onBlur={() => handleAppearanceOptionLeave("house-texture")}
+            onBlur={() => {
+              hideDetailTooltip();
+              handleAppearanceOptionLeave("house-texture");
+            }}
             aria-label={option.name}
-            title={option.name}
             className={`h-8 w-8 rounded-lg border transition ${
               isSelected
                 ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
@@ -2616,6 +2660,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
           </p>
           <p className="mt-1 text-[10px] font-bold leading-snug text-[#8d6e63]">
             {giftTooltip.description}
+          </p>
+        </div>
+      ) : null}
+      {detailTooltip ? (
+        <div
+          className="pointer-events-none fixed z-[5000] rounded-[14px] border-2 border-white bg-[#fffcf9] px-3 py-2 text-left shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur"
+          style={{
+            left: detailTooltip.left,
+            top: detailTooltip.top,
+            width: detailTooltip.width
+          }}
+        >
+          <p className="text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5d4037]">
+            {detailTooltip.name}
+          </p>
+          <p className="mt-1 text-[10px] font-bold leading-snug text-[#8d6e63]">
+            {detailTooltip.description}
           </p>
         </div>
       ) : null}
