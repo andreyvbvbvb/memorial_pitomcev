@@ -32,6 +32,7 @@ model User {
   gifts        GiftPlacement[]
   memorialDrafts MemorialDraft[]
   walletTransactions WalletTransaction[]
+  paymentOrders PaymentOrder[]
   newsRead     NewsRead?
   documentRevisions DocumentRevision[]
   passwordResetTokens PasswordResetToken[]
@@ -205,6 +206,26 @@ model WalletTransaction {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model PaymentOrder {
+  id                 String    @id @default(cuid())
+  userId             String
+  invoiceId          String    @unique
+  coins              Int
+  amountMinor        Int
+  currency           String
+  status             String    @default("created")
+  cloudTransactionId String?
+  failureReason      String?
+  paidAt             DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 model NewsPost {

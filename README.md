@@ -28,6 +28,8 @@ SMTP_USER="meowgav.service@xn--80aeb9a9a9d.com"
 SMTP_PASS="SET_IN_SERVER_ENV"
 SMTP_FROM="МЯУГАВ <meowgav.service@xn--80aeb9a9a9d.com>"
 SMTP_SECURE="true"
+CLOUDPAYMENTS_PUBLIC_ID="pk_test_..."
+CLOUDPAYMENTS_API_SECRET="cloudpayments_api_secret"
 ```
 
 ## Production domain
@@ -41,6 +43,22 @@ Recommended production values when web and API are served through the same domai
 FRONTEND_URL=https://xn--80aeb9a9a9d.com
 NEXT_PUBLIC_API_URL=/api
 INTERNAL_API_URL=http://api:3001
+```
+
+## CloudPayments
+Wallet top-ups use CloudPayments widget on `/payment` and server callbacks in the API.
+
+Set these API environment variables in production:
+```
+CLOUDPAYMENTS_PUBLIC_ID=...
+CLOUDPAYMENTS_API_SECRET=...
+```
+
+Configure CloudPayments notifications to the public API URL:
+```
+Check: https://xn--80aeb9a9a9d.com/api/wallet/payments/cloudpayments/check
+Pay:   https://xn--80aeb9a9a9d.com/api/wallet/payments/cloudpayments/pay
+Fail:  https://xn--80aeb9a9a9d.com/api/wallet/payments/cloudpayments/fail
 ```
 
 ## Apps
