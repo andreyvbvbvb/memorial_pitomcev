@@ -66,6 +66,10 @@ model Pet {
   story     String?
   isPublic  Boolean  @default(false)
   isActive  Boolean  @default(true)
+  moderationStatus String @default("APPROVED")
+  moderationComment String?
+  moderatedAt DateTime?
+  moderatorId String?
   deactivatedAt DateTime?
   deactivationReason String?
   createdAt DateTime @default(now())
@@ -78,6 +82,7 @@ model Pet {
   gifts     GiftPlacement[]
 
   @@index([ownerId, isActive])
+  @@index([moderationStatus, createdAt])
 }
 
 model Memorial {

@@ -8,7 +8,7 @@ import {
   useState,
   useCallback,
   type CSSProperties,
-  type PointerEvent as ReactPointerEvent
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,8 +16,16 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
-import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../lib/map-preview";
-import { canAccessAdmin, canUseCalibration, type AccessLevel, type AuthUser } from "../../lib/access";
+import {
+  MAP_PREVIEW_CAPTURE_HEIGHT,
+  MAP_PREVIEW_CAPTURE_WIDTH,
+} from "../../lib/map-preview";
+import {
+  canAccessAdmin,
+  canUseCalibration,
+  type AccessLevel,
+  type AuthUser,
+} from "../../lib/access";
 import AuthModal from "../../components/AuthModal";
 import {
   getAllMemorialModelUrls,
@@ -32,15 +40,19 @@ import {
   resolveFrameRightModel,
   resolveMatModel,
   resolveBowlFoodModel,
-  resolveBowlWaterModel
+  resolveBowlWaterModel,
 } from "../../lib/memorial-models";
 import type { SeasonKey } from "../../lib/memorial-models";
 import {
   buildHouseVariantGroup,
-  splitHouseVariantId
+  splitHouseVariantId,
 } from "../../lib/house-variants";
 import { getHouseTextureSwatchBackground } from "../../lib/house-texture-swatches";
-import { buildHouseLayoutKey, getHouseTransform, normalizeTerrainLayoutId } from "../../lib/house-layout";
+import {
+  buildHouseLayoutKey,
+  getHouseTransform,
+  normalizeTerrainLayoutId,
+} from "../../lib/house-layout";
 import {
   firstMarkerVariantId,
   markerAnchor,
@@ -49,7 +61,7 @@ import {
   markerStyleById,
   markerVariants,
   markerStyles,
-  markerVariantsForSpecies
+  markerVariantsForSpecies,
 } from "../../lib/markers";
 import MemorialPreview from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
@@ -61,7 +73,7 @@ import {
   hudInnerSurfaceClass,
   hudPanelChromeClass,
   hudRoundButtonClass,
-  hudTooltipClass
+  hudTooltipClass,
 } from "../../components/hudTheme";
 import {
   DEFAULT_SOUL_COLOR,
@@ -72,14 +84,17 @@ import {
   normalizeSoulPath,
   readSoulSettings,
   type PetSoulMode,
-  type PetSoulPath
+  type PetSoulPath,
 } from "../../components/PetSoul";
-import { getConfiguredHouseSlots, getTerrainGiftSlots } from "../../lib/memorial-config";
+import {
+  getConfiguredHouseSlots,
+  getTerrainGiftSlots,
+} from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
 import {
   getGiftAvailableTypes,
   getGiftSlotType,
-  resolveGiftModelUrl
+  resolveGiftModelUrl,
 } from "../../lib/gifts";
 import { giftModelsGenerated } from "../../lib/gifts.generated";
 import {
@@ -94,7 +109,7 @@ import {
   roofOptions as allRoofOptions,
   signOptions as allSignOptions,
   wallOptions as allWallOptions,
-  type OptionItem
+  type OptionItem,
 } from "../../lib/memorial-options";
 
 ensureDracoLoader();
@@ -106,7 +121,7 @@ const DEFAULT_LOADING_TIPS = [
   "Подарки в мемориале помогают показать заботу и любовь.",
   "Вы можете менять оформление мемориала в любое время.",
   "Фотографии питомца можно добавить позже в личном кабинете.",
-  "Мы храним данные безопасно и используем резервное копирование."
+  "Мы храним данные безопасно и используем резервное копирование.",
 ];
 
 type FormState = {
@@ -230,7 +245,7 @@ const MEMORIAL_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
   { id: "5y", years: 5, label: "5 лет", price: 500 },
-  { id: "lifetime", years: 0, label: "Навсегда", price: 1200 }
+  { id: "lifetime", years: 0, label: "Навсегда", price: 1200 },
 ] as const;
 type MemorialPlanId = (typeof MEMORIAL_PLANS)[number]["id"];
 type MemorialPlan = {
@@ -259,7 +274,13 @@ type Step3Tab = {
   focusSlot?: string | null;
 };
 
-type BuilderOverlayId = "details" | "marker" | "photos" | "story" | "base" | "soul";
+type BuilderOverlayId =
+  | "details"
+  | "marker"
+  | "photos"
+  | "story"
+  | "base"
+  | "soul";
 type MarkerPanelTab = "marker" | "map";
 
 type CameraOffset = {
@@ -301,13 +322,13 @@ const SEASON_LABELS: Record<SeasonKey, string> = {
   spring: "Весна",
   summer: "Лето",
   autumn: "Осень",
-  winter: "Зима"
+  winter: "Зима",
 };
 const SEASON_SWATCHES: Record<SeasonKey, { color: string; label: string }> = {
   spring: { color: "#F3A4D8", label: SEASON_LABELS.spring },
   summer: { color: "#6BCB77", label: SEASON_LABELS.summer },
   autumn: { color: "#F2B84B", label: SEASON_LABELS.autumn },
-  winter: { color: "#A7D8FF", label: SEASON_LABELS.winter }
+  winter: { color: "#A7D8FF", label: SEASON_LABELS.winter },
 };
 
 const STEP3_ICON_CLASS = "h-6 w-6";
@@ -316,14 +337,30 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
   switch (id) {
     case "environment":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <circle cx="7" cy="7" r="2" />
           <path d="M3 19l6-7 4 5 3-4 5 6" />
         </svg>
       );
     case "house":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M3 11l9-7 9 7" />
           <path d="M5 10v9h14v-9" />
           <path d="M9 19v-6h6v6" />
@@ -331,14 +368,30 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     case "roof":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M4 14l8-7 8 7" />
           <path d="M6 14h12" />
         </svg>
       );
     case "wall":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="4" y="6" width="16" height="12" rx="1.5" />
           <path d="M4 11h16" />
           <path d="M10 6v12" />
@@ -346,35 +399,75 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     case "sign":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M6 4v16" />
           <rect x="8" y="6" width="10" height="6" rx="1" />
         </svg>
       );
     case "frameLeft":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="5" y="5" width="14" height="14" rx="2" />
           <path d="M9 5v14" />
         </svg>
       );
     case "frameRight":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="5" y="5" width="14" height="14" rx="2" />
           <path d="M15 5v14" />
         </svg>
       );
     case "mat":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="5" y="6" width="14" height="12" rx="2" />
           <path d="M9 6v12" />
         </svg>
       );
     case "bowlFood":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M4 11h16" />
           <path d="M6 11l2 6h8l2-6" />
           <circle cx="12" cy="7.5" r="1.5" />
@@ -382,7 +475,15 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
       );
     case "bowlWater":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M12 4l6 6" />
           <path d="M12 4l-6 6" />
           <path d="M6 10c0 4 3 7 6 7s6-3 6-7" />
@@ -397,7 +498,15 @@ const BuilderOverlayIcon = ({ id }: { id: BuilderOverlayId }) => {
   switch (id) {
     case "details":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M3 11l9-7 9 7" />
           <path d="M5 10v9h14v-9" />
           <path d="M9 19v-6h6v6" />
@@ -406,14 +515,30 @@ const BuilderOverlayIcon = ({ id }: { id: BuilderOverlayId }) => {
       );
     case "soul":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
           <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
         </svg>
       );
     case "base":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <circle cx="12" cy="12" r="9" />
           <path d="M12 11v5" />
           <circle cx="12" cy="8" r="1" />
@@ -421,21 +546,45 @@ const BuilderOverlayIcon = ({ id }: { id: BuilderOverlayId }) => {
       );
     case "story":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M4 5h8a3 3 0 0 1 3 3v11" />
           <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
         </svg>
       );
     case "marker":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
           <circle cx="12" cy="10" r="2.5" />
         </svg>
       );
     case "photos":
       return (
-        <svg viewBox="0 0 24 24" className={STEP3_ICON_CLASS} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="3" y="5" width="18" height="14" rx="2" />
           <circle cx="9" cy="11" r="2" />
           <path d="M21 15l-4-4-4 4-3-3-5 5" />
@@ -454,7 +603,7 @@ const STEP3_TAB_DESCRIPTIONS: Record<Step3TabId, string> = {
   frameRight: "Правая фоторамка у домика.",
   mat: "Коврик перед входом.",
   bowlFood: "Миска с кормом.",
-  bowlWater: "Миска с водой."
+  bowlWater: "Миска с водой.",
 };
 const colorPalette = [
   "#F36C6C",
@@ -481,7 +630,7 @@ const colorPalette = [
   "#8A5E2E",
   "#714A22",
   "#5A3A1B",
-  "#422913"
+  "#422913",
 ];
 
 const createDefaultSoulPathState = (): SoulPathState => ({
@@ -491,11 +640,13 @@ const createDefaultSoulPathState = (): SoulPathState => ({
   points: [
     { id: "point-1", x: -1.15, y: 0.2, z: 0.45, duration: 2.2 },
     { id: "point-2", x: 0.15, y: 0.65, z: 1.1, duration: 2.4 },
-    { id: "point-3", x: 1.05, y: 0.28, z: -0.35, duration: 2.2 }
-  ]
+    { id: "point-3", x: 1.05, y: 0.28, z: -0.35, duration: 2.2 },
+  ],
 });
 
-const soulPathStateFromSettings = (path?: PetSoulPath | null): SoulPathState => {
+const soulPathStateFromSettings = (
+  path?: PetSoulPath | null,
+): SoulPathState => {
   const fallback = createDefaultSoulPathState();
   if (!path?.points.length) {
     return fallback;
@@ -509,8 +660,8 @@ const soulPathStateFromSettings = (path?: PetSoulPath | null): SoulPathState => 
       x: point.x,
       y: point.y,
       z: point.z,
-      duration: point.duration
-    }))
+      duration: point.duration,
+    })),
   };
 };
 
@@ -519,7 +670,12 @@ const soulPathForScene = (state: SoulPathState): PetSoulPath | null =>
     enabled: state.enabled,
     returnDuration: state.returnDuration,
     idleDuration: state.idleDuration,
-    points: state.points.map(({ x, y, z, duration }) => ({ x, y, z, duration }))
+    points: state.points.map(({ x, y, z, duration }) => ({
+      x,
+      y,
+      z,
+      duration,
+    })),
   });
 
 const initialState: FormState = {
@@ -555,13 +711,13 @@ const initialState: FormState = {
   bowlFoodColor: colorPalette[3] ?? "#FFD166",
   bowlWaterColor: colorPalette[7] ?? "#8ECAE6",
   soulColor: DEFAULT_SOUL_COLOR,
-  soulPath: createDefaultSoulPathState()
+  soulPath: createDefaultSoulPathState(),
 };
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
 
 const parseEnvironmentDraft = (
-  rawEnvironmentId?: string | null
+  rawEnvironmentId?: string | null,
 ): {
   environmentId: string;
   environmentSeason: SeasonKey;
@@ -576,38 +732,53 @@ const parseEnvironmentDraft = (
       return {
         environmentId: baseId,
         environmentSeason: season,
-        environmentSeasonAuto: false
+        environmentSeasonAuto: false,
       };
     }
   }
   return {
     environmentId: value,
     environmentSeason: getSeasonForDate(),
-    environmentSeasonAuto: true
+    environmentSeasonAuto: true,
   };
 };
 
-const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState => {
+const buildEditFormState = (
+  pet: EditMemorialPet,
+  ownerId: string,
+): FormState => {
   const memorial = pet.memorial;
   const marker = pet.marker;
   const sceneJson =
-    memorial?.sceneJson && typeof memorial.sceneJson === "object" && !Array.isArray(memorial.sceneJson)
+    memorial?.sceneJson &&
+    typeof memorial.sceneJson === "object" &&
+    !Array.isArray(memorial.sceneJson)
       ? memorial.sceneJson
       : {};
   const parts =
-    sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
+    sceneJson.parts &&
+    typeof sceneJson.parts === "object" &&
+    !Array.isArray(sceneJson.parts)
       ? (sceneJson.parts as Record<string, unknown>)
       : {};
   const colors =
-    sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
+    sceneJson.colors &&
+    typeof sceneJson.colors === "object" &&
+    !Array.isArray(sceneJson.colors)
       ? (sceneJson.colors as Record<string, unknown>)
       : {};
   const soul = readSoulSettings(sceneJson);
-  const environmentDraft = parseEnvironmentDraft(memorial?.environmentId ?? null);
+  const environmentDraft = parseEnvironmentDraft(
+    memorial?.environmentId ?? null,
+  );
   const pickId = (key: string, fallback: string) =>
-    typeof parts[key] === "string" && parts[key] ? String(parts[key]) : fallback;
+    typeof parts[key] === "string" && parts[key]
+      ? String(parts[key])
+      : fallback;
   const pickColor = (key: string, fallback: string) =>
-    typeof colors[key] === "string" && colors[key] ? String(colors[key]) : fallback;
+    typeof colors[key] === "string" && colors[key]
+      ? String(colors[key])
+      : fallback;
 
   return {
     ownerId,
@@ -626,7 +797,9 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
       typeof marker?.lng === "number" && !Number.isNaN(marker.lng)
         ? marker.lng.toFixed(6)
         : "",
-    markerStyle: marker?.markerStyle ?? firstMarkerVariantId(pet.species ?? initialState.species),
+    markerStyle:
+      marker?.markerStyle ??
+      firstMarkerVariantId(pet.species ?? initialState.species),
     environmentId: environmentDraft.environmentId,
     environmentSeason: environmentDraft.environmentSeason,
     environmentSeasonAuto: environmentDraft.environmentSeasonAuto,
@@ -643,34 +816,50 @@ const buildEditFormState = (pet: EditMemorialPet, ownerId: string): FormState =>
     wallColor: pickColor("wall_paint", initialState.wallColor),
     signColor: pickColor("sign_paint", initialState.signColor),
     frameLeftColor: pickColor("frame_left_paint", initialState.frameLeftColor),
-    frameRightColor: pickColor("frame_right_paint", initialState.frameRightColor),
+    frameRightColor: pickColor(
+      "frame_right_paint",
+      initialState.frameRightColor,
+    ),
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
     bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
     soulColor: soul.color,
-    soulPath: soulPathStateFromSettings(soul.path)
+    soulPath: soulPathStateFromSettings(soul.path),
   };
 };
 
-const buildDraftFormState = (draft: MemorialDraftDto, ownerId: string): FormState => {
+const buildDraftFormState = (
+  draft: MemorialDraftDto,
+  ownerId: string,
+): FormState => {
   const sceneJson =
-    draft.sceneJson && typeof draft.sceneJson === "object" && !Array.isArray(draft.sceneJson)
+    draft.sceneJson &&
+    typeof draft.sceneJson === "object" &&
+    !Array.isArray(draft.sceneJson)
       ? draft.sceneJson
       : {};
   const parts =
-    sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
+    sceneJson.parts &&
+    typeof sceneJson.parts === "object" &&
+    !Array.isArray(sceneJson.parts)
       ? (sceneJson.parts as Record<string, unknown>)
       : {};
   const colors =
-    sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
+    sceneJson.colors &&
+    typeof sceneJson.colors === "object" &&
+    !Array.isArray(sceneJson.colors)
       ? (sceneJson.colors as Record<string, unknown>)
       : {};
   const soul = readSoulSettings(sceneJson);
   const environmentDraft = parseEnvironmentDraft(draft.environmentId ?? null);
   const pickId = (key: string, fallback: string) =>
-    typeof parts[key] === "string" && parts[key] ? String(parts[key]) : fallback;
+    typeof parts[key] === "string" && parts[key]
+      ? String(parts[key])
+      : fallback;
   const pickColor = (key: string, fallback: string) =>
-    typeof colors[key] === "string" && colors[key] ? String(colors[key]) : fallback;
+    typeof colors[key] === "string" && colors[key]
+      ? String(colors[key])
+      : fallback;
 
   return {
     ownerId,
@@ -689,7 +878,9 @@ const buildDraftFormState = (draft: MemorialDraftDto, ownerId: string): FormStat
       typeof draft.lng === "number" && !Number.isNaN(draft.lng)
         ? draft.lng.toFixed(6)
         : "",
-    markerStyle: draft.markerStyle ?? firstMarkerVariantId(draft.species ?? initialState.species),
+    markerStyle:
+      draft.markerStyle ??
+      firstMarkerVariantId(draft.species ?? initialState.species),
     environmentId: environmentDraft.environmentId,
     environmentSeason: environmentDraft.environmentSeason,
     environmentSeasonAuto: environmentDraft.environmentSeasonAuto,
@@ -706,17 +897,20 @@ const buildDraftFormState = (draft: MemorialDraftDto, ownerId: string): FormStat
     wallColor: pickColor("wall_paint", initialState.wallColor),
     signColor: pickColor("sign_paint", initialState.signColor),
     frameLeftColor: pickColor("frame_left_paint", initialState.frameLeftColor),
-    frameRightColor: pickColor("frame_right_paint", initialState.frameRightColor),
+    frameRightColor: pickColor(
+      "frame_right_paint",
+      initialState.frameRightColor,
+    ),
     matColor: pickColor("mat_paint", initialState.matColor),
     bowlFoodColor: pickColor("bowl_food_paint", initialState.bowlFoodColor),
     bowlWaterColor: pickColor("bowl_water_paint", initialState.bowlWaterColor),
     soulColor: soul.color,
-    soulPath: soulPathStateFromSettings(soul.path)
+    soulPath: soulPathStateFromSettings(soul.path),
   };
 };
 
 export default function CreateMemorialClient({
-  editId = null
+  editId = null,
 }: CreateMemorialClientProps) {
   const isPortraitLayout = usePortraitLayout();
   const isEditMode = Boolean(editId);
@@ -736,9 +930,10 @@ export default function CreateMemorialClient({
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [memorialPlanId, setMemorialPlanId] = useState<MemorialPlanId>("1y");
   const [memorialPlans, setMemorialPlans] = useState<MemorialPlan[]>(() =>
-    MEMORIAL_PLANS.map((plan) => ({ ...plan }))
+    MEMORIAL_PLANS.map((plan) => ({ ...plan })),
   );
-  const [detectedHouseSlots, setDetectedHouseSlots] = useState<HouseSlots | null>(null);
+  const [detectedHouseSlots, setDetectedHouseSlots] =
+    useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
   const [previewPhotoId, setPreviewPhotoId] = useState<string | null>(null);
@@ -749,8 +944,13 @@ export default function CreateMemorialClient({
   const [focusSlot, setFocusSlot] = useState<string | null>(null);
   const [cameraFocusKey, setCameraFocusKey] = useState<string | null>(null);
   const [focusRequestId, setFocusRequestId] = useState(0);
-  const [hoveredOption, setHoveredOption] = useState<{ category: string; id: string } | null>(null);
-  const [detailTooltip, setDetailTooltip] = useState<DetailTooltipState | null>(null);
+  const [hoveredOption, setHoveredOption] = useState<{
+    category: string;
+    id: string;
+  } | null>(null);
+  const [detailTooltip, setDetailTooltip] = useState<DetailTooltipState | null>(
+    null,
+  );
   const hoverIntentRef = useRef<{ category: string; id: string } | null>(null);
   const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
   const tooltipTimerRef = useRef<number | null>(null);
@@ -761,32 +961,42 @@ export default function CreateMemorialClient({
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [showMeterGrid, setShowMeterGrid] = useState(false);
-  const [mapPreviewCaptureWithoutGifts, setMapPreviewCaptureWithoutGifts] = useState(false);
+  const [mapPreviewCaptureWithoutGifts, setMapPreviewCaptureWithoutGifts] =
+    useState(false);
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [soulPreviewReady, setSoulPreviewReady] = useState(isEditMode);
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
   const [customSoulPickerOpen, setCustomSoulPickerOpen] = useState(false);
-  const [soulColorTab, setSoulColorTab] = useState<"standard" | "custom">("standard");
-  const [farewellPlaying, setFarewellPlaying] = useState(false);
-  const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(null);
-  const previewControlsRef = useRef<any>(null);
-  const sceneDismissPointerRef = useRef<{ x: number; y: number; pointerId: number | null } | null>(
-    null
+  const [soulColorTab, setSoulColorTab] = useState<"standard" | "custom">(
+    "standard",
   );
+  const [farewellPlaying, setFarewellPlaying] = useState(false);
+  const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(
+    null,
+  );
+  const previewControlsRef = useRef<any>(null);
+  const sceneDismissPointerRef = useRef<{
+    x: number;
+    y: number;
+    pointerId: number | null;
+  } | null>(null);
   const previewRenderRef = useRef<{
     gl: THREE.WebGLRenderer;
     scene: THREE.Scene;
     camera: THREE.Camera;
   } | null>(null);
-  const [activeOverlay, setActiveOverlay] = useState<BuilderOverlayId | null>(null);
-  const [markerPanelTab, setMarkerPanelTab] = useState<MarkerPanelTab>("marker");
+  const [activeOverlay, setActiveOverlay] = useState<BuilderOverlayId | null>(
+    null,
+  );
+  const [markerPanelTab, setMarkerPanelTab] =
+    useState<MarkerPanelTab>("marker");
   const [visitedOverlays, setVisitedOverlays] = useState({
     details: false,
     marker: false,
     photos: false,
     story: false,
     base: false,
-    soul: false
+    soul: false,
   });
 
   useEffect(() => {
@@ -806,10 +1016,10 @@ export default function CreateMemorialClient({
       sceneDismissPointerRef.current = {
         x: event.clientX,
         y: event.clientY,
-        pointerId: typeof event.pointerId === "number" ? event.pointerId : null
+        pointerId: typeof event.pointerId === "number" ? event.pointerId : null,
       };
     },
-    [activeOverlay, farewellPlaying]
+    [activeOverlay, farewellPlaying],
   );
   const handleBuilderScenePointerUp = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -824,12 +1034,15 @@ export default function CreateMemorialClient({
         return;
       }
 
-      const movedDistance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+      const movedDistance = Math.hypot(
+        event.clientX - start.x,
+        event.clientY - start.y,
+      );
       if (movedDistance <= 5) {
         setActiveOverlay(null);
       }
     },
-    [activeOverlay, farewellPlaying]
+    [activeOverlay, farewellPlaying],
   );
   const handleBuilderScenePointerCancel = useCallback(() => {
     sceneDismissPointerRef.current = null;
@@ -837,16 +1050,26 @@ export default function CreateMemorialClient({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
+  const [moderationNoticePetId, setModerationNoticePetId] = useState<
+    string | null
+  >(null);
   const [mobileBuilderMenuOpen, setMobileBuilderMenuOpen] = useState(false);
-  const [mobileBuilderMenuVisible, setMobileBuilderMenuVisible] = useState(false);
-  const [mobileBuilderActionsOpen, setMobileBuilderActionsOpen] = useState(false);
-  const [mobileBuilderActionsVisible, setMobileBuilderActionsVisible] = useState(false);
+  const [mobileBuilderMenuVisible, setMobileBuilderMenuVisible] =
+    useState(false);
+  const [mobileBuilderActionsOpen, setMobileBuilderActionsOpen] =
+    useState(false);
+  const [mobileBuilderActionsVisible, setMobileBuilderActionsVisible] =
+    useState(false);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
   const [authPromptVisible, setAuthPromptVisible] = useState(false);
-  const [authPromptPurpose, setAuthPromptPurpose] = useState<"publish" | "draft">("publish");
+  const [authPromptPurpose, setAuthPromptPurpose] = useState<
+    "publish" | "draft"
+  >("publish");
   const [pendingPublishAfterAuth, setPendingPublishAfterAuth] = useState(false);
   const [pendingDraftAfterAuth, setPendingDraftAfterAuth] = useState(false);
-  const [pendingDraftRedirectHref, setPendingDraftRedirectHref] = useState<string | null>(null);
+  const [pendingDraftRedirectHref, setPendingDraftRedirectHref] = useState<
+    string | null
+  >(null);
   const [leaveConfirmHref, setLeaveConfirmHref] = useState<string | null>(null);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
@@ -855,17 +1078,20 @@ export default function CreateMemorialClient({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingProgressRef = useRef<number | null>(null);
   const editInitialPreloadDoneRef = useRef(false);
-  const [loadingTips, setLoadingTips] = useState<string[]>(DEFAULT_LOADING_TIPS);
+  const [loadingTips, setLoadingTips] =
+    useState<string[]>(DEFAULT_LOADING_TIPS);
   const [loadingTipIndex, setLoadingTipIndex] = useState(0);
   const loadingTipTimerRef = useRef<number | null>(null);
   const [housePlacementOverrides, setHousePlacementOverrides] = useState<
     Record<string, { x: number; z: number; rotY: number }>
   >({});
-  const [houseScaleOverrides, setHouseScaleOverrides] = useState<Record<string, number>>({});
+  const [houseScaleOverrides, setHouseScaleOverrides] = useState<
+    Record<string, number>
+  >({});
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
-    sign_slot: { x: 0, y: 0, z: 2.85 }
+    sign_slot: { x: 0, y: 0, z: 2.85 },
   });
 
   const router = useRouter();
@@ -875,12 +1101,14 @@ export default function CreateMemorialClient({
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
   const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: apiKey });
   const makeLocalPhotoId = useCallback(
-    () => crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    []
+    () =>
+      crypto.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    [],
   );
   const normalizePhotoUrl = useCallback(
     (url: string) => (url.startsWith("http") ? url : `${apiUrl}${url}`),
-    [apiUrl]
+    [apiUrl],
   );
   const revokePhotoUrl = useCallback((photo: PhotoDraft) => {
     if (photo.isObjectUrl) {
@@ -918,8 +1146,8 @@ export default function CreateMemorialClient({
       form.story,
       isEditMode,
       photos.length,
-      step
-    ]
+      step,
+    ],
   );
 
   useEffect(() => {
@@ -930,14 +1158,17 @@ export default function CreateMemorialClient({
         if (!response.ok) {
           return;
         }
-        const rows = (await response.json()) as { years?: number; price?: number }[];
+        const rows = (await response.json()) as {
+          years?: number;
+          price?: number;
+        }[];
         const priceByYears = new Map(
           rows
             .filter(
               (row) =>
-                typeof row.years === "number" && typeof row.price === "number"
+                typeof row.years === "number" && typeof row.price === "number",
             )
-            .map((row) => [row.years as number, row.price as number])
+            .map((row) => [row.years as number, row.price as number]),
         );
         if (!isMounted || priceByYears.size === 0) {
           return;
@@ -945,8 +1176,8 @@ export default function CreateMemorialClient({
         setMemorialPlans((prev) =>
           prev.map((plan) => ({
             ...plan,
-            price: priceByYears.get(plan.years) ?? plan.price
-          }))
+            price: priceByYears.get(plan.years) ?? plan.price,
+          })),
         );
       } catch {
         // Keep bundled fallback prices when pricing endpoint is unavailable.
@@ -963,7 +1194,7 @@ export default function CreateMemorialClient({
     const loadTips = async () => {
       try {
         const response = await fetch(`${apiUrl}/content/loading-tips`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           return;
@@ -971,7 +1202,9 @@ export default function CreateMemorialClient({
         const data = (await response.json()) as { tips?: { text?: string }[] };
         const nextTips = Array.isArray(data.tips)
           ? data.tips
-              .map((tip) => (typeof tip.text === "string" ? tip.text.trim() : ""))
+              .map((tip) =>
+                typeof tip.text === "string" ? tip.text.trim() : "",
+              )
               .filter(Boolean)
           : [];
         if (isMounted && nextTips.length > 0) {
@@ -1019,7 +1252,8 @@ export default function CreateMemorialClient({
   const mapCenter = canShowMarker ? { lat: lat!, lng: lng! } : defaultCenter;
 
   const selectedMarker = markerStyleById(form.markerStyle);
-  const markerIconId = form.markerStyle === "other" ? "other" : form.markerStyle;
+  const markerIconId =
+    form.markerStyle === "other" ? "other" : form.markerStyle;
   const markerPreviewSize = markerSize(form.markerStyle, 43);
   const markerPreviewAnchor = markerAnchor(form.markerStyle, 43);
   useEffect(() => {
@@ -1027,71 +1261,75 @@ export default function CreateMemorialClient({
   }, [form.species]);
   const markerGroups = useMemo(
     () => markerVariantsForSpecies(markerCategory),
-    [markerCategory]
+    [markerCategory],
   );
   const environmentOptions = useMemo(
     () => filterOptionsForUser(allEnvironmentOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const houseOptions = useMemo(
     () => filterOptionsForUser(allHouseOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const roofOptions = useMemo(
     () => filterOptionsForUser(allRoofOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const wallOptions = useMemo(
     () => filterOptionsForUser(allWallOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const signOptions = useMemo(
     () => filterOptionsForUser(allSignOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const frameLeftOptions = useMemo(
     () => filterOptionsForUser(allFrameLeftOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const frameRightOptions = useMemo(
     () => filterOptionsForUser(allFrameRightOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const matOptions = useMemo(
     () => filterOptionsForUser(allMatOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const bowlFoodOptions = useMemo(
     () => filterOptionsForUser(allBowlFoodOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const bowlWaterOptions = useMemo(
     () => filterOptionsForUser(allBowlWaterOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const memorialPlan = useMemo(
     () =>
       memorialPlans.find((plan) => plan.id === memorialPlanId) ??
       memorialPlans[0] ??
       MEMORIAL_PLANS[0],
-    [memorialPlanId, memorialPlans]
+    [memorialPlanId, memorialPlans],
   );
   const memorialPrice = memorialPlan.price;
   const environmentSeasons = useMemo(
     () => getEnvironmentSeasons(form.environmentId),
-    [form.environmentId]
+    [form.environmentId],
   );
   const houseVariantGroup = useMemo(
     () => buildHouseVariantGroup(houseOptions),
-    [houseOptions]
+    [houseOptions],
   );
   useEffect(() => {
     const firstId = (options: OptionItem[]) => options[0]?.id ?? "";
     setForm((prev) => {
-      const nextEnvironmentId = environmentOptions.some((option) => option.id === prev.environmentId)
+      const nextEnvironmentId = environmentOptions.some(
+        (option) => option.id === prev.environmentId,
+      )
         ? prev.environmentId
         : firstId(environmentOptions);
-      const nextHouseId = houseOptions.some((option) => option.id === prev.houseId)
+      const nextHouseId = houseOptions.some(
+        (option) => option.id === prev.houseId,
+      )
         ? prev.houseId
         : firstId(houseOptions);
       const nextRoofId = roofOptions.some((option) => option.id === prev.roofId)
@@ -1103,19 +1341,27 @@ export default function CreateMemorialClient({
       const nextSignId = signOptions.some((option) => option.id === prev.signId)
         ? prev.signId
         : firstId(signOptions);
-      const nextFrameLeftId = frameLeftOptions.some((option) => option.id === prev.frameLeftId)
+      const nextFrameLeftId = frameLeftOptions.some(
+        (option) => option.id === prev.frameLeftId,
+      )
         ? prev.frameLeftId
         : firstId(frameLeftOptions);
-      const nextFrameRightId = frameRightOptions.some((option) => option.id === prev.frameRightId)
+      const nextFrameRightId = frameRightOptions.some(
+        (option) => option.id === prev.frameRightId,
+      )
         ? prev.frameRightId
         : firstId(frameRightOptions);
       const nextMatId = matOptions.some((option) => option.id === prev.matId)
         ? prev.matId
         : firstId(matOptions);
-      const nextBowlFoodId = bowlFoodOptions.some((option) => option.id === prev.bowlFoodId)
+      const nextBowlFoodId = bowlFoodOptions.some(
+        (option) => option.id === prev.bowlFoodId,
+      )
         ? prev.bowlFoodId
         : firstId(bowlFoodOptions);
-      const nextBowlWaterId = bowlWaterOptions.some((option) => option.id === prev.bowlWaterId)
+      const nextBowlWaterId = bowlWaterOptions.some(
+        (option) => option.id === prev.bowlWaterId,
+      )
         ? prev.bowlWaterId
         : firstId(bowlWaterOptions);
 
@@ -1145,7 +1391,7 @@ export default function CreateMemorialClient({
         frameRightId: nextFrameRightId,
         matId: nextMatId,
         bowlFoodId: nextBowlFoodId,
-        bowlWaterId: nextBowlWaterId
+        bowlWaterId: nextBowlWaterId,
       };
     });
   }, [
@@ -1158,40 +1404,54 @@ export default function CreateMemorialClient({
     matOptions,
     roofOptions,
     signOptions,
-    wallOptions
+    wallOptions,
   ]);
   const selectedHouseVariant = splitHouseVariantId(form.houseId);
   const selectedHouseBaseId =
-    selectedHouseVariant.baseId || houseVariantGroup.baseOptions[0]?.id || form.houseId;
+    selectedHouseVariant.baseId ||
+    houseVariantGroup.baseOptions[0]?.id ||
+    form.houseId;
   const selectedTerrainLayoutId = normalizeTerrainLayoutId(form.environmentId);
-  const selectedHouseLayoutKey = buildHouseLayoutKey(selectedTerrainLayoutId, selectedHouseBaseId);
+  const selectedHouseLayoutKey = buildHouseLayoutKey(
+    selectedTerrainLayoutId,
+    selectedHouseBaseId,
+  );
   const houseBaseOptions = houseVariantGroup.baseOptions;
   const houseTextureOptions =
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
   const defaultHouseTransform = useMemo(
     () => getHouseTransform(selectedHouseBaseId, selectedTerrainLayoutId),
-    [selectedHouseBaseId, selectedTerrainLayoutId]
+    [selectedHouseBaseId, selectedTerrainLayoutId],
   );
-  const activeHousePlacement =
-    housePlacementOverrides[selectedHouseLayoutKey] ?? {
-      x: defaultHouseTransform.offsetX,
-      z: defaultHouseTransform.offsetZ,
-      rotY: defaultHouseTransform.rotationY
-    };
+  const activeHousePlacement = housePlacementOverrides[
+    selectedHouseLayoutKey
+  ] ?? {
+    x: defaultHouseTransform.offsetX,
+    z: defaultHouseTransform.offsetZ,
+    rotY: defaultHouseTransform.rotationY,
+  };
   const activeHouseScale =
     houseScaleOverrides[selectedHouseLayoutKey] ?? defaultHouseTransform.scale;
-  const activeSoulPath = useMemo(() => soulPathForScene(form.soulPath), [form.soulPath]);
+  const activeSoulPath = useMemo(
+    () => soulPathForScene(form.soulPath),
+    [form.soulPath],
+  );
   const soulPathTotalDuration = useMemo(
     () =>
       form.soulPath.points.reduce(
-        (total, point) => total + (Number.isFinite(point.duration) ? point.duration : 0),
-        0
+        (total, point) =>
+          total + (Number.isFinite(point.duration) ? point.duration : 0),
+        0,
       ),
-    [form.soulPath.points]
+    [form.soulPath.points],
   );
   const soulPathExportJson = useMemo(() => {
     const enabledPath = soulPathForScene({ ...form.soulPath, enabled: true });
-    return JSON.stringify(enabledPath ?? { enabled: false, points: [] }, null, 2);
+    return JSON.stringify(
+      enabledPath ?? { enabled: false, points: [] },
+      null,
+      2,
+    );
   }, [form.soulPath]);
   const updateHousePlacement = useCallback(
     (patch: Partial<{ x: number; z: number; rotY: number }>) => {
@@ -1205,16 +1465,16 @@ export default function CreateMemorialClient({
           z: defaultHouseTransform.offsetZ,
           rotY: defaultHouseTransform.rotationY,
           ...(prev[selectedHouseLayoutKey] ?? {}),
-          ...patch
-        }
+          ...patch,
+        },
       }));
     },
     [
       defaultHouseTransform.offsetX,
       defaultHouseTransform.offsetZ,
       defaultHouseTransform.rotationY,
-      selectedHouseLayoutKey
-    ]
+      selectedHouseLayoutKey,
+    ],
   );
   const updateHouseScale = useCallback(
     (value: number) => {
@@ -1223,20 +1483,23 @@ export default function CreateMemorialClient({
       }
       setHouseScaleOverrides((prev) => ({
         ...prev,
-        [selectedHouseLayoutKey]: value
+        [selectedHouseLayoutKey]: value,
       }));
     },
-    [selectedHouseLayoutKey]
+    [selectedHouseLayoutKey],
   );
-  const updateSoulPath = useCallback((patch: Partial<Omit<SoulPathState, "points">>) => {
-    setForm((prev) => ({
-      ...prev,
-      soulPath: {
-        ...prev.soulPath,
-        ...patch
-      }
-    }));
-  }, []);
+  const updateSoulPath = useCallback(
+    (patch: Partial<Omit<SoulPathState, "points">>) => {
+      setForm((prev) => ({
+        ...prev,
+        soulPath: {
+          ...prev.soulPath,
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
   const updateSoulPathPoint = useCallback(
     (id: string, patch: Partial<Omit<SoulPathPointState, "id">>) => {
       setForm((prev) => ({
@@ -1244,12 +1507,12 @@ export default function CreateMemorialClient({
         soulPath: {
           ...prev.soulPath,
           points: prev.soulPath.points.map((point) =>
-            point.id === id ? { ...point, ...patch } : point
-          )
-        }
+            point.id === id ? { ...point, ...patch } : point,
+          ),
+        },
       }));
     },
-    []
+    [],
   );
   const updateSoulPathTotalDuration = useCallback((value: number) => {
     if (!Number.isFinite(value) || value <= 0) {
@@ -1262,25 +1525,31 @@ export default function CreateMemorialClient({
       }
       const safeTotal = Math.max(0.2 * pointsCount, value);
       const currentTotal = prev.soulPath.points.reduce(
-        (total, point) => total + (Number.isFinite(point.duration) ? point.duration : 0),
-        0
+        (total, point) =>
+          total + (Number.isFinite(point.duration) ? point.duration : 0),
+        0,
       );
       const nextPoints =
         currentTotal > 0
           ? prev.soulPath.points.map((point) => ({
               ...point,
-              duration: Number(Math.max(0.2, point.duration * (safeTotal / currentTotal)).toFixed(2))
+              duration: Number(
+                Math.max(
+                  0.2,
+                  point.duration * (safeTotal / currentTotal),
+                ).toFixed(2),
+              ),
             }))
           : prev.soulPath.points.map((point) => ({
               ...point,
-              duration: Number((safeTotal / pointsCount).toFixed(2))
+              duration: Number((safeTotal / pointsCount).toFixed(2)),
             }));
       return {
         ...prev,
         soulPath: {
           ...prev.soulPath,
-          points: nextPoints
-        }
+          points: nextPoints,
+        },
       };
     });
   }, []);
@@ -1301,10 +1570,10 @@ export default function CreateMemorialClient({
               x: lastPoint ? Number((lastPoint.x + 0.35).toFixed(2)) : 0,
               y: lastPoint?.y ?? 0.25,
               z: lastPoint ? Number((lastPoint.z - 0.35).toFixed(2)) : 0.4,
-              duration: lastPoint?.duration ?? 2
-            }
-          ]
-        }
+              duration: lastPoint?.duration ?? 2,
+            },
+          ],
+        },
       };
     });
   }, []);
@@ -1317,8 +1586,8 @@ export default function CreateMemorialClient({
         ...prev,
         soulPath: {
           ...prev.soulPath,
-          points: prev.soulPath.points.filter((point) => point.id !== id)
-        }
+          points: prev.soulPath.points.filter((point) => point.id !== id),
+        },
       };
     });
   }, []);
@@ -1333,24 +1602,32 @@ export default function CreateMemorialClient({
   const housePreviewId =
     hoveredHouseVariantId ??
     (hoveredHouseBaseId
-      ? houseVariantGroup.defaultVariantByBase[hoveredHouseBaseId] ?? hoveredHouseBaseId
+      ? (houseVariantGroup.defaultVariantByBase[hoveredHouseBaseId] ??
+        hoveredHouseBaseId)
       : null) ??
     form.houseId;
   const previewHouseVariant = splitHouseVariantId(housePreviewId);
   const previewHouseBaseId =
-    previewHouseVariant.baseId || hoveredHouseBaseId || selectedHouseBaseId || housePreviewId;
+    previewHouseVariant.baseId ||
+    hoveredHouseBaseId ||
+    selectedHouseBaseId ||
+    housePreviewId;
   const previewTerrainLayoutId = normalizeTerrainLayoutId(environmentPreviewId);
-  const previewHouseLayoutKey = buildHouseLayoutKey(previewTerrainLayoutId, previewHouseBaseId);
+  const previewHouseLayoutKey = buildHouseLayoutKey(
+    previewTerrainLayoutId,
+    previewHouseBaseId,
+  );
   const previewHouseTransform = useMemo(
     () => getHouseTransform(previewHouseBaseId, previewTerrainLayoutId),
-    [previewHouseBaseId, previewTerrainLayoutId]
+    [previewHouseBaseId, previewTerrainLayoutId],
   );
-  const previewHousePlacement =
-    housePlacementOverrides[previewHouseLayoutKey] ?? {
-      x: previewHouseTransform.offsetX,
-      z: previewHouseTransform.offsetZ,
-      rotY: previewHouseTransform.rotationY
-    };
+  const previewHousePlacement = housePlacementOverrides[
+    previewHouseLayoutKey
+  ] ?? {
+    x: previewHouseTransform.offsetX,
+    z: previewHouseTransform.offsetZ,
+    rotY: previewHouseTransform.rotationY,
+  };
   const previewHouseScale =
     houseScaleOverrides[previewHouseLayoutKey] ?? previewHouseTransform.scale;
   const roofPreviewId = hoveredId("roof") ?? form.roofId;
@@ -1395,7 +1672,7 @@ export default function CreateMemorialClient({
           return null;
       }
     },
-    [environmentPreviewSeason, houseVariantGroup.defaultVariantByBase]
+    [environmentPreviewSeason, houseVariantGroup.defaultVariantByBase],
   );
   const selectedIdForCategory = useCallback(
     (category: string) => {
@@ -1437,22 +1714,28 @@ export default function CreateMemorialClient({
       form.roofId,
       form.signId,
       form.wallId,
-      selectedHouseBaseId
-    ]
+      selectedHouseBaseId,
+    ],
   );
   const environmentUrl = resolveEnvironmentModel(
     environmentPreviewId,
-    environmentPreviewSeason
+    environmentPreviewSeason,
   );
   const houseUrl = resolveHouseModel(housePreviewId);
   const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
-  const houseSlots: Partial<HouseSlots> = detectedHouseSlots ?? configuredHouseSlots ?? {};
+  const houseSlots: Partial<HouseSlots> =
+    detectedHouseSlots ?? configuredHouseSlots ?? {};
   const terrainGiftSlots = useMemo(
     () => detectedGiftSlots ?? getTerrainGiftSlots(environmentPreviewId),
-    [detectedGiftSlots, environmentPreviewId]
+    [detectedGiftSlots, environmentPreviewId],
   );
-  const previewGiftCandidates = useMemo(() => Object.keys(giftModelsGenerated), []);
-  const previewGiftAssignmentsRef = useRef(new Map<string, { code: string; resolveType: string }>());
+  const previewGiftCandidates = useMemo(
+    () => Object.keys(giftModelsGenerated),
+    [],
+  );
+  const previewGiftAssignmentsRef = useRef(
+    new Map<string, { code: string; resolveType: string }>(),
+  );
   const previewGiftCodesByType = useMemo(() => {
     const map = new Map<string, string[]>();
     previewGiftCandidates.forEach((code) => {
@@ -1483,11 +1766,12 @@ export default function CreateMemorialClient({
           const candidates =
             slotType === "default"
               ? previewGiftCandidates
-              : previewGiftCodesByType.get(slotType) ?? [];
-          const code = candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+              : (previewGiftCodesByType.get(slotType) ?? []);
+          const code =
+            candidates[Math.floor(Math.random() * candidates.length)] ?? null;
           const resolveType =
             code && slotType === "default"
-              ? getGiftAvailableTypes({ code })[0] ?? null
+              ? (getGiftAvailableTypes({ code })[0] ?? null)
               : slotType;
           if (code && resolveType) {
             assignment = { code, resolveType };
@@ -1500,17 +1784,22 @@ export default function CreateMemorialClient({
         const url = resolveGiftModelUrl({
           gift: { code: assignment.code },
           slotType: assignment.resolveType,
-          fallbackUrl: null
+          fallbackUrl: null,
         });
         if (!url) {
           return null;
         }
         return { slot, url, name: "Подарок" };
       })
-      .filter(
-        (gift): gift is { slot: string; url: string; name: string } => Boolean(gift)
+      .filter((gift): gift is { slot: string; url: string; name: string } =>
+        Boolean(gift),
       );
-  }, [giftPreviewEnabled, previewGiftCodesByType, previewGiftCandidates, terrainGiftSlots]);
+  }, [
+    giftPreviewEnabled,
+    previewGiftCodesByType,
+    previewGiftCandidates,
+    terrainGiftSlots,
+  ]);
   const previewPlaceholderSlots = useMemo(() => {
     if (!giftPreviewEnabled) {
       return [];
@@ -1518,11 +1807,12 @@ export default function CreateMemorialClient({
     const filled = new Set(previewGifts.map((gift) => gift.slot));
     return terrainGiftSlots.filter((slot) => !filled.has(slot));
   }, [giftPreviewEnabled, previewGifts, terrainGiftSlots]);
-  const [activeStep3Tab, setActiveStep3Tab] = useState<Step3TabId>("environment");
+  const [activeStep3Tab, setActiveStep3Tab] =
+    useState<Step3TabId>("environment");
   const step3Tabs = useMemo<Step3Tab[]>(() => {
     const tabs: Step3Tab[] = [
       { id: "environment", label: "Поверхность", focusSlot: "dom_slot" },
-      { id: "house", label: "Домик", focusSlot: "dom_slot" }
+      { id: "house", label: "Домик", focusSlot: "dom_slot" },
     ];
     if (houseSlots.roof) tabs.push({ id: "roof", label: "Крыша" });
     if (houseSlots.wall) tabs.push({ id: "wall", label: "Стены" });
@@ -1550,7 +1840,10 @@ export default function CreateMemorialClient({
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
     return mapping;
   }, [houseSlots]);
-  const getCameraFocusKey = (slot: string | null, tabId: Step3TabId = activeStep3Tab) => {
+  const getCameraFocusKey = (
+    slot: string | null,
+    tabId: Step3TabId = activeStep3Tab,
+  ) => {
     if (!slot) {
       return null;
     }
@@ -1575,13 +1868,21 @@ export default function CreateMemorialClient({
     houseSlots.roof ? { slot: houseSlots.roof, url: roofUrl } : null,
     houseSlots.wall ? { slot: houseSlots.wall, url: wallUrl } : null,
     houseSlots.sign ? { slot: houseSlots.sign, url: signUrl } : null,
-    houseSlots.frameLeft ? { slot: houseSlots.frameLeft, url: frameLeftUrl } : null,
-    houseSlots.frameRight ? { slot: houseSlots.frameRight, url: frameRightUrl } : null,
+    houseSlots.frameLeft
+      ? { slot: houseSlots.frameLeft, url: frameLeftUrl }
+      : null,
+    houseSlots.frameRight
+      ? { slot: houseSlots.frameRight, url: frameRightUrl }
+      : null,
     houseSlots.mat ? { slot: houseSlots.mat, url: matUrl } : null,
-    houseSlots.bowlFood ? { slot: houseSlots.bowlFood, url: bowlFoodUrl } : null,
-    houseSlots.bowlWater ? { slot: houseSlots.bowlWater, url: bowlWaterUrl } : null
-  ].filter(
-    (part): part is { slot: string; url: string } => Boolean(part && part.url)
+    houseSlots.bowlFood
+      ? { slot: houseSlots.bowlFood, url: bowlFoodUrl }
+      : null,
+    houseSlots.bowlWater
+      ? { slot: houseSlots.bowlWater, url: bowlWaterUrl }
+      : null,
+  ].filter((part): part is { slot: string; url: string } =>
+    Boolean(part && part.url),
   );
   const colorOverrides = {
     roof_paint: form.roofColor,
@@ -1591,7 +1892,7 @@ export default function CreateMemorialClient({
     frame_right_paint: form.frameRightColor,
     mat_paint: form.matColor,
     bowl_food_paint: form.bowlFoodColor,
-    bowl_water_paint: form.bowlWaterColor
+    bowl_water_paint: form.bowlWaterColor,
   };
   const currentEnvironmentId = form.environmentSeasonAuto
     ? form.environmentId
@@ -1606,7 +1907,7 @@ export default function CreateMemorialClient({
         frameRight: form.frameRightId,
         mat: form.matId,
         bowlFood: form.bowlFoodId,
-        bowlWater: form.bowlWaterId
+        bowlWater: form.bowlWaterId,
       },
       colors: {
         roof_paint: form.roofColor,
@@ -1616,10 +1917,10 @@ export default function CreateMemorialClient({
         frame_right_paint: form.frameRightColor,
         mat_paint: form.matColor,
         bowl_food_paint: form.bowlFoodColor,
-        bowl_water_paint: form.bowlWaterColor
+        bowl_water_paint: form.bowlWaterColor,
       },
       soul: buildSoulSettings(form.soulColor, activeSoulPath),
-      version: 3
+      version: 3,
     }),
     [
       activeSoulPath,
@@ -1639,12 +1940,12 @@ export default function CreateMemorialClient({
       form.signId,
       form.soulColor,
       form.wallColor,
-      form.wallId
-    ]
+      form.wallId,
+    ],
   );
   const soulPreviewColor = hoveredSoulColor ?? form.soulColor;
   const selectedSoulColorIsPreset = SOUL_COLOR_OPTIONS.some(
-    (option) => option.color.toLowerCase() === form.soulColor.toLowerCase()
+    (option) => option.color.toLowerCase() === form.soulColor.toLowerCase(),
   );
   const customSoulColorValue = normalizeSoulColor(form.soulColor);
 
@@ -1659,8 +1960,10 @@ export default function CreateMemorialClient({
     const standardPalette = (
       <div className="relative flex flex-wrap items-center gap-2">
         {SOUL_COLOR_OPTIONS.map((option) => {
-          const isSelected = form.soulColor.toLowerCase() === option.color.toLowerCase();
-          const isPreviewed = soulPreviewColor.toLowerCase() === option.color.toLowerCase();
+          const isSelected =
+            form.soulColor.toLowerCase() === option.color.toLowerCase();
+          const isPreviewed =
+            soulPreviewColor.toLowerCase() === option.color.toLowerCase();
           return (
             <button
               key={option.id}
@@ -1690,10 +1993,12 @@ export default function CreateMemorialClient({
       return (
         <div className="relative grid gap-2">
           <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1">
-            {([
-              ["standard", "Стандартные"],
-              ["custom", "Свой цвет"]
-            ] as const).map(([tab, label]) => (
+            {(
+              [
+                ["standard", "Стандартные"],
+                ["custom", "Свой цвет"],
+              ] as const
+            ).map(([tab, label]) => (
               <button
                 key={tab}
                 type="button"
@@ -1737,7 +2042,13 @@ export default function CreateMemorialClient({
 
     return (
       <div className="relative grid gap-2">
-        <div className={compact ? overlayLabelClass : "text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]"}>
+        <div
+          className={
+            compact
+              ? overlayLabelClass
+              : "text-[10px] font-black uppercase tracking-[0.2em] text-[#8d6e63]"
+          }
+        >
           Цвет души
         </div>
         <div className="relative flex flex-wrap items-center gap-2">
@@ -1755,22 +2066,26 @@ export default function CreateMemorialClient({
                 : "border-white hover:border-[#d3a27f]"
             }`}
             aria-expanded={customSoulPickerOpen}
-            >
-              <span
-                className="h-5 w-5 rounded-full border border-white shadow-inner"
-                style={{ backgroundColor: customSoulColorValue }}
-              />
-              Свой
-            </button>
+          >
+            <span
+              className="h-5 w-5 rounded-full border border-white shadow-inner"
+              style={{ backgroundColor: customSoulColorValue }}
+            />
+            Свой
+          </button>
           {customSoulPickerOpen ? (
-            <div className={`absolute z-[260] w-[min(16rem,calc(100vw-2rem))] rounded-[18px] border-[3px] border-white bg-white/96 p-3 shadow-[0_18px_40px_-22px_rgba(93,64,55,0.55)] backdrop-blur ${compact ? "bottom-[calc(100%+0.6rem)] left-0" : "right-0 top-[calc(100%+0.6rem)]"}`}>
+            <div
+              className={`absolute z-[260] w-[min(16rem,calc(100vw-2rem))] rounded-[18px] border-[3px] border-white bg-white/96 p-3 shadow-[0_18px_40px_-22px_rgba(93,64,55,0.55)] backdrop-blur ${compact ? "bottom-[calc(100%+0.6rem)] left-0" : "right-0 top-[calc(100%+0.6rem)]"}`}
+            >
               <label className="grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
                 Палитра
                 <input
                   type="color"
                   value={customSoulColorValue}
                   onInput={(event) => applySoulColor(event.currentTarget.value)}
-                  onChange={(event) => applySoulColor(event.currentTarget.value)}
+                  onChange={(event) =>
+                    applySoulColor(event.currentTarget.value)
+                  }
                   className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-[#f6efea]/92 p-1 shadow-inner"
                   aria-label="Выбрать свой цвет души"
                 />
@@ -1819,7 +2134,7 @@ export default function CreateMemorialClient({
     if (!environmentSeasons.includes(form.environmentSeason)) {
       setForm((prev) => ({
         ...prev,
-        environmentSeason: environmentSeasons[0] ?? getSeasonForDate()
+        environmentSeason: environmentSeasons[0] ?? getSeasonForDate(),
       }));
     }
   }, [environmentSeasons, form.environmentSeason]);
@@ -1833,7 +2148,10 @@ export default function CreateMemorialClient({
     }
   }, [step3Tabs, activeStep3Tab]);
 
-  const requestFocus = (slot: string | null, tabId: Step3TabId = activeStep3Tab) => {
+  const requestFocus = (
+    slot: string | null,
+    tabId: Step3TabId = activeStep3Tab,
+  ) => {
     setFocusSlot(slot);
     setCameraFocusKey(getCameraFocusKey(slot, tabId));
     setFocusRequestId((prev) => prev + 1);
@@ -1875,7 +2193,10 @@ export default function CreateMemorialClient({
     }
   };
 
-  const handlePreviewDetailClick = (detail: { slot?: string; area?: "environment" | "house" }) => {
+  const handlePreviewDetailClick = (detail: {
+    slot?: string;
+    area?: "environment" | "house";
+  }) => {
     if (detail.slot) {
       const tabId = step3TabBySlot.get(detail.slot);
       if (tabId) {
@@ -1900,14 +2221,12 @@ export default function CreateMemorialClient({
     }
   };
 
-
   const topUpOptions = [
     { coins: 100, rub: 99, usd: 1.49 },
     { coins: 300, rub: 299, usd: 4.49 },
     { coins: 800, rub: 699, usd: 9.99 },
-    { coins: 2000, rub: 1799, usd: 22.99 }
+    { coins: 2000, rub: 1799, usd: 22.99 },
   ];
-
 
   const fetchWalletBalance = useCallback(async () => {
     if (!form.ownerId) {
@@ -1916,13 +2235,15 @@ export default function CreateMemorialClient({
     setWalletLoading(true);
     try {
       const response = await fetch(`${apiUrl}/wallet/${form.ownerId}`, {
-        credentials: "include"
+        credentials: "include",
       });
       if (!response.ok) {
         throw new Error("Не удалось загрузить баланс");
       }
       const data = (await response.json()) as { coinBalance: number };
-      setWalletBalance(typeof data.coinBalance === "number" ? data.coinBalance : null);
+      setWalletBalance(
+        typeof data.coinBalance === "number" ? data.coinBalance : null,
+      );
     } catch {
       setWalletBalance(null);
     } finally {
@@ -1933,7 +2254,9 @@ export default function CreateMemorialClient({
   useEffect(() => {
     const loadMe = async () => {
       try {
-        const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
+        const response = await fetch(`${apiUrl}/auth/me`, {
+          credentials: "include",
+        });
         if (!response.ok) {
           if (isEditMode) {
             router.replace("/auth");
@@ -1950,7 +2273,7 @@ export default function CreateMemorialClient({
         };
         if (isEditMode && editId) {
           const petResponse = await fetch(`${apiUrl}/pets/${editId}`, {
-            credentials: "include"
+            credentials: "include",
           });
           if (!petResponse.ok) {
             router.replace(`/pets/${editId}`);
@@ -1971,16 +2294,19 @@ export default function CreateMemorialClient({
                 file: null,
                 persistedId: photo.id,
                 isObjectUrl: false,
-                url: normalizePhotoUrl(photo.url)
+                url: normalizePhotoUrl(photo.url),
               }))
             : [];
           setForm(buildEditFormState(pet, data.id));
           setPhotos(nextPhotos);
           setRemovedPhotoIds([]);
           setPreviewPhotoId(
-            pet.marker?.previewPhotoId && nextPhotos.some((photo) => photo.id === pet.marker?.previewPhotoId)
+            pet.marker?.previewPhotoId &&
+              nextPhotos.some(
+                (photo) => photo.id === pet.marker?.previewPhotoId,
+              )
               ? pet.marker.previewPhotoId
-              : nextPhotos[0]?.id ?? null
+              : (nextPhotos[0]?.id ?? null),
           );
           setStep(1);
           setActiveStep3Tab("house");
@@ -1992,11 +2318,13 @@ export default function CreateMemorialClient({
             photos: true,
             story: true,
             base: true,
-            soul: true
+            soul: true,
           });
           setEditReady(true);
         } else {
-          setForm((prev) => (prev.ownerId ? prev : { ...prev, ownerId: data.id }));
+          setForm((prev) =>
+            prev.ownerId ? prev : { ...prev, ownerId: data.id },
+          );
         }
         setCurrentUserLogin(data.login ?? null);
         setAccessLevel(data.accessLevel ?? "USER");
@@ -2040,7 +2368,7 @@ export default function CreateMemorialClient({
       try {
         const response = await fetch(
           `${apiUrl}/pets/drafts/${encodeURIComponent(draftIdFromUrl)}`,
-          { credentials: "include" }
+          { credentials: "include" },
         );
         if (!response.ok) {
           const text = await response.text();
@@ -2060,7 +2388,11 @@ export default function CreateMemorialClient({
         setDraftNotice(null);
       } catch (err) {
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Не удалось загрузить черновик");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Не удалось загрузить черновик",
+          );
         }
       } finally {
         if (isMounted) {
@@ -2072,81 +2404,96 @@ export default function CreateMemorialClient({
     return () => {
       isMounted = false;
     };
-  }, [apiUrl, authReady, draftIdFromUrl, form.ownerId, isEditMode, openAuthPrompt, revokePhotoUrl]);
-
-  const saveCurrentDraft = useCallback(async (options?: { redirectToMyPets?: boolean }) => {
-    if (isEditMode) {
-      return null;
-    }
-    if (!form.ownerId.trim()) {
-      setPendingDraftAfterAuth(true);
-      openAuthPrompt("draft");
-      return null;
-    }
-    setDraftLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/pets/drafts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          id: currentDraftId ?? undefined,
-          name: form.name.trim() || "Новый мемориал",
-          species: form.species,
-          birthDate: form.birthDate || undefined,
-          deathDate: form.deathDate || undefined,
-          epitaph: form.epitaph.trim() || undefined,
-          story: form.story.trim() || undefined,
-          isPublic: form.isPublic,
-          lat: canShowMarker ? lat : undefined,
-          lng: canShowMarker ? lng : undefined,
-          markerStyle: form.markerStyle,
-          environmentId: currentEnvironmentId,
-          houseId: form.houseId,
-          step,
-          sceneJson: buildCurrentSceneJson()
-        })
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Не удалось сохранить черновик");
-      }
-      const saved = (await response.json()) as MemorialDraftDto;
-      setCurrentDraftId(saved.id);
-      setDraftNotice("Черновик сохранён. Фотографии сохраняются только при публикации.");
-      if (options?.redirectToMyPets !== false) {
-        window.setTimeout(() => router.push("/my-pets"), 700);
-      }
-      return saved.id;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось сохранить черновик");
-      return null;
-    } finally {
-      setDraftLoading(false);
-    }
   }, [
     apiUrl,
-    buildCurrentSceneJson,
-    canShowMarker,
-    currentDraftId,
-    currentEnvironmentId,
-    form.birthDate,
-    form.deathDate,
-    form.epitaph,
-    form.houseId,
-    form.isPublic,
-    form.markerStyle,
-    form.name,
+    authReady,
+    draftIdFromUrl,
     form.ownerId,
-    form.species,
-    form.story,
     isEditMode,
-    lat,
-    lng,
     openAuthPrompt,
-    router,
-    step
+    revokePhotoUrl,
   ]);
+
+  const saveCurrentDraft = useCallback(
+    async (options?: { redirectToMyPets?: boolean }) => {
+      if (isEditMode) {
+        return null;
+      }
+      if (!form.ownerId.trim()) {
+        setPendingDraftAfterAuth(true);
+        openAuthPrompt("draft");
+        return null;
+      }
+      setDraftLoading(true);
+      try {
+        const response = await fetch(`${apiUrl}/pets/drafts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            id: currentDraftId ?? undefined,
+            name: form.name.trim() || "Новый мемориал",
+            species: form.species,
+            birthDate: form.birthDate || undefined,
+            deathDate: form.deathDate || undefined,
+            epitaph: form.epitaph.trim() || undefined,
+            story: form.story.trim() || undefined,
+            isPublic: form.isPublic,
+            lat: canShowMarker ? lat : undefined,
+            lng: canShowMarker ? lng : undefined,
+            markerStyle: form.markerStyle,
+            environmentId: currentEnvironmentId,
+            houseId: form.houseId,
+            step,
+            sceneJson: buildCurrentSceneJson(),
+          }),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось сохранить черновик");
+        }
+        const saved = (await response.json()) as MemorialDraftDto;
+        setCurrentDraftId(saved.id);
+        setDraftNotice(
+          "Черновик сохранён. Фотографии сохраняются только при публикации.",
+        );
+        if (options?.redirectToMyPets !== false) {
+          window.setTimeout(() => router.push("/my-pets"), 700);
+        }
+        return saved.id;
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Не удалось сохранить черновик",
+        );
+        return null;
+      } finally {
+        setDraftLoading(false);
+      }
+    },
+    [
+      apiUrl,
+      buildCurrentSceneJson,
+      canShowMarker,
+      currentDraftId,
+      currentEnvironmentId,
+      form.birthDate,
+      form.deathDate,
+      form.epitaph,
+      form.houseId,
+      form.isPublic,
+      form.markerStyle,
+      form.name,
+      form.ownerId,
+      form.species,
+      form.story,
+      isEditMode,
+      lat,
+      lng,
+      openAuthPrompt,
+      router,
+      step,
+    ],
+  );
 
   useEffect(() => {
     if (!hasDraftContent) {
@@ -2167,15 +2514,28 @@ export default function CreateMemorialClient({
       return;
     }
     const handleLinkClick = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
         return;
       }
       const target = event.target as HTMLElement | null;
       const link = target?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!link || link.target === "_blank" || link.origin !== window.location.origin) {
+      if (
+        !link ||
+        link.target === "_blank" ||
+        link.origin !== window.location.origin
+      ) {
         return;
       }
-      if (link.pathname === window.location.pathname && link.search === window.location.search) {
+      if (
+        link.pathname === window.location.pathname &&
+        link.search === window.location.search
+      ) {
         return;
       }
       event.preventDefault();
@@ -2217,7 +2577,13 @@ export default function CreateMemorialClient({
         router.push(href);
       }
     });
-  }, [form.ownerId, leaveConfirmHref, openAuthPrompt, router, saveCurrentDraft]);
+  }, [
+    form.ownerId,
+    leaveConfirmHref,
+    openAuthPrompt,
+    router,
+    saveCurrentDraft,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -2238,7 +2604,10 @@ export default function CreateMemorialClient({
       }
       return;
     }
-    if (!previewPhotoId || !photos.some((photo) => photo.id === previewPhotoId)) {
+    if (
+      !previewPhotoId ||
+      !photos.some((photo) => photo.id === previewPhotoId)
+    ) {
       setPreviewPhotoId(photos[0]?.id ?? null);
     }
   }, [photos, previewPhotoId]);
@@ -2279,7 +2648,8 @@ export default function CreateMemorialClient({
   }, [form.birthDate, form.deathDate, today]);
   const hasRequiredDateError =
     reviewAttempted && (!form.birthDate.trim() || !form.deathDate.trim());
-  const hasDateFieldError = hasRequiredDateError || Boolean(dateValidationMessage);
+  const hasDateFieldError =
+    hasRequiredDateError || Boolean(dateValidationMessage);
 
   const todayInputValue = useMemo(() => formatDateInputValue(today), [today]);
 
@@ -2356,7 +2726,7 @@ export default function CreateMemorialClient({
         loadingProgressRef.current = null;
       }
     },
-    []
+    [],
   );
 
   const handleNext = async () => {
@@ -2428,7 +2798,7 @@ export default function CreateMemorialClient({
       file,
       persistedId: null,
       isObjectUrl: true,
-      url: URL.createObjectURL(file)
+      url: URL.createObjectURL(file),
     }));
     setPhotos((prev) => [...prev, ...mapped]);
     if (!previewPhotoId && mapped[0]) {
@@ -2445,7 +2815,9 @@ export default function CreateMemorialClient({
         const removedPersistedId = removed.persistedId;
         if (removedPersistedId) {
           setRemovedPhotoIds((current) =>
-            current.includes(removedPersistedId) ? current : [...current, removedPersistedId]
+            current.includes(removedPersistedId)
+              ? current
+              : [...current, removedPersistedId],
           );
         }
       }
@@ -2467,7 +2839,8 @@ export default function CreateMemorialClient({
     const camera =
       (controls?.object as THREE.PerspectiveCamera | undefined) ??
       (renderContext.camera as THREE.PerspectiveCamera | undefined);
-    const perspectiveCamera = camera instanceof THREE.PerspectiveCamera ? camera : null;
+    const perspectiveCamera =
+      camera instanceof THREE.PerspectiveCamera ? camera : null;
     const prevAspect = perspectiveCamera?.aspect ?? null;
     const target = controls?.target as THREE.Vector3 | undefined;
     let restore: (() => void) | null = null;
@@ -2477,16 +2850,20 @@ export default function CreateMemorialClient({
       const baseTarget = new THREE.Vector3(0, 0.6, 0);
       const basePosition = new THREE.Vector3(8, 5, 8);
       const baseOffset = basePosition.sub(baseTarget);
-      const rotatedOffset = baseOffset.clone().applyAxisAngle(
-        new THREE.Vector3(0, 1, 0),
-        THREE.MathUtils.degToRad(-30)
-      );
+      const rotatedOffset = baseOffset
+        .clone()
+        .applyAxisAngle(
+          new THREE.Vector3(0, 1, 0),
+          THREE.MathUtils.degToRad(-30),
+        );
       rotatedOffset.multiplyScalar(0.84);
       rotatedOffset.y -= 0.85;
       const nextPos = baseTarget.clone().add(rotatedOffset);
       const distance = nextPos.distanceTo(baseTarget);
       const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
-      const nextTarget = baseTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
+      const nextTarget = baseTarget
+        .clone()
+        .add(new THREE.Vector3(0, tiltOffset, 0));
       camera.position.copy(nextPos);
       if (target && controls) {
         controls.target.copy(nextTarget);
@@ -2523,7 +2900,7 @@ export default function CreateMemorialClient({
     const { gl, scene } = renderContext;
     const renderTarget = new THREE.WebGLRenderTarget(width, height, {
       depthBuffer: true,
-      stencilBuffer: false
+      stencilBuffer: false,
     });
     const prevTarget = gl.getRenderTarget();
     const prevAutoClear = gl.autoClear;
@@ -2593,20 +2970,23 @@ export default function CreateMemorialClient({
       await fetch(`${apiUrl}/pets/${petId}/map-preview`, {
         method: "POST",
         credentials: "include",
-        body: formData
+        body: formData,
       });
     },
-    [apiUrl, capturePreviewImage]
+    [apiUrl, capturePreviewImage],
   );
 
   const syncEditedPhotos = useCallback(
     async (petId: string) => {
       const deletedPhotoIds: string[] = [];
       for (const photoId of removedPhotoIds) {
-        const response = await fetch(`${apiUrl}/pets/${petId}/photos/${photoId}`, {
-          method: "DELETE",
-          credentials: "include"
-        });
+        const response = await fetch(
+          `${apiUrl}/pets/${petId}/photos/${photoId}`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          },
+        );
         if (!response.ok) {
           const text = await response.text();
           throw new Error(text || "Ошибка удаления фото");
@@ -2624,29 +3004,34 @@ export default function CreateMemorialClient({
         const uploadResponse = await fetch(`${apiUrl}/pets/${petId}/photos`, {
           method: "POST",
           credentials: "include",
-          body: formData
+          body: formData,
         });
         if (!uploadResponse.ok) {
           const text = await uploadResponse.text();
           throw new Error(text || "Ошибка загрузки фото");
         }
-        const saved = (await uploadResponse.json()) as { id: string; url: string };
+        const saved = (await uploadResponse.json()) as {
+          id: string;
+          url: string;
+        };
         uploaded.push({
           localId: photo.id,
           id: saved.id,
-          url: normalizePhotoUrl(saved.url)
+          url: normalizePhotoUrl(saved.url),
         });
       }
 
       if (deletedPhotoIds.length > 0) {
         setRemovedPhotoIds((current) =>
-          current.filter((photoId) => !deletedPhotoIds.includes(photoId))
+          current.filter((photoId) => !deletedPhotoIds.includes(photoId)),
         );
       }
 
       let nextPreviewPersistedId = previewPhotoId;
       if (uploaded.length > 0) {
-        const uploadedByLocalId = new Map(uploaded.map((item) => [item.localId, item]));
+        const uploadedByLocalId = new Map(
+          uploaded.map((item) => [item.localId, item]),
+        );
         setPhotos((current) =>
           current.map((photo) => {
             const saved = uploadedByLocalId.get(photo.id);
@@ -2659,9 +3044,9 @@ export default function CreateMemorialClient({
               file: null,
               persistedId: saved.id,
               isObjectUrl: false,
-              url: saved.url
+              url: saved.url,
             };
-          })
+          }),
         );
         if (previewPhotoId) {
           const uploadedPreview = uploadedByLocalId.get(previewPhotoId);
@@ -2676,19 +3061,24 @@ export default function CreateMemorialClient({
         const existingPreviewPhoto = photos.find(
           (photo) =>
             photo.persistedId === nextPreviewPersistedId ||
-            (photo.id === nextPreviewPersistedId && photo.persistedId)
+            (photo.id === nextPreviewPersistedId && photo.persistedId),
         );
         const existingPreviewId = existingPreviewPhoto?.persistedId ?? null;
         const uploadedPreviewId =
-          uploaded.find((item) => item.id === nextPreviewPersistedId)?.id ?? null;
-        const resolvedPreviewId = uploadedPreviewId ?? existingPreviewId ?? null;
+          uploaded.find((item) => item.id === nextPreviewPersistedId)?.id ??
+          null;
+        const resolvedPreviewId =
+          uploadedPreviewId ?? existingPreviewId ?? null;
         if (resolvedPreviewId) {
-          const previewResponse = await fetch(`${apiUrl}/pets/${petId}/preview-photo`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ photoId: resolvedPreviewId })
-          });
+          const previewResponse = await fetch(
+            `${apiUrl}/pets/${petId}/preview-photo`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ photoId: resolvedPreviewId }),
+            },
+          );
           if (!previewResponse.ok) {
             const text = await previewResponse.text();
             throw new Error(text || "Ошибка выбора превью");
@@ -2696,7 +3086,14 @@ export default function CreateMemorialClient({
         }
       }
     },
-    [apiUrl, normalizePhotoUrl, photos, previewPhotoId, removedPhotoIds, revokePhotoUrl]
+    [
+      apiUrl,
+      normalizePhotoUrl,
+      photos,
+      previewPhotoId,
+      removedPhotoIds,
+      revokePhotoUrl,
+    ],
   );
 
   const handleSubmit = async () => {
@@ -2710,8 +3107,8 @@ export default function CreateMemorialClient({
           credentials: "include",
           body: JSON.stringify({
             houseId: form.houseId,
-            sceneJson: buildCurrentSceneJson()
-          })
+            sceneJson: buildCurrentSceneJson(),
+          }),
         });
         if (!response.ok) {
           const text = await response.text();
@@ -2791,7 +3188,7 @@ export default function CreateMemorialClient({
       environmentId: currentEnvironmentId,
       houseId: form.houseId,
       memorialPlanYears: memorialPlan.years,
-      sceneJson: buildCurrentSceneJson()
+      sceneJson: buildCurrentSceneJson(),
     };
 
     try {
@@ -2799,7 +3196,7 @@ export default function CreateMemorialClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -2814,11 +3211,14 @@ export default function CreateMemorialClient({
           }
           const formData = new FormData();
           formData.append("file", photo.file);
-          const uploadResponse = await fetch(`${apiUrl}/pets/${created.id}/photos`, {
-            method: "POST",
-            credentials: "include",
-            body: formData
-          });
+          const uploadResponse = await fetch(
+            `${apiUrl}/pets/${created.id}/photos`,
+            {
+              method: "POST",
+              credentials: "include",
+              body: formData,
+            },
+          );
           if (!uploadResponse.ok) {
             const text = await uploadResponse.text();
             throw new Error(text || "Ошибка загрузки фото");
@@ -2827,7 +3227,9 @@ export default function CreateMemorialClient({
           uploaded.push({ localId: photo.id, id: saved.id });
         }
         if (previewPhotoId) {
-          const previewMatch = uploaded.find((item) => item.localId === previewPhotoId);
+          const previewMatch = uploaded.find(
+            (item) => item.localId === previewPhotoId,
+          );
           if (previewMatch) {
             const previewResponse = await fetch(
               `${apiUrl}/pets/${created.id}/preview-photo`,
@@ -2835,8 +3237,8 @@ export default function CreateMemorialClient({
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ photoId: previewMatch.id })
-              }
+                body: JSON.stringify({ photoId: previewMatch.id }),
+              },
             );
             if (!previewResponse.ok) {
               const text = await previewResponse.text();
@@ -2851,13 +3253,16 @@ export default function CreateMemorialClient({
         console.warn("Не удалось сохранить превью для карты", err);
       }
       setWalletBalance((prev) =>
-        typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev
+        typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev,
       );
       if (currentDraftId) {
-        await fetch(`${apiUrl}/pets/drafts/${encodeURIComponent(currentDraftId)}`, {
-          method: "DELETE",
-          credentials: "include"
-        });
+        await fetch(
+          `${apiUrl}/pets/drafts/${encodeURIComponent(currentDraftId)}`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          },
+        );
         setCurrentDraftId(null);
       }
       setReviewVisible(false);
@@ -2866,7 +3271,7 @@ export default function CreateMemorialClient({
       setLoading(false);
       setFarewellPlaying(false);
       setSoulSceneMode("idle");
-      router.push(`/pets/${created.id}`);
+      setModerationNoticePetId(created.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания");
     } finally {
@@ -2889,15 +3294,28 @@ export default function CreateMemorialClient({
     const redirectHref = pendingDraftRedirectHref;
     setPendingDraftAfterAuth(false);
     setPendingDraftRedirectHref(null);
-    void saveCurrentDraft({ redirectToMyPets: !redirectHref }).then((savedId) => {
-      if (savedId && redirectHref) {
-        router.push(redirectHref);
-      }
-    });
-  }, [form.ownerId, pendingDraftAfterAuth, pendingDraftRedirectHref, router, saveCurrentDraft]);
+    void saveCurrentDraft({ redirectToMyPets: !redirectHref }).then(
+      (savedId) => {
+        if (savedId && redirectHref) {
+          router.push(redirectHref);
+        }
+      },
+    );
+  }, [
+    form.ownerId,
+    pendingDraftAfterAuth,
+    pendingDraftRedirectHref,
+    router,
+    saveCurrentDraft,
+  ]);
 
   const toggleOverlay = (panel: BuilderOverlayId) => {
-    if (isEditMode && panel !== "details" && panel !== "photos" && panel !== "soul") {
+    if (
+      isEditMode &&
+      panel !== "details" &&
+      panel !== "photos" &&
+      panel !== "soul"
+    ) {
       return;
     }
     clearStep3TooltipTimer();
@@ -2974,7 +3392,9 @@ export default function CreateMemorialClient({
   };
 
   const renderArrowIcon = (className?: string) => (
-    <span className={`ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-all duration-300 group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100 ${className ?? ""}`}>
+    <span
+      className={`ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-all duration-300 group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100 ${className ?? ""}`}
+    >
       <svg
         viewBox="0 0 20 20"
         className="h-4 w-4 translate-x-[-4px] text-white transition-transform duration-300 group-hover:translate-x-0"
@@ -3023,7 +3443,7 @@ export default function CreateMemorialClient({
       "sign",
       "mat",
       "bowl-food",
-      "bowl-water"
+      "bowl-water",
     ]);
     const add = (category: string, id?: string | null) => {
       if (!preloadCategories.has(category)) {
@@ -3049,7 +3469,7 @@ export default function CreateMemorialClient({
     houseOptions,
     houseVariantGroup.baseOptions,
     matOptions,
-    signOptions
+    signOptions,
   ]);
 
   const warmAsset = useCallback(async (url: string) => {
@@ -3061,7 +3481,7 @@ export default function CreateMemorialClient({
       try {
         const response = await fetch(url, {
           cache: "force-cache",
-          signal: controller.signal
+          signal: controller.signal,
         });
         if (response.ok) {
           await response.arrayBuffer();
@@ -3117,7 +3537,7 @@ export default function CreateMemorialClient({
       cache.set(url, task);
       return task;
     },
-    [warmAsset]
+    [warmAsset],
   );
 
   const queueGltfLoad = useCallback(
@@ -3126,7 +3546,7 @@ export default function CreateMemorialClient({
       gltfQueueRef.current = task.catch(() => {});
       return task;
     },
-    [ensureGltfReady]
+    [ensureGltfReady],
   );
 
   const warmAssetsWithLimit = useCallback(
@@ -3148,7 +3568,7 @@ export default function CreateMemorialClient({
 
       await Promise.all(Array.from({ length: workerCount }, runWorker));
     },
-    [warmAsset]
+    [warmAsset],
   );
 
   const loadGltfsWithLimit = useCallback(
@@ -3174,7 +3594,7 @@ export default function CreateMemorialClient({
 
       await Promise.all(Array.from({ length: workerCount }, runWorker));
     },
-    [ensureGltfReady]
+    [ensureGltfReady],
   );
 
   const preloadConcurrency = useMemo(() => {
@@ -3191,7 +3611,9 @@ export default function CreateMemorialClient({
     }
     assetsLoadStartedRef.current = true;
     const modelUrls = new Set<string>(allModelUrls);
-    const activeSeason = form.environmentSeasonAuto ? getSeasonForDate() : form.environmentSeason;
+    const activeSeason = form.environmentSeasonAuto
+      ? getSeasonForDate()
+      : form.environmentSeason;
     [
       resolveEnvironmentModel(form.environmentId, activeSeason),
       resolveHouseModel(form.houseId),
@@ -3202,7 +3624,7 @@ export default function CreateMemorialClient({
       resolveFrameRightModel(form.frameRightId),
       resolveMatModel(form.matId),
       resolveBowlFoodModel(form.bowlFoodId),
-      resolveBowlWaterModel(form.bowlWaterId)
+      resolveBowlWaterModel(form.bowlWaterId),
     ].forEach((url) => {
       if (url) {
         modelUrls.add(url);
@@ -3212,7 +3634,7 @@ export default function CreateMemorialClient({
     try {
       await Promise.all([
         warmAssetsWithLimit(preloadImageUrls, preloadConcurrency),
-        loadGltfsWithLimit([...modelUrls.values()], preloadConcurrency)
+        loadGltfsWithLimit([...modelUrls.values()], preloadConcurrency),
       ]);
     } finally {
       setAssetsReady(true);
@@ -3234,7 +3656,7 @@ export default function CreateMemorialClient({
     loadGltfsWithLimit,
     preloadConcurrency,
     preloadImageUrls,
-    warmAssetsWithLimit
+    warmAssetsWithLimit,
   ]);
 
   useEffect(() => {
@@ -3253,7 +3675,13 @@ export default function CreateMemorialClient({
       return;
     }
     void preloadAssets();
-  }, [isEditMode, preloadAssets, startLoadingProgress, step, stopLoadingProgress]);
+  }, [
+    isEditMode,
+    preloadAssets,
+    startLoadingProgress,
+    step,
+    stopLoadingProgress,
+  ]);
 
   const preloadOptionModel = useCallback(
     async (category: string, id: string) => {
@@ -3263,7 +3691,7 @@ export default function CreateMemorialClient({
       }
       await queueGltfLoad(url);
     },
-    [queueGltfLoad, resolveHoverModelUrl]
+    [queueGltfLoad, resolveHoverModelUrl],
   );
 
   const handleOptionHover = useCallback(
@@ -3274,11 +3702,14 @@ export default function CreateMemorialClient({
         return;
       }
       await preloadOptionModel(category, id);
-      if (hoverIntentRef.current?.category === category && hoverIntentRef.current?.id === id) {
+      if (
+        hoverIntentRef.current?.category === category &&
+        hoverIntentRef.current?.id === id
+      ) {
         setHoveredOption({ category, id });
       }
     },
-    [preloadOptionModel, selectedIdForCategory]
+    [preloadOptionModel, selectedIdForCategory],
   );
 
   const handleOptionLeave = useCallback((category: string) => {
@@ -3296,7 +3727,9 @@ export default function CreateMemorialClient({
       const margin = 8;
       const rect = element.getBoundingClientRect();
       const hasLeftSpace = rect.left >= width + gap + margin;
-      const preferredLeft = hasLeftSpace ? rect.left - width - gap : rect.right + gap;
+      const preferredLeft = hasLeftSpace
+        ? rect.left - width - gap
+        : rect.right + gap;
       const maxLeft = window.innerWidth - width - margin;
       const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
       const maxTop = Math.max(margin, window.innerHeight - maxHeight - margin);
@@ -3304,13 +3737,14 @@ export default function CreateMemorialClient({
       setDetailTooltip({
         id: option.id,
         name: option.name,
-        description: option.description.trim() || "Деталь оформления мемориала.",
+        description:
+          option.description.trim() || "Деталь оформления мемориала.",
         left,
         top,
-        width
+        width,
       });
     },
-    [isPortraitLayout]
+    [isPortraitLayout],
   );
 
   const hideDetailTooltip = useCallback(() => {
@@ -3322,7 +3756,7 @@ export default function CreateMemorialClient({
       await preloadOptionModel(category, id);
       apply();
     },
-    [preloadOptionModel]
+    [preloadOptionModel],
   );
 
   const preloadEnvironmentSeason = useCallback(
@@ -3333,7 +3767,7 @@ export default function CreateMemorialClient({
       }
       await queueGltfLoad(url);
     },
-    [form.environmentId, queueGltfLoad]
+    [form.environmentId, queueGltfLoad],
   );
 
   const renderOptionGrid = (
@@ -3342,18 +3776,21 @@ export default function CreateMemorialClient({
     selectedId: string,
     onSelect: (id: string) => void,
     imageCategory: string = category,
-    gridClassName = "grid grid-cols-2 place-items-center gap-0.5"
+    gridClassName = "grid grid-cols-2 place-items-center gap-0.5",
   ) => (
     <div className={gridClassName}>
       {options.map((option) => {
         const isSelected = selectedId === option.id;
-        const imageUrl = option.id === "none" ? null : optionImage(imageCategory, option.id);
+        const imageUrl =
+          option.id === "none" ? null : optionImage(imageCategory, option.id);
         return (
           <button
             key={option.id}
             type="button"
             onClick={() => {
-              void handleOptionSelect(category, option.id, () => onSelect(option.id));
+              void handleOptionSelect(category, option.id, () =>
+                onSelect(option.id),
+              );
             }}
             onMouseEnter={(event) => {
               showDetailTooltip(option, event.currentTarget);
@@ -3399,9 +3836,15 @@ export default function CreateMemorialClient({
     options: OptionItem[],
     selectedId: string,
     onSelect: (id: string) => void,
-    vertical = false
+    vertical = false,
   ) => (
-    <div className={vertical ? "flex max-h-full flex-col gap-2 overflow-y-auto pr-0.5" : "flex flex-wrap gap-2"}>
+    <div
+      className={
+        vertical
+          ? "flex max-h-full flex-col gap-2 overflow-y-auto pr-0.5"
+          : "flex flex-wrap gap-2"
+      }
+    >
       {options.map((option, index) => {
         const isSelected = selectedId === option.id;
         return (
@@ -3409,7 +3852,9 @@ export default function CreateMemorialClient({
             key={option.id}
             type="button"
             onClick={() => {
-              void handleOptionSelect("house-texture", option.id, () => onSelect(option.id));
+              void handleOptionSelect("house-texture", option.id, () =>
+                onSelect(option.id),
+              );
             }}
             onMouseEnter={(event) => {
               showDetailTooltip(option, event.currentTarget);
@@ -3433,7 +3878,9 @@ export default function CreateMemorialClient({
                 ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
                 : "border-[#eadfd9] hover:border-[#d3a27f]"
             }`}
-            style={{ background: getHouseTextureSwatchBackground(option.id, index) }}
+            style={{
+              background: getHouseTextureSwatchBackground(option.id, index),
+            }}
           />
         );
       })}
@@ -3445,12 +3892,23 @@ export default function CreateMemorialClient({
       case "environment":
         return (
           <div className="grid h-full min-h-0 rounded-2xl bg-[#fffcf9] p-2">
-            <div className={environmentSeasons.length > 0 ? "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2" : "min-h-0"}>
+            <div
+              className={
+                environmentSeasons.length > 0
+                  ? "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2"
+                  : "min-h-0"
+              }
+            >
               <div className="min-h-0 overflow-y-auto overscroll-contain">
-                {renderOptionGrid("environment", environmentOptions, form.environmentId, (id) => {
-                  handleChange("environmentId", id);
-                  requestFocus("dom_slot");
-                })}
+                {renderOptionGrid(
+                  "environment",
+                  environmentOptions,
+                  form.environmentId,
+                  (id) => {
+                    handleChange("environmentId", id);
+                    requestFocus("dom_slot");
+                  },
+                )}
               </div>
               {environmentSeasons.length > 0 ? (
                 <div className="grid w-11 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] content-start justify-items-center gap-2 p-1.5">
@@ -3472,7 +3930,7 @@ export default function CreateMemorialClient({
                           type="button"
                           onClick={() => {
                             void preloadEnvironmentSeason(season).then(() =>
-                              handleChange("environmentSeason", season)
+                              handleChange("environmentSeason", season),
                             );
                           }}
                           aria-label={swatch.label}
@@ -3493,7 +3951,10 @@ export default function CreateMemorialClient({
                       className="h-4 w-4"
                       checked={form.environmentSeasonAuto}
                       onChange={(event) =>
-                        handleChange("environmentSeasonAuto", event.target.checked)
+                        handleChange(
+                          "environmentSeasonAuto",
+                          event.target.checked,
+                        )
                       }
                       aria-label="Автосмена сезонов"
                       title="Автосмена сезонов"
@@ -3514,13 +3975,22 @@ export default function CreateMemorialClient({
               <div className="grid min-h-0 flex-1 rounded-2xl bg-[#fffcf9] p-2">
                 <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
                   <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
-                    <h2 className="px-1 text-sm font-semibold text-[#5d4037]">Домик</h2>
+                    <h2 className="px-1 text-sm font-semibold text-[#5d4037]">
+                      Домик
+                    </h2>
                     <div className="min-h-0 overflow-y-auto overscroll-contain">
-                      {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
-                        const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
-                        handleChange("houseId", nextVariant);
-                        requestFocus("dom_slot");
-                      }, "house")}
+                      {renderOptionGrid(
+                        "house-base",
+                        houseBaseOptions,
+                        selectedHouseBaseId,
+                        (id) => {
+                          const nextVariant =
+                            houseVariantGroup.defaultVariantByBase[id] ?? id;
+                          handleChange("houseId", nextVariant);
+                          requestFocus("dom_slot");
+                        },
+                        "house",
+                      )}
                     </div>
                   </div>
                   <div className="grid w-12 min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2 p-1.5">
@@ -3541,7 +4011,7 @@ export default function CreateMemorialClient({
                               handleChange("houseId", id);
                               requestFocus("dom_slot");
                             },
-                            true
+                            true,
                           )
                         : renderOptionGrid(
                             "house-texture",
@@ -3552,7 +4022,7 @@ export default function CreateMemorialClient({
                               requestFocus("dom_slot");
                             },
                             "house-texture",
-                            "grid grid-cols-1 place-items-center gap-1"
+                            "grid grid-cols-1 place-items-center gap-1",
                           )}
                     </div>
                   </div>
@@ -3560,95 +4030,110 @@ export default function CreateMemorialClient({
               </div>
             ) : (
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-                {renderOptionGrid("house-base", houseBaseOptions, selectedHouseBaseId, (id) => {
-                  const nextVariant = houseVariantGroup.defaultVariantByBase[id] ?? id;
-                  handleChange("houseId", nextVariant);
-                  requestFocus("dom_slot");
-                }, "house")}
+                {renderOptionGrid(
+                  "house-base",
+                  houseBaseOptions,
+                  selectedHouseBaseId,
+                  (id) => {
+                    const nextVariant =
+                      houseVariantGroup.defaultVariantByBase[id] ?? id;
+                    handleChange("houseId", nextVariant);
+                    requestFocus("dom_slot");
+                  },
+                  "house",
+                )}
               </div>
             )}
             {canUseCalibration(accessLevel) ? (
-            <div className="grid gap-3 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-3 text-xs text-[#6f6360]">
-              <div className="text-xs font-semibold text-[#5d4037]">
-                Временная настройка положения домика
-              </div>
-              <div className="text-[11px] text-[#8d6e63]">
-                Поверхность: <span className="font-semibold text-[#6f6360]">{selectedTerrainLayoutId || "default"}</span>
-              </div>
-              <div className="text-[11px] text-[#8d6e63]">
-                Домик: <span className="font-semibold text-[#6f6360]">{selectedHouseBaseId}</span>
-              </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Сдвиг X</span>
+              <div className="grid gap-3 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-3 text-xs text-[#6f6360]">
+                <div className="text-xs font-semibold text-[#5d4037]">
+                  Временная настройка положения домика
+                </div>
+                <div className="text-[11px] text-[#8d6e63]">
+                  Поверхность:{" "}
                   <span className="font-semibold text-[#6f6360]">
-                    {activeHousePlacement.x.toFixed(2)}
+                    {selectedTerrainLayoutId || "default"}
                   </span>
-                </label>
-                <input
-                  type="range"
-                  min={-6}
-                  max={6}
-                  step={0.05}
-                  value={activeHousePlacement.x}
-                  onChange={(event) =>
-                    updateHousePlacement({ x: Number(event.target.value) })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Сдвиг Z</span>
+                </div>
+                <div className="text-[11px] text-[#8d6e63]">
+                  Домик:{" "}
                   <span className="font-semibold text-[#6f6360]">
-                    {activeHousePlacement.z.toFixed(2)}
+                    {selectedHouseBaseId}
                   </span>
-                </label>
-                <input
-                  type="range"
-                  min={-6}
-                  max={6}
-                  step={0.05}
-                  value={activeHousePlacement.z}
-                  onChange={(event) =>
-                    updateHousePlacement({ z: Number(event.target.value) })
-                  }
-                />
+                </div>
+                <div className="grid gap-2">
+                  <label className="flex items-center justify-between">
+                    <span>Сдвиг X</span>
+                    <span className="font-semibold text-[#6f6360]">
+                      {activeHousePlacement.x.toFixed(2)}
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min={-6}
+                    max={6}
+                    step={0.05}
+                    value={activeHousePlacement.x}
+                    onChange={(event) =>
+                      updateHousePlacement({ x: Number(event.target.value) })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="flex items-center justify-between">
+                    <span>Сдвиг Z</span>
+                    <span className="font-semibold text-[#6f6360]">
+                      {activeHousePlacement.z.toFixed(2)}
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min={-6}
+                    max={6}
+                    step={0.05}
+                    value={activeHousePlacement.z}
+                    onChange={(event) =>
+                      updateHousePlacement({ z: Number(event.target.value) })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="flex items-center justify-between">
+                    <span>Поворот Y</span>
+                    <span className="font-semibold text-[#6f6360]">
+                      {activeHousePlacement.rotY.toFixed(0)}°
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={activeHousePlacement.rotY}
+                    onChange={(event) =>
+                      updateHousePlacement({ rotY: Number(event.target.value) })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="flex items-center justify-between">
+                    <span>Масштаб</span>
+                    <span className="font-semibold text-[#6f6360]">
+                      {activeHouseScale.toFixed(2)}
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min={0.25}
+                    max={3}
+                    step={0.01}
+                    value={activeHouseScale}
+                    onChange={(event) =>
+                      updateHouseScale(Number(event.target.value))
+                    }
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Поворот Y</span>
-                  <span className="font-semibold text-[#6f6360]">
-                    {activeHousePlacement.rotY.toFixed(0)}°
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  min={-180}
-                  max={180}
-                  step={1}
-                  value={activeHousePlacement.rotY}
-                  onChange={(event) =>
-                    updateHousePlacement({ rotY: Number(event.target.value) })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="flex items-center justify-between">
-                  <span>Масштаб</span>
-                  <span className="font-semibold text-[#6f6360]">
-                    {activeHouseScale.toFixed(2)}
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  min={0.25}
-                  max={3}
-                  step={0.01}
-                  value={activeHouseScale}
-                  onChange={(event) => updateHouseScale(Number(event.target.value))}
-                />
-              </div>
-            </div>
             ) : null}
           </div>
         );
@@ -3679,17 +4164,27 @@ export default function CreateMemorialClient({
       case "frameLeft":
         return (
           <div className="grid gap-3">
-            {renderOptionGrid("frame-left", frameLeftOptions, form.frameLeftId, (id) => {
-              handleChange("frameLeftId", id);
-            })}
+            {renderOptionGrid(
+              "frame-left",
+              frameLeftOptions,
+              form.frameLeftId,
+              (id) => {
+                handleChange("frameLeftId", id);
+              },
+            )}
           </div>
         );
       case "frameRight":
         return (
           <div className="grid gap-3">
-            {renderOptionGrid("frame-right", frameRightOptions, form.frameRightId, (id) => {
-              handleChange("frameRightId", id);
-            })}
+            {renderOptionGrid(
+              "frame-right",
+              frameRightOptions,
+              form.frameRightId,
+              (id) => {
+                handleChange("frameRightId", id);
+              },
+            )}
           </div>
         );
       case "mat":
@@ -3703,17 +4198,27 @@ export default function CreateMemorialClient({
       case "bowlFood":
         return (
           <div className="grid gap-3">
-            {renderOptionGrid("bowl-food", bowlFoodOptions, form.bowlFoodId, (id) => {
-              handleChange("bowlFoodId", id);
-            })}
+            {renderOptionGrid(
+              "bowl-food",
+              bowlFoodOptions,
+              form.bowlFoodId,
+              (id) => {
+                handleChange("bowlFoodId", id);
+              },
+            )}
           </div>
         );
       case "bowlWater":
         return (
           <div className="grid gap-3">
-            {renderOptionGrid("bowl-water", bowlWaterOptions, form.bowlWaterId, (id) => {
-              handleChange("bowlWaterId", id);
-            })}
+            {renderOptionGrid(
+              "bowl-water",
+              bowlWaterOptions,
+              form.bowlWaterId,
+              (id) => {
+                handleChange("bowlWaterId", id);
+              },
+            )}
           </div>
         );
       default:
@@ -3727,23 +4232,19 @@ export default function CreateMemorialClient({
   const overlayLabelClass = isPortraitLayout
     ? "text-[9px] font-black uppercase tracking-[0.14em] text-[#9f938e]"
     : "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
-  const overlayInputClass =
-    isPortraitLayout
-      ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
-      : "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
-  const overlayTextareaClass =
-    isPortraitLayout
-      ? "min-h-[76px] w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-snug text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
-      : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
-  const overlayShellClass =
-    isPortraitLayout
-      ? "flex h-full min-h-0 flex-col gap-1.5 overflow-hidden bg-[#f7f1ee] p-1"
-      : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
+  const overlayInputClass = isPortraitLayout
+    ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+    : "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+  const overlayTextareaClass = isPortraitLayout
+    ? "min-h-[76px] w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-snug text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+    : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+  const overlayShellClass = isPortraitLayout
+    ? "flex h-full min-h-0 flex-col gap-1.5 overflow-hidden bg-[#f7f1ee] p-1"
+    : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
 
   const centeredFieldClass =
     "w-full rounded-2xl border border-[#d8cfc9] bg-[#fbf7f4] px-4 py-2 text-center text-base font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]";
-  const centeredSelectFieldClass =
-    `${centeredFieldClass} h-[52px] min-h-[52px] py-0 text-center [text-align-last:center]`;
+  const centeredSelectFieldClass = `${centeredFieldClass} h-[52px] min-h-[52px] py-0 text-center [text-align-last:center]`;
   const centeredDateFieldClass = (hasError: boolean) =>
     `block w-full min-w-0 max-w-full appearance-none rounded-2xl border px-4 py-2 text-center text-base font-semibold ${
       hasError ? "border-red-400" : "border-[#d8cfc9]"
@@ -3754,7 +4255,7 @@ export default function CreateMemorialClient({
     maxWidth: "100%",
     display: "block",
     WebkitAppearance: "none",
-    appearance: "none"
+    appearance: "none",
   };
 
   const renderSoulPicker = () => (
@@ -3784,13 +4285,17 @@ export default function CreateMemorialClient({
   );
 
   const renderNameField = (centered = false) => (
-    <label className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
-      {!centered ? <span className={overlayLabelClass}>Имя питомца</span> : null}
+    <label
+      className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
+    >
+      {!centered ? (
+        <span className={overlayLabelClass}>Имя питомца</span>
+      ) : null}
       {centered ? "Имя питомца" : null}
       <input
-        className={centered
-          ? `${centeredFieldClass} min-h-[52px]`
-          : overlayInputClass}
+        className={
+          centered ? `${centeredFieldClass} min-h-[52px]` : overlayInputClass
+        }
         value={form.name}
         onChange={(event) => handleChange("name", event.target.value)}
         placeholder="Барсик"
@@ -3802,13 +4307,15 @@ export default function CreateMemorialClient({
   );
 
   const renderSpeciesField = (centered = false) => (
-    <label className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}>
-      {!centered ? <span className={overlayLabelClass}>Вид питомца</span> : null}
+    <label
+      className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
+    >
+      {!centered ? (
+        <span className={overlayLabelClass}>Вид питомца</span>
+      ) : null}
       {centered ? "Вид питомца" : null}
       <select
-        className={centered
-          ? centeredSelectFieldClass
-          : overlayInputClass}
+        className={centered ? centeredSelectFieldClass : overlayInputClass}
         value={form.species}
         onChange={(event) => handleSpeciesChange(event.target.value)}
       >
@@ -3828,14 +4335,18 @@ export default function CreateMemorialClient({
       className={`${isPortraitLayout ? "grid gap-1" : "grid gap-2"} cursor-pointer ${centered ? "w-full text-center text-sm text-[#8a7c77]" : ""}`}
       onClick={() => openDatePicker(birthDateInputRef.current)}
     >
-      {!centered ? <span className={overlayLabelClass}>Дата рождения</span> : null}
+      {!centered ? (
+        <span className={overlayLabelClass}>Дата рождения</span>
+      ) : null}
       {centered ? "Дата рождения" : null}
       <input
         ref={birthDateInputRef}
         type="date"
-        className={centered
-          ? centeredDateFieldClass(hasDateFieldError)
-          : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
+        className={
+          centered
+            ? centeredDateFieldClass(hasDateFieldError)
+            : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`
+        }
         value={form.birthDate}
         onChange={(event) => handleChange("birthDate", event.target.value)}
         max={form.deathDate || todayInputValue}
@@ -3855,9 +4366,11 @@ export default function CreateMemorialClient({
       <input
         ref={deathDateInputRef}
         type="date"
-        className={centered
-          ? centeredDateFieldClass(hasDateFieldError)
-          : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`}
+        className={
+          centered
+            ? centeredDateFieldClass(hasDateFieldError)
+            : `${overlayInputClass} ${hasDateFieldError ? "!border-red-400" : ""}`
+        }
         value={form.deathDate}
         onChange={(event) => handleChange("deathDate", event.target.value)}
         min={form.birthDate || undefined}
@@ -3893,7 +4406,9 @@ export default function CreateMemorialClient({
       {centered ? (
         renderBirthDateField(centered)
       ) : (
-        <div className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid gap-4"}>
+        <div
+          className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid gap-4"}
+        >
           {renderBirthDateField(false)}
           {renderDeathDateField(false)}
         </div>
@@ -3901,27 +4416,32 @@ export default function CreateMemorialClient({
       {centered ? <div aria-hidden /> : null}
       {centered ? renderDeathDateField(centered) : null}
       {centered
-        ? renderDateValidationMessage("pointer-events-none absolute left-0 right-0 -bottom-6 min-h-[16px]")
+        ? renderDateValidationMessage(
+            "pointer-events-none absolute left-0 right-0 -bottom-6 min-h-[16px]",
+          )
         : renderDateValidationMessage()}
     </div>
   );
 
   const renderMarkerPanel = () => {
-    const markerDisplay = markerGroups.primary.length > 0
-      ? markerGroups.primary
-      : markerGroups.all;
+    const markerDisplay =
+      markerGroups.primary.length > 0 ? markerGroups.primary : markerGroups.all;
     return (
-      <div className={`${overlayShellClass} ${isPortraitLayout ? "!grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden" : ""}`}>
+      <div
+        className={`${overlayShellClass} ${isPortraitLayout ? "!grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden" : ""}`}
+      >
         <h3 className={overlaySectionTitleClass}>
           <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
           Место в мире
         </h3>
         {isPortraitLayout ? (
           <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1">
-            {([
-              ["marker", "Маркер"],
-              ["map", "Карта"]
-            ] as const).map(([tab, label]) => (
+            {(
+              [
+                ["marker", "Маркер"],
+                ["map", "Карта"],
+              ] as const
+            ).map(([tab, label]) => (
               <button
                 key={tab}
                 type="button"
@@ -3937,216 +4457,304 @@ export default function CreateMemorialClient({
             ))}
           </div>
         ) : null}
-        <div className={isPortraitLayout ? "grid h-full min-h-0 gap-2 overflow-hidden" : "grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)] [@media(max-height:640px)]:!grid-cols-1 [@media(max-height:640px)]:gap-2"}>
         <div
           className={
             isPortraitLayout
-              ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 grid-rows-[minmax(0,1fr)] gap-2 overflow-hidden`
-              : "grid content-start gap-3 [@media(max-height:640px)]:gap-2"
+              ? "grid h-full min-h-0 gap-2 overflow-hidden"
+              : "grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)] [@media(max-height:640px)]:!grid-cols-1 [@media(max-height:640px)]:gap-2"
           }
         >
-          <div className={`${isPortraitLayout ? "h-full min-h-0" : ""} overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2`}>
-            {!apiKey ? (
-              <div className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]`}>
-                Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
-              </div>
-            ) : loadError ? (
-              <div className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-red-600`}>
-                Ошибка загрузки карты
-              </div>
-            ) : !isLoaded ? (
-              <div className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]`}>
-                Загрузка карты...
-              </div>
-            ) : (
-              <GoogleMap
-                mapContainerStyle={{
-                  width: "100%",
-                  height: markerMapHeight
-                }}
-                center={mapCenter}
-                zoom={canShowMarker ? 12 : 3}
-                onClick={(event) => {
-                  const latValue = event.latLng?.lat();
-                  const lngValue = event.latLng?.lng();
-                  if (latValue === undefined || lngValue === undefined) {
-                    return;
-                  }
-                  setForm((prev) => ({
-                    ...prev,
-                    lat: latValue.toFixed(6),
-                    lng: lngValue.toFixed(6)
-                  }));
-                }}
-              >
-                {canShowMarker ? (
-                  <Marker
-                    position={{ lat: lat!, lng: lng! }}
-                    icon={{
-                      url: markerIconUrl(markerIconId),
-                      scaledSize: new window.google.maps.Size(
-                        markerPreviewSize.width,
-                        markerPreviewSize.height
-                      ),
-                      anchor: new window.google.maps.Point(
-                        markerPreviewAnchor.x,
-                        markerPreviewAnchor.y
-                      )
-                    }}
-                  />
-                ) : null}
-              </GoogleMap>
-            )}
-          </div>
-
-          <div className={isPortraitLayout ? "hidden" : "grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2"}>
-            <div className={isPortraitLayout ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1"}>
-              <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
-                <span className={overlayLabelClass}>Широта</span>
-                <input
-                  inputMode={isPortraitLayout ? "text" : "decimal"}
-                  className={overlayInputClass}
-                  placeholder="55.755826"
-                  value={form.lat}
-                  onChange={(event) => handleChange("lat", event.target.value)}
-                />
-              </label>
-              <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
-                <span className={overlayLabelClass}>Долгота</span>
-                <input
-                  inputMode={isPortraitLayout ? "text" : "decimal"}
-                  className={overlayInputClass}
-                  placeholder="37.617299"
-                  value={form.lng}
-                  onChange={(event) => handleChange("lng", event.target.value)}
-                />
-              </label>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!navigator.geolocation) {
-                    setError("Геолокация не поддерживается в этом браузере");
-                    return;
-                  }
-                  navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        lat: pos.coords.latitude.toFixed(6),
-                        lng: pos.coords.longitude.toFixed(6)
-                      }));
-                    },
-                    () => setError("Не удалось получить геолокацию")
-                  );
-                }}
-                className="rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
-              >
-                Моё местоположение
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({ ...prev, lat: "", lng: "" }))}
-                className="rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
-              >
-                Очистить
-              </button>
-            </div>
-
-            <label className="group relative flex items-center gap-2 text-xs font-bold text-[#6f6360]">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={form.isPublic}
-                onChange={(event) => handleChange("isPublic", event.target.checked)}
-              />
-              Публичный мемориал
-              <span className="grid h-5 w-5 place-items-center rounded-full border border-white bg-[#fffcf9] text-[10px] font-black text-[#8d6e63]">
-                ?
-              </span>
-              <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                Кликни на карте, чтобы выбрать точку. Публичный мемориал виден на карте всем пользователям, приватные доступны только по ссылке.
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <div className={isPortraitLayout ? `${markerPanelTab !== "marker" ? "hidden" : "grid"} h-full min-h-0 min-w-0 overflow-hidden` : "grid min-h-0 min-w-0 content-start gap-2"}>
-          <div className={isPortraitLayout ? "grid h-full min-h-0 grid-cols-[44px_minmax(0,1fr)] gap-2 overflow-hidden" : "grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2"}>
-            <div className={isPortraitLayout ? "flex h-full min-h-0 w-11 touch-pan-y snap-y snap-mandatory flex-col items-center gap-1.5 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 [overscroll-behavior-x:none]" : "flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1"}>
-              {markerStyles.map((style) => {
-                const isActive = markerCategory === style.id;
-                const categoryIconUrl =
-                  markerVariants.find((variant) => variant.id === style.id)?.iconUrl ??
-                  markerIconUrl(style.id);
-                return (
-                  <div key={style.id} className={isPortraitLayout ? "group relative w-10 shrink-0 snap-start" : "group relative"}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMarkerCategory(style.id);
-                        if (markerStyleById(form.markerStyle).id !== style.id) {
-                          handleChange("markerStyle", firstMarkerVariantId(style.id));
-                        }
+          <div
+            className={
+              isPortraitLayout
+                ? `${markerPanelTab !== "map" ? "hidden" : "grid"} h-full min-h-0 grid-rows-[minmax(0,1fr)] gap-2 overflow-hidden`
+                : "grid content-start gap-3 [@media(max-height:640px)]:gap-2"
+            }
+          >
+            <div
+              className={`${isPortraitLayout ? "h-full min-h-0" : ""} overflow-hidden rounded-[24px] border-[3px] border-white bg-[#f8f9fa] shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2`}
+            >
+              {!apiKey ? (
+                <div
+                  className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]`}
+                >
+                  Укажи NEXT_PUBLIC_GOOGLE_MAPS_API_KEY в .env.local
+                </div>
+              ) : loadError ? (
+                <div
+                  className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-red-600`}
+                >
+                  Ошибка загрузки карты
+                </div>
+              ) : !isLoaded ? (
+                <div
+                  className={`${isPortraitLayout ? "h-full min-h-0" : "min-h-[220px]"} flex items-center justify-center bg-[#fcf8f5] text-xs text-[#8d6e63]`}
+                >
+                  Загрузка карты...
+                </div>
+              ) : (
+                <GoogleMap
+                  mapContainerStyle={{
+                    width: "100%",
+                    height: markerMapHeight,
+                  }}
+                  center={mapCenter}
+                  zoom={canShowMarker ? 12 : 3}
+                  onClick={(event) => {
+                    const latValue = event.latLng?.lat();
+                    const lngValue = event.latLng?.lng();
+                    if (latValue === undefined || lngValue === undefined) {
+                      return;
+                    }
+                    setForm((prev) => ({
+                      ...prev,
+                      lat: latValue.toFixed(6),
+                      lng: lngValue.toFixed(6),
+                    }));
+                  }}
+                >
+                  {canShowMarker ? (
+                    <Marker
+                      position={{ lat: lat!, lng: lng! }}
+                      icon={{
+                        url: markerIconUrl(markerIconId),
+                        scaledSize: new window.google.maps.Size(
+                          markerPreviewSize.width,
+                          markerPreviewSize.height,
+                        ),
+                        anchor: new window.google.maps.Point(
+                          markerPreviewAnchor.x,
+                          markerPreviewAnchor.y,
+                        ),
                       }}
-                      className={`flex shrink-0 items-center justify-center overflow-hidden border p-0 transition ${
-                        isPortraitLayout
-                          ? "h-10 w-10 rounded-xl"
-                          : "h-12 w-12 rounded-2xl sm:h-14 sm:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10 [@media(max-height:640px)]:rounded-xl"
-                      } ${
-                        isActive
-                          ? "border-[#5d4037] bg-[#5d4037] text-white"
-                          : "border-[#eadfd9] bg-white text-[#8d6e63] hover:border-[#d3a27f]"
-                      }`}
-                      aria-label={style.name}
-                    >
-                      <img
-                        src={categoryIconUrl}
-                        alt={style.name}
-                        className="h-full w-full scale-[1.12] object-contain p-0.5"
-                      />
-                    </button>
-                    <span className={isPortraitLayout ? "hidden" : "pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#eadfd9] bg-white px-2 py-1 text-[10px] text-[#6f6360] opacity-0 shadow-sm transition group-hover:opacity-100"}>
-                      {style.name}
-                    </span>
-                  </div>
-                );
-              })}
+                    />
+                  ) : null}
+                </GoogleMap>
+              )}
             </div>
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-[#c2a79a]">
-                Маркеры выбранного вида
-              </p>
-              <div className={isPortraitLayout ? "grid min-h-0 flex-1 grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] content-start gap-1 overflow-y-auto overscroll-contain pr-1" : "flex w-full flex-wrap gap-1 [@media(max-height:640px)]:max-h-32 [@media(max-height:640px)]:overflow-y-auto"}>
-                {markerDisplay.map((marker) => {
-                  const markerName = markerStyleById(marker.baseId).name;
+
+            <div
+              className={
+                isPortraitLayout
+                  ? "hidden"
+                  : "grid gap-2 rounded-[24px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner [@media(max-height:640px)]:rounded-[18px] [@media(max-height:640px)]:border-2 [@media(max-height:640px)]:p-2"
+              }
+            >
+              <div
+                className={
+                  isPortraitLayout
+                    ? "grid grid-cols-2 gap-2"
+                    : "grid grid-cols-2 gap-2 [@media(max-width:760px)]:grid-cols-1"
+                }
+              >
+                <label
+                  className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}
+                >
+                  <span className={overlayLabelClass}>Широта</span>
+                  <input
+                    inputMode={isPortraitLayout ? "text" : "decimal"}
+                    className={overlayInputClass}
+                    placeholder="55.755826"
+                    value={form.lat}
+                    onChange={(event) =>
+                      handleChange("lat", event.target.value)
+                    }
+                  />
+                </label>
+                <label
+                  className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}
+                >
+                  <span className={overlayLabelClass}>Долгота</span>
+                  <input
+                    inputMode={isPortraitLayout ? "text" : "decimal"}
+                    className={overlayInputClass}
+                    placeholder="37.617299"
+                    value={form.lng}
+                    onChange={(event) =>
+                      handleChange("lng", event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!navigator.geolocation) {
+                      setError("Геолокация не поддерживается в этом браузере");
+                      return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          lat: pos.coords.latitude.toFixed(6),
+                          lng: pos.coords.longitude.toFixed(6),
+                        }));
+                      },
+                      () => setError("Не удалось получить геолокацию"),
+                    );
+                  }}
+                  className="rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
+                >
+                  Моё местоположение
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, lat: "", lng: "" }))
+                  }
+                  className="rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-2 py-1 text-[10px] text-[#6f6360] transition hover:bg-[#fff7f2]"
+                >
+                  Очистить
+                </button>
+              </div>
+
+              <label className="group relative flex items-center gap-2 text-xs font-bold text-[#6f6360]">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={form.isPublic}
+                  onChange={(event) =>
+                    handleChange("isPublic", event.target.checked)
+                  }
+                />
+                Публичный мемориал
+                <span className="grid h-5 w-5 place-items-center rounded-full border border-white bg-[#fffcf9] text-[10px] font-black text-[#8d6e63]">
+                  ?
+                </span>
+                <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  Кликни на карте, чтобы выбрать точку. Публичный мемориал виден
+                  на карте всем пользователям, приватные доступны только по
+                  ссылке.
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div
+            className={
+              isPortraitLayout
+                ? `${markerPanelTab !== "marker" ? "hidden" : "grid"} h-full min-h-0 min-w-0 overflow-hidden`
+                : "grid min-h-0 min-w-0 content-start gap-2"
+            }
+          >
+            <div
+              className={
+                isPortraitLayout
+                  ? "grid h-full min-h-0 grid-cols-[44px_minmax(0,1fr)] gap-2 overflow-hidden"
+                  : "grid grid-cols-[56px_minmax(0,1fr)] gap-3 [@media(max-height:640px)]:grid-cols-1 [@media(max-height:640px)]:gap-2"
+              }
+            >
+              <div
+                className={
+                  isPortraitLayout
+                    ? "flex h-full min-h-0 w-11 touch-pan-y snap-y snap-mandatory flex-col items-center gap-1.5 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 [overscroll-behavior-x:none]"
+                    : "flex w-14 flex-col items-center gap-2 [@media(max-height:640px)]:w-full [@media(max-height:640px)]:flex-row [@media(max-height:640px)]:overflow-x-auto [@media(max-height:640px)]:pb-1"
+                }
+              >
+                {markerStyles.map((style) => {
+                  const isActive = markerCategory === style.id;
+                  const categoryIconUrl =
+                    markerVariants.find((variant) => variant.id === style.id)
+                      ?.iconUrl ?? markerIconUrl(style.id);
                   return (
-                    <button
-                      key={marker.id}
-                      type="button"
-                      onClick={() => handleChange("markerStyle", marker.id)}
-                      className={`flex items-center justify-center rounded-lg border p-0.5 ${
-                        form.markerStyle === marker.id
-                          ? "border-[#5d4037] bg-[#5d4037] text-white"
-                          : "border-[#eadfd9] bg-white text-[#6f6360]"
-                      }`}
+                    <div
+                      key={style.id}
+                      className={
+                        isPortraitLayout
+                          ? "group relative w-10 shrink-0 snap-start"
+                          : "group relative"
+                      }
                     >
-                      <span className={isPortraitLayout ? "h-12 w-12 overflow-hidden rounded-lg bg-[#f7f1ee] min-[390px]:h-14 min-[390px]:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10" : "h-14 w-14 overflow-hidden rounded-lg bg-[#f7f1ee] [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10"}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMarkerCategory(style.id);
+                          if (
+                            markerStyleById(form.markerStyle).id !== style.id
+                          ) {
+                            handleChange(
+                              "markerStyle",
+                              firstMarkerVariantId(style.id),
+                            );
+                          }
+                        }}
+                        className={`flex shrink-0 items-center justify-center overflow-hidden border p-0 transition ${
+                          isPortraitLayout
+                            ? "h-10 w-10 rounded-xl"
+                            : "h-12 w-12 rounded-2xl sm:h-14 sm:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10 [@media(max-height:640px)]:rounded-xl"
+                        } ${
+                          isActive
+                            ? "border-[#5d4037] bg-[#5d4037] text-white"
+                            : "border-[#eadfd9] bg-white text-[#8d6e63] hover:border-[#d3a27f]"
+                        }`}
+                        aria-label={style.name}
+                      >
                         <img
-                          src={marker.iconUrl}
-                          alt={markerName}
-                          className="h-full w-full object-contain"
+                          src={categoryIconUrl}
+                          alt={style.name}
+                          className="h-full w-full scale-[1.12] object-contain p-0.5"
                         />
+                      </button>
+                      <span
+                        className={
+                          isPortraitLayout
+                            ? "hidden"
+                            : "pointer-events-none absolute left-full top-1/2 z-10 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-[#eadfd9] bg-white px-2 py-1 text-[10px] text-[#6f6360] opacity-0 shadow-sm transition group-hover:opacity-100"
+                        }
+                      >
+                        {style.name}
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#c2a79a]">
+                  Маркеры выбранного вида
+                </p>
+                <div
+                  className={
+                    isPortraitLayout
+                      ? "grid min-h-0 flex-1 grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] content-start gap-1 overflow-y-auto overscroll-contain pr-1"
+                      : "flex w-full flex-wrap gap-1 [@media(max-height:640px)]:max-h-32 [@media(max-height:640px)]:overflow-y-auto"
+                  }
+                >
+                  {markerDisplay.map((marker) => {
+                    const markerName = markerStyleById(marker.baseId).name;
+                    return (
+                      <button
+                        key={marker.id}
+                        type="button"
+                        onClick={() => handleChange("markerStyle", marker.id)}
+                        className={`flex items-center justify-center rounded-lg border p-0.5 ${
+                          form.markerStyle === marker.id
+                            ? "border-[#5d4037] bg-[#5d4037] text-white"
+                            : "border-[#eadfd9] bg-white text-[#6f6360]"
+                        }`}
+                      >
+                        <span
+                          className={
+                            isPortraitLayout
+                              ? "h-12 w-12 overflow-hidden rounded-lg bg-[#f7f1ee] min-[390px]:h-14 min-[390px]:w-14 [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10"
+                              : "h-14 w-14 overflow-hidden rounded-lg bg-[#f7f1ee] [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10"
+                          }
+                        >
+                          <img
+                            src={marker.iconUrl}
+                            alt={markerName}
+                            className="h-full w-full object-contain"
+                          />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     );
   };
@@ -4192,10 +4800,10 @@ export default function CreateMemorialClient({
                 setForm((prev) => ({
                   ...prev,
                   lat: pos.coords.latitude.toFixed(6),
-                  lng: pos.coords.longitude.toFixed(6)
+                  lng: pos.coords.longitude.toFixed(6),
                 }));
               },
-              () => setError("Не удалось получить геолокацию")
+              () => setError("Не удалось получить геолокацию"),
             );
           }}
           className="rounded-xl border border-[#eadfd9] bg-white px-2 py-1 text-[9px] font-bold text-[#6f6360]"
@@ -4222,7 +4830,8 @@ export default function CreateMemorialClient({
           ?
         </span>
         <span className="pointer-events-none fixed left-4 right-4 top-[calc(3.75rem+env(safe-area-inset-top))] z-[2200] rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-semibold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          Кликни на карте, чтобы выбрать точку. Публичный мемориал виден на карте всем пользователям, приватные доступны только по ссылке.
+          Кликни на карте, чтобы выбрать точку. Публичный мемориал виден на
+          карте всем пользователям, приватные доступны только по ссылке.
         </span>
       </label>
     </div>
@@ -4281,14 +4890,16 @@ export default function CreateMemorialClient({
           event.currentTarget.value = "";
         }}
       />
-      <p className="text-xs text-[#8d6e63]">Максимум {MAX_PHOTOS} фото, до 6 МБ каждое.</p>
+      <p className="text-xs text-[#8d6e63]">
+        Максимум {MAX_PHOTOS} фото, до 6 МБ каждое.
+      </p>
       {photos.length > 0 ? (
         <div
           className="grid gap-2"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
-            gap: "6px"
+            gap: "6px",
           }}
         >
           {photos.map((photo) => (
@@ -4362,7 +4973,8 @@ export default function CreateMemorialClient({
               Путь души
             </div>
             <div className="mt-1 leading-snug text-[#8a7c77]">
-              Один путь — это одно движение души. Точки задают плавную траекторию без остановок, затем душа возвращается в старт.
+              Один путь — это одно движение души. Точки задают плавную
+              траекторию без остановок, затем душа возвращается в старт.
             </div>
           </div>
           <label className="inline-flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 font-black uppercase tracking-[0.1em] text-[#3b8d76]">
@@ -4370,7 +4982,9 @@ export default function CreateMemorialClient({
               type="checkbox"
               className="h-4 w-4 rounded border-[#d8cfc9]"
               checked={form.soulPath.enabled}
-              onChange={(event) => updateSoulPath({ enabled: event.target.checked })}
+              onChange={(event) =>
+                updateSoulPath({ enabled: event.target.checked })
+              }
             />
             Включить
           </label>
@@ -4404,7 +5018,8 @@ export default function CreateMemorialClient({
               className={rangeClass}
             />
             <span className="text-[10px] leading-snug text-[#9b8a84]">
-              Масштабирует время прохождения всей траектории по точкам, без участка возврата в старт.
+              Масштабирует время прохождения всей траектории по точкам, без
+              участка возврата в старт.
             </span>
           </label>
           <label className="grid gap-1">
@@ -4465,7 +5080,10 @@ export default function CreateMemorialClient({
 
         <div className="grid gap-2">
           {form.soulPath.points.map((point, index) => (
-            <div key={point.id} className="grid gap-2 rounded-[16px] bg-[#fffcf9] p-2">
+            <div
+              key={point.id}
+              className="grid gap-2 rounded-[16px] bg-[#fffcf9] p-2"
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-black uppercase tracking-[0.12em] text-[#5d4037]">
                   Точка {index + 1}
@@ -4490,7 +5108,9 @@ export default function CreateMemorialClient({
                       step={0.05}
                       value={point[axis]}
                       onChange={(event) =>
-                        updateSoulPathPoint(point.id, { [axis]: Number(event.target.value) })
+                        updateSoulPathPoint(point.id, {
+                          [axis]: Number(event.target.value),
+                        })
                       }
                       className={rowInputClass}
                     />
@@ -4502,7 +5122,9 @@ export default function CreateMemorialClient({
                     step={0.05}
                     value={point[axis]}
                     onChange={(event) =>
-                      updateSoulPathPoint(point.id, { [axis]: Number(event.target.value) })
+                      updateSoulPathPoint(point.id, {
+                        [axis]: Number(event.target.value),
+                      })
                     }
                     className={rangeClass}
                   />
@@ -4518,7 +5140,9 @@ export default function CreateMemorialClient({
                     step={0.1}
                     value={point.duration}
                     onChange={(event) =>
-                      updateSoulPathPoint(point.id, { duration: Number(event.target.value) })
+                      updateSoulPathPoint(point.id, {
+                        duration: Number(event.target.value),
+                      })
                     }
                     className={rowInputClass}
                   />
@@ -4530,7 +5154,9 @@ export default function CreateMemorialClient({
                   step={0.1}
                   value={point.duration}
                   onChange={(event) =>
-                    updateSoulPathPoint(point.id, { duration: Number(event.target.value) })
+                    updateSoulPathPoint(point.id, {
+                      duration: Number(event.target.value),
+                    })
                   }
                   className={rangeClass}
                 />
@@ -4555,9 +5181,11 @@ export default function CreateMemorialClient({
           <textarea
             readOnly
             value={soulPathExportJson}
-            className={isPortraitLayout
-              ? "min-h-24 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[16px] leading-snug text-[#5d4037] outline-none"
-              : "min-h-28 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"}
+            className={
+              isPortraitLayout
+                ? "min-h-24 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[16px] leading-snug text-[#5d4037] outline-none"
+                : "min-h-28 resize-y rounded-[16px] border-2 border-white bg-[#fffcf9] p-2 font-mono text-[10px] leading-snug text-[#5d4037] outline-none"
+            }
             onFocus={(event) => event.currentTarget.select()}
           />
         </label>
@@ -4580,7 +5208,13 @@ export default function CreateMemorialClient({
           text="Цвет души меняет ядро и мягкое свечение вокруг него."
         />
       </h3>
-      <div className={isPortraitLayout ? "grid content-start gap-2.5 overflow-y-auto overscroll-contain pr-1" : "grid gap-4"}>
+      <div
+        className={
+          isPortraitLayout
+            ? "grid content-start gap-2.5 overflow-y-auto overscroll-contain pr-1"
+            : "grid gap-4"
+        }
+      >
         {renderSoulColorControls(true)}
         {renderSoulPathCalibrationPanel()}
       </div>
@@ -4640,10 +5274,9 @@ export default function CreateMemorialClient({
   const isBuilderStep = step === 1;
   const isInitialStep = step === 0;
   const headerOffset = "var(--app-header-height, 56px)";
-  const overlayPanelBase =
-    isPortraitLayout
-      ? `pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] ${hudPanelChromeClass(true)}`
-      : `pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] ${hudPanelChromeClass(false)} sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]`;
+  const overlayPanelBase = isPortraitLayout
+    ? `pointer-events-auto absolute left-16 right-1.5 bottom-[calc(4.35rem+env(safe-area-inset-bottom))] z-[80] ${hudPanelChromeClass(true)}`
+    : `pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-[6.75rem] z-[80] ${hudPanelChromeClass(false)} sm:left-[7.35rem] sm:p-3 xl:left-[7.95rem]`;
   const overlayPanelClass = (variant?: "marker" | "soul") =>
     `${overlayPanelBase} ${
       variant === "marker"
@@ -4654,9 +5287,9 @@ export default function CreateMemorialClient({
           ? isPortraitLayout
             ? "w-auto overflow-visible"
             : "w-[min(500px,calc(100vw-8.75rem))] overflow-visible"
-        : isPortraitLayout
-          ? "w-auto max-h-[min(44vh,360px)] overflow-y-auto"
-          : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
+          : isPortraitLayout
+            ? "w-auto max-h-[min(44vh,360px)] overflow-y-auto"
+            : "w-[min(500px,calc(100vw-8.75rem))] max-h-[70vh] overflow-y-auto"
     }`;
   const panelButtonClass = (active: boolean, highlight: boolean) =>
     `${hudRoundButtonClass(isPortraitLayout, active)} ${
@@ -4665,7 +5298,7 @@ export default function CreateMemorialClient({
       highlight
         ? "ring-2 ring-emerald-400/80 shadow-[0_0_0_4px_rgba(52,211,153,0.18)]"
         : ""
-      }`;
+    }`;
   const builderControlTooltipClass = hudTooltipClass("right");
   const builderAttentionBadgeClass = isPortraitLayout
     ? "absolute -right-0.5 -top-0.5 flex h-[1.125rem] w-[1.125rem] items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow"
@@ -4703,8 +5336,7 @@ export default function CreateMemorialClient({
   const builderFinishButtonClass = isPortraitLayout
     ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
     : "group inline-flex min-w-[15rem] items-center justify-center rounded-xl bg-[#2d3436] px-10 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
-  const builderActionTooltipClass =
-    hudTooltipClass("action");
+  const builderActionTooltipClass = hudTooltipClass("action");
   const builderSceneFrameClass = isPortraitLayout
     ? "fixed left-0 right-0 top-0 z-0 h-[51dvh] overflow-hidden"
     : "fixed inset-0 z-0";
@@ -4721,12 +5353,13 @@ export default function CreateMemorialClient({
     loadingTips[loadingTipIndex] ?? "Происходит загрузка страницы...";
   const mainStyle: CSSProperties = {
     minHeight: "100dvh",
-    marginTop: isBuilderStep || isInitialStep ? `calc(-1 * ${headerOffset})` : 0,
+    marginTop:
+      isBuilderStep || isInitialStep ? `calc(-1 * ${headerOffset})` : 0,
     paddingTop: isBuilderStep
       ? 0
       : isInitialStep
         ? 0
-        : `calc(${headerOffset} + 24px)`
+        : `calc(${headerOffset} + 24px)`,
   };
   const mobileOverlayTabs: Array<{
     id: BuilderOverlayId;
@@ -4738,38 +5371,38 @@ export default function CreateMemorialClient({
       id: "details",
       label: "Редактор",
       disabled: false,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.details
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.details,
     },
     {
       id: "base",
       label: "Основные данные",
       disabled: isEditMode,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.base
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.base,
     },
     {
       id: "story",
       label: "История",
       disabled: isEditMode,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.story
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.story,
     },
     {
       id: "marker",
       label: "Маркер на карте",
       disabled: isEditMode,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.marker
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.marker,
     },
     {
       id: "photos",
       label: "Фотографии",
       disabled: false,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.photos
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.photos,
     },
     {
       id: "soul",
       label: "Цвет души",
       disabled: false,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.soul
-    }
+      highlight: !isEditMode && isBuilderStep && !visitedOverlays.soul,
+    },
   ];
 
   if (isEditMode && (!authReady || !editReady)) {
@@ -4791,7 +5424,7 @@ export default function CreateMemorialClient({
           ? "h-[100dvh] overflow-hidden"
           : isInitialStep
             ? "h-[100dvh] overflow-y-auto overscroll-contain"
-          : "px-4 pb-8"
+            : "px-4 pb-8"
       }`}
       style={mainStyle}
     >
@@ -4801,7 +5434,7 @@ export default function CreateMemorialClient({
           style={{
             left: detailTooltip.left,
             top: detailTooltip.top,
-            width: detailTooltip.width
+            width: detailTooltip.width,
           }}
         >
           <p className="text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5d4037]">
@@ -4837,8 +5470,16 @@ export default function CreateMemorialClient({
         </div>
       ) : null}
       {!isBuilderStep ? (
-        <div className={isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"}>
-          <section className={isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-[#f6efea]/82 p-5"}>
+        <div
+          className={
+            isInitialStep ? "w-full" : "mx-auto w-full max-w-none lg:w-[90vw]"
+          }
+        >
+          <section
+            className={
+              isInitialStep ? "h-full" : "mt-6 rounded-2xl bg-[#f6efea]/82 p-5"
+            }
+          >
             {step === 0 ? (
               <div
                 className={`relative box-border flex min-h-[100dvh] overflow-visible bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_rgba(244,236,231,0.98)_36%,_rgba(238,228,222,1)_100%)] px-3 py-4 sm:px-4 ${
@@ -4871,14 +5512,19 @@ export default function CreateMemorialClient({
                         <div aria-hidden />
                         {renderDeathDateField(true)}
                         <div aria-hidden />
-                        {renderDateValidationMessage("pointer-events-none absolute bottom-[5.35rem] left-0 right-0 min-h-[16px] text-center sm:bottom-[5.65rem]")}
+                        {renderDateValidationMessage(
+                          "pointer-events-none absolute bottom-[5.35rem] left-0 right-0 min-h-[16px] text-center sm:bottom-[5.65rem]",
+                        )}
                         <div className="grid gap-2">
-                          <span aria-hidden className="invisible text-[13px] font-medium leading-normal">
+                          <span
+                            aria-hidden
+                            className="invisible text-[13px] font-medium leading-normal"
+                          >
                             Продолжить
                           </span>
                           {renderNavButtons(
                             "shrink-0",
-                            "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]"
+                            "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]",
                           )}
                         </div>
                       </div>
@@ -4888,7 +5534,6 @@ export default function CreateMemorialClient({
               </div>
             ) : null}
           </section>
-
         </div>
       ) : (
         <>
@@ -4898,27 +5543,35 @@ export default function CreateMemorialClient({
             onPointerUp={handleBuilderScenePointerUp}
             onPointerCancel={handleBuilderScenePointerCancel}
           >
-              <MemorialPreview
-                className="h-full w-full rounded-none border-transparent bg-transparent"
-                terrainUrl={environmentUrl}
-                terrainId={environmentPreviewId}
-                houseUrl={houseUrl}
-                houseId={housePreviewId}
-                suppressLoadingOverlay
-                cameraPosition={isPortraitLayout ? [10, 6, 10] : [8, 5, 8]}
-                houseOffsetX={previewHousePlacement.x}
-                houseOffsetZ={previewHousePlacement.z}
-                houseRotationY={previewHousePlacement.rotY}
-                houseScaleMultiplier={previewHouseScale}
-                soulColor={soulPreviewColor}
-                soulPath={activeSoulPath}
-                showSoulPathMarkers={canUseCalibration(accessLevel) && activeOverlay === "soul"}
-                showMeterGrid={canUseCalibration(accessLevel) && showMeterGrid}
-                soulMode={soulSceneMode}
-                parts={partList}
-                gifts={!mapPreviewCaptureWithoutGifts && giftPreviewEnabled ? previewGifts : undefined}
+            <MemorialPreview
+              className="h-full w-full rounded-none border-transparent bg-transparent"
+              terrainUrl={environmentUrl}
+              terrainId={environmentPreviewId}
+              houseUrl={houseUrl}
+              houseId={housePreviewId}
+              suppressLoadingOverlay
+              cameraPosition={isPortraitLayout ? [10, 6, 10] : [8, 5, 8]}
+              houseOffsetX={previewHousePlacement.x}
+              houseOffsetZ={previewHousePlacement.z}
+              houseRotationY={previewHousePlacement.rotY}
+              houseScaleMultiplier={previewHouseScale}
+              soulColor={soulPreviewColor}
+              soulPath={activeSoulPath}
+              showSoulPathMarkers={
+                canUseCalibration(accessLevel) && activeOverlay === "soul"
+              }
+              showMeterGrid={canUseCalibration(accessLevel) && showMeterGrid}
+              soulMode={soulSceneMode}
+              parts={partList}
+              gifts={
+                !mapPreviewCaptureWithoutGifts && giftPreviewEnabled
+                  ? previewGifts
+                  : undefined
+              }
               giftSlots={
-                !mapPreviewCaptureWithoutGifts && giftPreviewEnabled && previewPlaceholderSlots.length > 0
+                !mapPreviewCaptureWithoutGifts &&
+                giftPreviewEnabled &&
+                previewPlaceholderSlots.length > 0
                   ? previewPlaceholderSlots
                   : undefined
               }
@@ -4941,11 +5594,11 @@ export default function CreateMemorialClient({
                 previewRenderRef.current = context;
               }}
               cameraOffsetAdjustments={cameraOffsetAdjustments}
-                cameraAdjustmentKey={activeCameraKey}
-                onHouseSlotsDetected={setDetectedHouseSlots}
-                onGiftSlotsDetected={setDetectedGiftSlots}
-                onDetailClick={handlePreviewDetailClick}
-              />
+              cameraAdjustmentKey={activeCameraKey}
+              onHouseSlotsDetected={setDetectedHouseSlots}
+              onGiftSlotsDetected={setDetectedGiftSlots}
+              onDetailClick={handlePreviewDetailClick}
+            />
           </div>
 
           {farewellPlaying ? (
@@ -4955,355 +5608,492 @@ export default function CreateMemorialClient({
               </div>
             </div>
           ) : (
-          <div className="pointer-events-none fixed inset-0 z-10">
-            {isPortraitLayout && activeOverlay === "marker" && markerPanelTab === "map"
-              ? renderFloatingMapControls()
-              : null}
+            <div className="pointer-events-none fixed inset-0 z-10">
+              {isPortraitLayout &&
+              activeOverlay === "marker" &&
+              markerPanelTab === "map"
+                ? renderFloatingMapControls()
+                : null}
 
-            <div className={builderEditorPanelClass}>
-              <div className={builderPanelInnerClass}>
-                <div className={builderPanelHeaderClass}>
-                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                    <h3 className={isPortraitLayout ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]" : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"}>
-                      Редактор мемориала
-                    </h3>
-                    <div className={isPortraitLayout ? "flex min-w-0 flex-wrap items-center justify-end gap-1.5" : "flex min-w-0 flex-wrap items-center justify-end gap-3"}>
-                      {isEditMode ? (
-                        <span className={isPortraitLayout ? "rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-[#fffcf9] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
-                          Только оформление
-                        </span>
-                      ) : null}
-                      <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
-                        <input
-                          type="checkbox"
-                          className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]" : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"}
-                          checked={giftPreviewEnabled}
-                          onChange={(event) => setGiftPreviewEnabled(event.target.checked)}
-                        />
-                        <span className="truncate">Посмотреть</span>
-                        <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                          При включении показываем мемориал с примерами подарков, чтобы было видно, как они размещаются.
-                        </span>
-                      </label>
-                      {canUseCalibration(accessLevel) ? (
-                        <label className={isPortraitLayout ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]" : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"}>
+              <div className={builderEditorPanelClass}>
+                <div className={builderPanelInnerClass}>
+                  <div className={builderPanelHeaderClass}>
+                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <h3
+                        className={
+                          isPortraitLayout
+                            ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]"
+                            : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"
+                        }
+                      >
+                        Редактор мемориала
+                      </h3>
+                      <div
+                        className={
+                          isPortraitLayout
+                            ? "flex min-w-0 flex-wrap items-center justify-end gap-1.5"
+                            : "flex min-w-0 flex-wrap items-center justify-end gap-3"
+                        }
+                      >
+                        {isEditMode ? (
+                          <span
+                            className={
+                              isPortraitLayout
+                                ? "rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]"
+                                : "rounded-full bg-[#fffcf9] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"
+                            }
+                          >
+                            Только оформление
+                          </span>
+                        ) : null}
+                        <label
+                          className={
+                            isPortraitLayout
+                              ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]"
+                              : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"
+                          }
+                        >
                           <input
                             type="checkbox"
-                            className={isPortraitLayout ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]" : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"}
-                            checked={showMeterGrid}
-                            onChange={(event) => setShowMeterGrid(event.target.checked)}
+                            className={
+                              isPortraitLayout
+                                ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]"
+                                : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"
+                            }
+                            checked={giftPreviewEnabled}
+                            onChange={(event) =>
+                              setGiftPreviewEnabled(event.target.checked)
+                            }
                           />
-                          <span className="truncate">Сетка 1 м</span>
+                          <span className="truncate">Посмотреть</span>
                           <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                            Полупрозрачный объемный куб с сеткой 1 метр для проверки размеров и расстояний.
+                            При включении показываем мемориал с примерами
+                            подарков, чтобы было видно, как они размещаются.
                           </span>
                         </label>
-                      ) : null}
+                        {canUseCalibration(accessLevel) ? (
+                          <label
+                            className={
+                              isPortraitLayout
+                                ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]"
+                                : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#3b8d76]"
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              className={
+                                isPortraitLayout
+                                  ? "h-3.5 w-3.5 shrink-0 rounded border-[#d8cfc9]"
+                                  : "h-4 w-4 shrink-0 rounded border-[#d8cfc9]"
+                              }
+                              checked={showMeterGrid}
+                              onChange={(event) =>
+                                setShowMeterGrid(event.target.checked)
+                              }
+                            />
+                            <span className="truncate">Сетка 1 м</span>
+                            <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                              Полупрозрачный объемный куб с сеткой 1 метр для
+                              проверки размеров и расстояний.
+                            </span>
+                          </label>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className={builderEditorBodyClass}>
-                  {isPortraitLayout ? (
-                    <>
+                  <div className={builderEditorBodyClass}>
+                    {isPortraitLayout ? (
+                      <>
+                        <div className={builderTabRailClass}>
+                          {mobileOverlayTabs.map((tab) => {
+                            const isActive = activeOverlay === tab.id;
+                            return (
+                              <div key={tab.id} className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleOverlay(tab.id)}
+                                  disabled={tab.disabled}
+                                  aria-label={tab.label}
+                                  title={tab.label}
+                                  className={`${builderTabButtonClass(isActive, tab.disabled)} ${tab.disabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                                >
+                                  <BuilderOverlayIcon id={tab.id} />
+                                  <span className="sr-only">{tab.label}</span>
+                                  {tab.highlight ? (
+                                    <span
+                                      className={builderAttentionBadgeClass}
+                                    >
+                                      !
+                                    </span>
+                                  ) : null}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
                       <div className={builderTabRailClass}>
-                        {mobileOverlayTabs.map((tab) => {
-                          const isActive = activeOverlay === tab.id;
+                        {step3Tabs.map((tab) => {
+                          const isActive = activeStep3Tab === tab.id;
+                          const isDisabled =
+                            isEditMode && tab.id === "environment";
+                          const isTooltipVisible = tooltipTabId === tab.id;
+                          const description = STEP3_TAB_DESCRIPTIONS[tab.id];
                           return (
                             <div key={tab.id} className="relative">
                               <button
                                 type="button"
-                                onClick={() => toggleOverlay(tab.id)}
-                                disabled={tab.disabled}
+                                onClick={() => handleStep3TabSelect(tab)}
+                                disabled={isDisabled}
+                                onMouseEnter={() => {
+                                  if (isDisabled) {
+                                    return;
+                                  }
+                                  clearStep3TooltipTimer();
+                                  setTooltipTabId(tab.id);
+                                }}
+                                onMouseLeave={() => {
+                                  clearStep3TooltipTimer();
+                                  setTooltipTabId((prev) =>
+                                    prev === tab.id ? null : prev,
+                                  );
+                                }}
+                                onFocus={() => {
+                                  if (isDisabled) {
+                                    return;
+                                  }
+                                  clearStep3TooltipTimer();
+                                  setTooltipTabId(tab.id);
+                                }}
+                                onBlur={() => {
+                                  clearStep3TooltipTimer();
+                                  setTooltipTabId((prev) =>
+                                    prev === tab.id ? null : prev,
+                                  );
+                                }}
                                 aria-label={tab.label}
                                 title={tab.label}
-                                className={`${builderTabButtonClass(isActive, tab.disabled)} ${tab.disabled ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                                className={builderTabButtonClass(
+                                  isActive,
+                                  isDisabled,
+                                )}
                               >
-                                <BuilderOverlayIcon id={tab.id} />
+                                <Step3TabIcon id={tab.id} />
                                 <span className="sr-only">{tab.label}</span>
-                                {tab.highlight ? (
-                                  <span className={builderAttentionBadgeClass}>!</span>
-                                ) : null}
                               </button>
+                              {isTooltipVisible ? (
+                                <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
+                                  <div className="font-semibold text-[#5d4037]">
+                                    {tab.label}
+                                  </div>
+                                  <div className="mt-1 text-[#8d6e63]">
+                                    {description}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           );
                         })}
                       </div>
-                    </>
-                  ) : (
-                    <div className={builderTabRailClass}>
-                      {step3Tabs.map((tab) => {
-                        const isActive = activeStep3Tab === tab.id;
-                        const isDisabled = isEditMode && tab.id === "environment";
-                        const isTooltipVisible = tooltipTabId === tab.id;
-                        const description = STEP3_TAB_DESCRIPTIONS[tab.id];
-                        return (
-                          <div key={tab.id} className="relative">
-                            <button
-                              type="button"
-                              onClick={() => handleStep3TabSelect(tab)}
-                              disabled={isDisabled}
-                              onMouseEnter={() => {
-                                if (isDisabled) {
-                                  return;
-                                }
-                                clearStep3TooltipTimer();
-                                setTooltipTabId(tab.id);
-                              }}
-                              onMouseLeave={() => {
-                                clearStep3TooltipTimer();
-                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
-                              }}
-                              onFocus={() => {
-                                if (isDisabled) {
-                                  return;
-                                }
-                                clearStep3TooltipTimer();
-                                setTooltipTabId(tab.id);
-                              }}
-                              onBlur={() => {
-                                clearStep3TooltipTimer();
-                                setTooltipTabId((prev) => (prev === tab.id ? null : prev));
-                              }}
-                              aria-label={tab.label}
-                              title={tab.label}
-                              className={builderTabButtonClass(isActive, isDisabled)}
-                            >
-                              <Step3TabIcon id={tab.id} />
-                              <span className="sr-only">{tab.label}</span>
-                            </button>
-                            {isTooltipVisible ? (
-                              <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-[#fffcf9] px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
-                                <div className="font-semibold text-[#5d4037]">{tab.label}</div>
-                                <div className="mt-1 text-[#8d6e63]">{description}</div>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                    )}
 
-                <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
-                  <div
-                    key={isPortraitLayout && activeOverlay && activeOverlay !== "details" ? `overlay-${activeOverlay}` : `detail-${activeStep3Tab}`}
-                    className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3"
-                  >
-                    {isPortraitLayout && activeOverlay
-                      ? renderActiveOverlayContent()
-                      : renderStep3TabContent()}
+                    <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
+                      <div
+                        key={
+                          isPortraitLayout &&
+                          activeOverlay &&
+                          activeOverlay !== "details"
+                            ? `overlay-${activeOverlay}`
+                            : `detail-${activeStep3Tab}`
+                        }
+                        className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3"
+                      >
+                        {isPortraitLayout && activeOverlay
+                          ? renderActiveOverlayContent()
+                          : renderStep3TabContent()}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            </div>
 
-            {activeOverlay && activeOverlay !== "details" && !isPortraitLayout ? (
-              <div className={overlayPanelClass(activeOverlay === "marker" ? "marker" : activeOverlay === "soul" ? "soul" : undefined)}>
-                {renderActiveOverlayContent()}
-              </div>
-            ) : null}
+              {activeOverlay &&
+              activeOverlay !== "details" &&
+              !isPortraitLayout ? (
+                <div
+                  className={overlayPanelClass(
+                    activeOverlay === "marker"
+                      ? "marker"
+                      : activeOverlay === "soul"
+                        ? "soul"
+                        : undefined,
+                  )}
+                >
+                  {renderActiveOverlayContent()}
+                </div>
+              ) : null}
 
-            <div className={builderOverlayButtonsWrapClass}>
-              <div className={builderOverlayButtonsClass}>
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleOverlay("soul")}
-                    aria-label="Цвет души"
-                    title="Цвет души"
-                    className={panelButtonClass(
-                      activeOverlay === "soul",
-                      !isEditMode && isBuilderStep && !visitedOverlays.soul
-                    )}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
-                      <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
-                      <path d="M6 15c.5 1.3 1.2 2 2.4 2.4C7.2 17.8 6.5 18.5 6 20c-.5-1.5-1.2-2.2-2.4-2.6C4.8 17 5.5 16.3 6 15z" />
-                    </svg>
-                    {!isEditMode && isBuilderStep && !visitedOverlays.soul ? (
-                      <span className={builderAttentionBadgeClass}>
-                        !
-                      </span>
-                    ) : null}
-                  </button>
-                  <span className={builderControlTooltipClass}>Цвет души</span>
-                </div>
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleOverlay("base")}
-                    aria-label="Основные данные"
-                    title="Основные данные"
-                    disabled={isEditMode}
-                    className={`${panelButtonClass(
-                      activeOverlay === "base",
-                      !isEditMode && isBuilderStep && !visitedOverlays.base
-                    )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M12 11v5" />
-                      <circle cx="12" cy="8" r="1" />
-                    </svg>
-                    {!isEditMode && isBuilderStep && !visitedOverlays.base ? (
-                      <span className={builderAttentionBadgeClass}>
-                        !
-                      </span>
-                    ) : null}
-                  </button>
-                  <span className={builderControlTooltipClass}>Основные данные</span>
-                </div>
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleOverlay("story")}
-                    aria-label="История"
-                    title="История"
-                    disabled={isEditMode}
-                    className={`${panelButtonClass(
-                      activeOverlay === "story",
-                      !isEditMode && isBuilderStep && !visitedOverlays.story
-                    )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 5h8a3 3 0 0 1 3 3v11" />
-                      <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
-                    </svg>
-                    {!isEditMode && isBuilderStep && !visitedOverlays.story ? (
-                      <span className={builderAttentionBadgeClass}>
-                        !
-                      </span>
-                    ) : null}
-                  </button>
-                  <span className={builderControlTooltipClass}>История</span>
-                </div>
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleOverlay("marker")}
-                    aria-label="Маркер"
-                    title="Маркер"
-                    disabled={isEditMode}
-                    className={`${panelButtonClass(
-                      activeOverlay === "marker",
-                      !isEditMode && isBuilderStep && !visitedOverlays.marker
-                    )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
-                      <circle cx="12" cy="10" r="2.5" />
-                    </svg>
-                    {!isEditMode && isBuilderStep && !visitedOverlays.marker ? (
-                      <span className={builderAttentionBadgeClass}>
-                        !
-                      </span>
-                    ) : null}
-                  </button>
-                  <span className={builderControlTooltipClass}>Маркер на карте</span>
-                </div>
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleOverlay("photos")}
-                    aria-label="Фотографии"
-                    title="Фотографии"
-                    className={`${panelButtonClass(
-                      activeOverlay === "photos",
-                      !isEditMode && isBuilderStep && !visitedOverlays.photos
-                    )}`}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="5" width="18" height="14" rx="2" />
-                      <circle cx="9" cy="11" r="2" />
-                      <path d="M21 15l-4-4-4 4-3-3-5 5" />
-                    </svg>
-                    {!isEditMode && isBuilderStep && !visitedOverlays.photos ? (
-                      <span className={builderAttentionBadgeClass}>
-                        !
-                      </span>
-                    ) : null}
-                  </button>
-                  <span className={builderControlTooltipClass}>Фотографии</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={builderActionBarClass}>
-              {isPortraitLayout ? (
-                <div className="relative flex h-11 items-start justify-center px-2">
-                  <button
-                    type="button"
-                    onClick={openMobileBuilderActions}
-                    className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
-                  >
-                    {isEditMode ? "Сохранить" : "Сохранить/Продолжить"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openMobileBuilderMenu}
-                    className="absolute right-2 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
-                    aria-label="Меню"
-                    title="Меню"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                      <path d="M5 7h14M5 12h14M5 17h14" />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  {isEditMode && editId ? (
+              <div className={builderOverlayButtonsWrapClass}>
+                <div className={builderOverlayButtonsClass}>
+                  <div className="group/control relative">
                     <button
                       type="button"
-                      onClick={() => router.push(`/pets/${editId}`)}
-                      className={builderCancelButtonClass}
+                      onClick={() => toggleOverlay("soul")}
+                      aria-label="Цвет души"
+                      title="Цвет души"
+                      className={panelButtonClass(
+                        activeOverlay === "soul",
+                        !isEditMode && isBuilderStep && !visitedOverlays.soul,
+                      )}
                     >
-                      Отмена
-                    </button>
-                  ) : null}
-                  {!isEditMode ? (
-                    <div className="group/draft-action relative shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => void saveCurrentDraft({ redirectToMyPets: true })}
-                        className={builderDraftButtonClass}
-                        disabled={draftLoading}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       >
-                        {draftLoading ? (
-                          "Сохраняем..."
-                        ) : (
-                          <>
-                            Сохранить
-                            <br />
-                            черновик
-                          </>
-                        )}
-                      </button>
-                      <span className={`${builderActionTooltipClass} group-hover/draft-action:opacity-100 group-focus-within/draft-action:opacity-100`}>
-                        Фотографии не сохраняются в черновике. Они будут загружены только при публикации мемориала.
-                      </span>
-                    </div>
-                  ) : null}
-                  <div className="group/finish-action relative min-w-0 flex-1 sm:flex-none">
+                        <path d="M12 3c1.2 3.4 2.9 5.1 6 6-3.1.9-4.8 2.6-6 6-1.2-3.4-2.9-5.1-6-6 3.1-.9 4.8-2.6 6-6z" />
+                        <path d="M18 14c.7 1.7 1.6 2.6 3 3-.4.2-2.2.8-3 3-.8-2.2-2.6-2.8-3-3 1.4-.4 2.3-1.3 3-3z" />
+                        <path d="M6 15c.5 1.3 1.2 2 2.4 2.4C7.2 17.8 6.5 18.5 6 20c-.5-1.5-1.2-2.2-2.4-2.6C4.8 17 5.5 16.3 6 15z" />
+                      </svg>
+                      {!isEditMode && isBuilderStep && !visitedOverlays.soul ? (
+                        <span className={builderAttentionBadgeClass}>!</span>
+                      ) : null}
+                    </button>
+                    <span className={builderControlTooltipClass}>
+                      Цвет души
+                    </span>
+                  </div>
+                  <div className="group/control relative">
                     <button
                       type="button"
-                      onClick={openReview}
-                      className={builderFinishButtonClass}
+                      onClick={() => toggleOverlay("base")}
+                      aria-label="Основные данные"
+                      title="Основные данные"
+                      disabled={isEditMode}
+                      className={`${panelButtonClass(
+                        activeOverlay === "base",
+                        !isEditMode && isBuilderStep && !visitedOverlays.base,
+                      )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
                     >
-                      <span className="transition-transform duration-300 group-hover:-translate-x-1">
-                        {isEditMode ? "Сохранить" : "Завершить"}
-                      </span>
-                      {renderArrowIcon()}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 11v5" />
+                        <circle cx="12" cy="8" r="1" />
+                      </svg>
+                      {!isEditMode && isBuilderStep && !visitedOverlays.base ? (
+                        <span className={builderAttentionBadgeClass}>!</span>
+                      ) : null}
                     </button>
-                    <span className={`${builderActionTooltipClass} group-hover/finish-action:opacity-100 group-focus-within/finish-action:opacity-100`}>
-                      Далее откроется проверка мемориала, после которой можно будет оплатить и опубликовать его.
+                    <span className={builderControlTooltipClass}>
+                      Основные данные
+                    </span>
+                  </div>
+                  <div className="group/control relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleOverlay("story")}
+                      aria-label="История"
+                      title="История"
+                      disabled={isEditMode}
+                      className={`${panelButtonClass(
+                        activeOverlay === "story",
+                        !isEditMode && isBuilderStep && !visitedOverlays.story,
+                      )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M4 5h8a3 3 0 0 1 3 3v11" />
+                        <path d="M20 19H10a3 3 0 0 0-3 3V6a3 3 0 0 1 3-3h10z" />
+                      </svg>
+                      {!isEditMode &&
+                      isBuilderStep &&
+                      !visitedOverlays.story ? (
+                        <span className={builderAttentionBadgeClass}>!</span>
+                      ) : null}
+                    </button>
+                    <span className={builderControlTooltipClass}>История</span>
+                  </div>
+                  <div className="group/control relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleOverlay("marker")}
+                      aria-label="Маркер"
+                      title="Маркер"
+                      disabled={isEditMode}
+                      className={`${panelButtonClass(
+                        activeOverlay === "marker",
+                        !isEditMode && isBuilderStep && !visitedOverlays.marker,
+                      )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 21s-6-6.5-6-11a6 6 0 1 1 12 0c0 4.5-6 11-6 11z" />
+                        <circle cx="12" cy="10" r="2.5" />
+                      </svg>
+                      {!isEditMode &&
+                      isBuilderStep &&
+                      !visitedOverlays.marker ? (
+                        <span className={builderAttentionBadgeClass}>!</span>
+                      ) : null}
+                    </button>
+                    <span className={builderControlTooltipClass}>
+                      Маркер на карте
+                    </span>
+                  </div>
+                  <div className="group/control relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleOverlay("photos")}
+                      aria-label="Фотографии"
+                      title="Фотографии"
+                      className={`${panelButtonClass(
+                        activeOverlay === "photos",
+                        !isEditMode && isBuilderStep && !visitedOverlays.photos,
+                      )}`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <circle cx="9" cy="11" r="2" />
+                        <path d="M21 15l-4-4-4 4-3-3-5 5" />
+                      </svg>
+                      {!isEditMode &&
+                      isBuilderStep &&
+                      !visitedOverlays.photos ? (
+                        <span className={builderAttentionBadgeClass}>!</span>
+                      ) : null}
+                    </button>
+                    <span className={builderControlTooltipClass}>
+                      Фотографии
                     </span>
                   </div>
                 </div>
-              )}
+              </div>
+
+              <div className={builderActionBarClass}>
+                {isPortraitLayout ? (
+                  <div className="relative flex h-11 items-start justify-center px-2">
+                    <button
+                      type="button"
+                      onClick={openMobileBuilderActions}
+                      className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
+                    >
+                      {isEditMode ? "Сохранить" : "Сохранить/Продолжить"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openMobileBuilderMenu}
+                      className="absolute right-2 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+                      aria-label="Меню"
+                      title="Меню"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      >
+                        <path d="M5 7h14M5 12h14M5 17h14" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {isEditMode && editId ? (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/pets/${editId}`)}
+                        className={builderCancelButtonClass}
+                      >
+                        Отмена
+                      </button>
+                    ) : null}
+                    {!isEditMode ? (
+                      <div className="group/draft-action relative shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void saveCurrentDraft({ redirectToMyPets: true })
+                          }
+                          className={builderDraftButtonClass}
+                          disabled={draftLoading}
+                        >
+                          {draftLoading ? (
+                            "Сохраняем..."
+                          ) : (
+                            <>
+                              Сохранить
+                              <br />
+                              черновик
+                            </>
+                          )}
+                        </button>
+                        <span
+                          className={`${builderActionTooltipClass} group-hover/draft-action:opacity-100 group-focus-within/draft-action:opacity-100`}
+                        >
+                          Фотографии не сохраняются в черновике. Они будут
+                          загружены только при публикации мемориала.
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="group/finish-action relative min-w-0 flex-1 sm:flex-none">
+                      <button
+                        type="button"
+                        onClick={openReview}
+                        className={builderFinishButtonClass}
+                      >
+                        <span className="transition-transform duration-300 group-hover:-translate-x-1">
+                          {isEditMode ? "Сохранить" : "Завершить"}
+                        </span>
+                        {renderArrowIcon()}
+                      </button>
+                      <span
+                        className={`${builderActionTooltipClass} group-hover/finish-action:opacity-100 group-focus-within/finish-action:opacity-100`}
+                      >
+                        Далее откроется проверка мемориала, после которой можно
+                        будет оплатить и опубликовать его.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           )}
 
           {mobileBuilderMenuOpen ? (
@@ -5320,7 +6110,9 @@ export default function CreateMemorialClient({
               />
               <div
                 className={`relative grid w-full max-w-sm gap-2 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-                  mobileBuilderMenuVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                  mobileBuilderMenuVisible
+                    ? "translate-y-0 scale-100"
+                    : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3 rounded-[22px] bg-[#fffcf9] px-4 py-3">
@@ -5341,7 +6133,11 @@ export default function CreateMemorialClient({
                   </button>
                 </div>
                 {form.ownerId ? (
-                  <button type="button" onClick={() => navigateFromMobileMenu("/my-pets")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  <button
+                    type="button"
+                    onClick={() => navigateFromMobileMenu("/my-pets")}
+                    className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                  >
                     Мои питомцы
                   </button>
                 ) : (
@@ -5356,25 +6152,49 @@ export default function CreateMemorialClient({
                     Войти
                   </button>
                 )}
-                <button type="button" onClick={() => navigateFromMobileMenu("/map")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileMenu("/map")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Карта
                 </button>
                 {form.ownerId ? (
-                  <button type="button" onClick={() => navigateFromMobileMenu("/profile")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  <button
+                    type="button"
+                    onClick={() => navigateFromMobileMenu("/profile")}
+                    className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                  >
                     Профиль
                   </button>
                 ) : null}
-                <button type="button" onClick={() => navigateFromMobileMenu("/news")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileMenu("/news")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Новости
                 </button>
-                <button type="button" onClick={() => navigateFromMobileMenu("/about")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileMenu("/about")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   О проекте
                 </button>
-                <button type="button" onClick={() => navigateFromMobileMenu("/charity")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileMenu("/charity")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Благотворительность
                 </button>
                 {canAccessAdmin(accessLevel) ? (
-                  <button type="button" onClick={() => navigateFromMobileMenu("/admin/sql")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                  <button
+                    type="button"
+                    onClick={() => navigateFromMobileMenu("/admin/sql")}
+                    className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                  >
                     Админ-панель
                   </button>
                 ) : null}
@@ -5396,7 +6216,9 @@ export default function CreateMemorialClient({
               />
               <div
                 className={`relative grid w-full max-w-sm gap-3 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-                  mobileBuilderActionsVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                  mobileBuilderActionsVisible
+                    ? "translate-y-0 scale-100"
+                    : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="rounded-[22px] bg-[#fffcf9] px-4 py-3">
@@ -5404,7 +6226,9 @@ export default function CreateMemorialClient({
                     Действие
                   </p>
                   <h3 className="text-xl font-black text-[#5d4037]">
-                    {isEditMode ? "Сохранить изменения?" : "Что сделать дальше?"}
+                    {isEditMode
+                      ? "Сохранить изменения?"
+                      : "Что сделать дальше?"}
                   </h3>
                 </div>
                 {!isEditMode ? (
@@ -5437,7 +6261,10 @@ export default function CreateMemorialClient({
                     type="button"
                     onClick={() => {
                       closeMobileBuilderActions();
-                      window.setTimeout(() => router.push(`/pets/${editId}`), 120);
+                      window.setTimeout(
+                        () => router.push(`/pets/${editId}`),
+                        120,
+                      );
                     }}
                     className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-sm font-black uppercase tracking-[0.12em] text-[#8d6e63]"
                   >
@@ -5462,12 +6289,20 @@ export default function CreateMemorialClient({
               />
               <div
                 className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#eadfd9] bg-white p-6 shadow-2xl transition-transform duration-200 ${
-                  reviewVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                  reviewVisible
+                    ? "translate-y-0 scale-100"
+                    : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-[#5d4037]">Проверка мемориала</h3>
-                  <button type="button" className="btn btn-ghost px-3 py-2" onClick={closeReview}>
+                  <h3 className="text-lg font-semibold text-[#5d4037]">
+                    Проверка мемориала
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn btn-ghost px-3 py-2"
+                    onClick={closeReview}
+                  >
                     Закрыть
                   </button>
                 </div>
@@ -5479,10 +6314,14 @@ export default function CreateMemorialClient({
                       <p>Дата рождения: {form.birthDate || "—"}</p>
                       <p>Дата ухода: {form.deathDate || "—"}</p>
                       <p className="break-words">
-                        Эпитафия: <span className="break-all">{form.epitaph || "—"}</span>
+                        Эпитафия:{" "}
+                        <span className="break-all">{form.epitaph || "—"}</span>
                       </p>
                       <p className="break-words">
-                        История: <span className="whitespace-pre-wrap break-all">{form.story || "—"}</span>
+                        История:{" "}
+                        <span className="whitespace-pre-wrap break-all">
+                          {form.story || "—"}
+                        </span>
                       </p>
                     </div>
                     {photos.length > 0 ? (
@@ -5524,17 +6363,20 @@ export default function CreateMemorialClient({
                     <div className="rounded-2xl border border-[#eadfd9] bg-white p-5">
                       <div className="grid gap-3 text-sm text-[#6f6360]">
                         <p className="font-semibold text-[#5d4037]">
-                          {isEditMode ? "Сохранение изменений" : "Оплата мемориала"}
+                          {isEditMode
+                            ? "Сохранение изменений"
+                            : "Оплата мемориала"}
                         </p>
                         {isEditMode ? (
                           <p className="text-xs text-[#8d6e63]">
-                            Сохраним только домик и его детали. Остальные данные мемориала не изменятся.
+                            Сохраним только домик и его детали. Остальные данные
+                            мемориала не изменятся.
                           </p>
                         ) : (
                           <>
                             <p className="text-xs text-[#8d6e63]">
                               {form.ownerId
-                                ? `Баланс: ${walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет`
+                                ? `Баланс: ${walletLoading ? "Загрузка..." : (walletBalance ?? "—")} монет`
                                 : "Вы собрали мемориал без входа. Для публикации нужно войти или зарегистрироваться."}
                             </p>
                             <div className="grid gap-2">
@@ -5551,8 +6393,12 @@ export default function CreateMemorialClient({
                                         : "border-[#eadfd9] text-[#6f6360] hover:border-[#d3a27f]"
                                     }`}
                                   >
-                                    <span className="font-semibold">{plan.label}</span>
-                                    <span className="text-[#8d6e63]">{plan.price} монет</span>
+                                    <span className="font-semibold">
+                                      {plan.label}
+                                    </span>
+                                    <span className="text-[#8d6e63]">
+                                      {plan.price} монет
+                                    </span>
                                   </button>
                                 );
                               })}
@@ -5588,6 +6434,35 @@ export default function CreateMemorialClient({
       )}
 
       <ConfirmDialog
+        open={Boolean(moderationNoticePetId)}
+        eyebrow="Модерация"
+        title="Мемориал отправлен на проверку"
+        message="Сейчас мемориал опубликован только для вас и одновременно отправлен на модерацию."
+        helperText="После проверки вам придет письмо. Если мемориал публичный, после одобрения он станет виден другим пользователям на карте. Если приватный — он останется доступен только вам. Если модератор найдет вопрос, в письме будет написано, что нужно поправить."
+        cancelAction={{
+          label: "Мои питомцы",
+          onClick: () => router.push("/my-pets"),
+          variant: "secondary",
+        }}
+        confirmAction={{
+          label: "Открыть мемориал",
+          onClick: () => {
+            if (moderationNoticePetId) {
+              router.push(`/pets/${moderationNoticePetId}`);
+            }
+          },
+          variant: "primary",
+        }}
+        onClose={() =>
+          router.push(
+            moderationNoticePetId
+              ? `/pets/${moderationNoticePetId}`
+              : "/my-pets",
+          )
+        }
+      />
+
+      <ConfirmDialog
         open={Boolean(leaveConfirmHref)}
         eyebrow="Черновик"
         title="Сохранить перед переходом?"
@@ -5596,18 +6471,18 @@ export default function CreateMemorialClient({
         cancelAction={{
           label: "Остаться",
           onClick: closeLeaveConfirm,
-          variant: "secondary"
+          variant: "secondary",
         }}
         extraAction={{
           label: "Без сохранения",
           onClick: continueWithoutDraft,
-          variant: "secondary"
+          variant: "secondary",
         }}
         confirmAction={{
           label: draftLoading ? "Сохранение..." : "Сохранить",
           onClick: saveDraftBeforeNavigation,
           disabled: draftLoading,
-          variant: "primary"
+          variant: "primary",
         }}
         onClose={closeLeaveConfirm}
       />
@@ -5615,7 +6490,11 @@ export default function CreateMemorialClient({
       <AuthModal
         open={authPromptOpen}
         visible={authPromptVisible}
-        title={authPromptPurpose === "draft" ? "Сохранение черновика" : "Публикация мемориала"}
+        title={
+          authPromptPurpose === "draft"
+            ? "Сохранение черновика"
+            : "Публикация мемориала"
+        }
         helperText={
           authPromptPurpose === "draft"
             ? "Войдите или зарегистрируйтесь, чтобы сохранить черновик в аккаунте. Фотографии сохраняются только при публикации."
@@ -5628,7 +6507,9 @@ export default function CreateMemorialClient({
           setCurrentUserLogin(payload.login ?? null);
           setAccessLevel(payload.accessLevel ?? "USER");
           setWalletBalance(
-            typeof payload.coinBalance === "number" ? payload.coinBalance : null
+            typeof payload.coinBalance === "number"
+              ? payload.coinBalance
+              : null,
           );
           setAuthReady(true);
           closeAuthPrompt();
@@ -5662,7 +6543,9 @@ export default function CreateMemorialClient({
           />
           <div
             className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-              topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+              topUpVisible
+                ? "translate-y-0 scale-100"
+                : "translate-y-4 scale-95"
             }`}
           >
             <div className="rounded-[28px] border border-white/80 bg-white/[0.86] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
@@ -5700,7 +6583,9 @@ export default function CreateMemorialClient({
                       type="button"
                       onClick={() => setTopUpCurrency(currency)}
                       className={`flex-1 rounded-[15px] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition ${
-                        isActive ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]" : "text-[#8d6e63] hover:bg-white/70"
+                        isActive
+                          ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                          : "text-[#8d6e63] hover:bg-white/70"
                       }`}
                     >
                       {currency}
@@ -5711,7 +6596,10 @@ export default function CreateMemorialClient({
               <div className="mt-4 grid gap-2">
                 {topUpOptions.map((option) => {
                   const isSelected = topUpPlan === option.coins;
-                  const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
+                  const price =
+                    topUpCurrency === "RUB"
+                      ? `${option.rub} ₽`
+                      : `${option.usd} USD`;
                   return (
                     <button
                       key={option.coins}
@@ -5724,7 +6612,9 @@ export default function CreateMemorialClient({
                       }`}
                     >
                       <span className="font-black">{option.coins} монет</span>
-                      <span className="font-semibold text-[#8d6e63]">{price}</span>
+                      <span className="font-semibold text-[#8d6e63]">
+                        {price}
+                      </span>
                     </button>
                   );
                 })}
@@ -5736,7 +6626,9 @@ export default function CreateMemorialClient({
                   if (!topUpPlan) {
                     return;
                   }
-                  router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
+                  router.push(
+                    `/payment?coins=${topUpPlan}&currency=${topUpCurrency}`,
+                  );
                   closeTopUp();
                 }}
                 disabled={!topUpPlan}

@@ -18,7 +18,8 @@ type MarkerWithPet = Prisma.MapMarkerGetPayload<{
 export class MapController {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(MaintenanceService) private readonly maintenance: MaintenanceService
+    @Inject(MaintenanceService)
+    private readonly maintenance: MaintenanceService,
   ) {}
 
   @Get("markers")
@@ -30,22 +31,23 @@ export class MapController {
         pet: {
           isPublic: true,
           isActive: true,
+          moderationStatus: "APPROVED",
           memorial: {
             is: {
               deactivatedAt: null,
-              OR: [{ activeUntil: null }, { activeUntil: { gt: now } }]
-            }
-          }
-        }
+              OR: [{ activeUntil: null }, { activeUntil: { gt: now } }],
+            },
+          },
+        },
       },
       include: {
         pet: {
           include: {
             photos: true,
-            memorial: true
-          }
-        }
-      }
+            memorial: true,
+          },
+        },
+      },
     });
 
     return markers.map((marker) => {
@@ -77,7 +79,8 @@ export class MapController {
         markerStyle: marker.markerStyle ?? null,
         previewPhotoUrl: previewPhoto?.url ?? null,
         previewImageUrl,
-        isPublic: marker.pet.isPublic
+        isPublic: marker.pet.isPublic,
+        moderationStatus: marker.pet.moderationStatus,
       };
     });
   }

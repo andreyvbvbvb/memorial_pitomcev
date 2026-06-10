@@ -8,9 +8,12 @@ import { API_BASE } from "../../../lib/config";
 import {
   buildDirtSlotPlacements,
   readActiveDirtSlots,
-  type DirtSlotName
+  type DirtSlotName,
 } from "../../../lib/dirt-models";
-import { MAP_PREVIEW_CAPTURE_HEIGHT, MAP_PREVIEW_CAPTURE_WIDTH } from "../../../lib/map-preview";
+import {
+  MAP_PREVIEW_CAPTURE_HEIGHT,
+  MAP_PREVIEW_CAPTURE_WIDTH,
+} from "../../../lib/map-preview";
 import { ensureDracoLoader } from "../../../lib/draco";
 import MemorialPreview from "../../create/MemorialPreview";
 import AuthModal from "../../../components/AuthModal";
@@ -24,7 +27,7 @@ import {
   hudPanelChromeClass,
   hudPrimaryActionClass,
   hudRoundButtonClass,
-  hudTooltipClass
+  hudTooltipClass,
 } from "../../../components/hudTheme";
 import {
   resolveEnvironmentModel,
@@ -36,9 +39,12 @@ import {
   resolveFrameRightModel,
   resolveMatModel,
   resolveBowlFoodModel,
-  resolveBowlWaterModel
+  resolveBowlWaterModel,
 } from "../../../lib/memorial-models";
-import { getHouseSlots, getTerrainGiftSlots } from "../../../lib/memorial-config";
+import {
+  getHouseSlots,
+  getTerrainGiftSlots,
+} from "../../../lib/memorial-config";
 import {
   GiftSize,
   getGiftAvailableTypes,
@@ -46,11 +52,11 @@ import {
   giftSupportsSize,
   getGiftCode,
   resolveGiftModelUrl,
-  resolveGiftIconUrl
+  resolveGiftIconUrl,
 } from "../../../lib/gifts";
 import {
   buildHouseVariantGroup,
-  splitHouseVariantId
+  splitHouseVariantId,
 } from "../../../lib/house-variants";
 import { getHouseTextureSwatchBackground } from "../../../lib/house-texture-swatches";
 import {
@@ -65,12 +71,17 @@ import {
   roofOptions as allRoofOptions,
   signOptions as allSignOptions,
   wallOptions as allWallOptions,
-  type OptionItem
+  type OptionItem,
 } from "../../../lib/memorial-options";
 
 ensureDracoLoader();
 
-const DIRT_SLOTS = ["dirt_slot_1", "dirt_slot_2", "dirt_slot_3", "dirt_slot_4"] as const;
+const DIRT_SLOTS = [
+  "dirt_slot_1",
+  "dirt_slot_2",
+  "dirt_slot_3",
+  "dirt_slot_4",
+] as const;
 const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
 type GiftCatalogItem = {
   id: string;
@@ -94,7 +105,7 @@ const MEMORIAL_EXTENSION_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
   { id: "5y", years: 5, label: "5 лет", price: 500 },
-  { id: "lifetime", years: 0, label: "Навсегда", price: 1200 }
+  { id: "lifetime", years: 0, label: "Навсегда", price: 1200 },
 ] as const;
 type MemorialExtensionPlan = {
   id: (typeof MEMORIAL_EXTENSION_PLANS)[number]["id"];
@@ -146,7 +157,7 @@ const colorPalette = [
   "#8A5E2E",
   "#714A22",
   "#5A3A1B",
-  "#422913"
+  "#422913",
 ] as const;
 
 const APPEARANCE_TAB_DESCRIPTIONS: Record<AppearanceTabId, string> = {
@@ -158,7 +169,7 @@ const APPEARANCE_TAB_DESCRIPTIONS: Record<AppearanceTabId, string> = {
   frameRight: "Правая фоторамка у домика.",
   mat: "Коврик перед входом.",
   bowlFood: "Миска с кормом.",
-  bowlWater: "Миска с водой."
+  bowlWater: "Миска с водой.",
 };
 
 type AppearanceTabId =
@@ -203,6 +214,10 @@ type Pet = {
   epitaph: string | null;
   story: string | null;
   isPublic: boolean;
+  moderationStatus?: "PENDING" | "APPROVED" | "NEEDS_CHANGES" | string;
+  moderationComment?: string | null;
+  moderatedAt?: string | null;
+  moderatorId?: string | null;
   createdAt: string;
   memorial?: {
     environmentId: string | null;
@@ -222,7 +237,13 @@ type Pet = {
     expiresAt: string | null;
     isActive?: boolean;
     size?: string | null;
-    gift: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
+    gift: {
+      id: string;
+      code?: string | null;
+      name: string;
+      price: number;
+      modelUrl: string;
+    };
     owner?: {
       id: string;
       email: string | null;
@@ -253,13 +274,21 @@ type GiftLike = {
   modelUrl?: string | null;
 };
 
-const isGiftCompatibleWithSlot = (gift: GiftLike | null | undefined, slot: string) => {
+const isGiftCompatibleWithSlot = (
+  gift: GiftLike | null | undefined,
+  slot: string,
+) => {
   if (!gift) {
     return true;
   }
   const slotType = getGiftSlotType(slot);
   const giftTypes = getGiftAvailableTypes(gift);
-  return !slotType || slotType === "default" || giftTypes.includes("default") || giftTypes.includes(slotType);
+  return (
+    !slotType ||
+    slotType === "default" ||
+    giftTypes.includes("default") ||
+    giftTypes.includes(slotType)
+  );
 };
 
 type AuthUser = {
@@ -267,6 +296,7 @@ type AuthUser = {
   login?: string | null;
   email: string;
   coinBalance?: number;
+  accessLevel?: "OWNER" | "ADMIN" | "USER";
 };
 
 type Props = {
@@ -275,10 +305,16 @@ type Props = {
 };
 
 const readPreviewDustStage = (sceneJson?: Record<string, unknown> | null) =>
-  typeof sceneJson?.previewDustStage === "number" ? sceneJson.previewDustStage : null;
+  typeof sceneJson?.previewDustStage === "number"
+    ? sceneJson.previewDustStage
+    : null;
 
-const readPreviewDustUpdatedAt = (sceneJson?: Record<string, unknown> | null) =>
-  typeof sceneJson?.previewDustUpdatedAt === "string" ? sceneJson.previewDustUpdatedAt : null;
+const readPreviewDustUpdatedAt = (
+  sceneJson?: Record<string, unknown> | null,
+) =>
+  typeof sceneJson?.previewDustUpdatedAt === "string"
+    ? sceneJson.previewDustUpdatedAt
+    : null;
 
 const readPreviewDirtSlots = (sceneJson?: Record<string, unknown> | null) =>
   sceneJson && Array.isArray(sceneJson.previewDirtSlots)
@@ -287,7 +323,7 @@ const readPreviewDirtSlots = (sceneJson?: Record<string, unknown> | null) =>
 
 const areDirtSlotsEqual = (
   left: readonly DirtSlotName[] | null | undefined,
-  right: readonly DirtSlotName[]
+  right: readonly DirtSlotName[],
 ) => {
   if (!left || left.length !== right.length) {
     return false;
@@ -313,7 +349,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [topUpPlan, setTopUpPlan] = useState<number | null>(null);
   const [giftCatalog, setGiftCatalog] = useState<GiftCatalogItem[]>([]);
   const [giftTooltip, setGiftTooltip] = useState<GiftTooltipState | null>(null);
-  const [detailTooltip, setDetailTooltip] = useState<GiftTooltipState | null>(null);
+  const [detailTooltip, setDetailTooltip] = useState<GiftTooltipState | null>(
+    null,
+  );
   const [giftError, setGiftError] = useState<string | null>(null);
   const [giftSuccess, setGiftSuccess] = useState<string | null>(null);
   const [cleanSuccess, setCleanSuccess] = useState<string | null>(null);
@@ -324,11 +362,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
   const [giftCatalogLoading, setGiftCatalogLoading] = useState(true);
-  const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<Record<string, true>>({});
-  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [preloadedGiftUrls, setPreloadedGiftUrls] = useState<
+    Record<string, true>
+  >({});
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(
+    null,
+  );
   const [giftPanelOpen, setGiftPanelOpen] = useState(false);
   const [giftSlotsVisible, setGiftSlotsVisible] = useState(true);
-  const [mapPreviewCaptureWithoutGiftUi, setMapPreviewCaptureWithoutGiftUi] = useState(false);
+  const [mapPreviewCaptureWithoutGiftUi, setMapPreviewCaptureWithoutGiftUi] =
+    useState(false);
   const [giftAuthOpen, setGiftAuthOpen] = useState(false);
   const [giftAuthVisible, setGiftAuthVisible] = useState(false);
   const [activePanel, setActivePanel] = useState<
@@ -344,37 +387,47 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [deletingMemorial, setDeletingMemorial] = useState(false);
   const [extensionDialogOpen, setExtensionDialogOpen] = useState(false);
   const [extensionDialogVisible, setExtensionDialogVisible] = useState(false);
-  const [selectedExtensionYears, setSelectedExtensionYears] = useState<0 | 1 | 2 | 5>(1);
-  const [extensionPlans, setExtensionPlans] = useState<MemorialExtensionPlan[]>(() =>
-    MEMORIAL_EXTENSION_PLANS.map((plan) => ({ ...plan }))
+  const [selectedExtensionYears, setSelectedExtensionYears] = useState<
+    0 | 1 | 2 | 5
+  >(1);
+  const [extensionPlans, setExtensionPlans] = useState<MemorialExtensionPlan[]>(
+    () => MEMORIAL_EXTENSION_PLANS.map((plan) => ({ ...plan })),
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [deleteConfirmationName, setDeleteConfirmationName] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editDialogVisible, setEditDialogVisible] = useState(false);
-  const [appearanceDraft, setAppearanceDraft] = useState<AppearanceDraft | null>(null);
+  const [appearanceDraft, setAppearanceDraft] =
+    useState<AppearanceDraft | null>(null);
   const [appearanceTab, setAppearanceTab] = useState<AppearanceTabId>("house");
-  const [appearanceFocusSlot, setAppearanceFocusSlot] = useState<string | null>(null);
+  const [appearanceFocusSlot, setAppearanceFocusSlot] = useState<string | null>(
+    null,
+  );
   const [appearanceFocusRequestId, setAppearanceFocusRequestId] = useState(0);
   const [hoveredAppearanceOption, setHoveredAppearanceOption] = useState<{
     category: string;
     id: string;
   } | null>(null);
-  const hoverAppearanceIntentRef = useRef<{ category: string; id: string } | null>(null);
-  const [appearanceTooltipTabId, setAppearanceTooltipTabId] = useState<AppearanceTabId | null>(
-    null
-  );
+  const hoverAppearanceIntentRef = useRef<{
+    category: string;
+    id: string;
+  } | null>(null);
+  const [appearanceTooltipTabId, setAppearanceTooltipTabId] =
+    useState<AppearanceTabId | null>(null);
   const appearanceTooltipTimerRef = useRef<number | null>(null);
   const [appearanceError, setAppearanceError] = useState<string | null>(null);
-  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(null);
+  const [appearanceSuccess, setAppearanceSuccess] = useState<string | null>(
+    null,
+  );
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [appearanceReviewOpen, setAppearanceReviewOpen] = useState(false);
   const [appearanceReviewVisible, setAppearanceReviewVisible] = useState(false);
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
   const [mobileEditMenuVisible, setMobileEditMenuVisible] = useState(false);
   const [mobileEditActionsOpen, setMobileEditActionsOpen] = useState(false);
-  const [mobileEditActionsVisible, setMobileEditActionsVisible] = useState(false);
+  const [mobileEditActionsVisible, setMobileEditActionsVisible] =
+    useState(false);
   const [previewContextReady, setPreviewContextReady] = useState(false);
   const [previewSceneReady, setPreviewSceneReady] = useState(false);
   const previewControlsRef = useRef<any>(null);
@@ -393,76 +446,83 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const router = useRouter();
   const activeDirtSlots = useMemo(
     () => readActiveDirtSlots(pet?.memorial?.sceneJson, dirtLevel),
-    [dirtLevel, pet?.memorial?.sceneJson]
+    [dirtLevel, pet?.memorial?.sceneJson],
   );
-  const handleCleanDirt = useCallback(async (slotName?: DirtSlotName) => {
-    if (!currentUser?.id) {
-      setCleanSuccess(null);
-      setError("Вам требуется авторизоваться, чтобы почистить мемориал.");
-      return;
-    }
-    try {
-      setCleanSuccess(null);
-      const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: slotName ? { "Content-Type": "application/json" } : undefined,
-        body: slotName ? JSON.stringify({ slot: slotName }) : undefined
-      });
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          setError("Вам требуется авторизоваться, чтобы почистить мемориал.");
-          return;
-        }
-        throw new Error("Не удалось очистить мемориал");
+  const handleCleanDirt = useCallback(
+    async (slotName?: DirtSlotName) => {
+      if (!currentUser?.id) {
+        setCleanSuccess(null);
+        setError("Вам требуется авторизоваться, чтобы почистить мемориал.");
+        return;
       }
-      const data = (await response.json()) as {
-        dustStage?: number | null;
-        dustUpdatedAt?: string | null;
-        activeDirtSlots?: DirtSlotName[] | null;
-        dirtNextSlotIndex?: number | null;
-        remainingDirtSlots?: number | null;
-        removedCount?: number | null;
-      };
-      const nextStage = typeof data.dustStage === "number" ? data.dustStage : 0;
-      const nextSlots = readActiveDirtSlots(
-        { activeDirtSlots: data.activeDirtSlots ?? [] },
-        nextStage
-      );
-      const remaining =
-        typeof data.remainingDirtSlots === "number"
-          ? data.remainingDirtSlots
-          : nextSlots.length;
-      setDirtLevel(nextStage);
-      setPet((prev) =>
-        prev?.memorial
-          ? {
-              ...prev,
-              memorial: {
-                ...prev.memorial,
-                dustStage: nextStage,
-                dustUpdatedAt: data.dustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null,
-                sceneJson: {
-                  ...(prev.memorial.sceneJson ?? {}),
-                  activeDirtSlots: nextSlots,
-                  ...(typeof data.dirtNextSlotIndex === "number"
-                    ? { dirtNextSlotIndex: data.dirtNextSlotIndex }
-                    : {})
+      try {
+        setCleanSuccess(null);
+        const response = await fetch(`${apiUrl}/pets/${id}/memorial/clean`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: slotName
+            ? { "Content-Type": "application/json" }
+            : undefined,
+          body: slotName ? JSON.stringify({ slot: slotName }) : undefined,
+        });
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            setError("Вам требуется авторизоваться, чтобы почистить мемориал.");
+            return;
+          }
+          throw new Error("Не удалось очистить мемориал");
+        }
+        const data = (await response.json()) as {
+          dustStage?: number | null;
+          dustUpdatedAt?: string | null;
+          activeDirtSlots?: DirtSlotName[] | null;
+          dirtNextSlotIndex?: number | null;
+          remainingDirtSlots?: number | null;
+          removedCount?: number | null;
+        };
+        const nextStage =
+          typeof data.dustStage === "number" ? data.dustStage : 0;
+        const nextSlots = readActiveDirtSlots(
+          { activeDirtSlots: data.activeDirtSlots ?? [] },
+          nextStage,
+        );
+        const remaining =
+          typeof data.remainingDirtSlots === "number"
+            ? data.remainingDirtSlots
+            : nextSlots.length;
+        setDirtLevel(nextStage);
+        setPet((prev) =>
+          prev?.memorial
+            ? {
+                ...prev,
+                memorial: {
+                  ...prev.memorial,
+                  dustStage: nextStage,
+                  dustUpdatedAt:
+                    data.dustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null,
+                  sceneJson: {
+                    ...(prev.memorial.sceneJson ?? {}),
+                    activeDirtSlots: nextSlots,
+                    ...(typeof data.dirtNextSlotIndex === "number"
+                      ? { dirtNextSlotIndex: data.dirtNextSlotIndex }
+                      : {}),
+                  },
+                  needsPreviewRefresh: true,
                 },
-                needsPreviewRefresh: true
               }
-            }
-          : prev
-      );
-      setCleanSuccess(
-        remaining > 0
-          ? `Спасибо, что чистите мемориал. Осталось пятен: ${remaining}.`
-          : "Спасибо, что поддерживаете мемориал в чистоте."
-      );
-    } catch {
-      setError("Не удалось очистить мемориал. Попробуйте еще раз.");
-    }
-  }, [apiUrl, currentUser?.id, id]);
+            : prev,
+        );
+        setCleanSuccess(
+          remaining > 0
+            ? `Спасибо, что чистите мемориал. Осталось пятен: ${remaining}.`
+            : "Спасибо, что поддерживаете мемориал в чистоте.",
+        );
+      } catch {
+        setError("Не удалось очистить мемориал. Попробуйте еще раз.");
+      }
+    },
+    [apiUrl, currentUser?.id, id],
+  );
 
   const handleMemorialDetailClick = useCallback(
     (detail: { slot?: string }) => {
@@ -470,7 +530,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         handleCleanDirt(detail.slot as DirtSlotName);
       }
     },
-    [handleCleanDirt]
+    [handleCleanDirt],
   );
 
   const loadPet = useCallback(async () => {
@@ -478,7 +538,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     setError(null);
     try {
       const response = await fetch(`${apiUrl}/pets/${id}`, {
-        credentials: "include"
+        credentials: "include",
       });
       if (!response.ok) {
         if (response.status === 404) {
@@ -503,7 +563,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const loadCurrentUser = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
+      const response = await fetch(`${apiUrl}/auth/me`, {
+        credentials: "include",
+      });
       if (!response.ok) {
         setCurrentUser(null);
         setWalletBalance(null);
@@ -525,7 +587,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       setWalletLoading(true);
       try {
         const response = await fetch(`${apiUrl}/wallet/${ownerId}`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           throw new Error("Не удалось загрузить баланс");
@@ -538,7 +600,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         setWalletLoading(false);
       }
     },
-    [apiUrl]
+    [apiUrl],
   );
 
   useEffect(() => {
@@ -553,14 +615,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
         if (!response.ok) {
           return;
         }
-        const rows = (await response.json()) as { years?: number; price?: number }[];
+        const rows = (await response.json()) as {
+          years?: number;
+          price?: number;
+        }[];
         const priceByYears = new Map(
           rows
             .filter(
               (row) =>
-                typeof row.years === "number" && typeof row.price === "number"
+                typeof row.years === "number" && typeof row.price === "number",
             )
-            .map((row) => [row.years as number, row.price as number])
+            .map((row) => [row.years as number, row.price as number]),
         );
         if (!isMounted || priceByYears.size === 0) {
           return;
@@ -568,8 +633,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
         setExtensionPlans((prev) =>
           prev.map((plan) => ({
             ...plan,
-            price: priceByYears.get(plan.years) ?? plan.price
-          }))
+            price: priceByYears.get(plan.years) ?? plan.price,
+          })),
         );
       } catch {
         // Keep bundled fallback prices when pricing endpoint is unavailable.
@@ -625,7 +690,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           currentUser?.id === pet.ownerId ? "" : "&visibility=public";
         const response = await fetch(
           `${apiUrl}/pets?ownerId=${pet.ownerId}${visibilityQuery}`,
-          { credentials: "include" }
+          { credentials: "include" },
         );
         if (!response.ok) {
           throw new Error("Не удалось загрузить мемориалы владельца");
@@ -673,8 +738,18 @@ export default function PetClient({ id, mode = "view" }: Props) {
           modelUrl: string;
         }[];
         const sorted = [...data].sort((a, b) => {
-          const aCode = (getGiftCode(a) ?? a.code ?? a.name ?? "").toLowerCase();
-          const bCode = (getGiftCode(b) ?? b.code ?? b.name ?? "").toLowerCase();
+          const aCode = (
+            getGiftCode(a) ??
+            a.code ??
+            a.name ??
+            ""
+          ).toLowerCase();
+          const bCode = (
+            getGiftCode(b) ??
+            b.code ??
+            b.name ??
+            ""
+          ).toLowerCase();
           const aType = aCode.split("_")[0] ?? "";
           const bType = bCode.split("_")[0] ?? "";
           const typeDiff = aType.localeCompare(bType, "ru");
@@ -685,10 +760,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
         });
         setGiftCatalog(sorted);
         setSelectedGiftId((prev) =>
-          prev && sorted.some((gift) => gift.id === prev) ? prev : null
+          prev && sorted.some((gift) => gift.id === prev) ? prev : null,
         );
       } catch (err) {
-        setGiftError(err instanceof Error ? err.message : "Ошибка загрузки подарков");
+        setGiftError(
+          err instanceof Error ? err.message : "Ошибка загрузки подарков",
+        );
       } finally {
         setGiftCatalogLoading(false);
       }
@@ -760,39 +837,39 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const currentUserLogin = currentUser?.login ?? pet?.owner?.login ?? null;
   const houseOptions = useMemo(
     () => filterOptionsForUser(allHouseOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const roofOptions = useMemo(
     () => filterOptionsForUser(allRoofOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const wallOptions = useMemo(
     () => filterOptionsForUser(allWallOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const signOptions = useMemo(
     () => filterOptionsForUser(allSignOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const frameLeftOptions = useMemo(
     () => filterOptionsForUser(allFrameLeftOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const frameRightOptions = useMemo(
     () => filterOptionsForUser(allFrameRightOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const matOptions = useMemo(
     () => filterOptionsForUser(allMatOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const bowlFoodOptions = useMemo(
     () => filterOptionsForUser(allBowlFoodOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const bowlWaterOptions = useMemo(
     () => filterOptionsForUser(allBowlWaterOptions, currentUserLogin),
-    [currentUserLogin]
+    [currentUserLogin],
   );
   const sceneJson = useMemo(() => {
     const value = pet?.memorial?.sceneJson;
@@ -804,16 +881,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const soulSettings = useMemo(() => readSoulSettings(sceneJson), [sceneJson]);
   const currentAppearance = useMemo<AppearanceDraft>(() => {
     const parts =
-      sceneJson.parts && typeof sceneJson.parts === "object" && !Array.isArray(sceneJson.parts)
+      sceneJson.parts &&
+      typeof sceneJson.parts === "object" &&
+      !Array.isArray(sceneJson.parts)
         ? (sceneJson.parts as Record<string, unknown>)
         : {};
     const colors =
-      sceneJson.colors && typeof sceneJson.colors === "object" && !Array.isArray(sceneJson.colors)
+      sceneJson.colors &&
+      typeof sceneJson.colors === "object" &&
+      !Array.isArray(sceneJson.colors)
         ? (sceneJson.colors as Record<string, unknown>)
         : {};
-    const firstId = (options: OptionItem[], fallback = "none") => options[0]?.id ?? fallback;
+    const firstId = (options: OptionItem[], fallback = "none") =>
+      options[0]?.id ?? fallback;
     const colorValue = (key: string, fallback: string) =>
-      typeof colors[key] === "string" && colors[key] ? String(colors[key]) : fallback;
+      typeof colors[key] === "string" && colors[key]
+        ? String(colors[key])
+        : fallback;
     const partId = (key: string, options: OptionItem[], fallback = "none") =>
       typeof parts[key] === "string" && parts[key]
         ? String(parts[key])
@@ -835,7 +919,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       frameRightColor: colorValue("frame_right_paint", colorPalette[16]),
       matColor: colorValue("mat_paint", colorPalette[9]),
       bowlFoodColor: colorValue("bowl_food_paint", colorPalette[3]),
-      bowlWaterColor: colorValue("bowl_water_paint", colorPalette[7])
+      bowlWaterColor: colorValue("bowl_water_paint", colorPalette[7]),
     };
   }, [
     bowlFoodOptions,
@@ -848,42 +932,51 @@ export default function PetClient({ id, mode = "view" }: Props) {
     roofOptions,
     sceneJson,
     signOptions,
-    wallOptions
+    wallOptions,
   ]);
   const draftAppearance = appearanceDraft ?? currentAppearance;
-  const effectiveHouseId = draftAppearance.houseId || pet?.memorial?.houseId || null;
+  const effectiveHouseId =
+    draftAppearance.houseId || pet?.memorial?.houseId || null;
   const houseVariantGroup = useMemo(
     () => buildHouseVariantGroup(houseOptions),
-    [houseOptions]
+    [houseOptions],
   );
   const selectedHouseVariant = splitHouseVariantId(draftAppearance.houseId);
   const selectedHouseBaseId =
-    selectedHouseVariant.baseId || houseVariantGroup.baseOptions[0]?.id || draftAppearance.houseId;
+    selectedHouseVariant.baseId ||
+    houseVariantGroup.baseOptions[0]?.id ||
+    draftAppearance.houseId;
   const houseBaseOptions = houseVariantGroup.baseOptions;
   const houseTextureOptions =
     houseVariantGroup.textureOptionsByBase[selectedHouseBaseId] ?? [];
   const houseSlots = getHouseSlots(effectiveHouseId);
   const hoveredAppearanceId = useCallback(
     (category: string) =>
-      hoveredAppearanceOption?.category === category ? hoveredAppearanceOption.id : null,
-    [hoveredAppearanceOption]
+      hoveredAppearanceOption?.category === category
+        ? hoveredAppearanceOption.id
+        : null,
+    [hoveredAppearanceOption],
   );
   const previewHouseVariantId = hoveredAppearanceId("house-texture");
   const previewHouseBaseId = hoveredAppearanceId("house-base");
   const editPreviewHouseId =
     previewHouseVariantId ??
     (previewHouseBaseId
-      ? houseVariantGroup.defaultVariantByBase[previewHouseBaseId] ?? previewHouseBaseId
+      ? (houseVariantGroup.defaultVariantByBase[previewHouseBaseId] ??
+        previewHouseBaseId)
       : null) ??
     effectiveHouseId;
   const previewHouseSlots = getHouseSlots(editPreviewHouseId);
   const previewRoofId = hoveredAppearanceId("roof") ?? draftAppearance.roofId;
   const previewWallId = hoveredAppearanceId("wall") ?? draftAppearance.wallId;
   const previewSignId = hoveredAppearanceId("sign") ?? draftAppearance.signId;
-  const previewFrameLeftId = hoveredAppearanceId("frame-left") ?? draftAppearance.frameLeftId;
-  const previewFrameRightId = hoveredAppearanceId("frame-right") ?? draftAppearance.frameRightId;
+  const previewFrameLeftId =
+    hoveredAppearanceId("frame-left") ?? draftAppearance.frameLeftId;
+  const previewFrameRightId =
+    hoveredAppearanceId("frame-right") ?? draftAppearance.frameRightId;
   const previewMatId = hoveredAppearanceId("mat") ?? draftAppearance.matId;
-  const previewBowlFoodId = hoveredAppearanceId("bowl-food") ?? draftAppearance.bowlFoodId;
+  const previewBowlFoodId =
+    hoveredAppearanceId("bowl-food") ?? draftAppearance.bowlFoodId;
   const previewBowlWaterId =
     hoveredAppearanceId("bowl-water") ?? draftAppearance.bowlWaterId;
   const resolveAppearanceHoverModelUrl = useCallback(
@@ -893,7 +986,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
       switch (category) {
         case "house-base": {
-          const variant = houseVariantGroup.defaultVariantByBase[optionId] ?? optionId;
+          const variant =
+            houseVariantGroup.defaultVariantByBase[optionId] ?? optionId;
           return resolveHouseModel(variant);
         }
         case "house-texture":
@@ -918,7 +1012,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           return null;
       }
     },
-    [houseVariantGroup.defaultVariantByBase]
+    [houseVariantGroup.defaultVariantByBase],
   );
   const selectedAppearanceIdForCategory = useCallback(
     (category: string) => {
@@ -957,8 +1051,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
       draftAppearance.roofId,
       draftAppearance.signId,
       draftAppearance.wallId,
-      selectedHouseBaseId
-    ]
+      selectedHouseBaseId,
+    ],
   );
   const queueAppearanceGltfLoad = useCallback(async (url: string) => {
     if (!url) {
@@ -980,11 +1074,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
             url,
             () => resolve(),
             undefined,
-            (error) => reject(error)
+            (error) => reject(error),
           );
         }).catch(() => {
           cache.delete(url);
-        }) as Promise<void>
+        }) as Promise<void>,
       );
     }
     const loadPromise = cache.get(url);
@@ -1005,12 +1099,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
       await queueAppearanceGltfLoad(url);
     },
-    [queueAppearanceGltfLoad, resolveAppearanceHoverModelUrl]
+    [queueAppearanceGltfLoad, resolveAppearanceHoverModelUrl],
   );
   const handleAppearanceOptionHover = useCallback(
     async (category: string, optionId: string) => {
       hoverAppearanceIntentRef.current = { category, id: optionId };
-      if (category !== "house-base" && optionId === selectedAppearanceIdForCategory(category)) {
+      if (
+        category !== "house-base" &&
+        optionId === selectedAppearanceIdForCategory(category)
+      ) {
         setHoveredAppearanceOption({ category, id: optionId });
         return;
       }
@@ -1022,13 +1119,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
         setHoveredAppearanceOption({ category, id: optionId });
       }
     },
-    [preloadAppearanceOptionModel, selectedAppearanceIdForCategory]
+    [preloadAppearanceOptionModel, selectedAppearanceIdForCategory],
   );
   const handleAppearanceOptionLeave = useCallback((category: string) => {
     if (hoverAppearanceIntentRef.current?.category === category) {
       hoverAppearanceIntentRef.current = null;
     }
-    setHoveredAppearanceOption((prev) => (prev?.category === category ? null : prev));
+    setHoveredAppearanceOption((prev) =>
+      prev?.category === category ? null : prev,
+    );
   }, []);
   const showDetailTooltip = useCallback(
     (option: OptionItem, element: HTMLElement) => {
@@ -1038,7 +1137,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const margin = 8;
       const rect = element.getBoundingClientRect();
       const hasLeftSpace = rect.left >= width + gap + margin;
-      const preferredLeft = hasLeftSpace ? rect.left - width - gap : rect.right + gap;
+      const preferredLeft = hasLeftSpace
+        ? rect.left - width - gap
+        : rect.right + gap;
       const maxLeft = window.innerWidth - width - margin;
       const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
       const maxTop = Math.max(margin, window.innerHeight - maxHeight - margin);
@@ -1046,13 +1147,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
       setDetailTooltip({
         id: option.id,
         name: option.name,
-        description: option.description.trim() || "Деталь оформления мемориала.",
+        description:
+          option.description.trim() || "Деталь оформления мемориала.",
         left,
         top,
-        width
+        width,
       });
     },
-    [isPortraitLayout]
+    [isPortraitLayout],
   );
 
   const hideDetailTooltip = useCallback(() => {
@@ -1064,22 +1166,25 @@ export default function PetClient({ id, mode = "view" }: Props) {
       await preloadAppearanceOptionModel(category, optionId);
       apply();
     },
-    [preloadAppearanceOptionModel]
+    [preloadAppearanceOptionModel],
   );
   useEffect(() => {
     setDetectedSlots(null);
     setSlotManuallyCleared(false);
   }, [pet?.id]);
 
-  const terrainGiftSlots = detectedSlots ?? getTerrainGiftSlots(pet?.memorial?.environmentId);
+  const terrainGiftSlots =
+    detectedSlots ?? getTerrainGiftSlots(pet?.memorial?.environmentId);
   const activeGifts =
     pet?.gifts?.filter(
       (gift) =>
         gift.isActive !== false &&
-        (!gift.expiresAt || new Date(gift.expiresAt) > new Date())
+        (!gift.expiresAt || new Date(gift.expiresAt) > new Date()),
     ) ?? [];
   const occupiedSlots = new Set(activeGifts.map((gift) => gift.slotName));
-  const availableSlots = terrainGiftSlots.filter((slot) => !occupiedSlots.has(slot));
+  const availableSlots = terrainGiftSlots.filter(
+    (slot) => !occupiedSlots.has(slot),
+  );
   const giftsWithSlots = useMemo(() => {
     if (availableSlots.length === 0) {
       return [];
@@ -1087,7 +1192,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     const slotTypes = new Set(
       availableSlots
         .map((slot) => getGiftSlotType(slot))
-        .filter((type): type is string => Boolean(type))
+        .filter((type): type is string => Boolean(type)),
     );
     const hasDefaultSlots = slotTypes.has("default");
     return giftCatalog.filter((gift) => {
@@ -1115,21 +1220,26 @@ export default function PetClient({ id, mode = "view" }: Props) {
     });
   }, [giftsWithSlots, selectedGiftId, selectedSlot]);
 
-  const selectedGift = giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
+  const selectedGift =
+    giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
   const selectedGiftSupportsSize = giftSupportsSize(selectedGift ?? undefined);
   const selectedGiftCode = getGiftCode(selectedGift ?? undefined);
   const giftCompatibleSlots = selectedGift
-    ? availableSlots.filter((slot) => isGiftCompatibleWithSlot(selectedGift, slot))
+    ? availableSlots.filter((slot) =>
+        isGiftCompatibleWithSlot(selectedGift, slot),
+      )
     : availableSlots;
   const dimmedGiftSlots = selectedGift
-    ? availableSlots.filter((slot) => !isGiftCompatibleWithSlot(selectedGift, slot))
+    ? availableSlots.filter(
+        (slot) => !isGiftCompatibleWithSlot(selectedGift, slot),
+      )
     : [];
-  const filteredAvailableSlots = selectedGift ? giftCompatibleSlots : availableSlots;
+  const filteredAvailableSlots = selectedGift
+    ? giftCompatibleSlots
+    : availableSlots;
   const highlightSlots = availableSlots;
   const shouldShowGiftSlots =
-    giftPanelOpen &&
-    highlightSlots.length > 0 &&
-    giftSlotsVisible;
+    giftPanelOpen && highlightSlots.length > 0 && giftSlotsVisible;
 
   useEffect(() => {
     if (visibleGiftsWithSlots.length === 0) {
@@ -1184,7 +1294,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
     if (!selectedSlot && !slotManuallyCleared) {
       setSelectedSlot(filteredAvailableSlots[0] ?? null);
     }
-  }, [availableSlots, filteredAvailableSlots, selectedGift, selectedSlot, slotManuallyCleared]);
+  }, [
+    availableSlots,
+    filteredAvailableSlots,
+    selectedGift,
+    selectedSlot,
+    slotManuallyCleared,
+  ]);
 
   useEffect(() => {
     if (giftPanelOpen) {
@@ -1230,7 +1346,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     (gift: GiftCatalogItem) =>
       gift.description?.trim() ||
       "Подарок памяти, который добавляет мемориалу тёплую деталь.",
-    []
+    [],
   );
 
   const showGiftCatalogTooltip = useCallback(
@@ -1241,7 +1357,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const margin = 8;
       const rect = element.getBoundingClientRect();
       const hasLeftSpace = rect.left >= width + gap + margin;
-      const preferredLeft = hasLeftSpace ? rect.left - width - gap : rect.right + gap;
+      const preferredLeft = hasLeftSpace
+        ? rect.left - width - gap
+        : rect.right + gap;
       const maxLeft = window.innerWidth - width - margin;
       const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
       const maxTop = Math.max(margin, window.innerHeight - maxHeight - margin);
@@ -1252,10 +1370,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
         description: getGiftDescription(gift),
         left,
         top,
-        width
+        width,
       });
     },
-    [getGiftDescription, isPortraitLayout]
+    [getGiftDescription, isPortraitLayout],
   );
 
   const hideGiftCatalogTooltip = useCallback(() => {
@@ -1270,7 +1388,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
       return next;
     });
-  const togglePanel = (panel: "info" | "photos" | "gifts" | "memorials" | "manage") =>
+  const togglePanel = (
+    panel: "info" | "photos" | "gifts" | "memorials" | "manage",
+  ) =>
     setActivePanel((prev) => {
       const next = prev === panel ? null : panel;
       if (next) {
@@ -1359,15 +1479,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
   const updateAppearanceDraft = <K extends keyof AppearanceDraft>(
     field: K,
-    value: AppearanceDraft[K]
+    value: AppearanceDraft[K],
   ) => {
     setAppearanceDraft((prev) =>
       prev
         ? {
             ...prev,
-            [field]: value
+            [field]: value,
           }
-        : prev
+        : prev,
     );
   };
 
@@ -1426,7 +1546,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
     const camera =
       (controls?.object as THREE.PerspectiveCamera | undefined) ??
       (renderContext.camera as THREE.PerspectiveCamera | undefined);
-    const perspectiveCamera = camera instanceof THREE.PerspectiveCamera ? camera : null;
+    const perspectiveCamera =
+      camera instanceof THREE.PerspectiveCamera ? camera : null;
     if (!perspectiveCamera) {
       return null;
     }
@@ -1437,16 +1558,20 @@ export default function PetClient({ id, mode = "view" }: Props) {
     const baseTarget = new THREE.Vector3(0, 0.6, 0);
     const basePosition = new THREE.Vector3(8, 5, 8);
     const baseOffset = basePosition.sub(baseTarget);
-    const rotatedOffset = baseOffset.clone().applyAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      THREE.MathUtils.degToRad(-30)
-    );
+    const rotatedOffset = baseOffset
+      .clone()
+      .applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        THREE.MathUtils.degToRad(-30),
+      );
     rotatedOffset.multiplyScalar(0.84);
     rotatedOffset.y -= 0.85;
     const nextPos = baseTarget.clone().add(rotatedOffset);
     const distance = nextPos.distanceTo(baseTarget);
     const tiltOffset = Math.tan(THREE.MathUtils.degToRad(5)) * distance;
-    const nextTarget = baseTarget.clone().add(new THREE.Vector3(0, tiltOffset, 0));
+    const nextTarget = baseTarget
+      .clone()
+      .add(new THREE.Vector3(0, tiltOffset, 0));
     const captureCamera = perspectiveCamera.clone();
     captureCamera.aspect = width / height;
     captureCamera.position.copy(nextPos);
@@ -1456,7 +1581,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     const { gl, scene } = renderContext;
     const renderTarget = new THREE.WebGLRenderTarget(width, height, {
       depthBuffer: true,
-      stencilBuffer: false
+      stencilBuffer: false,
     });
     const prevTarget = gl.getRenderTarget();
     const prevAutoClear = gl.autoClear;
@@ -1536,7 +1661,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const response = await fetch(`${apiUrl}/pets/${id}/map-preview`, {
         method: "POST",
         credentials: "include",
-        body: formData
+        body: formData,
       });
       if (!response.ok) {
         throw new Error("Не удалось обновить обложку карты");
@@ -1560,14 +1685,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   previewDustStage:
                     typeof data.previewDustStage === "number"
                       ? data.previewDustStage
-                      : prev.memorial.dustStage ?? dirtLevel,
+                      : (prev.memorial.dustStage ?? dirtLevel),
                   previewDustUpdatedAt:
-                    data.previewDustUpdatedAt ?? prev.memorial.dustUpdatedAt ?? null,
-                  previewDirtSlots: data.previewDirtSlots ?? activeDirtSlots
-                }
-              }
+                    data.previewDustUpdatedAt ??
+                    prev.memorial.dustUpdatedAt ??
+                    null,
+                  previewDirtSlots: data.previewDirtSlots ?? activeDirtSlots,
+                },
+              },
             }
-          : prev
+          : prev,
       );
     } finally {
       previewRefreshInFlightRef.current = false;
@@ -1597,7 +1724,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     const purchasedGift = selectedGift;
     const purchasedSlot = selectedSlot;
     const purchasedDuration = selectedDuration;
-    const purchasedGiftSize = selectedGiftSupportsSize ? selectedGiftSize : null;
+    const purchasedGiftSize = selectedGiftSupportsSize
+      ? selectedGiftSize
+      : null;
     try {
       const response = await fetch(`${apiUrl}/pets/${id}/gifts`, {
         method: "POST",
@@ -1608,8 +1737,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
           giftId: selectedGiftId,
           slotName: selectedSlot,
           months: selectedDuration,
-          size: selectedGiftSupportsSize ? selectedGiftSize : undefined
-        })
+          size: selectedGiftSupportsSize ? selectedGiftSize : undefined,
+        }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1627,7 +1756,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
           placedAt: string;
           expiresAt: string | null;
           size?: string | null;
-          gift?: { id: string; code?: string | null; name: string; price: number; modelUrl: string };
+          gift?: {
+            id: string;
+            code?: string | null;
+            name: string;
+            price: number;
+            modelUrl: string;
+          };
           owner?: {
             id: string;
             email?: string | null;
@@ -1655,7 +1790,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 code: purchasedGift.code ?? null,
                 name: purchasedGift.name,
                 price: purchasedGift.price,
-                modelUrl: purchasedGift.modelUrl
+                modelUrl: purchasedGift.modelUrl,
               }
             : null);
         if (giftPayload) {
@@ -1674,31 +1809,37 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       gift: giftPayload,
                       owner: {
                         id: placement.owner?.id ?? currentUser.id,
-                        email: placement.owner?.email ?? currentUser.email ?? null,
-                        login: placement.owner?.login ?? currentUser.login ?? null,
-                        pets: []
-                      }
+                        email:
+                          placement.owner?.email ?? currentUser.email ?? null,
+                        login:
+                          placement.owner?.login ?? currentUser.login ?? null,
+                        pets: [],
+                      },
                     },
-                    ...((prev.gifts ?? []).filter((gift) => gift.slotName !== placement.slotName))
+                    ...(prev.gifts ?? []).filter(
+                      (gift) => gift.slotName !== placement.slotName,
+                    ),
                   ],
                   memorial: prev.memorial
                     ? {
                         ...prev.memorial,
-                        needsPreviewRefresh: true
+                        needsPreviewRefresh: true,
                       }
-                    : prev.memorial
+                    : prev.memorial,
                 }
-              : prev
+              : prev,
           );
         }
       }
       if (purchasedGift) {
         setGiftSuccess(
-          `Вы подарили ${purchasedGift.name} ${pet?.name ?? "мемориалу"} на ${formatMonthsLabel(purchasedDuration)}.`
+          `Вы подарили ${purchasedGift.name} ${pet?.name ?? "мемориалу"} на ${formatMonthsLabel(purchasedDuration)}.`,
         );
       }
     } catch (err) {
-      setGiftError(err instanceof Error ? err.message : "Ошибка покупки подарка");
+      setGiftError(
+        err instanceof Error ? err.message : "Ошибка покупки подарка",
+      );
     } finally {
       setGiftLoading(false);
     }
@@ -1728,10 +1869,30 @@ export default function PetClient({ id, mode = "view" }: Props) {
     { coins: 100, rub: 99, usd: 1.49 },
     { coins: 300, rub: 299, usd: 4.49 },
     { coins: 800, rub: 699, usd: 9.99 },
-    { coins: 2000, rub: 1799, usd: 22.99 }
+    { coins: 2000, rub: 1799, usd: 22.99 },
   ];
 
   const isOwner = Boolean(currentUser?.id && pet?.ownerId === currentUser.id);
+  const canSeeModerationStatus = Boolean(
+    pet &&
+    (isOwner ||
+      currentUser?.accessLevel === "ADMIN" ||
+      currentUser?.accessLevel === "OWNER"),
+  );
+  const moderationStatus = pet?.moderationStatus ?? "APPROVED";
+  const moderationTitle =
+    moderationStatus === "PENDING"
+      ? "Мемориал на модерации"
+      : moderationStatus === "NEEDS_CHANGES"
+        ? "Мемориал нужно поправить"
+        : null;
+  const moderationText =
+    moderationStatus === "PENDING"
+      ? "Сейчас он виден только вам. После проверки мы отправим уведомление на почту."
+      : moderationStatus === "NEEDS_CHANGES"
+        ? pet?.moderationComment ||
+          "Модератор попросил уточнить данные. Отредактируйте мемориал и сохраните изменения, чтобы отправить его на повторную проверку."
+        : null;
   const handleExtendMemorial = async (years: 0 | 1 | 2 | 5) => {
     if (!currentUser?.id) {
       setLifecycleError("Войдите, чтобы продлить мемориал");
@@ -1744,7 +1905,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ ownerId: currentUser.id, years })
+        body: JSON.stringify({ ownerId: currentUser.id, years }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1767,10 +1928,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
               ...prev,
               memorial: {
                 ...prev.memorial,
-                activeUntil: "activeUntil" in data ? data.activeUntil ?? null : prev.memorial.activeUntil ?? null
-              }
+                activeUntil:
+                  "activeUntil" in data
+                    ? (data.activeUntil ?? null)
+                    : (prev.memorial.activeUntil ?? null),
+              },
             }
-          : prev
+          : prev,
       );
       if (currentUser.id) {
         void loadWallet(currentUser.id);
@@ -1778,11 +1942,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
       setLifecycleSuccess(
         data.activeUntil
           ? `Мемориал продлён до ${formatDate(data.activeUntil)}.`
-          : "Мемориал теперь не имеет ограничения по времени."
+          : "Мемориал теперь не имеет ограничения по времени.",
       );
       closeExtensionDialog();
     } catch (err) {
-      setLifecycleError(err instanceof Error ? err.message : "Ошибка продления");
+      setLifecycleError(
+        err instanceof Error ? err.message : "Ошибка продления",
+      );
     } finally {
       setExtendingMemorial(false);
     }
@@ -1801,14 +1967,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
     try {
       const response = await fetch(`${apiUrl}/pets/${id}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || "Не удалось удалить мемориал");
       }
       if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("memorial-page-toast", "Мемориал удалён.");
+        window.sessionStorage.setItem(
+          "memorial-page-toast",
+          "Мемориал удалён.",
+        );
       }
       router.replace("/my-pets");
     } catch (err) {
@@ -1819,7 +1988,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
   };
 
   const appearanceTabs = useMemo<
-    { id: AppearanceTabId; label: string; imageCategory: string; focusSlot?: string | null }[]
+    {
+      id: AppearanceTabId;
+      label: string;
+      imageCategory: string;
+      focusSlot?: string | null;
+    }[]
   >(() => {
     const tabs: {
       id: AppearanceTabId;
@@ -1827,63 +2001,68 @@ export default function PetClient({ id, mode = "view" }: Props) {
       imageCategory: string;
       focusSlot?: string | null;
     }[] = [
-      { id: "house", label: "Домик", imageCategory: "house", focusSlot: "dom_slot" }
+      {
+        id: "house",
+        label: "Домик",
+        imageCategory: "house",
+        focusSlot: "dom_slot",
+      },
     ];
     if (houseSlots.roof)
       tabs.push({
         id: "roof",
         label: "Крыша",
         imageCategory: "roof",
-        focusSlot: houseSlots.roof
+        focusSlot: houseSlots.roof,
       });
     if (houseSlots.wall)
       tabs.push({
         id: "wall",
         label: "Стены",
         imageCategory: "wall",
-        focusSlot: houseSlots.wall
+        focusSlot: houseSlots.wall,
       });
     if (houseSlots.sign)
       tabs.push({
         id: "sign",
         label: "Украшение",
         imageCategory: "sign",
-        focusSlot: houseSlots.sign
+        focusSlot: houseSlots.sign,
       });
     if (houseSlots.frameLeft)
       tabs.push({
         id: "frameLeft",
         label: "Рамка слева",
         imageCategory: "frame-left",
-        focusSlot: houseSlots.frameLeft
+        focusSlot: houseSlots.frameLeft,
       });
     if (houseSlots.frameRight)
       tabs.push({
         id: "frameRight",
         label: "Рамка справа",
         imageCategory: "frame-right",
-        focusSlot: houseSlots.frameRight
+        focusSlot: houseSlots.frameRight,
       });
     if (houseSlots.mat)
       tabs.push({
         id: "mat",
         label: "Коврик",
         imageCategory: "mat",
-        focusSlot: houseSlots.mat
+        focusSlot: houseSlots.mat,
       });
     if (houseSlots.bowlFood)
       tabs.push({
         id: "bowlFood",
         label: "Миска с кормом",
         imageCategory: "bowl-food",
-        focusSlot: houseSlots.bowlFood
+        focusSlot: houseSlots.bowlFood,
       });
     if (houseSlots.bowlWater)
       tabs.push({
         id: "bowlWater",
         label: "Миска с водой",
         imageCategory: "bowl-water",
-        focusSlot: houseSlots.bowlWater
+        focusSlot: houseSlots.bowlWater,
       });
     return tabs;
   }, [houseSlots]);
@@ -1902,16 +2081,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
   }, [houseSlots]);
 
   const activeAppearanceFocusSlot = useMemo(
-    () => appearanceTabs.find((tab) => tab.id === appearanceTab)?.focusSlot ?? null,
-    [appearanceTab, appearanceTabs]
+    () =>
+      appearanceTabs.find((tab) => tab.id === appearanceTab)?.focusSlot ?? null,
+    [appearanceTab, appearanceTabs],
   );
 
   const appearanceCameraOffsetAdjustments = useMemo(
     () => ({
       dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
-      sign_slot: { x: 0, y: 0, z: 2.85 }
+      sign_slot: { x: 0, y: 0, z: 2.85 },
     }),
-    []
+    [],
   );
 
   const activeAppearanceCameraKey = useMemo(() => {
@@ -1944,7 +2124,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         requestAppearanceFocus("dom_slot");
       }
     },
-    [appearanceTabBySlot, requestAppearanceFocus]
+    [appearanceTabBySlot, requestAppearanceFocus],
   );
 
   useEffect(() => {
@@ -1968,7 +2148,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         frameRight: appearanceDraft.frameRightId,
         mat: appearanceDraft.matId,
         bowlFood: appearanceDraft.bowlFoodId,
-        bowlWater: appearanceDraft.bowlWaterId
+        bowlWater: appearanceDraft.bowlWaterId,
       },
       colors: {
         roof_paint: appearanceDraft.roofColor,
@@ -1978,9 +2158,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
         frame_right_paint: appearanceDraft.frameRightColor,
         mat_paint: appearanceDraft.matColor,
         bowl_food_paint: appearanceDraft.bowlFoodColor,
-        bowl_water_paint: appearanceDraft.bowlWaterColor
+        bowl_water_paint: appearanceDraft.bowlWaterColor,
       },
-      version: 3
+      version: 3,
     };
     try {
       const response = await fetch(`${apiUrl}/pets/${id}`, {
@@ -1989,8 +2169,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
         credentials: "include",
         body: JSON.stringify({
           houseId: appearanceDraft.houseId,
-          sceneJson: nextSceneJson
-        })
+          sceneJson: nextSceneJson,
+        }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -2005,26 +2185,30 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 houseId: appearanceDraft.houseId,
                 sceneJson: {
                   ...(prev.memorial.sceneJson ?? {}),
-                  ...nextSceneJson
+                  ...nextSceneJson,
                 },
-                needsPreviewRefresh: true
-              }
+                needsPreviewRefresh: true,
+              },
             }
-          : prev
+          : prev,
       );
       if (!isEditMode) {
         setAppearanceSuccess("Оформление мемориала обновлено.");
       }
       closeEditDialog();
     } catch (err) {
-      setAppearanceError(err instanceof Error ? err.message : "Ошибка сохранения");
+      setAppearanceError(
+        err instanceof Error ? err.message : "Ошибка сохранения",
+      );
     } finally {
       setSavingAppearance(false);
     }
   };
 
   const previewDirtStage = readPreviewDustStage(pet?.memorial?.sceneJson);
-  const previewDirtUpdatedAt = readPreviewDustUpdatedAt(pet?.memorial?.sceneJson);
+  const previewDirtUpdatedAt = readPreviewDustUpdatedAt(
+    pet?.memorial?.sceneJson,
+  );
   const previewDirtSlots = readPreviewDirtSlots(pet?.memorial?.sceneJson);
   const currentDirtUpdatedAt = pet?.memorial?.dustUpdatedAt ?? null;
   const dirtPreviewNeedsRefresh =
@@ -2057,24 +2241,28 @@ export default function PetClient({ id, mode = "view" }: Props) {
     previewContextReady,
     previewSceneReady,
     selectedGiftId,
-    uploadMapPreview
+    uploadMapPreview,
   ]);
 
   const starSizeOptions: { id: GiftSize; label: string; helper: string }[] = [
     { id: "s", label: "S", helper: "Маленькая" },
     { id: "m", label: "M", helper: "Средняя" },
-    { id: "l", label: "L", helper: "Большая" }
+    { id: "l", label: "L", helper: "Большая" },
   ];
   const durationIndex = Math.max(
     0,
     DURATION_OPTIONS.indexOf(
-      (selectedDuration ?? DURATION_OPTIONS[0]) as (typeof DURATION_OPTIONS)[number]
-    )
+      (selectedDuration ??
+        DURATION_OPTIONS[0]) as (typeof DURATION_OPTIONS)[number],
+    ),
   );
 
   const selectedSlotType = selectedSlot ? getGiftSlotType(selectedSlot) : null;
   const previewGiftUrl =
-    resolveGiftModelUrl({ gift: selectedGift ?? undefined, slotType: selectedSlotType }) ??
+    resolveGiftModelUrl({
+      gift: selectedGift ?? undefined,
+      slotType: selectedSlotType,
+    }) ??
     selectedGift?.modelUrl ??
     null;
   const handleGiftPreloaded = useCallback((url: string) => {
@@ -2085,10 +2273,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
       return { ...prev, [url]: true };
     });
   }, []);
-  const previewReady = previewGiftUrl ? Boolean(preloadedGiftUrls[previewGiftUrl]) : false;
+  const previewReady = previewGiftUrl
+    ? Boolean(preloadedGiftUrls[previewGiftUrl])
+    : false;
   const dirtModelUrls = useMemo(
     () => buildDirtModelUrls(effectiveHouseId),
-    [effectiveHouseId]
+    [effectiveHouseId],
   );
   const dirtSlotPlacements = useMemo(
     () =>
@@ -2096,48 +2286,71 @@ export default function PetClient({ id, mode = "view" }: Props) {
         houseId: effectiveHouseId,
         level: dirtLevel,
         activeSlots: activeDirtSlots,
-        seed: `${pet?.id ?? id}:${pet?.memorial?.dustUpdatedAt ?? pet?.createdAt ?? ""}`
+        seed: `${pet?.id ?? id}:${pet?.memorial?.dustUpdatedAt ?? pet?.createdAt ?? ""}`,
       }),
-    [activeDirtSlots, dirtLevel, effectiveHouseId, id, pet?.createdAt, pet?.id, pet?.memorial?.dustUpdatedAt]
+    [
+      activeDirtSlots,
+      dirtLevel,
+      effectiveHouseId,
+      id,
+      pet?.createdAt,
+      pet?.id,
+      pet?.memorial?.dustUpdatedAt,
+    ],
   );
   const appearanceReviewItems = useMemo(() => {
     const items: { label: string; value: string }[] = [
-      { label: "Домик", value: optionById(houseOptions, draftAppearance.houseId).name }
+      {
+        label: "Домик",
+        value: optionById(houseOptions, draftAppearance.houseId).name,
+      },
     ];
     if (houseSlots.roof) {
-      items.push({ label: "Крыша", value: optionById(roofOptions, draftAppearance.roofId).name });
+      items.push({
+        label: "Крыша",
+        value: optionById(roofOptions, draftAppearance.roofId).name,
+      });
     }
     if (houseSlots.wall) {
-      items.push({ label: "Стены", value: optionById(wallOptions, draftAppearance.wallId).name });
+      items.push({
+        label: "Стены",
+        value: optionById(wallOptions, draftAppearance.wallId).name,
+      });
     }
     if (houseSlots.sign) {
-      items.push({ label: "Украшение", value: optionById(signOptions, draftAppearance.signId).name });
+      items.push({
+        label: "Украшение",
+        value: optionById(signOptions, draftAppearance.signId).name,
+      });
     }
     if (houseSlots.frameLeft) {
       items.push({
         label: "Рамка слева",
-        value: optionById(frameLeftOptions, draftAppearance.frameLeftId).name
+        value: optionById(frameLeftOptions, draftAppearance.frameLeftId).name,
       });
     }
     if (houseSlots.frameRight) {
       items.push({
         label: "Рамка справа",
-        value: optionById(frameRightOptions, draftAppearance.frameRightId).name
+        value: optionById(frameRightOptions, draftAppearance.frameRightId).name,
       });
     }
     if (houseSlots.mat) {
-      items.push({ label: "Коврик", value: optionById(matOptions, draftAppearance.matId).name });
+      items.push({
+        label: "Коврик",
+        value: optionById(matOptions, draftAppearance.matId).name,
+      });
     }
     if (houseSlots.bowlFood) {
       items.push({
         label: "Миска с кормом",
-        value: optionById(bowlFoodOptions, draftAppearance.bowlFoodId).name
+        value: optionById(bowlFoodOptions, draftAppearance.bowlFoodId).name,
       });
     }
     if (houseSlots.bowlWater) {
       items.push({
         label: "Миска с водой",
-        value: optionById(bowlWaterOptions, draftAppearance.bowlWaterId).name
+        value: optionById(bowlWaterOptions, draftAppearance.bowlWaterId).name,
       });
     }
     return items;
@@ -2167,7 +2380,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     matOptions,
     roofOptions,
     signOptions,
-    wallOptions
+    wallOptions,
   ]);
 
   useEffect(() => {
@@ -2192,7 +2405,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     preloadedGiftUrls,
     previewGiftUrl,
     selectedGift,
-    selectedSlot
+    selectedSlot,
   ]);
 
   if (loading) {
@@ -2205,7 +2418,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
             <div className="mt-3 h-4 w-48 rounded-full bg-[#eadfd9]" />
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {Array.from({ length: 2 }).map((_, index) => (
-                <div key={`info-skeleton-${index}`} className="h-20 rounded-2xl bg-[#f1e7e0]" />
+                <div
+                  key={`info-skeleton-${index}`}
+                  className="h-20 rounded-2xl bg-[#f1e7e0]"
+                />
               ))}
             </div>
           </div>
@@ -2215,7 +2431,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
               <div className="h-[320px] rounded-2xl bg-[#f1e7e0]" />
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={`gift-skeleton-${index}`} className="h-10 rounded-xl bg-[#f1e7e0]" />
+                  <div
+                    key={`gift-skeleton-${index}`}
+                    className="h-10 rounded-xl bg-[#f1e7e0]"
+                  />
                 ))}
               </div>
             </div>
@@ -2229,7 +2448,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     return (
       <main className="min-h-screen bg-[#fcf8f5] px-6 py-16">
         <div className="mx-auto max-w-6xl text-center">
-          <h1 className="text-2xl font-semibold text-[#5d4037]">Мемориал не найден</h1>
+          <h1 className="text-2xl font-semibold text-[#5d4037]">
+            Мемориал не найден
+          </h1>
           <p className="mt-3 text-[#8d6e63]">{error ?? "Проверь ссылку"}</p>
         </div>
       </main>
@@ -2244,45 +2465,57 @@ export default function PetClient({ id, mode = "view" }: Props) {
     frameRight: previewFrameRightId,
     mat: previewMatId,
     bowlFood: previewBowlFoodId,
-    bowlWater: previewBowlWaterId
+    bowlWater: previewBowlWaterId,
   };
   const partList = [
     previewHouseSlots.roof
-      ? { slot: previewHouseSlots.roof, url: resolveRoofModel(appearanceParts.roof) }
+      ? {
+          slot: previewHouseSlots.roof,
+          url: resolveRoofModel(appearanceParts.roof),
+        }
       : null,
     previewHouseSlots.wall
-      ? { slot: previewHouseSlots.wall, url: resolveWallModel(appearanceParts.wall) }
+      ? {
+          slot: previewHouseSlots.wall,
+          url: resolveWallModel(appearanceParts.wall),
+        }
       : null,
     previewHouseSlots.sign
-      ? { slot: previewHouseSlots.sign, url: resolveSignModel(appearanceParts.sign) }
+      ? {
+          slot: previewHouseSlots.sign,
+          url: resolveSignModel(appearanceParts.sign),
+        }
       : null,
     previewHouseSlots.frameLeft
       ? {
           slot: previewHouseSlots.frameLeft,
-          url: resolveFrameLeftModel(appearanceParts.frameLeft)
+          url: resolveFrameLeftModel(appearanceParts.frameLeft),
         }
       : null,
     previewHouseSlots.frameRight
       ? {
           slot: previewHouseSlots.frameRight,
-          url: resolveFrameRightModel(appearanceParts.frameRight)
+          url: resolveFrameRightModel(appearanceParts.frameRight),
         }
       : null,
     previewHouseSlots.mat
-      ? { slot: previewHouseSlots.mat, url: resolveMatModel(appearanceParts.mat) }
+      ? {
+          slot: previewHouseSlots.mat,
+          url: resolveMatModel(appearanceParts.mat),
+        }
       : null,
     previewHouseSlots.bowlFood
       ? {
           slot: previewHouseSlots.bowlFood,
-          url: resolveBowlFoodModel(appearanceParts.bowlFood)
+          url: resolveBowlFoodModel(appearanceParts.bowlFood),
         }
       : null,
     previewHouseSlots.bowlWater
       ? {
           slot: previewHouseSlots.bowlWater,
-          url: resolveBowlWaterModel(appearanceParts.bowlWater)
+          url: resolveBowlWaterModel(appearanceParts.bowlWater),
         }
-      : null
+      : null,
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
   const fullPartList = partList;
   const colorOverrides = {
@@ -2293,25 +2526,28 @@ export default function PetClient({ id, mode = "view" }: Props) {
     frame_right_paint: draftAppearance.frameRightColor,
     mat_paint: draftAppearance.matColor,
     bowl_food_paint: draftAppearance.bowlFoodColor,
-    bowl_water_paint: draftAppearance.bowlWaterColor
+    bowl_water_paint: draftAppearance.bowlWaterColor,
   };
   const giftInstances = activeGifts.map((gift) => {
     const ownerPets = gift.owner?.pets ?? [];
     const ownerLabel =
       ownerPets.length > 0
         ? ownerPets.map((petItem) => petItem.name).join(", ")
-        : gift.owner?.login ?? gift.owner?.email ?? "—";
+        : (gift.owner?.login ?? gift.owner?.email ?? "—");
     const slotType = getGiftSlotType(gift.slotName);
     const resolvedUrl =
-      resolveGiftModelUrl({ gift: gift.gift, slotType, fallbackUrl: gift.gift.modelUrl }) ??
-      gift.gift.modelUrl;
+      resolveGiftModelUrl({
+        gift: gift.gift,
+        slotType,
+        fallbackUrl: gift.gift.modelUrl,
+      }) ?? gift.gift.modelUrl;
     return {
       slot: gift.slotName,
       url: resolvedUrl,
       name: gift.gift.name,
       owner: ownerLabel,
       expiresAt: gift.expiresAt ?? undefined,
-      size: gift.size ?? null
+      size: gift.size ?? null,
     };
   });
   const previewGift =
@@ -2327,22 +2563,30 @@ export default function PetClient({ id, mode = "view" }: Props) {
           name: selectedGift.name,
           owner: currentUser?.login ?? currentUser?.email ?? "—",
           expiresAt: null,
-          size: selectedGiftSupportsSize ? selectedGiftSize : null
+          size: selectedGiftSupportsSize ? selectedGiftSize : null,
         }
       : null;
-  const previewGifts = previewGift ? [...giftInstances, previewGift] : giftInstances;
+  const previewGifts = previewGift
+    ? [...giftInstances, previewGift]
+    : giftInstances;
   const totalPrice =
-    selectedGift && selectedDuration ? selectedGift.price * selectedDuration : null;
+    selectedGift && selectedDuration
+      ? selectedGift.price * selectedDuration
+      : null;
 
   const formatDate = (value?: string | null) =>
     value ? new Date(value).toLocaleDateString("ru-RU") : "—";
   const memorialPaidUntil =
-    typeof sceneJson.memorialPaidUntil === "string" ? sceneJson.memorialPaidUntil : null;
+    typeof sceneJson.memorialPaidUntil === "string"
+      ? sceneJson.memorialPaidUntil
+      : null;
   const activeUntil =
     pet.memorial?.activeUntil === undefined
       ? memorialPaidUntil
       : pet.memorial.activeUntil;
-  const activeUntilLabel = activeUntil ? formatDate(activeUntil) : "Без ограничений по времени";
+  const activeUntilLabel = activeUntil
+    ? formatDate(activeUntil)
+    : "Без ограничений по времени";
   const canExtendMemorial = Boolean(activeUntil);
   const selectedExtensionPlan =
     extensionPlans.find((plan) => plan.years === selectedExtensionYears) ??
@@ -2353,14 +2597,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const dateRange = `${formatDate(pet.birthDate)}-${formatDate(pet.deathDate)}`;
   const otherMemorials = ownerMemorials.filter((item) => item.id !== pet.id);
 
-  const panelBaseClass =
-    isPortraitLayout
-      ? `w-[min(540px,calc(100vw-0.75rem))] max-w-[calc(100vw-0.75rem)] max-h-[min(50dvh,390px)] overflow-y-auto ${hudPanelChromeClass(true)}`
-      : `w-[290px] max-w-[82vw] ${hudPanelChromeClass(false)} sm:w-[340px]`;
-  const panelSectionClass =
-    isPortraitLayout
-      ? `grid max-h-full gap-2 overflow-y-auto p-2.5 ${hudInnerSurfaceClass(true)}`
-      : `grid gap-3 p-4 ${hudInnerSurfaceClass(false)}`;
+  const panelBaseClass = isPortraitLayout
+    ? `w-[min(540px,calc(100vw-0.75rem))] max-w-[calc(100vw-0.75rem)] max-h-[min(50dvh,390px)] overflow-y-auto ${hudPanelChromeClass(true)}`
+    : `w-[290px] max-w-[82vw] ${hudPanelChromeClass(false)} sm:w-[340px]`;
+  const panelSectionClass = isPortraitLayout
+    ? `grid max-h-full gap-2 overflow-y-auto p-2.5 ${hudInnerSurfaceClass(true)}`
+    : `grid gap-3 p-4 ${hudInnerSurfaceClass(false)}`;
   const panelLabelClass =
     "text-[10px] font-black uppercase tracking-[0.24em] text-[#adb5bd]";
   const panelButtonClass = (active: boolean) =>
@@ -2371,25 +2613,21 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const memorialGiftTooltipClass = isPortraitLayout
     ? memorialControlTooltipClass
     : hudTooltipClass("left");
-  const primaryActionClass =
-    hudPrimaryActionClass;
+  const primaryActionClass = hudPrimaryActionClass;
   const secondaryActionClass =
     "rounded-[18px] border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-[#8d6e63] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
   const sidePanelAnchorClass = isPortraitLayout
     ? "fixed left-1/2 bottom-[calc(9.35rem+env(safe-area-inset-bottom))] -translate-x-1/2"
     : "absolute bottom-0 left-[4.5rem] sm:left-20";
-  const editEditorPanelClass =
-    isPortraitLayout
-      ? "pointer-events-auto absolute left-0 right-0 bottom-0 flex h-[44dvh] flex-col bg-[#f7f1ee]"
-      : `pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`;
-  const editFinishButtonClass =
-    isPortraitLayout
-      ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
-      : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
-  const editCancelButtonClass =
-    isPortraitLayout
-      ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
-      : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
+  const editEditorPanelClass = isPortraitLayout
+    ? "pointer-events-auto absolute left-0 right-0 bottom-0 flex h-[44dvh] flex-col bg-[#f7f1ee]"
+    : `pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`;
+  const editFinishButtonClass = isPortraitLayout
+    ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+    : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+  const editCancelButtonClass = isPortraitLayout
+    ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+    : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
   const memorialControlsWrapClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(4.65rem+env(safe-area-inset-bottom))] left-1.5 right-[3.7rem]"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4";
@@ -2400,7 +2638,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "pointer-events-auto absolute bottom-[calc(4.65rem+env(safe-area-inset-bottom))] right-1.5"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4";
   const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-all ${
-    isPortraitLayout ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
+    isPortraitLayout
+      ? "h-10 w-10 rounded-[14px]"
+      : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
     ? `fixed left-[3%] right-[3%] top-[calc(26dvh+0.25rem)] bottom-[calc(8.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
@@ -2432,7 +2672,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
     `group/gift-card relative flex w-full items-center justify-center overflow-visible border transition ${
-      isPortraitLayout ? "aspect-[1/1.18] flex-col justify-start rounded-[16px] border-2 bg-white p-0.5 pb-6" : "h-28 rounded-[22px] border-[3px]"
+      isPortraitLayout
+        ? "aspect-[1/1.18] flex-col justify-start rounded-[16px] border-2 bg-white p-0.5 pb-6"
+        : "h-28 rounded-[22px] border-[3px]"
     } ${
       selected
         ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-sm"
@@ -2460,7 +2702,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "truncate text-[11px] font-semibold text-[#8d6e63]"
     : "text-xs font-semibold text-[#8d6e63]";
   const appearanceOptionImage = (category: string, optionId: string) =>
-    optionId === "none" ? null : `/memorial/options/${category}/${optionId}.png`;
+    optionId === "none"
+      ? null
+      : `/memorial/options/${category}/${optionId}.png`;
   const appearanceColorField =
     appearanceTab === "roof"
       ? "roofColor"
@@ -2483,7 +2727,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
     switch (tabId) {
       case "house":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M3 11.5 12 4l9 7.5" />
             <path d="M5.5 10.5V20h13V10.5" />
             <path d="M9 20v-5h6v5" />
@@ -2491,14 +2743,30 @@ export default function PetClient({ id, mode = "view" }: Props) {
         );
       case "roof":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M3 12 12 4l9 8" />
             <path d="M6 12h12" />
           </svg>
         );
       case "wall":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M5 7h14v12H5z" />
             <path d="M5 11h14" />
             <path d="M9 7v12" />
@@ -2507,7 +2775,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
         );
       case "sign":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M7 6h10l-2 4 2 4H7z" />
             <path d="M7 6v12" />
           </svg>
@@ -2515,21 +2791,45 @@ export default function PetClient({ id, mode = "view" }: Props) {
       case "frameLeft":
       case "frameRight":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="6" y="5" width="12" height="14" rx="2" />
             <path d="M9 8h6v8H9z" />
           </svg>
         );
       case "mat":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="4" y="9" width="16" height="7" rx="2" />
           </svg>
         );
       case "bowlFood":
       case "bowlWater":
         return (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M5 11h14l-1 5a3 3 0 0 1-3 2H9a3 3 0 0 1-3-2z" />
             <path d="M7 11V9h10v2" />
           </svg>
@@ -2544,7 +2844,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     selectedId: string,
     onSelect: (id: string) => void,
     imageCategory: string = category,
-    gridClassName = "grid grid-cols-2 place-items-center gap-0.5"
+    gridClassName = "grid grid-cols-2 place-items-center gap-0.5",
   ) => (
     <div className={gridClassName}>
       {options.map((option) => {
@@ -2555,7 +2855,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
             key={option.id}
             type="button"
             onClick={() => {
-              void handleAppearanceOptionSelect(category, option.id, () => onSelect(option.id));
+              void handleAppearanceOptionSelect(category, option.id, () =>
+                onSelect(option.id),
+              );
             }}
             onMouseEnter={(event) => {
               showDetailTooltip(option, event.currentTarget);
@@ -2601,9 +2903,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
     options: OptionItem[],
     selectedId: string,
     onSelect: (id: string) => void,
-    vertical = false
+    vertical = false,
   ) => (
-    <div className={vertical ? "flex max-h-full flex-col gap-2 overflow-y-auto pr-0.5" : "flex flex-wrap gap-2"}>
+    <div
+      className={
+        vertical
+          ? "flex max-h-full flex-col gap-2 overflow-y-auto pr-0.5"
+          : "flex flex-wrap gap-2"
+      }
+    >
       {options.map((option, index) => {
         const isSelected = selectedId === option.id;
         return (
@@ -2611,8 +2919,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
             key={option.id}
             type="button"
             onClick={() => {
-              void handleAppearanceOptionSelect("house-texture", option.id, () =>
-                onSelect(option.id)
+              void handleAppearanceOptionSelect(
+                "house-texture",
+                option.id,
+                () => onSelect(option.id),
               );
             }}
             onMouseEnter={(event) => {
@@ -2637,7 +2947,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                 ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
                 : "border-[#eadfd9] hover:border-[#d3a27f]"
             }`}
-            style={{ background: getHouseTextureSwatchBackground(option.id, index) }}
+            style={{
+              background: getHouseTextureSwatchBackground(option.id, index),
+            }}
           />
         );
       })}
@@ -2652,7 +2964,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           style={{
             left: giftTooltip.left,
             top: giftTooltip.top,
-            width: giftTooltip.width
+            width: giftTooltip.width,
           }}
         >
           <p className="text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5d4037]">
@@ -2669,7 +2981,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           style={{
             left: detailTooltip.left,
             top: detailTooltip.top,
-            width: detailTooltip.width
+            width: detailTooltip.width,
           }}
         >
           <p className="text-[10px] font-black uppercase leading-tight tracking-[0.08em] text-[#5d4037]">
@@ -2683,22 +2995,39 @@ export default function PetClient({ id, mode = "view" }: Props) {
       <div className={memorialSceneFrameClass}>
         <MemorialPreview
           className="h-full w-full rounded-none border-transparent bg-transparent"
-          terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
+          terrainUrl={resolveEnvironmentModel(
+            pet.memorial?.environmentId,
+            "auto",
+          )}
           terrainId={pet.memorial?.environmentId ?? null}
-          houseUrl={resolveHouseModel(editDialogOpen ? editPreviewHouseId : effectiveHouseId)}
+          houseUrl={resolveHouseModel(
+            editDialogOpen ? editPreviewHouseId : effectiveHouseId,
+          )}
           houseId={editDialogOpen ? editPreviewHouseId : effectiveHouseId}
           parts={fullPartList}
           dirtUrls={dirtModelUrls}
           dirtSlots={dirtSlotPlacements}
           dirtLevel={dirtLevel}
           gifts={previewGifts}
-          giftSlots={!mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? highlightSlots : undefined}
-          dimmedGiftSlots={
-            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? dimmedGiftSlots : undefined
+          giftSlots={
+            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen
+              ? highlightSlots
+              : undefined
           }
-          selectedSlot={!mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? selectedSlot : null}
+          dimmedGiftSlots={
+            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen
+              ? dimmedGiftSlots
+              : undefined
+          }
+          selectedSlot={
+            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen
+              ? selectedSlot
+              : null
+          }
           onSelectSlot={
-            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen ? handleSelectSlot : undefined
+            !mapPreviewCaptureWithoutGiftUi && giftPanelOpen
+              ? handleSelectSlot
+              : undefined
           }
           onGiftSlotsDetected={setDetectedSlots}
           preloadGiftUrl={pendingPreviewUrl}
@@ -2709,16 +3038,26 @@ export default function PetClient({ id, mode = "view" }: Props) {
           soulEnabled={soulSettings.enabled}
           soulPath={soulSettings.path}
           soulMode="idle"
-          onDetailClick={editDialogOpen ? handleEditPreviewDetailClick : handleMemorialDetailClick}
+          onDetailClick={
+            editDialogOpen
+              ? handleEditPreviewDetailClick
+              : handleMemorialDetailClick
+          }
           showControls={false}
           showGiftSlots={!mapPreviewCaptureWithoutGiftUi && shouldShowGiftSlots}
           enableHoverHighlight={editDialogOpen}
-          focusSlot={editDialogOpen ? appearanceFocusSlot ?? activeAppearanceFocusSlot : null}
+          focusSlot={
+            editDialogOpen
+              ? (appearanceFocusSlot ?? activeAppearanceFocusSlot)
+              : null
+          }
           focusRequestId={editDialogOpen ? appearanceFocusRequestId : undefined}
           cameraOffsetAdjustments={
             editDialogOpen ? appearanceCameraOffsetAdjustments : undefined
           }
-          cameraAdjustmentKey={editDialogOpen ? activeAppearanceCameraKey : undefined}
+          cameraAdjustmentKey={
+            editDialogOpen ? activeAppearanceCameraKey : undefined
+          }
           cameraPosition={[10, 6.5, 10]}
           defaultCameraPosition={[10, 6.5, 10]}
           defaultTarget={[0, 0.25, 0]}
@@ -2738,566 +3077,773 @@ export default function PetClient({ id, mode = "view" }: Props) {
       <div className="fixed inset-0 z-10 pointer-events-none">
         {!editDialogOpen && !isEditMode ? (
           <>
-        <div className={floatingTitleWrapClass}>
-          <div className={floatingTitleCardClass}>
-            <div className={floatingTitleNameClass}>{pet.name}</div>
-            <div className={floatingTitleMetaClass}>{dateRange}</div>
-          </div>
-        </div>
-
-        <div className={memorialControlsWrapClass}>
-          <div className="relative">
-            <div className={memorialControlsClass}>
-              <div className="group/control relative">
-                <button
-                  type="button"
-                  onClick={() => togglePanel("info")}
-                  aria-label="Информация"
-                  title="Информация"
-                  className={panelButtonClass(activePanel === "info")}
-                >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 11v5" />
-                    <circle cx="12" cy="8" r="1" />
-                  </svg>
-                </button>
-                <span className={memorialControlTooltipClass}>Информация</span>
+            <div className={floatingTitleWrapClass}>
+              <div className={floatingTitleCardClass}>
+                <div className={floatingTitleNameClass}>{pet.name}</div>
+                <div className={floatingTitleMetaClass}>{dateRange}</div>
               </div>
-              <div className="group/control relative">
-                <button
-                  type="button"
-                  onClick={() => togglePanel("photos")}
-                  aria-label="Фотографии"
-                  title="Фотографии"
-                  className={panelButtonClass(activePanel === "photos")}
-                >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <circle cx="9" cy="11" r="2" />
-                    <path d="M21 15l-4-4-4 4-3-3-5 5" />
-                  </svg>
-                </button>
-                <span className={memorialControlTooltipClass}>Фотографии</span>
-              </div>
-              <div className="group/control relative">
-                <button
-                  type="button"
-                  onClick={() => togglePanel("gifts")}
-                  aria-label="Подарки"
-                  title="Подарки"
-                  className={panelButtonClass(activePanel === "gifts")}
-                >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" />
-                  </svg>
-                </button>
-                <span className={memorialControlTooltipClass}>Подарки</span>
-              </div>
-              <div className="group/control relative">
-                <button
-                  type="button"
-                  onClick={() => togglePanel("memorials")}
-                  aria-label="Другие мемориалы"
-                  title="Другие мемориалы"
-                  className={panelButtonClass(activePanel === "memorials")}
-                >
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="8" cy="9" r="3" />
-                    <circle cx="16" cy="9" r="3" />
-                    <path d="M3 20c0-3 3-5 5-5" />
-                    <path d="M21 20c0-3-3-5-5-5" />
-                  </svg>
-                </button>
-                <span className={memorialControlTooltipClass}>Другие мемориалы</span>
-              </div>
-              {isOwner ? (
-                <div className="group/control relative">
-                  <button
-                    type="button"
-                    onClick={() => togglePanel("manage")}
-                    aria-label="Управление мемориалом"
-                    title="Управление мемориалом"
-                    className={panelButtonClass(activePanel === "manage")}
-                  >
-                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="3" />
-                      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-                    </svg>
-                  </button>
-                  <span className={memorialControlTooltipClass}>Управление</span>
-                </div>
-              ) : null}
             </div>
 
-            {activePanel === "info" ? (
-              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
-                <div className={`${panelSectionClass} text-sm text-[#6f6360]`}>
-                  <div>
-                    <p className={panelLabelClass}>Эпитафия</p>
-                    <p className="mt-2 text-sm font-semibold text-[#5d4037]">
-                      {pet.epitaph ?? "Без эпитафии"}
-                    </p>
+            {canSeeModerationStatus && moderationTitle ? (
+              <div
+                className={`pointer-events-auto absolute left-1/2 z-20 -translate-x-1/2 rounded-[22px] border-[3px] border-white bg-[#fffcf9]/95 px-4 py-3 text-center text-[#5d4037] shadow-[0_18px_42px_-24px_rgba(93,64,55,0.42)] backdrop-blur ${
+                  isPortraitLayout
+                    ? "top-[calc(var(--app-header-height,0px)+6.25rem)] w-[min(21rem,calc(100vw-1rem))]"
+                    : "top-[calc(var(--app-header-height,0px)+7.25rem)] w-[min(34rem,calc(100vw-2rem))]"
+                }`}
+              >
+                <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[#d3a27f]">
+                  Модерация
+                </div>
+                <div className="mt-1 text-sm font-black">{moderationTitle}</div>
+                {moderationText ? (
+                  <div className="mt-1 text-xs font-semibold leading-snug text-[#8d6e63]">
+                    {moderationText}
                   </div>
-                  <div>
-                    <p className={panelLabelClass}>История</p>
-                    <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6f6360]">
-                      {pet.story ?? "История пока не заполнена."}
-                    </p>
-                  </div>
-                  <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
-                    <div className="flex items-center justify-between text-xs font-semibold text-[#8d6e63]">
-                      <span className="font-black uppercase tracking-[0.16em] text-[#5d4037]">
-                        Чистота мемориала
-                      </span>
-                      <span>
-                        {dirtLevel}/{DIRT_SLOTS.length}
-                      </span>
-                    </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className={memorialControlsWrapClass}>
+              <div className="relative">
+                <div className={memorialControlsClass}>
+                  <div className="group/control relative">
                     <button
                       type="button"
-                      onClick={() => handleCleanDirt()}
-                      disabled={dirtLevel === 0}
-                      className={`mt-3 w-full ${primaryActionClass} ${
-                        dirtLevel === 0
-                          ? "cursor-not-allowed bg-[#d8cfc9] text-white/85 shadow-none"
-                          : ""
-                      }`}
+                      onClick={() => togglePanel("info")}
+                      aria-label="Информация"
+                      title="Информация"
+                      className={panelButtonClass(activePanel === "info")}
                     >
-                      Почистить мемориал
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 11v5" />
+                        <circle cx="12" cy="8" r="1" />
+                      </svg>
                     </button>
+                    <span className={memorialControlTooltipClass}>
+                      Информация
+                    </span>
                   </div>
-                </div>
-              </div>
-            ) : null}
-
-            {activePanel === "photos" ? (
-              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
-                <div className={panelSectionClass}>
-                  <p className={panelLabelClass}>Фотографии</p>
-                  {photos.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {photos.map((photo, index) => (
-                        <button
-                          key={photo.id}
-                          type="button"
-                          onClick={() => openLightbox(index)}
-                          className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)]"
-                        >
-                          <div className="overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
-                            <img
-                              src={photo.url.startsWith("http") ? photo.url : `${apiUrl}${photo.url}`}
-                              alt="Фото питомца"
-                              className="h-28 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-                              loading="lazy"
-                            />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm font-semibold text-[#8d6e63]">
-                      Фотографии пока не добавлены.
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {activePanel === "gifts" ? (
-              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
-                <div className={panelSectionClass}>
-                  <p className={panelLabelClass}>Подарки</p>
-                  <div className="max-h-[50vh] overflow-y-auto pr-1">
-                  {activeGifts.length > 0 ? (
-                    <div className="grid gap-2 text-sm text-[#6f6360]">
-                      {activeGifts.map((gift) => {
-                        const ownerPets = gift.owner?.pets ?? [];
-                        const ownerName =
-                          gift.owner?.login ?? gift.owner?.email ?? gift.owner?.id ?? "—";
-                        const ownerLabel =
-                          ownerPets.length > 0
-                            ? ownerPets.map((petItem) => petItem.name).join(", ")
-                            : ownerName;
-                        const expiresLabel = gift.expiresAt
-                          ? new Date(gift.expiresAt).toLocaleDateString()
-                          : null;
-                        const iconUrl = resolveGiftIconUrl(gift.gift);
-                        const fallbackIcon =
-                          "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
-                        return (
-                          <div
-                            key={gift.id}
-                            className="group relative flex gap-3 rounded-[22px] border border-white bg-white/90 p-3 transition hover:-translate-y-0.5 hover:border-[#fdf2e9] hover:bg-white"
-                          >
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[16px] bg-[#f8f9fa] shadow-inner">
-                              {iconUrl ? (
-                                <img
-                                  src={iconUrl ?? undefined}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                  onError={(event) => {
-                                    event.currentTarget.onerror = null;
-                                    event.currentTarget.src = fallbackIcon;
-                                  }}
-                                />
-                              ) : null}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="font-black text-[#5d4037]">{gift.gift.name}</p>
-                              </div>
-                              <p className="mt-1 text-xs font-semibold text-[#8d6e63]">
-                                От хозяина:{" "}
-                                {ownerPets.length > 0 ? (
-                                  <span className="inline-flex flex-wrap gap-1">
-                                    {ownerPets.map((petItem, index) => (
-                                      <span key={petItem.id} className="inline-flex items-center gap-1">
-                                        <a
-                                          href={`/pets/${petItem.id}`}
-                                          className="text-[#5d4037] underline decoration-[#d3a27f]/50 underline-offset-2 hover:text-[#111827]"
-                                        >
-                                          {petItem.name}
-                                        </a>
-                                        {index < ownerPets.length - 1 ? "," : null}
-                                      </span>
-                                    ))}
-                                  </span>
-                                ) : (
-                                  ownerName
-                                )}
-                              </p>
-                              {expiresLabel ? (
-                                <p className="text-xs font-semibold text-[#8d6e63]">
-                                  До: {expiresLabel}
-                                </p>
-                              ) : null}
-                            </div>
-                            <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-[18px] border border-white bg-white/95 p-3 text-xs font-semibold text-[#8d6e63] shadow-lg group-hover:block">
-                              <p className="font-black text-[#5d4037]">{gift.gift.name}</p>
-                              <p className="mt-1">От: {ownerLabel}</p>
-                              {expiresLabel ? <p className="mt-1">До: {expiresLabel}</p> : null}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-sm font-semibold text-[#8d6e63]">Пока нет подарков.</p>
-                  )}
-                </div>
-                </div>
-              </div>
-            ) : null}
-
-            {activePanel === "memorials" ? (
-              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
-                <div className={panelSectionClass}>
-                  <p className={panelLabelClass}>Мемориалы хозяина</p>
-                  {otherMemorials.length > 0 ? (
-                  <div className="max-h-[50vh] overflow-y-auto pr-1">
-                    <div className="grid gap-3">
-                      {otherMemorials.map((item) => {
-                        const photo = item.photos?.[0];
-                        const url = photo
-                          ? photo.url.startsWith("http")
-                            ? photo.url
-                            : `${apiUrl}${photo.url}`
-                          : null;
-                        return (
-                          <a
-                            key={item.id}
-                            href={`/pets/${item.id}`}
-                            className="group flex items-center gap-3 rounded-[22px] border border-white bg-white/90 px-3 py-2 transition hover:-translate-y-0.5 hover:border-[#fdf2e9]"
-                          >
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[16px] bg-[#f8f9fa] shadow-inner">
-                              {url ? (
-                                <img src={url} alt="" className="h-full w-full object-cover" />
-                              ) : null}
-                            </div>
-                            <div>
-                              <p className="text-sm font-black text-[#5d4037]">{item.name}</p>
-                              <p className="text-xs font-semibold text-[#8d6e63]">
-                                {formatDate(item.birthDate)}-{formatDate(item.deathDate)}
-                              </p>
-                            </div>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm font-semibold text-[#8d6e63]">
-                    Других мемориалов пока нет.
-                  </p>
-                )}
-                </div>
-              </div>
-            ) : null}
-
-            {isOwner && activePanel === "manage" ? (
-              <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
-                <div className={panelSectionClass}>
-                  <p className={panelLabelClass}>Управление</p>
-                  <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
-                    <p className={panelLabelClass}>
-                      {canExtendMemorial ? "Активен до" : "Срок действия"}
-                    </p>
-                    {canExtendMemorial ? (
-                      <p className="mt-1 text-lg font-black text-[#5d4037]">
-                        {activeUntilLabel}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-sm font-black leading-snug text-[#5d4037]">
-                        Ваш мемориал не имеет ограничения по времени
-                      </p>
-                    )}
-                  </div>
-                  {lifecycleError ? (
-                    <p className="text-xs font-semibold text-red-600">{lifecycleError}</p>
-                  ) : null}
-                  <div className="grid gap-2">
+                  <div className="group/control relative">
                     <button
                       type="button"
-                      onClick={() => router.push(`/create?edit=${id}`)}
-                      className={secondaryActionClass}
+                      onClick={() => togglePanel("photos")}
+                      aria-label="Фотографии"
+                      title="Фотографии"
+                      className={panelButtonClass(activePanel === "photos")}
                     >
-                      Редактировать домик
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <circle cx="9" cy="11" r="2" />
+                        <path d="M21 15l-4-4-4 4-3-3-5 5" />
+                      </svg>
                     </button>
-                    {canExtendMemorial ? (
+                    <span className={memorialControlTooltipClass}>
+                      Фотографии
+                    </span>
+                  </div>
+                  <div className="group/control relative">
+                    <button
+                      type="button"
+                      onClick={() => togglePanel("gifts")}
+                      aria-label="Подарки"
+                      title="Подарки"
+                      className={panelButtonClass(activePanel === "gifts")}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" />
+                      </svg>
+                    </button>
+                    <span className={memorialControlTooltipClass}>Подарки</span>
+                  </div>
+                  <div className="group/control relative">
+                    <button
+                      type="button"
+                      onClick={() => togglePanel("memorials")}
+                      aria-label="Другие мемориалы"
+                      title="Другие мемориалы"
+                      className={panelButtonClass(activePanel === "memorials")}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="8" cy="9" r="3" />
+                        <circle cx="16" cy="9" r="3" />
+                        <path d="M3 20c0-3 3-5 5-5" />
+                        <path d="M21 20c0-3-3-5-5-5" />
+                      </svg>
+                    </button>
+                    <span className={memorialControlTooltipClass}>
+                      Другие мемориалы
+                    </span>
+                  </div>
+                  {isOwner ? (
+                    <div className="group/control relative">
                       <button
                         type="button"
-                        onClick={openExtensionDialog}
-                        className={primaryActionClass}
+                        onClick={() => togglePanel("manage")}
+                        aria-label="Управление мемориалом"
+                        title="Управление мемориалом"
+                        className={panelButtonClass(activePanel === "manage")}
                       >
-                        Продлить
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.6}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+                        </svg>
                       </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={openDeleteDialog}
-                      disabled={deletingMemorial}
-                      className="w-1/2 justify-self-start rounded-[16px] border-2 border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {deletingMemorial ? "Удаление..." : "Удалить"}
-                    </button>
-                  </div>
+                      <span className={memorialControlTooltipClass}>
+                        Управление
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
 
-        <div className={giftButtonWrapClass}>
-          <div className="group/control relative">
-            <button
-              type="button"
-              onClick={toggleGiftPanel}
-              aria-label="Подарки"
-              title="Подарки"
-              className={`${giftButtonClass} ${
-                giftPanelOpen
-                  ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-                  : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="8" width="18" height="12" rx="2" />
-                <path d="M12 8v12" />
-                <path d="M3 12h18" />
-                <path d="M7 8c-1.5 0-2.5-1-2.5-2s1-2 2.5-2c1.5 0 3 2 3 4" />
-                <path d="M17 8c1.5 0 2.5-1 2.5-2s-1-2-2.5-2c-1.5 0-3 2-3 4" />
-              </svg>
-            </button>
-            <span className={memorialGiftTooltipClass}>Подарки</span>
-            {giftPanelOpen ? (
-              <div className={giftPanelClass}>
-                <div className={giftPanelInnerClass}>
-                  <div className="flex shrink-0 items-center justify-between gap-2">
-                    <div>
-                      <p className={panelLabelClass}>Подарки</p>
-                      <p className={isPortraitLayout ? "text-xs font-black text-[#5d4037]" : "text-sm font-black text-[#5d4037]"}>Сделать подарок</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={toggleGiftPanel}
-                      className={secondaryActionClass}
+                {activePanel === "info" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div
+                      className={`${panelSectionClass} text-sm text-[#6f6360]`}
                     >
-                      Закрыть
-                    </button>
-                  </div>
-                  <div className={giftFlowClass}>
-                    {!isPortraitLayout ? (
-                    <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-[#6f6360]">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={giftSlotsVisible}
-                          onChange={(event) => setGiftSlotsVisible(event.target.checked)}
-                          disabled={highlightSlots.length === 0}
-                        />
-                        Подсвечивать места для подарков
-                      </label>
-                      {highlightSlots.length === 0 ? (
-                        <p className="text-sm text-[#8d6e63]">Свободных мест нет.</p>
-                      ) : null}
-                    </div>
-                    ) : highlightSlots.length === 0 ? (
-                      <p className="text-[11px] font-semibold text-[#8d6e63]">Свободных мест нет.</p>
-                    ) : null}
-
-                    <div className={giftCatalogSectionClass}>
-                      <span>Подарок</span>
-                      <div className={giftCatalogGridClass}>
-                        {giftCatalogLoading ? (
-                          Array.from({ length: 8 }).map((_, index) => (
-                            <div
-                              key={`gift-skeleton-${index}`}
-                              className={giftSkeletonClass}
-                            >
-                              <div className={isPortraitLayout ? "aspect-square w-full rounded-[14px] bg-[#f7f1ee]" : "absolute inset-0 bg-[#f7f1ee]"} />
-                              <div className={isPortraitLayout ? "absolute bottom-1 left-1/2 h-6 w-6 -translate-x-1/2 rounded-full bg-[#eadfd9]" : "absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#eadfd9]"} />
-                            </div>
-                          ))
-                        ) : visibleGiftsWithSlots.length === 0 ? (
-                          <p className="text-sm text-[#8d6e63]">Нет доступных подарков.</p>
-                        ) : (
-                          visibleGiftsWithSlots.map((gift) => {
-                            const iconUrl = resolveGiftIconUrl(gift);
-                            const fallbackIcon =
-                              "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
-                            const giftDescription = getGiftDescription(gift);
-                            return (
-                              <button
-                                key={gift.id}
-                                type="button"
-                                onClick={() => handleSelectGift(gift.id)}
-                                onMouseEnter={(event) =>
-                                  showGiftCatalogTooltip(gift, event.currentTarget)
-                                }
-                                onMouseLeave={hideGiftCatalogTooltip}
-                                onFocus={(event) =>
-                                  showGiftCatalogTooltip(gift, event.currentTarget)
-                                }
-                                onBlur={hideGiftCatalogTooltip}
-                                aria-label={`${gift.name}. ${giftDescription}`}
-                                className={giftCardClass(selectedGiftId === gift.id)}
-                              >
-                                {iconUrl ? (
-                                  <img
-                                    src={iconUrl ?? undefined}
-                                    alt=""
-                                    className={isPortraitLayout ? "aspect-square w-full rounded-[14px] object-cover" : "h-full w-full rounded-[inherit] object-cover"}
-                                    loading="lazy"
-                                    onError={(event) => {
-                                      event.currentTarget.onerror = null;
-                                      event.currentTarget.src = fallbackIcon;
-                                    }}
-                                  />
-                                ) : null}
-                                <span className={isPortraitLayout ? "pointer-events-none absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[8px] font-black text-white shadow-md" : "pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md"}>
-                                  {gift.price}
-                                </span>
-                                <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
-                                  0
-                                </span>
-                              </button>
-                            );
-                          })
-                        )}
+                      <div>
+                        <p className={panelLabelClass}>Эпитафия</p>
+                        <p className="mt-2 text-sm font-semibold text-[#5d4037]">
+                          {pet.epitaph ?? "Без эпитафии"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={panelLabelClass}>История</p>
+                        <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6f6360]">
+                          {pet.story ?? "История пока не заполнена."}
+                        </p>
+                      </div>
+                      <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
+                        <div className="flex items-center justify-between text-xs font-semibold text-[#8d6e63]">
+                          <span className="font-black uppercase tracking-[0.16em] text-[#5d4037]">
+                            Чистота мемориала
+                          </span>
+                          <span>
+                            {dirtLevel}/{DIRT_SLOTS.length}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCleanDirt()}
+                          disabled={dirtLevel === 0}
+                          className={`mt-3 w-full ${primaryActionClass} ${
+                            dirtLevel === 0
+                              ? "cursor-not-allowed bg-[#d8cfc9] text-white/85 shadow-none"
+                              : ""
+                          }`}
+                        >
+                          Почистить мемориал
+                        </button>
                       </div>
                     </div>
+                  </div>
+                ) : null}
 
-                    {selectedGiftSupportsSize ? (
-                      <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
-                        Размер звезды
-                        <div className="flex flex-wrap gap-2">
-                          {starSizeOptions.map((option) => (
+                {activePanel === "photos" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div className={panelSectionClass}>
+                      <p className={panelLabelClass}>Фотографии</p>
+                      {photos.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {photos.map((photo, index) => (
                             <button
-                              key={option.id}
+                              key={photo.id}
                               type="button"
-                              onClick={() => setSelectedGiftSize(option.id)}
-                              className={`flex items-center gap-2 rounded-[18px] border-[3px] px-3 py-2 text-xs ${
-                                selectedGiftSize === option.id
-                                  ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
-                                  : "border-white bg-white text-[#8d6e63]"
-                              }`}
+                              onClick={() => openLightbox(index)}
+                              className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)]"
                             >
-                              <span className="text-sm font-black">{option.label}</span>
-                              <span className="text-[11px] text-[#adb5bd]">{option.helper}</span>
+                              <div className="overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
+                                <img
+                                  src={
+                                    photo.url.startsWith("http")
+                                      ? photo.url
+                                      : `${apiUrl}${photo.url}`
+                                  }
+                                  alt="Фото питомца"
+                                  className="h-28 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
+                                  loading="lazy"
+                                />
+                              </div>
                             </button>
                           ))}
                         </div>
-                      </div>
-                    ) : null}
+                      ) : (
+                        <p className="text-sm font-semibold text-[#8d6e63]">
+                          Фотографии пока не добавлены.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
 
-                    <div className={isPortraitLayout ? "grid grid-cols-[minmax(0,1fr)_minmax(7.35rem,0.9fr)] items-center gap-2 pb-1 pt-0.5" : "grid gap-2"}>
-                      <div className={isPortraitLayout ? "grid gap-1 text-xs font-semibold text-[#6f6360]" : "grid gap-2 text-sm font-semibold text-[#6f6360]"}>
-                        Срок подарка
-                        <div className="grid gap-1.5">
-                          <div className={isPortraitLayout ? "text-xs font-black text-[#5d4037]" : "text-sm font-black text-[#5d4037]"}>
-                            {selectedDuration ? `${selectedDuration} мес` : "Выберите срок"}
+                {activePanel === "gifts" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div className={panelSectionClass}>
+                      <p className={panelLabelClass}>Подарки</p>
+                      <div className="max-h-[50vh] overflow-y-auto pr-1">
+                        {activeGifts.length > 0 ? (
+                          <div className="grid gap-2 text-sm text-[#6f6360]">
+                            {activeGifts.map((gift) => {
+                              const ownerPets = gift.owner?.pets ?? [];
+                              const ownerName =
+                                gift.owner?.login ??
+                                gift.owner?.email ??
+                                gift.owner?.id ??
+                                "—";
+                              const ownerLabel =
+                                ownerPets.length > 0
+                                  ? ownerPets
+                                      .map((petItem) => petItem.name)
+                                      .join(", ")
+                                  : ownerName;
+                              const expiresLabel = gift.expiresAt
+                                ? new Date(gift.expiresAt).toLocaleDateString()
+                                : null;
+                              const iconUrl = resolveGiftIconUrl(gift.gift);
+                              const fallbackIcon =
+                                "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                              return (
+                                <div
+                                  key={gift.id}
+                                  className="group relative flex gap-3 rounded-[22px] border border-white bg-white/90 p-3 transition hover:-translate-y-0.5 hover:border-[#fdf2e9] hover:bg-white"
+                                >
+                                  <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[16px] bg-[#f8f9fa] shadow-inner">
+                                    {iconUrl ? (
+                                      <img
+                                        src={iconUrl ?? undefined}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                        loading="lazy"
+                                        onError={(event) => {
+                                          event.currentTarget.onerror = null;
+                                          event.currentTarget.src =
+                                            fallbackIcon;
+                                        }}
+                                      />
+                                    ) : null}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between">
+                                      <p className="font-black text-[#5d4037]">
+                                        {gift.gift.name}
+                                      </p>
+                                    </div>
+                                    <p className="mt-1 text-xs font-semibold text-[#8d6e63]">
+                                      От хозяина:{" "}
+                                      {ownerPets.length > 0 ? (
+                                        <span className="inline-flex flex-wrap gap-1">
+                                          {ownerPets.map((petItem, index) => (
+                                            <span
+                                              key={petItem.id}
+                                              className="inline-flex items-center gap-1"
+                                            >
+                                              <a
+                                                href={`/pets/${petItem.id}`}
+                                                className="text-[#5d4037] underline decoration-[#d3a27f]/50 underline-offset-2 hover:text-[#111827]"
+                                              >
+                                                {petItem.name}
+                                              </a>
+                                              {index < ownerPets.length - 1
+                                                ? ","
+                                                : null}
+                                            </span>
+                                          ))}
+                                        </span>
+                                      ) : (
+                                        ownerName
+                                      )}
+                                    </p>
+                                    {expiresLabel ? (
+                                      <p className="text-xs font-semibold text-[#8d6e63]">
+                                        До: {expiresLabel}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <div className="pointer-events-none absolute right-3 top-3 z-10 hidden w-48 rounded-[18px] border border-white bg-white/95 p-3 text-xs font-semibold text-[#8d6e63] shadow-lg group-hover:block">
+                                    <p className="font-black text-[#5d4037]">
+                                      {gift.gift.name}
+                                    </p>
+                                    <p className="mt-1">От: {ownerLabel}</p>
+                                    {expiresLabel ? (
+                                      <p className="mt-1">До: {expiresLabel}</p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <input
-                            type="range"
-                            min={0}
-                            max={DURATION_OPTIONS.length - 1}
-                            step={1}
-                            value={durationIndex}
-                            onChange={(event) => {
-                              const index = Number(event.target.value);
-                              setSelectedDuration(DURATION_OPTIONS[index] ?? DURATION_OPTIONS[0]);
-                            }}
-                            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9]"
-                          />
-                          <div className={isPortraitLayout ? "flex justify-between text-[9px] font-semibold text-[#adb5bd]" : "flex justify-between text-[11px] font-semibold text-[#adb5bd]"}>
-                            {DURATION_OPTIONS.map((value) => (
-                              <span key={value}>{value}м</span>
-                            ))}
+                        ) : (
+                          <p className="text-sm font-semibold text-[#8d6e63]">
+                            Пока нет подарков.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {activePanel === "memorials" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div className={panelSectionClass}>
+                      <p className={panelLabelClass}>Мемориалы хозяина</p>
+                      {otherMemorials.length > 0 ? (
+                        <div className="max-h-[50vh] overflow-y-auto pr-1">
+                          <div className="grid gap-3">
+                            {otherMemorials.map((item) => {
+                              const photo = item.photos?.[0];
+                              const url = photo
+                                ? photo.url.startsWith("http")
+                                  ? photo.url
+                                  : `${apiUrl}${photo.url}`
+                                : null;
+                              return (
+                                <a
+                                  key={item.id}
+                                  href={`/pets/${item.id}`}
+                                  className="group flex items-center gap-3 rounded-[22px] border border-white bg-white/90 px-3 py-2 transition hover:-translate-y-0.5 hover:border-[#fdf2e9]"
+                                >
+                                  <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[16px] bg-[#f8f9fa] shadow-inner">
+                                    {url ? (
+                                      <img
+                                        src={url}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : null}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-black text-[#5d4037]">
+                                      {item.name}
+                                    </p>
+                                    <p className="text-xs font-semibold text-[#8d6e63]">
+                                      {formatDate(item.birthDate)}-
+                                      {formatDate(item.deathDate)}
+                                    </p>
+                                  </div>
+                                </a>
+                              );
+                            })}
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        <p className="text-sm font-semibold text-[#8d6e63]">
+                          Других мемориалов пока нет.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
 
-                      <button
-                        type="button"
-                        onClick={handlePlaceGift}
-                        className={`${
-                          selectedGiftId && selectedSlot && selectedDuration && !giftLoading
-                            ? primaryActionClass
-                            : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
-                        } ${isPortraitLayout ? "flex !min-h-[2.4rem] self-center flex-col items-center justify-center !px-2 !py-1 text-center !text-[10px] !font-black !leading-[1.05] !tracking-[0.045em]" : "px-4 py-3"}`}
-                        disabled={!selectedGiftId || !selectedSlot || !selectedDuration || giftLoading}
-                      >
-                        {giftLoading
-                          ? "Покупка..."
-                          : selectedGift && totalPrice !== null
-                            ? isPortraitLayout
-                              ? (
+                {isOwner && activePanel === "manage" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div className={panelSectionClass}>
+                      <p className={panelLabelClass}>Управление</p>
+                      <div className="rounded-[22px] border-[3px] border-white bg-[#fcf8f5] p-3 shadow-inner">
+                        <p className={panelLabelClass}>
+                          {canExtendMemorial ? "Активен до" : "Срок действия"}
+                        </p>
+                        {canExtendMemorial ? (
+                          <p className="mt-1 text-lg font-black text-[#5d4037]">
+                            {activeUntilLabel}
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-sm font-black leading-snug text-[#5d4037]">
+                            Ваш мемориал не имеет ограничения по времени
+                          </p>
+                        )}
+                      </div>
+                      {lifecycleError ? (
+                        <p className="text-xs font-semibold text-red-600">
+                          {lifecycleError}
+                        </p>
+                      ) : null}
+                      <div className="grid gap-2">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/create?edit=${id}`)}
+                          className={secondaryActionClass}
+                        >
+                          Редактировать домик
+                        </button>
+                        {canExtendMemorial ? (
+                          <button
+                            type="button"
+                            onClick={openExtensionDialog}
+                            className={primaryActionClass}
+                          >
+                            Продлить
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={openDeleteDialog}
+                          disabled={deletingMemorial}
+                          className="w-1/2 justify-self-start rounded-[16px] border-2 border-red-100 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {deletingMemorial ? "Удаление..." : "Удалить"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <div className={giftButtonWrapClass}>
+              <div className="group/control relative">
+                <button
+                  type="button"
+                  onClick={toggleGiftPanel}
+                  aria-label="Подарки"
+                  title="Подарки"
+                  className={`${giftButtonClass} ${
+                    giftPanelOpen
+                      ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
+                      : "border-white bg-white/90 text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
+                  }`}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="8" width="18" height="12" rx="2" />
+                    <path d="M12 8v12" />
+                    <path d="M3 12h18" />
+                    <path d="M7 8c-1.5 0-2.5-1-2.5-2s1-2 2.5-2c1.5 0 3 2 3 4" />
+                    <path d="M17 8c1.5 0 2.5-1 2.5-2s-1-2-2.5-2c-1.5 0-3 2-3 4" />
+                  </svg>
+                </button>
+                <span className={memorialGiftTooltipClass}>Подарки</span>
+                {giftPanelOpen ? (
+                  <div className={giftPanelClass}>
+                    <div className={giftPanelInnerClass}>
+                      <div className="flex shrink-0 items-center justify-between gap-2">
+                        <div>
+                          <p className={panelLabelClass}>Подарки</p>
+                          <p
+                            className={
+                              isPortraitLayout
+                                ? "text-xs font-black text-[#5d4037]"
+                                : "text-sm font-black text-[#5d4037]"
+                            }
+                          >
+                            Сделать подарок
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={toggleGiftPanel}
+                          className={secondaryActionClass}
+                        >
+                          Закрыть
+                        </button>
+                      </div>
+                      <div className={giftFlowClass}>
+                        {!isPortraitLayout ? (
+                          <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-[#6f6360]">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4"
+                                checked={giftSlotsVisible}
+                                onChange={(event) =>
+                                  setGiftSlotsVisible(event.target.checked)
+                                }
+                                disabled={highlightSlots.length === 0}
+                              />
+                              Подсвечивать места для подарков
+                            </label>
+                            {highlightSlots.length === 0 ? (
+                              <p className="text-sm text-[#8d6e63]">
+                                Свободных мест нет.
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : highlightSlots.length === 0 ? (
+                          <p className="text-[11px] font-semibold text-[#8d6e63]">
+                            Свободных мест нет.
+                          </p>
+                        ) : null}
+
+                        <div className={giftCatalogSectionClass}>
+                          <span>Подарок</span>
+                          <div className={giftCatalogGridClass}>
+                            {giftCatalogLoading ? (
+                              Array.from({ length: 8 }).map((_, index) => (
+                                <div
+                                  key={`gift-skeleton-${index}`}
+                                  className={giftSkeletonClass}
+                                >
+                                  <div
+                                    className={
+                                      isPortraitLayout
+                                        ? "aspect-square w-full rounded-[14px] bg-[#f7f1ee]"
+                                        : "absolute inset-0 bg-[#f7f1ee]"
+                                    }
+                                  />
+                                  <div
+                                    className={
+                                      isPortraitLayout
+                                        ? "absolute bottom-1 left-1/2 h-6 w-6 -translate-x-1/2 rounded-full bg-[#eadfd9]"
+                                        : "absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#eadfd9]"
+                                    }
+                                  />
+                                </div>
+                              ))
+                            ) : visibleGiftsWithSlots.length === 0 ? (
+                              <p className="text-sm text-[#8d6e63]">
+                                Нет доступных подарков.
+                              </p>
+                            ) : (
+                              visibleGiftsWithSlots.map((gift) => {
+                                const iconUrl = resolveGiftIconUrl(gift);
+                                const fallbackIcon =
+                                  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%23e2e8f0'/><path d='M64 28l10 20 22 3-16 15 4 22-20-10-20 10 4-22-16-15 22-3 10-20z' fill='%2394a3b8'/></svg>";
+                                const giftDescription =
+                                  getGiftDescription(gift);
+                                return (
+                                  <button
+                                    key={gift.id}
+                                    type="button"
+                                    onClick={() => handleSelectGift(gift.id)}
+                                    onMouseEnter={(event) =>
+                                      showGiftCatalogTooltip(
+                                        gift,
+                                        event.currentTarget,
+                                      )
+                                    }
+                                    onMouseLeave={hideGiftCatalogTooltip}
+                                    onFocus={(event) =>
+                                      showGiftCatalogTooltip(
+                                        gift,
+                                        event.currentTarget,
+                                      )
+                                    }
+                                    onBlur={hideGiftCatalogTooltip}
+                                    aria-label={`${gift.name}. ${giftDescription}`}
+                                    className={giftCardClass(
+                                      selectedGiftId === gift.id,
+                                    )}
+                                  >
+                                    {iconUrl ? (
+                                      <img
+                                        src={iconUrl ?? undefined}
+                                        alt=""
+                                        className={
+                                          isPortraitLayout
+                                            ? "aspect-square w-full rounded-[14px] object-cover"
+                                            : "h-full w-full rounded-[inherit] object-cover"
+                                        }
+                                        loading="lazy"
+                                        onError={(event) => {
+                                          event.currentTarget.onerror = null;
+                                          event.currentTarget.src =
+                                            fallbackIcon;
+                                        }}
+                                      />
+                                    ) : null}
+                                    <span
+                                      className={
+                                        isPortraitLayout
+                                          ? "pointer-events-none absolute bottom-1 left-1/2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-[#111827] text-[8px] font-black text-white shadow-md"
+                                          : "pointer-events-none absolute bottom-0 left-1/2 flex h-7 w-7 -translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full bg-[#111827] text-[9px] font-black text-white shadow-md"
+                                      }
+                                    >
+                                      {gift.price}
+                                    </span>
+                                    <span className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-white/60 text-[10px] font-semibold text-[#6f6360] opacity-0">
+                                      0
+                                    </span>
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+
+                        {selectedGiftSupportsSize ? (
+                          <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">
+                            Размер звезды
+                            <div className="flex flex-wrap gap-2">
+                              {starSizeOptions.map((option) => (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  onClick={() => setSelectedGiftSize(option.id)}
+                                  className={`flex items-center gap-2 rounded-[18px] border-[3px] px-3 py-2 text-xs ${
+                                    selectedGiftSize === option.id
+                                      ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                                      : "border-white bg-white text-[#8d6e63]"
+                                  }`}
+                                >
+                                  <span className="text-sm font-black">
+                                    {option.label}
+                                  </span>
+                                  <span className="text-[11px] text-[#adb5bd]">
+                                    {option.helper}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <div
+                          className={
+                            isPortraitLayout
+                              ? "grid grid-cols-[minmax(0,1fr)_minmax(7.35rem,0.9fr)] items-center gap-2 pb-1 pt-0.5"
+                              : "grid gap-2"
+                          }
+                        >
+                          <div
+                            className={
+                              isPortraitLayout
+                                ? "grid gap-1 text-xs font-semibold text-[#6f6360]"
+                                : "grid gap-2 text-sm font-semibold text-[#6f6360]"
+                            }
+                          >
+                            Срок подарка
+                            <div className="grid gap-1.5">
+                              <div
+                                className={
+                                  isPortraitLayout
+                                    ? "text-xs font-black text-[#5d4037]"
+                                    : "text-sm font-black text-[#5d4037]"
+                                }
+                              >
+                                {selectedDuration
+                                  ? `${selectedDuration} мес`
+                                  : "Выберите срок"}
+                              </div>
+                              <input
+                                type="range"
+                                min={0}
+                                max={DURATION_OPTIONS.length - 1}
+                                step={1}
+                                value={durationIndex}
+                                onChange={(event) => {
+                                  const index = Number(event.target.value);
+                                  setSelectedDuration(
+                                    DURATION_OPTIONS[index] ??
+                                      DURATION_OPTIONS[0],
+                                  );
+                                }}
+                                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9]"
+                              />
+                              <div
+                                className={
+                                  isPortraitLayout
+                                    ? "flex justify-between text-[9px] font-semibold text-[#adb5bd]"
+                                    : "flex justify-between text-[11px] font-semibold text-[#adb5bd]"
+                                }
+                              >
+                                {DURATION_OPTIONS.map((value) => (
+                                  <span key={value}>{value}м</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handlePlaceGift}
+                            className={`${
+                              selectedGiftId &&
+                              selectedSlot &&
+                              selectedDuration &&
+                              !giftLoading
+                                ? primaryActionClass
+                                : "cursor-not-allowed rounded-[22px] bg-[#d8cfc9] text-sm font-black uppercase tracking-[0.14em] text-white/85 shadow-none"
+                            } ${isPortraitLayout ? "flex !min-h-[2.4rem] self-center flex-col items-center justify-center !px-2 !py-1 text-center !text-[10px] !font-black !leading-[1.05] !tracking-[0.045em]" : "px-4 py-3"}`}
+                            disabled={
+                              !selectedGiftId ||
+                              !selectedSlot ||
+                              !selectedDuration ||
+                              giftLoading
+                            }
+                          >
+                            {giftLoading ? (
+                              "Покупка..."
+                            ) : selectedGift && totalPrice !== null ? (
+                              isPortraitLayout ? (
                                 <>
                                   <span>Подарить</span>
-                                  <span className="mt-0.5">{totalPrice} монет</span>
+                                  <span className="mt-0.5">
+                                    {totalPrice} монет
+                                  </span>
                                 </>
+                              ) : (
+                                `Подарить (${totalPrice} монет)`
                               )
-                              : `Подарить (${totalPrice} монет)`
-                            : "Подарить"}
-                      </button>
-                    </div>
+                            ) : (
+                              "Подарить"
+                            )}
+                          </button>
+                        </div>
 
-                    <ErrorToast message={giftError} onClose={() => setGiftError(null)} offset={0} />
-                    <ErrorToast
-                      message={giftSuccess}
-                      onClose={() => setGiftSuccess(null)}
-                      offset={88}
-                      variant="success"
-                    />
+                        <ErrorToast
+                          message={giftError}
+                          onClose={() => setGiftError(null)}
+                          offset={0}
+                        />
+                        <ErrorToast
+                          message={giftSuccess}
+                          onClose={() => setGiftSuccess(null)}
+                          offset={88}
+                          variant="success"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-        </div>
+            </div>
           </>
         ) : null}
       </div>
@@ -3312,9 +3858,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),transparent_35%,rgba(214,190,176,0.14)_100%)]" />
             <div className={floatingTitleWrapClass}>
               <div className={floatingTitleCardClass}>
-                <div className={floatingTitleKickerClass}>
-                  Редактирование
-                </div>
+                <div className={floatingTitleKickerClass}>Редактирование</div>
                 <div className={editFloatingTitleNameClass}>{pet.name}</div>
                 <div className={floatingTitleMetaClass}>
                   Меняется только домик и его детали
@@ -3323,13 +3867,37 @@ export default function PetClient({ id, mode = "view" }: Props) {
             </div>
 
             <div className={editEditorPanelClass}>
-              <div className={isPortraitLayout ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f7f1ee]" : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"}>
-                <div className={isPortraitLayout ? "px-2 py-1" : "border-b border-[#eadfd9] px-4 py-3"}>
+              <div
+                className={
+                  isPortraitLayout
+                    ? "flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f7f1ee]"
+                    : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-white/70 bg-[#f7f1ee]/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_10px_24px_rgba(126,102,93,0.08)]"
+                }
+              >
+                <div
+                  className={
+                    isPortraitLayout
+                      ? "px-2 py-1"
+                      : "border-b border-[#eadfd9] px-4 py-3"
+                  }
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className={isPortraitLayout ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]" : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"}>
+                    <h3
+                      className={
+                        isPortraitLayout
+                          ? "text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]"
+                          : "text-[11px] font-black uppercase tracking-[0.24em] text-[#8d6e63]"
+                      }
+                    >
                       Редактор мемориала
                     </h3>
-                    <span className={isPortraitLayout ? "rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]" : "rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"}>
+                    <span
+                      className={
+                        isPortraitLayout
+                          ? "rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3bceac]"
+                          : "rounded-full bg-white/90 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#3bceac]"
+                      }
+                    >
                       Только оформление
                     </span>
                   </div>
@@ -3338,7 +3906,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   <div className={editTabRailClass}>
                     {appearanceTabs.map((tab) => {
                       const isActive = appearanceTab === tab.id;
-                      const isTooltipVisible = appearanceTooltipTabId === tab.id;
+                      const isTooltipVisible =
+                        appearanceTooltipTabId === tab.id;
                       const description = APPEARANCE_TAB_DESCRIPTIONS[tab.id];
                       return (
                         <div key={tab.id} className="relative">
@@ -3355,7 +3924,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             onMouseLeave={() => {
                               clearAppearanceTooltipTimer();
                               setAppearanceTooltipTabId((prev) =>
-                                prev === tab.id ? null : prev
+                                prev === tab.id ? null : prev,
                               );
                             }}
                             onFocus={() => {
@@ -3365,7 +3934,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             onBlur={() => {
                               clearAppearanceTooltipTimer();
                               setAppearanceTooltipTabId((prev) =>
-                                prev === tab.id ? null : prev
+                                prev === tab.id ? null : prev,
                               );
                             }}
                             aria-label={tab.label}
@@ -3377,8 +3946,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           </button>
                           {isTooltipVisible && !isPortraitLayout ? (
                             <div className="pointer-events-none absolute left-full top-1/2 z-30 ml-4 w-56 -translate-y-1/2 rounded-xl border border-[#eadfd9] bg-white/95 px-3 py-2 text-[11px] text-[#6f6360] shadow-lg">
-                              <div className="font-semibold text-[#5d4037]">{tab.label}</div>
-                              <div className="mt-1 text-[#8d6e63]">{description}</div>
+                              <div className="font-semibold text-[#5d4037]">
+                                {tab.label}
+                              </div>
+                              <div className="mt-1 text-[#8d6e63]">
+                                {description}
+                              </div>
                             </div>
                           ) : null}
                         </div>
@@ -3404,11 +3977,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                       selectedHouseBaseId,
                                       (baseId) => {
                                         const nextVariant =
-                                          houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
-                                        updateAppearanceDraft("houseId", nextVariant);
+                                          houseVariantGroup
+                                            .defaultVariantByBase[baseId] ??
+                                          baseId;
+                                        updateAppearanceDraft(
+                                          "houseId",
+                                          nextVariant,
+                                        );
                                         requestAppearanceFocus("dom_slot");
                                       },
-                                      "house"
+                                      "house",
                                     )}
                                   </div>
                                 </div>
@@ -3427,21 +4005,27 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                           houseTextureOptions,
                                           appearanceDraft.houseId,
                                           (variantId) => {
-                                            updateAppearanceDraft("houseId", variantId);
+                                            updateAppearanceDraft(
+                                              "houseId",
+                                              variantId,
+                                            );
                                             requestAppearanceFocus("dom_slot");
                                           },
-                                          true
+                                          true,
                                         )
                                       : renderAppearanceOptionGrid(
                                           "house-texture",
                                           houseTextureOptions,
                                           appearanceDraft.houseId,
                                           (variantId) => {
-                                            updateAppearanceDraft("houseId", variantId);
+                                            updateAppearanceDraft(
+                                              "houseId",
+                                              variantId,
+                                            );
                                             requestAppearanceFocus("dom_slot");
                                           },
                                           "house-texture",
-                                          "grid grid-cols-1 place-items-center gap-1"
+                                          "grid grid-cols-1 place-items-center gap-1",
                                         )}
                                   </div>
                                 </div>
@@ -3458,11 +4042,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 selectedHouseBaseId,
                                 (baseId) => {
                                   const nextVariant =
-                                    houseVariantGroup.defaultVariantByBase[baseId] ?? baseId;
+                                    houseVariantGroup.defaultVariantByBase[
+                                      baseId
+                                    ] ?? baseId;
                                   updateAppearanceDraft("houseId", nextVariant);
                                   requestAppearanceFocus("dom_slot");
                                 },
-                                "house"
+                                "house",
                               )}
                             </div>
                           )}
@@ -3475,7 +4061,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           (optionId) => {
                             updateAppearanceDraft("roofId", optionId);
                             requestAppearanceFocus(houseSlots.roof ?? null);
-                          }
+                          },
                         )
                       ) : appearanceTab === "wall" ? (
                         renderAppearanceOptionGrid(
@@ -3485,7 +4071,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           (optionId) => {
                             updateAppearanceDraft("wallId", optionId);
                             requestAppearanceFocus(houseSlots.wall ?? null);
-                          }
+                          },
                         )
                       ) : appearanceTab === "sign" ? (
                         renderAppearanceOptionGrid(
@@ -3495,7 +4081,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           (optionId) => {
                             updateAppearanceDraft("signId", optionId);
                             requestAppearanceFocus(houseSlots.sign ?? null);
-                          }
+                          },
                         )
                       ) : appearanceTab === "frameLeft" ? (
                         renderAppearanceOptionGrid(
@@ -3504,8 +4090,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           appearanceDraft.frameLeftId,
                           (optionId) => {
                             updateAppearanceDraft("frameLeftId", optionId);
-                            requestAppearanceFocus(houseSlots.frameLeft ?? null);
-                          }
+                            requestAppearanceFocus(
+                              houseSlots.frameLeft ?? null,
+                            );
+                          },
                         )
                       ) : appearanceTab === "frameRight" ? (
                         renderAppearanceOptionGrid(
@@ -3514,8 +4102,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           appearanceDraft.frameRightId,
                           (optionId) => {
                             updateAppearanceDraft("frameRightId", optionId);
-                            requestAppearanceFocus(houseSlots.frameRight ?? null);
-                          }
+                            requestAppearanceFocus(
+                              houseSlots.frameRight ?? null,
+                            );
+                          },
                         )
                       ) : appearanceTab === "mat" ? (
                         renderAppearanceOptionGrid(
@@ -3525,7 +4115,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           (optionId) => {
                             updateAppearanceDraft("matId", optionId);
                             requestAppearanceFocus(houseSlots.mat ?? null);
-                          }
+                          },
                         )
                       ) : appearanceTab === "bowlFood" ? (
                         renderAppearanceOptionGrid(
@@ -3535,7 +4125,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           (optionId) => {
                             updateAppearanceDraft("bowlFoodId", optionId);
                             requestAppearanceFocus(houseSlots.bowlFood ?? null);
-                          }
+                          },
                         )
                       ) : appearanceTab === "bowlWater" ? (
                         renderAppearanceOptionGrid(
@@ -3544,22 +4134,32 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           appearanceDraft.bowlWaterId,
                           (optionId) => {
                             updateAppearanceDraft("bowlWaterId", optionId);
-                            requestAppearanceFocus(houseSlots.bowlWater ?? null);
-                          }
+                            requestAppearanceFocus(
+                              houseSlots.bowlWater ?? null,
+                            );
+                          },
                         )
                       ) : null}
 
                       {appearanceColorField ? (
                         <div className="mx-auto mt-4 grid w-full max-w-[440px] gap-3 rounded-xl border border-[#eadfd9] bg-white p-3 sm:max-w-[520px]">
-                          <div className="text-sm font-semibold text-[#5d4037]">Цвет детали</div>
+                          <div className="text-sm font-semibold text-[#5d4037]">
+                            Цвет детали
+                          </div>
                           <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
                             {colorPalette.map((color) => {
-                              const isActive = appearanceDraft[appearanceColorField] === color;
+                              const isActive =
+                                appearanceDraft[appearanceColorField] === color;
                               return (
                                 <button
                                   key={color}
                                   type="button"
-                                  onClick={() => updateAppearanceDraft(appearanceColorField, color)}
+                                  onClick={() =>
+                                    updateAppearanceDraft(
+                                      appearanceColorField,
+                                      color,
+                                    )
+                                  }
                                   className={`h-10 w-full rounded-xl border-2 transition ${
                                     isActive
                                       ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
@@ -3583,30 +4183,41 @@ export default function PetClient({ id, mode = "view" }: Props) {
             {isPortraitLayout ? (
               <div className="pointer-events-auto absolute left-0 right-0 top-[calc(0.55rem+env(safe-area-inset-top))] z-[95]">
                 <div className="relative flex h-11 items-start justify-center px-2">
-                <button
-                  type="button"
-                  onClick={openMobileEditActions}
-                  className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
-                >
-                  Сохранить
-                </button>
-                <button
-                  type="button"
-                  onClick={openMobileEditMenu}
-                  className="absolute right-2 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
-                  aria-label="Меню"
-                  title="Меню"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                    <path d="M5 7h14M5 12h14M5 17h14" />
-                  </svg>
-                </button>
+                  <button
+                    type="button"
+                    onClick={openMobileEditActions}
+                    className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openMobileEditMenu}
+                    className="absolute right-2 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
+                    aria-label="Меню"
+                    title="Меню"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                    >
+                      <path d="M5 7h14M5 12h14M5 17h14" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             ) : (
               <>
                 <div className="pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] left-6">
-                  <button type="button" onClick={closeEditDialog} className={editCancelButtonClass}>
+                  <button
+                    type="button"
+                    onClick={closeEditDialog}
+                    className={editCancelButtonClass}
+                  >
                     Отмена
                   </button>
                 </div>
@@ -3637,7 +4248,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
               />
               <div
                 className={`relative grid w-full max-w-sm gap-2 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-                  mobileEditMenuVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                  mobileEditMenuVisible
+                    ? "translate-y-0 scale-100"
+                    : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3 rounded-[22px] bg-[#fffcf9] px-4 py-3">
@@ -3657,25 +4270,53 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     ×
                   </button>
                 </div>
-                <button type="button" onClick={() => navigateFromMobileEditMenu(`/pets/${id}`)} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu(`/pets/${id}`)}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Мемориал
                 </button>
-                <button type="button" onClick={() => navigateFromMobileEditMenu("/my-pets")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu("/my-pets")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Мои питомцы
                 </button>
-                <button type="button" onClick={() => navigateFromMobileEditMenu("/map")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu("/map")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Карта
                 </button>
-                <button type="button" onClick={() => navigateFromMobileEditMenu("/profile")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu("/profile")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Профиль
                 </button>
-                <button type="button" onClick={() => navigateFromMobileEditMenu("/news")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu("/news")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Новости
                 </button>
-                <button type="button" onClick={() => navigateFromMobileEditMenu("/about")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu("/about")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   О проекте
                 </button>
-                <button type="button" onClick={() => navigateFromMobileEditMenu("/charity")} className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]">
+                <button
+                  type="button"
+                  onClick={() => navigateFromMobileEditMenu("/charity")}
+                  className="rounded-[18px] bg-[#fffcf9] px-4 py-3 text-left text-sm font-black uppercase tracking-[0.12em] text-[#5d4037]"
+                >
                   Благотворительность
                 </button>
               </div>
@@ -3696,7 +4337,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
               />
               <div
                 className={`relative grid w-full max-w-sm gap-3 rounded-[28px] border-[3px] border-white bg-[#f7f1ee] p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-                  mobileEditActionsVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                  mobileEditActionsVisible
+                    ? "translate-y-0 scale-100"
+                    : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="rounded-[22px] bg-[#fffcf9] px-4 py-3">
@@ -3745,11 +4388,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
               />
               <div
                 className={`relative w-full max-w-5xl max-h-[85vh] overflow-y-auto rounded-3xl border border-[#eadfd9] bg-white p-6 shadow-2xl transition-transform duration-200 ${
-                  appearanceReviewVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+                  appearanceReviewVisible
+                    ? "translate-y-0 scale-100"
+                    : "translate-y-4 scale-95"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-[#5d4037]">Проверка мемориала</h3>
+                  <h3 className="text-lg font-semibold text-[#5d4037]">
+                    Проверка мемориала
+                  </h3>
                   <button
                     type="button"
                     className="rounded-2xl border border-[#eadfd9] px-3 py-2 text-sm font-semibold text-[#6f6360] transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
@@ -3774,7 +4421,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           <div className="text-[11px] font-black uppercase tracking-[0.14em] text-[#c2a79a]">
                             {item.label}
                           </div>
-                          <div className="mt-1 font-semibold text-[#5d4037]">{item.value}</div>
+                          <div className="mt-1 font-semibold text-[#5d4037]">
+                            {item.value}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -3782,7 +4431,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
 
                   <div className="grid gap-3">
                     <MemorialPreview
-                      terrainUrl={resolveEnvironmentModel(pet.memorial?.environmentId, "auto")}
+                      terrainUrl={resolveEnvironmentModel(
+                        pet.memorial?.environmentId,
+                        "auto",
+                      )}
                       terrainId={pet.memorial?.environmentId ?? null}
                       houseUrl={resolveHouseModel(effectiveHouseId)}
                       houseId={effectiveHouseId}
@@ -3802,12 +4454,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
                     />
                     <div className="rounded-2xl border border-[#eadfd9] bg-white p-5">
                       <div className="grid gap-3 text-sm text-[#6f6360]">
-                        <p className="font-semibold text-[#5d4037]">Сохранение изменений</p>
+                        <p className="font-semibold text-[#5d4037]">
+                          Сохранение изменений
+                        </p>
                         <p className="text-xs text-[#8d6e63]">
-                          Будут обновлены только домик и его детали. Остальные данные мемориала не меняются.
+                          Будут обновлены только домик и его детали. Остальные
+                          данные мемориала не меняются.
                         </p>
                         {appearanceError ? (
-                          <p className="text-xs font-semibold text-red-600">{appearanceError}</p>
+                          <p className="text-xs font-semibold text-red-600">
+                            {appearanceError}
+                          </p>
                         ) : null}
                         <div className="flex flex-wrap justify-end gap-2">
                           <button
@@ -3830,7 +4487,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             className="group inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
                             disabled={savingAppearance}
                           >
-                            {savingAppearance ? "Сохраняем..." : "Сохранить изменения"}
+                            {savingAppearance
+                              ? "Сохраняем..."
+                              : "Сохранить изменения"}
                           </button>
                         </div>
                       </div>
@@ -3857,66 +4516,70 @@ export default function PetClient({ id, mode = "view" }: Props) {
           />
           <div
             className={`relative w-full max-w-lg rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-              extensionDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+              extensionDialogVisible
+                ? "translate-y-0 scale-100"
+                : "translate-y-4 scale-95"
             }`}
           >
             <div className={panelSectionClass}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className={panelLabelClass}>
-                  Продление
-                </p>
-                <h3 className="mt-1 text-lg font-black text-[#5d4037]">
-                  Выберите срок
-                </h3>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className={panelLabelClass}>Продление</p>
+                  <h3 className="mt-1 text-lg font-black text-[#5d4037]">
+                    Выберите срок
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className={secondaryActionClass}
+                  onClick={closeExtensionDialog}
+                >
+                  Закрыть
+                </button>
               </div>
+              <p className="mt-2 text-sm font-semibold text-[#8d6e63]">
+                Текущий срок: {activeUntilLabel}. Баланс:{" "}
+                {walletLoading ? "Загрузка..." : (walletBalance ?? "—")} монет
+              </p>
+              <div className="mt-4 grid gap-2">
+                {extensionPlans.map((plan) => {
+                  const isSelected = plan.years === selectedExtensionYears;
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSelectedExtensionYears(plan.years)}
+                      className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
+                        isSelected
+                          ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                          : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
+                      }`}
+                    >
+                      <span className="font-black">{plan.label}</span>
+                      <span className="font-semibold text-[#8d6e63]">
+                        {plan.price} монет
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {lifecycleError ? (
+                <p className="mt-3 text-xs font-semibold text-red-600">
+                  {lifecycleError}
+                </p>
+              ) : null}
               <button
                 type="button"
-                className={secondaryActionClass}
-                onClick={closeExtensionDialog}
+                onClick={() => handleExtendMemorial(selectedExtensionYears)}
+                disabled={extendingMemorial || !canExtendMemorial}
+                className={`mt-5 w-full ${primaryActionClass}`}
               >
-                Закрыть
+                {extendingMemorial
+                  ? "Продление..."
+                  : selectedExtensionPlan.years === 0
+                    ? `Сделать навсегда • ${selectedExtensionPlan.price} монет`
+                    : `Продлить на ${selectedExtensionPlan.label} • ${selectedExtensionPlan.price} монет`}
               </button>
-            </div>
-            <p className="mt-2 text-sm font-semibold text-[#8d6e63]">
-              Текущий срок: {activeUntilLabel}. Баланс:{" "}
-              {walletLoading ? "Загрузка..." : walletBalance ?? "—"} монет
-            </p>
-            <div className="mt-4 grid gap-2">
-              {extensionPlans.map((plan) => {
-                const isSelected = plan.years === selectedExtensionYears;
-                return (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => setSelectedExtensionYears(plan.years)}
-                    className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
-                      isSelected
-                        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
-                        : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
-                    }`}
-                  >
-                    <span className="font-black">{plan.label}</span>
-                    <span className="font-semibold text-[#8d6e63]">{plan.price} монет</span>
-                  </button>
-                );
-              })}
-            </div>
-            {lifecycleError ? (
-              <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => handleExtendMemorial(selectedExtensionYears)}
-              disabled={extendingMemorial || !canExtendMemorial}
-              className={`mt-5 w-full ${primaryActionClass}`}
-            >
-              {extendingMemorial
-                ? "Продление..."
-                : selectedExtensionPlan.years === 0
-                  ? `Сделать навсегда • ${selectedExtensionPlan.price} монет`
-                  : `Продлить на ${selectedExtensionPlan.label} • ${selectedExtensionPlan.price} монет`}
-            </button>
             </div>
           </div>
         </div>
@@ -3936,62 +4599,70 @@ export default function PetClient({ id, mode = "view" }: Props) {
           />
           <div
             className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-              deleteDialogVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+              deleteDialogVisible
+                ? "translate-y-0 scale-100"
+                : "translate-y-4 scale-95"
             }`}
           >
             <div className={panelSectionClass}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-red-400">
-                  Удаление
-                </p>
-                <h3 className="mt-1 text-lg font-black text-[#5d4037]">
-                  Подтвердите действие
-                </h3>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-red-400">
+                    Удаление
+                  </p>
+                  <h3 className="mt-1 text-lg font-black text-[#5d4037]">
+                    Подтвердите действие
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className={secondaryActionClass}
+                  onClick={closeDeleteDialog}
+                >
+                  Закрыть
+                </button>
               </div>
-              <button
-                type="button"
-                className={secondaryActionClass}
-                onClick={closeDeleteDialog}
-              >
-                Закрыть
-              </button>
-            </div>
-            <p className="mt-3 text-sm font-semibold leading-relaxed text-[#8d6e63]">
-              Мемориал исчезнет из списков и карты, но данные останутся в базе. Для
-              подтверждения введите имя:{" "}
-              <span className="font-black text-[#5d4037]">{pet.name}</span>
-            </p>
-            <input
-              type="text"
-              value={deleteConfirmationName}
-              onChange={(event) => setDeleteConfirmationName(event.target.value)}
-              className={isPortraitLayout
-                ? "mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"
-                : "mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"}
-              placeholder={pet.name}
-              autoComplete="off"
-            />
-            {lifecycleError ? (
-              <p className="mt-3 text-xs font-semibold text-red-600">{lifecycleError}</p>
-            ) : null}
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeDeleteDialog}
-                className={secondaryActionClass}
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteMemorial}
-                disabled={!canConfirmDelete}
-                className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-all hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:shadow-none"
-              >
-                {deletingMemorial ? "Удаление..." : "Удалить"}
-              </button>
-            </div>
+              <p className="mt-3 text-sm font-semibold leading-relaxed text-[#8d6e63]">
+                Мемориал исчезнет из списков и карты, но данные останутся в
+                базе. Для подтверждения введите имя:{" "}
+                <span className="font-black text-[#5d4037]">{pet.name}</span>
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmationName}
+                onChange={(event) =>
+                  setDeleteConfirmationName(event.target.value)
+                }
+                className={
+                  isPortraitLayout
+                    ? "mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"
+                    : "mt-4 w-full rounded-[22px] border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition focus:border-red-300"
+                }
+                placeholder={pet.name}
+                autoComplete="off"
+              />
+              {lifecycleError ? (
+                <p className="mt-3 text-xs font-semibold text-red-600">
+                  {lifecycleError}
+                </p>
+              ) : null}
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeDeleteDialog}
+                  className={secondaryActionClass}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteMemorial}
+                  disabled={!canConfirmDelete}
+                  className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-all hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:shadow-none"
+                >
+                  {deletingMemorial ? "Удаление..." : "Удалить"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -4011,74 +4682,91 @@ export default function PetClient({ id, mode = "view" }: Props) {
           />
           <div
             className={`relative w-full max-w-md rounded-[36px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_28px_70px_-24px_rgba(93,64,55,0.55)] transition-transform duration-200 ${
-              topUpVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
+              topUpVisible
+                ? "translate-y-0 scale-100"
+                : "translate-y-4 scale-95"
             }`}
           >
             <div className={panelSectionClass}>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className={panelLabelClass}>Баланс</p>
-                <h3 className="text-lg font-black text-[#5d4037]">Пополнение баланса</h3>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className={panelLabelClass}>Баланс</p>
+                  <h3 className="text-lg font-black text-[#5d4037]">
+                    Пополнение баланса
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  className={secondaryActionClass}
+                  onClick={closeTopUp}
+                >
+                  Закрыть
+                </button>
               </div>
-              <button type="button" className={secondaryActionClass} onClick={closeTopUp}>
-                Закрыть
+              <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
+                Баланс: {walletBalance ?? 0} монет
+              </p>
+              <div className="mt-4 flex gap-2 rounded-full bg-[#fdf2e9] p-1.5">
+                {(["RUB", "USD"] as const).map((currency) => {
+                  const isActive = topUpCurrency === currency;
+                  return (
+                    <button
+                      key={currency}
+                      type="button"
+                      onClick={() => setTopUpCurrency(currency)}
+                      className={`flex-1 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${
+                        isActive
+                          ? "bg-white text-[#5d4037] shadow-sm"
+                          : "text-[#8d6e63]"
+                      }`}
+                    >
+                      {currency}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-4 grid gap-2">
+                {topUpOptions.map((option) => {
+                  const isSelected = topUpPlan === option.coins;
+                  const price =
+                    topUpCurrency === "RUB"
+                      ? `${option.rub} ₽`
+                      : `${option.usd} USD`;
+                  return (
+                    <button
+                      key={option.coins}
+                      type="button"
+                      onClick={() => setTopUpPlan(option.coins)}
+                      className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
+                        isSelected
+                          ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
+                          : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
+                      }`}
+                    >
+                      <span className="font-black">{option.coins} монет</span>
+                      <span className="font-semibold text-[#8d6e63]">
+                        {price}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className={`mt-5 w-full ${primaryActionClass}`}
+                onClick={() => {
+                  if (!topUpPlan) {
+                    return;
+                  }
+                  router.push(
+                    `/payment?coins=${topUpPlan}&currency=${topUpCurrency}`,
+                  );
+                  closeTopUp();
+                }}
+                disabled={!topUpPlan || walletLoading}
+              >
+                Продолжить
               </button>
-            </div>
-            <p className="mt-1 text-sm font-semibold text-[#8d6e63]">
-              Баланс: {walletBalance ?? 0} монет
-            </p>
-            <div className="mt-4 flex gap-2 rounded-full bg-[#fdf2e9] p-1.5">
-              {(["RUB", "USD"] as const).map((currency) => {
-                const isActive = topUpCurrency === currency;
-                return (
-                  <button
-                    key={currency}
-                    type="button"
-                    onClick={() => setTopUpCurrency(currency)}
-                    className={`flex-1 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${
-                      isActive ? "bg-white text-[#5d4037] shadow-sm" : "text-[#8d6e63]"
-                    }`}
-                  >
-                    {currency}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-4 grid gap-2">
-              {topUpOptions.map((option) => {
-                const isSelected = topUpPlan === option.coins;
-                const price = topUpCurrency === "RUB" ? `${option.rub} ₽` : `${option.usd} USD`;
-                return (
-                  <button
-                    key={option.coins}
-                    type="button"
-                    onClick={() => setTopUpPlan(option.coins)}
-                    className={`flex items-center justify-between rounded-[22px] border-[3px] px-4 py-3 text-sm transition ${
-                      isSelected
-                        ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037]"
-                        : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
-                    }`}
-                  >
-                    <span className="font-black">{option.coins} монет</span>
-                    <span className="font-semibold text-[#8d6e63]">{price}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              className={`mt-5 w-full ${primaryActionClass}`}
-              onClick={() => {
-                if (!topUpPlan) {
-                  return;
-                }
-                router.push(`/payment?coins=${topUpPlan}&currency=${topUpCurrency}`);
-                closeTopUp();
-              }}
-              disabled={!topUpPlan || walletLoading}
-            >
-              Продолжить
-            </button>
             </div>
           </div>
         </div>

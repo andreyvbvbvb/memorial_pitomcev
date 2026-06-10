@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "../../../lib/config";
-import { canAccessAdmin, canManageAdmins, type AccessLevel } from "../../../lib/access";
+import {
+  canAccessAdmin,
+  canManageAdmins,
+  type AccessLevel,
+} from "../../../lib/access";
 import { resolveGiftIconUrl } from "../../../lib/gifts";
 import ErrorToast from "../../../components/ErrorToast";
 import DirtModelPreview from "../../../components/admin/DirtModelPreview";
@@ -13,50 +17,50 @@ const QUICK_QUERIES = [
   {
     label: "Пользователи (10)",
     query:
-      'SELECT id, email, login, "coinBalance", "createdAt" FROM "User" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, email, login, "coinBalance", "createdAt" FROM "User" ORDER BY "createdAt" DESC LIMIT 10;',
   },
   {
     label: "Питомцы (10)",
     query:
-      'SELECT id, name, "ownerId", "createdAt", "isPublic" FROM "Pet" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, name, "ownerId", "createdAt", "isPublic" FROM "Pet" ORDER BY "createdAt" DESC LIMIT 10;',
   },
   {
     label: "Мемориалы (10)",
     query:
-      'SELECT id, "petId", "environmentId", "houseId", "createdAt" FROM "Memorial" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, "petId", "environmentId", "houseId", "createdAt" FROM "Memorial" ORDER BY "createdAt" DESC LIMIT 10;',
   },
   {
     label: "Маркеры (10)",
     query:
-      'SELECT id, "petId", lat, lng, "markerStyle", "createdAt" FROM "MapMarker" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, "petId", lat, lng, "markerStyle", "createdAt" FROM "MapMarker" ORDER BY "createdAt" DESC LIMIT 10;',
   },
   {
     label: "Фото (10)",
     query:
-      'SELECT id, "petId", url, "sortOrder", "createdAt" FROM "PetPhoto" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, "petId", url, "sortOrder", "createdAt" FROM "PetPhoto" ORDER BY "createdAt" DESC LIMIT 10;',
   },
   {
     label: "Подарки (10)",
     query:
-      'SELECT id, code, name, description, price, "createdAt" FROM "GiftCatalog" ORDER BY "createdAt" DESC LIMIT 10;'
+      'SELECT id, code, name, description, price, "createdAt" FROM "GiftCatalog" ORDER BY "createdAt" DESC LIMIT 10;',
   },
   {
     label: "Размещения подарков (10)",
     query:
-      'SELECT id, "petId", "giftId", "ownerId", "slotName", "placedAt", "expiresAt" FROM "GiftPlacement" ORDER BY "placedAt" DESC LIMIT 10;'
-  }
+      'SELECT id, "petId", "giftId", "ownerId", "slotName", "placedAt", "expiresAt" FROM "GiftPlacement" ORDER BY "placedAt" DESC LIMIT 10;',
+  },
 ] as const;
 
 const LOAD_TEST_PRESETS = [
   { label: "Лёгкий", totalRequests: 30, concurrency: 5 },
   { label: "Средний", totalRequests: 100, concurrency: 10 },
-  { label: "Тяжёлый", totalRequests: 250, concurrency: 20 }
+  { label: "Тяжёлый", totalRequests: 250, concurrency: 20 },
 ] as const;
 
 const SYNTHETIC_USER_PRESETS = [
   { label: "20 VU", virtualUsers: 20, durationMs: 25_000 },
   { label: "50 VU", virtualUsers: 50, durationMs: 35_000 },
-  { label: "100 VU", virtualUsers: 100, durationMs: 45_000 }
+  { label: "100 VU", virtualUsers: 100, durationMs: 45_000 },
 ] as const;
 
 const SYNTHETIC_SCENARIOS = [
@@ -64,7 +68,7 @@ const SYNTHETIC_SCENARIOS = [
   { id: "myPets", label: "Мои питомцы", weight: 25 },
   { id: "memorial", label: "Страница мемориала", weight: 20 },
   { id: "gift", label: "Дарение подарка", weight: 10 },
-  { id: "edit", label: "Редактирование", weight: 5 }
+  { id: "edit", label: "Редактирование", weight: 5 },
 ] as const;
 
 const FONT_PREVIEW_OPTIONS = [
@@ -73,85 +77,86 @@ const FONT_PREVIEW_OPTIONS = [
     label: "Inter",
     badge: "Webfont",
     family: "var(--font-inter)",
-    note: "Нейтральный интерфейсный webfont. Оставлен для сравнения с текущим шрифтом сайта."
+    note: "Нейтральный интерфейсный webfont. Оставлен для сравнения с текущим шрифтом сайта.",
   },
   {
     id: "manrope",
     label: "Manrope",
     badge: "Webfont",
     family: "var(--font-manrope)",
-    note: "Более мягкий и широкий гротеск, хорошо подходит для интерфейсов и крупной кириллицы."
+    note: "Более мягкий и широкий гротеск, хорошо подходит для интерфейсов и крупной кириллицы.",
   },
   {
     id: "roboto",
     label: "Roboto",
     badge: "Android-like",
     family: "var(--font-roboto)",
-    note: "Похож на стандартный Android-шрифт, но здесь загружается как webfont и одинаково работает на всех устройствах."
+    note: "Похож на стандартный Android-шрифт, но здесь загружается как webfont и одинаково работает на всех устройствах.",
   },
   {
     id: "nunito",
     label: "Nunito Sans",
     badge: "Мягкий",
     family: "var(--font-nunito)",
-    note: "Более дружелюбный округлый вариант. Может лучше смотреться в карточках и подсказках."
+    note: "Более дружелюбный округлый вариант. Может лучше смотреться в карточках и подсказках.",
   },
   {
     id: "rubik",
     label: "Rubik",
     badge: "Плотный",
     family: "var(--font-rubik)",
-    note: "Компактный webfont с выраженными формами. Удобен для кнопок и коротких заголовков."
+    note: "Компактный webfont с выраженными формами. Удобен для кнопок и коротких заголовков.",
   },
   {
     id: "roboto-condensed",
     label: "Roboto Condensed",
     badge: "Сжатый",
     family: "var(--font-roboto-condensed)",
-    note: "Самый близкий к Roboto вариант, но уже по ширине. Подходит, когда нужно больше текста в кнопках и панелях."
+    note: "Самый близкий к Roboto вариант, но уже по ширине. Подходит, когда нужно больше текста в кнопках и панелях.",
   },
   {
     id: "noto-sans",
     label: "Noto Sans",
     badge: "Текущий",
     family: "var(--font-ui)",
-    note: "Основной шрифт сайта. Загружается как webfont через Next, поэтому не зависит от San Francisco на iPhone или Roboto на Android."
+    note: "Основной шрифт сайта. Загружается как webfont через Next, поэтому не зависит от San Francisco на iPhone или Roboto на Android.",
   },
   {
     id: "pt-sans-narrow",
     label: "PT Sans Narrow",
     badge: "Узкий",
     family: "var(--font-pt-sans-narrow)",
-    note: "Сжатый кириллический webfont. Может быть полезен для компактных кнопок, но крупные заголовки лучше проверять отдельно."
+    note: "Сжатый кириллический webfont. Может быть полезен для компактных кнопок, но крупные заголовки лучше проверять отдельно.",
   },
   {
     id: "source-sans",
     label: "Source Sans 3",
     badge: "Мягкий",
     family: "var(--font-source-sans)",
-    note: "Мягкий интерфейсный шрифт с хорошей читаемостью. Менее плотный, чем Roboto Condensed, но спокойнее визуально."
+    note: "Мягкий интерфейсный шрифт с хорошей читаемостью. Менее плотный, чем Roboto Condensed, но спокойнее визуально.",
   },
   {
     id: "onest",
     label: "Onest",
     badge: "Современный",
     family: "var(--font-onest)",
-    note: "Современный кириллический webfont: компактный, но не слишком жёсткий. Хорошо подходит для мобильного UI."
+    note: "Современный кириллический webfont: компактный, но не слишком жёсткий. Хорошо подходит для мобильного UI.",
   },
   {
     id: "commissioner",
     label: "Commissioner",
     badge: "Гибкий",
     family: "var(--font-commissioner)",
-    note: "Плотный и аккуратный гротеск с мягкими формами. Хорош для интерфейса, где нужно сохранить дружелюбный тон."
+    note: "Плотный и аккуратный гротеск с мягкими формами. Хорош для интерфейса, где нужно сохранить дружелюбный тон.",
   },
   {
     id: "system",
     label: "Системный стек",
     badge: "Сравнение",
-    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
-    note: "Только для сравнения: на iPhone будет ближе к San Francisco, на Android — к Roboto, поэтому вид отличается."
-  }
+    family:
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    note: "Только для сравнения: на iPhone будет ближе к San Francisco, на Android — к Roboto, поэтому вид отличается.",
+  },
 ] as const;
 
 type FontPreviewId = (typeof FONT_PREVIEW_OPTIONS)[number]["id"];
@@ -291,7 +296,10 @@ type SyntheticRunProgress = {
   scenarioCounts: SyntheticScenarioCounts;
 };
 
-type SyntheticRunSummary = Omit<SyntheticRunProgress, "elapsedMs" | "activeUsers"> & {
+type SyntheticRunSummary = Omit<
+  SyntheticRunProgress,
+  "elapsedMs" | "activeUsers"
+> & {
   actualDurationMs: number;
   avgRequestMs: number;
   p95RequestMs: number;
@@ -324,7 +332,7 @@ const getPercentile = (values: number[], percentile: number) => {
   const sorted = [...values].sort((a, b) => a - b);
   const index = Math.min(
     sorted.length - 1,
-    Math.max(0, Math.ceil((percentile / 100) * sorted.length) - 1)
+    Math.max(0, Math.ceil((percentile / 100) * sorted.length) - 1),
   );
   return sorted[index] ?? 0;
 };
@@ -371,11 +379,14 @@ const createEmptySyntheticScenarioCounts = (): SyntheticScenarioCounts => ({
   myPets: 0,
   memorial: 0,
   gift: 0,
-  edit: 0
+  edit: 0,
 });
 
 const chooseWeightedScenario = () => {
-  const totalWeight = SYNTHETIC_SCENARIOS.reduce((sum, item) => sum + item.weight, 0);
+  const totalWeight = SYNTHETIC_SCENARIOS.reduce(
+    (sum, item) => sum + item.weight,
+    0,
+  );
   let point = Math.random() * totalWeight;
   for (const item of SYNTHETIC_SCENARIOS) {
     point -= item.weight;
@@ -383,11 +394,16 @@ const chooseWeightedScenario = () => {
       return item;
     }
   }
-  return SYNTHETIC_SCENARIOS[SYNTHETIC_SCENARIOS.length - 1] ?? SYNTHETIC_SCENARIOS[0]!;
+  return (
+    SYNTHETIC_SCENARIOS[SYNTHETIC_SCENARIOS.length - 1] ??
+    SYNTHETIC_SCENARIOS[0]!
+  );
 };
 
 const pickRandom = <T,>(items: T[]) =>
-  items.length > 0 ? items[Math.floor(Math.random() * items.length)] ?? null : null;
+  items.length > 0
+    ? (items[Math.floor(Math.random() * items.length)] ?? null)
+    : null;
 
 const describeLoadSummary = (summary: LoadTestSummary) => {
   if (summary.wasAborted) {
@@ -437,7 +453,9 @@ export default function AdminSqlPage() {
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [schemaFilter, setSchemaFilter] = useState("");
-  const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({});
+  const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>(
+    {},
+  );
   const [passwordEmail, setPasswordEmail] = useState("");
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
@@ -447,7 +465,9 @@ export default function AdminSqlPage() {
   const [coinsNotice, setCoinsNotice] = useState<string | null>(null);
   const [coinsLoading, setCoinsLoading] = useState(false);
   const [bulkAccountRows, setBulkAccountRows] = useState<BulkAccountRow[]>([]);
-  const [bulkAccountNotice, setBulkAccountNotice] = useState<string | null>(null);
+  const [bulkAccountNotice, setBulkAccountNotice] = useState<string | null>(
+    null,
+  );
   const [bulkAccountLoading, setBulkAccountLoading] = useState(false);
   const [petId, setPetId] = useState("");
   const [loadingTips, setLoadingTips] = useState<LoadingTip[]>([]);
@@ -465,14 +485,18 @@ export default function AdminSqlPage() {
   const [newsTitle, setNewsTitle] = useState("");
   const [newsBody, setNewsBody] = useState("");
   const [newsActive, setNewsActive] = useState(true);
-  const [documentRevisions, setDocumentRevisions] = useState<DocumentRevision[]>([]);
+  const [documentRevisions, setDocumentRevisions] = useState<
+    DocumentRevision[]
+  >([]);
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentNotice, setDocumentNotice] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState<"terms" | "offer">("offer");
   const [documentTitle, setDocumentTitle] = useState("");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [memorialPlanPrices, setMemorialPlanPrices] = useState<MemorialPlanPrice[]>([]);
+  const [memorialPlanPrices, setMemorialPlanPrices] = useState<
+    MemorialPlanPrice[]
+  >([]);
   const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
@@ -492,13 +516,18 @@ export default function AdminSqlPage() {
   const [limitNotice, setLimitNotice] = useState<string | null>(null);
   const [loadTestRunning, setLoadTestRunning] = useState(false);
   const [loadTestError, setLoadTestError] = useState<string | null>(null);
-  const [loadTestProgress, setLoadTestProgress] = useState<LoadTestProgress | null>(null);
-  const [loadTestSummary, setLoadTestSummary] = useState<LoadTestSummary | null>(null);
+  const [loadTestProgress, setLoadTestProgress] =
+    useState<LoadTestProgress | null>(null);
+  const [loadTestSummary, setLoadTestSummary] =
+    useState<LoadTestSummary | null>(null);
   const [syntheticRunning, setSyntheticRunning] = useState(false);
   const [syntheticError, setSyntheticError] = useState<string | null>(null);
-  const [syntheticProgress, setSyntheticProgress] = useState<SyntheticRunProgress | null>(null);
-  const [syntheticSummary, setSyntheticSummary] = useState<SyntheticRunSummary | null>(null);
-  const [fontPreviewId, setFontPreviewId] = useState<FontPreviewId>("noto-sans");
+  const [syntheticProgress, setSyntheticProgress] =
+    useState<SyntheticRunProgress | null>(null);
+  const [syntheticSummary, setSyntheticSummary] =
+    useState<SyntheticRunSummary | null>(null);
+  const [fontPreviewId, setFontPreviewId] =
+    useState<FontPreviewId>("noto-sans");
 
   useEffect(() => {
     let isMounted = true;
@@ -506,7 +535,7 @@ export default function AdminSqlPage() {
       setError(null);
       try {
         const response = await fetch(`${apiUrl}/auth/me`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           router.replace("/auth");
@@ -545,7 +574,7 @@ export default function AdminSqlPage() {
       setSchemaError(null);
       try {
         const response = await fetch(`${apiUrl}/admin/schema`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           const text = await response.text();
@@ -558,7 +587,9 @@ export default function AdminSqlPage() {
         setSchema(Array.isArray(data.tables) ? data.tables : []);
       } catch (err) {
         if (isMounted) {
-          setSchemaError(err instanceof Error ? err.message : "Ошибка загрузки схемы");
+          setSchemaError(
+            err instanceof Error ? err.message : "Ошибка загрузки схемы",
+          );
         }
       } finally {
         if (isMounted) {
@@ -583,7 +614,7 @@ export default function AdminSqlPage() {
       try {
         const [newsResponse, documentsResponse] = await Promise.all([
           fetch(`${apiUrl}/admin/news`, { credentials: "include" }),
-          fetch(`${apiUrl}/admin/documents`, { credentials: "include" })
+          fetch(`${apiUrl}/admin/documents`, { credentials: "include" }),
         ]);
         if (newsResponse.ok) {
           const data = (await newsResponse.json()) as { posts?: NewsPost[] };
@@ -596,7 +627,9 @@ export default function AdminSqlPage() {
             revisions?: DocumentRevision[];
           };
           if (isMounted) {
-            setDocumentRevisions(Array.isArray(data.revisions) ? data.revisions : []);
+            setDocumentRevisions(
+              Array.isArray(data.revisions) ? data.revisions : [],
+            );
           }
         }
       } finally {
@@ -622,7 +655,7 @@ export default function AdminSqlPage() {
       setPricingError(null);
       try {
         const response = await fetch(`${apiUrl}/admin/pricing`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           const text = await response.text();
@@ -636,12 +669,14 @@ export default function AdminSqlPage() {
           return;
         }
         setMemorialPlanPrices(
-          Array.isArray(data.memorialPlanPrices) ? data.memorialPlanPrices : []
+          Array.isArray(data.memorialPlanPrices) ? data.memorialPlanPrices : [],
         );
         setGiftPrices(Array.isArray(data.gifts) ? data.gifts : []);
       } catch (err) {
         if (isMounted) {
-          setPricingError(err instanceof Error ? err.message : "Ошибка загрузки цен");
+          setPricingError(
+            err instanceof Error ? err.message : "Ошибка загрузки цен",
+          );
         }
       } finally {
         if (isMounted) {
@@ -672,7 +707,7 @@ export default function AdminSqlPage() {
       setAccessUsersError(null);
       try {
         const response = await fetch(`${apiUrl}/admin/access/users`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           const text = await response.text();
@@ -684,7 +719,9 @@ export default function AdminSqlPage() {
         }
       } catch (err) {
         if (isMounted) {
-          setAccessUsersError(err instanceof Error ? err.message : "Ошибка загрузки доступов");
+          setAccessUsersError(
+            err instanceof Error ? err.message : "Ошибка загрузки доступов",
+          );
         }
       } finally {
         if (isMounted) {
@@ -708,7 +745,7 @@ export default function AdminSqlPage() {
       setLoadingTipsError(null);
       try {
         const response = await fetch(`${apiUrl}/admin/loading-tips`, {
-          credentials: "include"
+          credentials: "include",
         });
         if (!response.ok) {
           const text = await response.text();
@@ -722,7 +759,7 @@ export default function AdminSqlPage() {
       } catch (err) {
         if (isMounted) {
           setLoadingTipsError(
-            err instanceof Error ? err.message : "Ошибка загрузки подсказок"
+            err instanceof Error ? err.message : "Ошибка загрузки подсказок",
           );
         }
       } finally {
@@ -745,7 +782,7 @@ export default function AdminSqlPage() {
     setSchemaError(null);
     try {
       const response = await fetch(`${apiUrl}/admin/schema`, {
-        credentials: "include"
+        credentials: "include",
       });
       if (!response.ok) {
         const text = await response.text();
@@ -754,7 +791,9 @@ export default function AdminSqlPage() {
       const data = (await response.json()) as { tables?: SchemaTable[] };
       setSchema(Array.isArray(data.tables) ? data.tables : []);
     } catch (err) {
-      setSchemaError(err instanceof Error ? err.message : "Ошибка загрузки схемы");
+      setSchemaError(
+        err instanceof Error ? err.message : "Ошибка загрузки схемы",
+      );
     } finally {
       setSchemaLoading(false);
     }
@@ -780,7 +819,7 @@ export default function AdminSqlPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ query: nextQuery })
+        body: JSON.stringify({ query: nextQuery }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -812,7 +851,7 @@ export default function AdminSqlPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, newPassword: nextPassword })
+        body: JSON.stringify({ email, newPassword: nextPassword }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -846,7 +885,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, amount })
+        body: JSON.stringify({ email, amount }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -857,7 +896,7 @@ export default function AdminSqlPage() {
         amount?: number;
       };
       setCoinsNotice(
-        `${data.user?.email ?? email}: +${data.amount ?? amount} монет. Баланс: ${data.user?.coinBalance ?? "—"}`
+        `${data.user?.email ?? email}: +${data.amount ?? amount} монет. Баланс: ${data.user?.coinBalance ?? "—"}`,
       );
       setCoinsAmount("100");
     } catch (err) {
@@ -924,13 +963,15 @@ export default function AdminSqlPage() {
         const [login, email, password, balance] = cells;
         const initialBalance = Number(balance);
         if (!login || !email || !password || !Number.isFinite(initialBalance)) {
-          throw new Error(`Строка ${index + 1}: нужен формат логин,email,пароль,начальный баланс`);
+          throw new Error(
+            `Строка ${index + 1}: нужен формат логин,email,пароль,начальный баланс`,
+          );
         }
         return {
           login,
           email,
           password,
-          initialBalance: Math.trunc(initialBalance)
+          initialBalance: Math.trunc(initialBalance),
         };
       });
     setBulkAccountRows(rows);
@@ -950,7 +991,7 @@ export default function AdminSqlPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ rows: bulkAccountRows })
+        body: JSON.stringify({ rows: bulkAccountRows }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -967,7 +1008,9 @@ export default function AdminSqlPage() {
   };
 
   const refreshNews = async () => {
-    const response = await fetch(`${apiUrl}/admin/news`, { credentials: "include" });
+    const response = await fetch(`${apiUrl}/admin/news`, {
+      credentials: "include",
+    });
     if (response.ok) {
       const data = (await response.json()) as { posts?: NewsPost[] };
       setNewsPosts(Array.isArray(data.posts) ? data.posts : []);
@@ -990,8 +1033,8 @@ export default function AdminSqlPage() {
         body: JSON.stringify({
           title: newsTitle.trim(),
           body: newsBody.trim(),
-          isActive: newsActive
-        })
+          isActive: newsActive,
+        }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1014,10 +1057,13 @@ export default function AdminSqlPage() {
     setNewsNotice(null);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/admin/news/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
+      const response = await fetch(
+        `${apiUrl}/admin/news/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || "Не удалось удалить новость");
@@ -1032,9 +1078,13 @@ export default function AdminSqlPage() {
   };
 
   const refreshDocuments = async () => {
-    const response = await fetch(`${apiUrl}/admin/documents`, { credentials: "include" });
+    const response = await fetch(`${apiUrl}/admin/documents`, {
+      credentials: "include",
+    });
     if (response.ok) {
-      const data = (await response.json()) as { revisions?: DocumentRevision[] };
+      const data = (await response.json()) as {
+        revisions?: DocumentRevision[];
+      };
       setDocumentRevisions(Array.isArray(data.revisions) ? data.revisions : []);
     }
   };
@@ -1055,7 +1105,7 @@ export default function AdminSqlPage() {
       const response = await fetch(`${apiUrl}/admin/documents`, {
         method: "POST",
         credentials: "include",
-        body
+        body,
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1066,7 +1116,9 @@ export default function AdminSqlPage() {
       setDocumentNotice("Документ загружен");
       await refreshDocuments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки документа");
+      setError(
+        err instanceof Error ? err.message : "Ошибка загрузки документа",
+      );
     } finally {
       setDocumentUploading(false);
     }
@@ -1074,13 +1126,13 @@ export default function AdminSqlPage() {
 
   const updateLoadingTip = (id: string, patch: Partial<LoadingTip>) => {
     setLoadingTips((prev) =>
-      prev.map((tip) => (tip.id === id ? { ...tip, ...patch } : tip))
+      prev.map((tip) => (tip.id === id ? { ...tip, ...patch } : tip)),
     );
   };
 
   const updateMemorialPlanPriceDraft = (years: number, price: number) => {
     setMemorialPlanPrices((prev) =>
-      prev.map((plan) => (plan.years === years ? { ...plan, price } : plan))
+      prev.map((plan) => (plan.years === years ? { ...plan, price } : plan)),
     );
   };
 
@@ -1097,7 +1149,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ years: plan.years, price: plan.price })
+        body: JSON.stringify({ years: plan.years, price: plan.price }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1106,12 +1158,16 @@ export default function AdminSqlPage() {
       const data = (await response.json()) as { plan?: MemorialPlanPrice };
       if (data.plan) {
         setMemorialPlanPrices((prev) =>
-          prev.map((item) => (item.years === data.plan?.years ? data.plan : item))
+          prev.map((item) =>
+            item.years === data.plan?.years ? data.plan : item,
+          ),
         );
       }
       setPricingNotice("Тариф аренды обновлён");
     } catch (err) {
-      setPricingError(err instanceof Error ? err.message : "Ошибка сохранения тарифа");
+      setPricingError(
+        err instanceof Error ? err.message : "Ошибка сохранения тарифа",
+      );
     } finally {
       setSavingPlanYears(null);
     }
@@ -1119,10 +1175,10 @@ export default function AdminSqlPage() {
 
   const updateGiftDraft = (
     id: string,
-    patch: Partial<Pick<GiftPrice, "name" | "description" | "price">>
+    patch: Partial<Pick<GiftPrice, "name" | "description" | "price">>,
   ) => {
     setGiftPrices((prev) =>
-      prev.map((gift) => (gift.id === id ? { ...gift, ...patch } : gift))
+      prev.map((gift) => (gift.id === id ? { ...gift, ...patch } : gift)),
     );
   };
 
@@ -1145,7 +1201,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ price: gift.price, name, description })
+        body: JSON.stringify({ price: gift.price, name, description }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1154,13 +1210,13 @@ export default function AdminSqlPage() {
       const data = (await response.json()) as { gift?: GiftPrice };
       if (data.gift) {
         setGiftPrices((prev) =>
-          prev.map((item) => (item.id === data.gift?.id ? data.gift : item))
+          prev.map((item) => (item.id === data.gift?.id ? data.gift : item)),
         );
       }
       setPricingNotice("Подарок обновлён");
     } catch (err) {
       setPricingError(
-        err instanceof Error ? err.message : "Ошибка сохранения цены подарка"
+        err instanceof Error ? err.message : "Ошибка сохранения цены подарка",
       );
     } finally {
       setSavingGiftId(null);
@@ -1175,7 +1231,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ text: tip.text, isActive: tip.isActive })
+        body: JSON.stringify({ text: tip.text, isActive: tip.isActive }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1183,7 +1239,7 @@ export default function AdminSqlPage() {
       }
     } catch (err) {
       setLoadingTipsError(
-        err instanceof Error ? err.message : "Ошибка сохранения подсказки"
+        err instanceof Error ? err.message : "Ошибка сохранения подсказки",
       );
     } finally {
       setSavingTipId(null);
@@ -1203,7 +1259,7 @@ export default function AdminSqlPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text }),
       });
       if (!response.ok) {
         const body = await response.text();
@@ -1211,7 +1267,7 @@ export default function AdminSqlPage() {
       }
       setNewTipText("");
       const listResponse = await fetch(`${apiUrl}/admin/loading-tips`, {
-        credentials: "include"
+        credentials: "include",
       });
       if (listResponse.ok) {
         const data = (await listResponse.json()) as { tips?: LoadingTip[] };
@@ -1219,7 +1275,7 @@ export default function AdminSqlPage() {
       }
     } catch (err) {
       setLoadingTipsError(
-        err instanceof Error ? err.message : "Ошибка добавления подсказки"
+        err instanceof Error ? err.message : "Ошибка добавления подсказки",
       );
     } finally {
       setCreatingTip(false);
@@ -1232,7 +1288,7 @@ export default function AdminSqlPage() {
     try {
       const response = await fetch(`${apiUrl}/admin/loading-tips/${id}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
       if (!response.ok) {
         const body = await response.text();
@@ -1241,7 +1297,7 @@ export default function AdminSqlPage() {
       setLoadingTips((prev) => prev.filter((tip) => tip.id !== id));
     } catch (err) {
       setLoadingTipsError(
-        err instanceof Error ? err.message : "Ошибка удаления подсказки"
+        err instanceof Error ? err.message : "Ошибка удаления подсказки",
       );
     } finally {
       setDeletingTipId(null);
@@ -1262,7 +1318,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, role })
+        body: JSON.stringify({ email, role }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1275,10 +1331,16 @@ export default function AdminSqlPage() {
           return [data.user as AccessUser, ...rest];
         });
       }
-      setRoleNotice(role === "ADMIN" ? "Пользователь назначен админом" : "Пользователь понижен до user");
+      setRoleNotice(
+        role === "ADMIN"
+          ? "Пользователь назначен админом"
+          : "Пользователь понижен до user",
+      );
       setRoleEmail("");
     } catch (err) {
-      setAccessUsersError(err instanceof Error ? err.message : "Ошибка обновления доступа");
+      setAccessUsersError(
+        err instanceof Error ? err.message : "Ошибка обновления доступа",
+      );
     } finally {
       setRoleSaving(null);
     }
@@ -1294,7 +1356,11 @@ export default function AdminSqlPage() {
       setError("Введите хотя бы один email");
       return;
     }
-    if (!Number.isInteger(maxMemorials) || maxMemorials < 0 || maxMemorials > 10000) {
+    if (
+      !Number.isInteger(maxMemorials) ||
+      maxMemorials < 0 ||
+      maxMemorials > 10000
+    ) {
       setError("Лимит должен быть целым числом от 0 до 10000");
       return;
     }
@@ -1306,7 +1372,7 @@ export default function AdminSqlPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ emails, maxMemorials })
+        body: JSON.stringify({ emails, maxMemorials }),
       });
       if (!response.ok) {
         const text = await response.text();
@@ -1325,22 +1391,30 @@ export default function AdminSqlPage() {
         });
       }
       const details = [
-        data.missingEmails?.length ? `не найдены: ${data.missingEmails.join(", ")}` : "",
-        data.skippedOwners?.length ? `owner не менялся: ${data.skippedOwners.join(", ")}` : ""
+        data.missingEmails?.length
+          ? `не найдены: ${data.missingEmails.join(", ")}`
+          : "",
+        data.skippedOwners?.length
+          ? `owner не менялся: ${data.skippedOwners.join(", ")}`
+          : "",
       ].filter(Boolean);
       setLimitNotice(
         details.length > 0
           ? `Лимит обновлён. ${details.join("; ")}`
-          : "Лимит мемориалов обновлён"
+          : "Лимит мемориалов обновлён",
       );
     } catch (err) {
-      setAccessUsersError(err instanceof Error ? err.message : "Ошибка обновления лимита");
+      setAccessUsersError(
+        err instanceof Error ? err.message : "Ошибка обновления лимита",
+      );
     } finally {
       setLimitSaving(false);
     }
   };
 
-  const handlePetAction = async (action: "disable" | "delete" | "memorial" | "photos") => {
+  const handlePetAction = async (
+    action: "disable" | "delete" | "memorial" | "photos",
+  ) => {
     const rawId = petId.trim();
     if (!rawId) {
       setError("Укажите ID питомца");
@@ -1370,7 +1444,7 @@ export default function AdminSqlPage() {
   const toggleTable = (name: string) => {
     setExpandedTables((prev) => ({
       ...prev,
-      [name]: !prev[name]
+      [name]: !prev[name],
     }));
   };
 
@@ -1393,7 +1467,7 @@ export default function AdminSqlPage() {
       concurrency: preset.concurrency,
       completed: 0,
       okCount: 0,
-      failCount: 0
+      failCount: 0,
     });
 
     const latencies: number[] = [];
@@ -1411,7 +1485,7 @@ export default function AdminSqlPage() {
         concurrency: preset.concurrency,
         completed,
         okCount,
-        failCount
+        failCount,
       });
     };
 
@@ -1430,7 +1504,7 @@ export default function AdminSqlPage() {
           const response = await fetch(`${apiUrl}/admin/load-probe`, {
             credentials: "include",
             cache: "no-store",
-            signal: controller.signal
+            signal: controller.signal,
           });
           const duration = performance.now() - requestStartedAt;
           latencies.push(duration);
@@ -1460,7 +1534,7 @@ export default function AdminSqlPage() {
 
     try {
       await Promise.all(
-        Array.from({ length: preset.concurrency }, () => worker())
+        Array.from({ length: preset.concurrency }, () => worker()),
       );
     } finally {
       const totalDurationMs = performance.now() - startedAt;
@@ -1479,10 +1553,13 @@ export default function AdminSqlPage() {
         minMs: latencies.length > 0 ? Math.min(...latencies) : 0,
         requestsPerSecond:
           totalDurationMs > 0 ? completed / (totalDurationMs / 1000) : 0,
-        avgServerMs: serverLatencies.length > 0 ? getAverage(serverLatencies) : null,
+        avgServerMs:
+          serverLatencies.length > 0 ? getAverage(serverLatencies) : null,
         p95ServerMs:
-          serverLatencies.length > 0 ? getPercentile(serverLatencies, 95) : null,
-        wasAborted
+          serverLatencies.length > 0
+            ? getPercentile(serverLatencies, 95)
+            : null,
+        wasAborted,
       };
       setLoadTestSummary(summary);
       updateProgress();
@@ -1498,7 +1575,9 @@ export default function AdminSqlPage() {
     syntheticAbortRef.current?.abort();
   };
 
-  const runSyntheticUsers = async (preset: (typeof SYNTHETIC_USER_PRESETS)[number]) => {
+  const runSyntheticUsers = async (
+    preset: (typeof SYNTHETIC_USER_PRESETS)[number],
+  ) => {
     if (syntheticRunning) {
       return;
     }
@@ -1536,12 +1615,13 @@ export default function AdminSqlPage() {
         totalRequests,
         okCount,
         failCount,
-        scenarioCounts: { ...scenarioCounts }
+        scenarioCounts: { ...scenarioCounts },
       });
     };
 
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const uniqueSuffix = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const uniqueSuffix = () =>
+      `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const withSyntheticQuery = (path: string) =>
       `${origin}${path}${path.includes("?") ? "&" : "?"}synthetic=${uniqueSuffix()}`;
 
@@ -1552,7 +1632,7 @@ export default function AdminSqlPage() {
           credentials: "include",
           cache: "no-store",
           signal: controller.signal,
-          ...init
+          ...init,
         });
         const duration = performance.now() - requestStartedAt;
         requestLatencies.push(duration);
@@ -1593,24 +1673,28 @@ export default function AdminSqlPage() {
     const me = await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
     if (!me?.id) {
       setSyntheticRunning(false);
-      setSyntheticError("Не удалось подготовить сценарий: auth/me не вернул пользователя");
+      setSyntheticError(
+        "Не удалось подготовить сценарий: auth/me не вернул пользователя",
+      );
       syntheticAbortRef.current = null;
       return;
     }
     const ownerPets =
       (await requestJson<SyntheticPetRecord[]>(
-        `${apiUrl}/pets?ownerId=${encodeURIComponent(me.id)}`
+        `${apiUrl}/pets?ownerId=${encodeURIComponent(me.id)}`,
       )) ?? [];
     const publicMarkers =
       (await requestJson<SyntheticMarker[]>(`${apiUrl}/map/markers`)) ?? [];
 
     const ownerPetIds = ownerPets.map((item) => item.id).filter(Boolean);
     const publicPetIds = Array.from(
-      new Set(publicMarkers.map((item) => item.petId).filter(Boolean))
+      new Set(publicMarkers.map((item) => item.petId).filter(Boolean)),
     );
 
-    const pickOwnerPetId = () => pickRandom(ownerPetIds) ?? pickRandom(publicPetIds);
-    const pickPublicPetId = () => pickRandom(publicPetIds) ?? pickRandom(ownerPetIds);
+    const pickOwnerPetId = () =>
+      pickRandom(ownerPetIds) ?? pickRandom(publicPetIds);
+    const pickPublicPetId = () =>
+      pickRandom(publicPetIds) ?? pickRandom(ownerPetIds);
 
     const runScenario = async (scenarioId: SyntheticScenarioId) => {
       switch (scenarioId) {
@@ -1625,11 +1709,13 @@ export default function AdminSqlPage() {
           return;
         }
         case "myPets": {
-          const pageResponse = await requestText(withSyntheticQuery("/my-pets"));
+          const pageResponse = await requestText(
+            withSyntheticQuery("/my-pets"),
+          );
           await pageResponse?.text().catch(() => null);
           await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
           await requestJson<SyntheticPetRecord[]>(
-            `${apiUrl}/pets?ownerId=${encodeURIComponent(me.id)}`
+            `${apiUrl}/pets?ownerId=${encodeURIComponent(me.id)}`,
           );
           return;
         }
@@ -1638,13 +1724,17 @@ export default function AdminSqlPage() {
           if (!petId) {
             return runScenario("map");
           }
-          const pageResponse = await requestText(withSyntheticQuery(`/pets/${petId}`));
+          const pageResponse = await requestText(
+            withSyntheticQuery(`/pets/${petId}`),
+          );
           await pageResponse?.text().catch(() => null);
-          const pet = await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
+          const pet = await requestJson<SyntheticPetRecord>(
+            `${apiUrl}/pets/${petId}`,
+          );
           await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
           if (pet?.ownerId) {
             await requestJson<SyntheticPetRecord[]>(
-              `${apiUrl}/pets?ownerId=${encodeURIComponent(pet.ownerId)}`
+              `${apiUrl}/pets?ownerId=${encodeURIComponent(pet.ownerId)}`,
             );
           }
           return;
@@ -1654,12 +1744,16 @@ export default function AdminSqlPage() {
           if (!petId) {
             return runScenario("memorial");
           }
-          const pageResponse = await requestText(withSyntheticQuery(`/pets/${petId}`));
+          const pageResponse = await requestText(
+            withSyntheticQuery(`/pets/${petId}`),
+          );
           await pageResponse?.text().catch(() => null);
           await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
           await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
           await requestJson<unknown[]>(`${apiUrl}/gifts`);
-          await requestJson<unknown>(`${apiUrl}/wallet/${encodeURIComponent(me.id)}`);
+          await requestJson<unknown>(
+            `${apiUrl}/wallet/${encodeURIComponent(me.id)}`,
+          );
           return;
         }
         case "edit": {
@@ -1667,11 +1761,15 @@ export default function AdminSqlPage() {
           if (!petId) {
             return runScenario("myPets");
           }
-          const pageResponse = await requestText(withSyntheticQuery(`/create?edit=${petId}`));
+          const pageResponse = await requestText(
+            withSyntheticQuery(`/create?edit=${petId}`),
+          );
           await pageResponse?.text().catch(() => null);
           await requestJson<SyntheticAuthUser>(`${apiUrl}/auth/me`);
           await requestJson<unknown[]>(`${apiUrl}/content/loading-tips`);
-          await requestJson<unknown>(`${apiUrl}/wallet/${encodeURIComponent(me.id)}`);
+          await requestJson<unknown>(
+            `${apiUrl}/wallet/${encodeURIComponent(me.id)}`,
+          );
           await requestJson<SyntheticPetRecord>(`${apiUrl}/pets/${petId}`);
           return;
         }
@@ -1715,16 +1813,18 @@ export default function AdminSqlPage() {
       totalRequests,
       okCount,
       failCount,
-      scenarioCounts: { ...scenarioCounts }
+      scenarioCounts: { ...scenarioCounts },
     });
 
     try {
       await Promise.all(
-        Array.from({ length: preset.virtualUsers }, () => worker())
+        Array.from({ length: preset.virtualUsers }, () => worker()),
       );
     } catch (err) {
       if (!isAbortError(err) && !controller.signal.aborted) {
-        setSyntheticError(err instanceof Error ? err.message : "Ошибка синтетического прогона");
+        setSyntheticError(
+          err instanceof Error ? err.message : "Ошибка синтетического прогона",
+        );
       }
     } finally {
       const actualDurationMs = performance.now() - startedAt;
@@ -1741,12 +1841,17 @@ export default function AdminSqlPage() {
         actualDurationMs,
         avgRequestMs: getAverage(requestLatencies),
         p95RequestMs: getPercentile(requestLatencies, 95),
-        maxRequestMs: requestLatencies.length > 0 ? Math.max(...requestLatencies) : 0,
+        maxRequestMs:
+          requestLatencies.length > 0 ? Math.max(...requestLatencies) : 0,
         avgFlowMs: getAverage(flowLatencies),
         p95FlowMs: getPercentile(flowLatencies, 95),
-        flowsPerMinute: actualDurationMs > 0 ? completedFlows / (actualDurationMs / 60000) : 0,
-        requestsPerSecond: actualDurationMs > 0 ? totalRequests / (actualDurationMs / 1000) : 0,
-        wasAborted
+        flowsPerMinute:
+          actualDurationMs > 0
+            ? completedFlows / (actualDurationMs / 60000)
+            : 0,
+        requestsPerSecond:
+          actualDurationMs > 0 ? totalRequests / (actualDurationMs / 1000) : 0,
+        wasAborted,
       };
       setSyntheticSummary(summary);
       setSyntheticProgress({
@@ -1759,7 +1864,7 @@ export default function AdminSqlPage() {
         totalRequests,
         okCount,
         failCount,
-        scenarioCounts: { ...scenarioCounts }
+        scenarioCounts: { ...scenarioCounts },
       });
       if (wasAborted) {
         setSyntheticError("Синтетический прогон остановлен вручную");
@@ -1777,14 +1882,15 @@ export default function AdminSqlPage() {
           return true;
         }
         return table.columns.some((column) =>
-          column.name.toLowerCase().includes(normalizedFilter)
+          column.name.toLowerCase().includes(normalizedFilter),
         );
       })
     : schema;
   const normalizedGiftPriceFilter = giftPriceFilter.trim().toLowerCase();
   const filteredGiftPrices = normalizedGiftPriceFilter
     ? giftPrices.filter((gift) => {
-        const haystack = `${gift.name} ${gift.code} ${gift.description ?? ""}`.toLowerCase();
+        const haystack =
+          `${gift.name} ${gift.code} ${gift.description ?? ""}`.toLowerCase();
         return haystack.includes(normalizedGiftPriceFilter);
       })
     : giftPrices;
@@ -1794,7 +1900,9 @@ export default function AdminSqlPage() {
 
   let content: ReactNode = null;
   if (!authChecked) {
-    content = <div className="mt-6 text-sm text-slate-500">Проверка доступа...</div>;
+    content = (
+      <div className="mt-6 text-sm text-slate-500">Проверка доступа...</div>
+    );
   } else if (!isAdmin) {
     content = (
       <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -1868,7 +1976,8 @@ export default function AdminSqlPage() {
                 {coinsLoading ? "Начисляем..." : "Добавить монеты"}
               </button>
               <p className="text-[11px] text-slate-500">
-                Начисление идет напрямую на баланс пользователя. Это не считается оплатой и не увеличивает благотворительный фонд.
+                Начисление идет напрямую на баланс пользователя. Это не
+                считается оплатой и не увеличивает благотворительный фонд.
               </p>
               {coinsNotice ? (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
@@ -1883,7 +1992,8 @@ export default function AdminSqlPage() {
               CSV-аккаунты
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Формат строк: логин,email,пароль,начальный баланс. Первая строка с заголовками не нужна.
+              Формат строк: логин,email,пароль,начальный баланс. Первая строка с
+              заголовками не нужна.
             </p>
             <div className="mt-3 grid gap-2">
               <input
@@ -1903,7 +2013,9 @@ export default function AdminSqlPage() {
                     </div>
                   ))}
                   {bulkAccountRows.length > 8 ? (
-                    <div className="mt-1 text-slate-400">...и ещё {bulkAccountRows.length - 8}</div>
+                    <div className="mt-1 text-slate-400">
+                      ...и ещё {bulkAccountRows.length - 8}
+                    </div>
                   ) : null}
                 </div>
               ) : null}
@@ -1952,7 +2064,8 @@ export default function AdminSqlPage() {
                 {limitSaving ? "Сохраняем..." : "Обновить лимит"}
               </button>
               <p className="text-[11px] text-slate-500">
-                По умолчанию — 5 мемориалов. Для owner всегда действует лимит 10000.
+                По умолчанию — 5 мемориалов. Для owner всегда действует лимит
+                10000.
               </p>
               {limitNotice ? (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
@@ -1967,10 +2080,12 @@ export default function AdminSqlPage() {
               Тарифы и подарки
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Цены указываются в монетах. Тарифы применяются при создании и продлении
-              мемориалов, цены подарков — при дарении.
+              Цены указываются в монетах. Тарифы применяются при создании и
+              продлении мемориалов, цены подарков — при дарении.
             </p>
-            {pricingLoading && memorialPlanPrices.length === 0 && giftPrices.length === 0 ? (
+            {pricingLoading &&
+            memorialPlanPrices.length === 0 &&
+            giftPrices.length === 0 ? (
               <div className="mt-3 text-xs text-slate-500">Загрузка...</div>
             ) : null}
             {pricingError ? (
@@ -2003,7 +2118,7 @@ export default function AdminSqlPage() {
                       onChange={(event) =>
                         updateMemorialPlanPriceDraft(
                           plan.years,
-                          Number(event.target.value)
+                          Number(event.target.value),
                         )
                       }
                       className="min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] text-slate-700"
@@ -2036,7 +2151,9 @@ export default function AdminSqlPage() {
               />
               <div className="max-h-[520px] space-y-3 overflow-auto pr-1">
                 {filteredGiftPrices.length === 0 && !pricingLoading ? (
-                  <div className="text-xs text-slate-500">Подарки не найдены</div>
+                  <div className="text-xs text-slate-500">
+                    Подарки не найдены
+                  </div>
                 ) : null}
                 {filteredGiftPrices.map((gift) => {
                   const iconUrl = resolveGiftIconUrl(gift);
@@ -2072,7 +2189,9 @@ export default function AdminSqlPage() {
                           <input
                             value={gift.name}
                             onChange={(event) =>
-                              updateGiftDraft(gift.id, { name: event.target.value })
+                              updateGiftDraft(gift.id, {
+                                name: event.target.value,
+                              })
                             }
                             maxLength={80}
                             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800"
@@ -2086,7 +2205,7 @@ export default function AdminSqlPage() {
                             value={gift.description ?? ""}
                             onChange={(event) =>
                               updateGiftDraft(gift.id, {
-                                description: event.target.value
+                                description: event.target.value,
                               })
                             }
                             maxLength={260}
@@ -2105,7 +2224,7 @@ export default function AdminSqlPage() {
                               value={gift.price}
                               onChange={(event) =>
                                 updateGiftDraft(gift.id, {
-                                  price: Number(event.target.value)
+                                  price: Number(event.target.value),
                                 })
                               }
                               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700"
@@ -2117,7 +2236,9 @@ export default function AdminSqlPage() {
                             disabled={savingGiftId === gift.id}
                             className="rounded-lg border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-60"
                           >
-                            {savingGiftId === gift.id ? "Сохраняем..." : "Сохранить"}
+                            {savingGiftId === gift.id
+                              ? "Сохраняем..."
+                              : "Сохранить"}
                           </button>
                         </div>
                         <div className="truncate text-[10px] text-slate-400">
@@ -2136,7 +2257,9 @@ export default function AdminSqlPage() {
               Шрифты интерфейса
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Сейчас сайт использует Noto Sans как webfont. Он загружается приложением и одинаково применяется на iPhone, Android и десктопе. Системный стек оставлен только для сравнения.
+              Сейчас сайт использует Noto Sans как webfont. Он загружается
+              приложением и одинаково применяется на iPhone, Android и десктопе.
+              Системный стек оставлен только для сравнения.
             </p>
             <div className="mt-3 grid gap-2">
               <div className="grid grid-cols-2 gap-2">
@@ -2154,7 +2277,9 @@ export default function AdminSqlPage() {
                       }`}
                       style={{ fontFamily: option.family }}
                     >
-                      <span className="block text-sm font-black">{option.label}</span>
+                      <span className="block text-sm font-black">
+                        {option.label}
+                      </span>
                       <span className="mt-1 inline-flex rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-slate-500">
                         {option.badge}
                       </span>
@@ -2173,7 +2298,8 @@ export default function AdminSqlPage() {
                   МЯУГАВ создаёт тёплые 3D‑мемориалы
                 </div>
                 <p className="mt-2 text-sm font-semibold leading-snug text-[#8d6e63]">
-                  Барсик, 2014 — 2026. Создавайте памятные страницы, дарите подарки и отмечайте питомцев на карте.
+                  Барсик, 2014 — 2026. Создавайте памятные страницы, дарите
+                  подарки и отмечайте питомцев на карте.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="rounded-full bg-[#111827] px-4 py-2 text-[11px] font-black uppercase tracking-[0.1em] text-white">
@@ -2209,7 +2335,9 @@ export default function AdminSqlPage() {
                     disabled={roleSaving !== null}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
                   >
-                    {roleSaving === "ADMIN" ? "Сохраняем..." : "Сделать админом"}
+                    {roleSaving === "ADMIN"
+                      ? "Сохраняем..."
+                      : "Сделать админом"}
                   </button>
                   <button
                     type="button"
@@ -2217,7 +2345,9 @@ export default function AdminSqlPage() {
                     disabled={roleSaving !== null}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
                   >
-                    {roleSaving === "USER" ? "Сохраняем..." : "Понизить до user"}
+                    {roleSaving === "USER"
+                      ? "Сохраняем..."
+                      : "Понизить до user"}
                   </button>
                 </div>
                 {roleNotice ? (
@@ -2235,24 +2365,30 @@ export default function AdminSqlPage() {
                     <div className="text-xs text-slate-500">Загрузка...</div>
                   ) : null}
                   {accessUsers.map((user) => (
-                    <div key={user.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
+                    <div
+                      key={user.id}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600"
+                    >
                       <div className="font-semibold text-slate-800">
                         {user.email}
                       </div>
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <span>{user.login || "—"}</span>
-                        <span className={`rounded-full px-2 py-0.5 font-semibold ${
-                          user.accessLevel === "OWNER"
-                            ? "bg-amber-100 text-amber-700"
-                            : user.accessLevel === "ADMIN"
-                              ? "bg-sky-100 text-sky-700"
-                              : "bg-slate-100 text-slate-600"
-                        }`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-semibold ${
+                            user.accessLevel === "OWNER"
+                              ? "bg-amber-100 text-amber-700"
+                              : user.accessLevel === "ADMIN"
+                                ? "bg-sky-100 text-sky-700"
+                                : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
                           {user.accessLevel}
                         </span>
                       </div>
                       <div className="mt-1 text-[10px] text-slate-500">
-                        Мемориалов: {user.memorialCount ?? 0}/{user.maxMemorials ?? 5}
+                        Мемориалов: {user.memorialCount ?? 0}/
+                        {user.maxMemorials ?? 5}
                       </div>
                     </div>
                   ))}
@@ -2337,7 +2473,9 @@ export default function AdminSqlPage() {
                   <div className="text-xs text-slate-500">Загрузка...</div>
                 ) : null}
                 {!loadingTipsLoading && loadingTips.length === 0 ? (
-                  <div className="text-xs text-slate-500">Пока нет подсказок</div>
+                  <div className="text-xs text-slate-500">
+                    Пока нет подсказок
+                  </div>
                 ) : null}
                 {loadingTips.map((tip) => (
                   <div
@@ -2357,7 +2495,9 @@ export default function AdminSqlPage() {
                           type="checkbox"
                           checked={tip.isActive}
                           onChange={(event) =>
-                            updateLoadingTip(tip.id, { isActive: event.target.checked })
+                            updateLoadingTip(tip.id, {
+                              isActive: event.target.checked,
+                            })
                           }
                         />
                         Активна
@@ -2369,7 +2509,9 @@ export default function AdminSqlPage() {
                           className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900"
                           disabled={savingTipId === tip.id}
                         >
-                          {savingTipId === tip.id ? "Сохраняем..." : "Сохранить"}
+                          {savingTipId === tip.id
+                            ? "Сохраняем..."
+                            : "Сохранить"}
                         </button>
                         <button
                           type="button"
@@ -2430,9 +2572,14 @@ export default function AdminSqlPage() {
                   <div className="text-xs text-slate-500">Загрузка...</div>
                 ) : null}
                 {newsPosts.map((post) => (
-                  <div key={post.id} className="rounded-lg border border-slate-200 bg-white p-2">
+                  <div
+                    key={post.id}
+                    className="rounded-lg border border-slate-200 bg-white p-2"
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 text-xs font-semibold text-slate-800">{post.title}</div>
+                      <div className="min-w-0 text-xs font-semibold text-slate-800">
+                        {post.title}
+                      </div>
                       <button
                         type="button"
                         onClick={() => deleteNewsPost(post.id)}
@@ -2442,9 +2589,12 @@ export default function AdminSqlPage() {
                         {deletingNewsId === post.id ? "Удаляем..." : "Удалить"}
                       </button>
                     </div>
-                    <div className="mt-1 line-clamp-3 text-[11px] text-slate-500">{post.body}</div>
+                    <div className="mt-1 line-clamp-3 text-[11px] text-slate-500">
+                      {post.body}
+                    </div>
                     <div className="mt-1 text-[10px] text-slate-400">
-                      {post.isActive ? "активна" : "скрыта"} · {new Date(post.createdAt).toLocaleDateString("ru-RU")}
+                      {post.isActive ? "активна" : "скрыта"} ·{" "}
+                      {new Date(post.createdAt).toLocaleDateString("ru-RU")}
                     </div>
                   </div>
                 ))}
@@ -2457,12 +2607,15 @@ export default function AdminSqlPage() {
               Документы PDF
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Загруженные PDF попадают в историю документа на страницах соглашения и оферты.
+              Загруженные PDF попадают в историю документа на страницах
+              соглашения и оферты.
             </p>
             <div className="mt-3 grid gap-2">
               <select
                 value={documentType}
-                onChange={(event) => setDocumentType(event.target.value as "terms" | "offer")}
+                onChange={(event) =>
+                  setDocumentType(event.target.value as "terms" | "offer")
+                }
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
               >
                 <option value="terms">Пользовательское соглашение</option>
@@ -2477,7 +2630,9 @@ export default function AdminSqlPage() {
               <input
                 type="file"
                 accept="application/pdf,.pdf"
-                onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                onChange={(event) =>
+                  setDocumentFile(event.target.files?.[0] ?? null)
+                }
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
               />
               <button
@@ -2486,7 +2641,9 @@ export default function AdminSqlPage() {
                 disabled={documentUploading}
                 className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
               >
-                {documentUploading ? "Загружаем..." : "Загрузить новый документ"}
+                {documentUploading
+                  ? "Загружаем..."
+                  : "Загрузить новый документ"}
               </button>
               {documentNotice ? (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
@@ -2506,7 +2663,10 @@ export default function AdminSqlPage() {
                     className="block rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-600 hover:border-slate-300"
                   >
                     <span className="font-semibold text-slate-800">
-                      {revision.documentType === "terms" ? "Соглашение" : "Оферта"} · {revision.title}
+                      {revision.documentType === "terms"
+                        ? "Соглашение"
+                        : "Оферта"}{" "}
+                      · {revision.title}
                     </span>
                     <span className="mt-1 block text-slate-400">
                       {new Date(revision.createdAt).toLocaleDateString("ru-RU")}
@@ -2540,8 +2700,9 @@ export default function AdminSqlPage() {
               Нагрузочный прогон
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Браузер запускает серию параллельных admin-only запросов к API с DB probe.
-              Это удобный smoke-тест под реальной HTTP-нагрузкой, но не полноценный benchmark.
+              Браузер запускает серию параллельных admin-only запросов к API с
+              DB probe. Это удобный smoke-тест под реальной HTTP-нагрузкой, но
+              не полноценный benchmark.
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
               {LOAD_TEST_PRESETS.map((preset) => (
@@ -2554,7 +2715,8 @@ export default function AdminSqlPage() {
                 >
                   <div>{preset.label}</div>
                   <div className="mt-1 text-[10px] font-normal text-slate-500">
-                    {preset.totalRequests} запросов, concurrency {preset.concurrency}
+                    {preset.totalRequests} запросов, concurrency{" "}
+                    {preset.concurrency}
                   </div>
                 </button>
               ))}
@@ -2572,10 +2734,13 @@ export default function AdminSqlPage() {
               <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-xs font-semibold text-slate-800">
-                    {loadTestProgress.label}: {loadTestProgress.completed}/{loadTestProgress.totalRequests}
+                    {loadTestProgress.label}: {loadTestProgress.completed}/
+                    {loadTestProgress.totalRequests}
                   </div>
                   <div className="text-[11px] text-slate-500">
-                    ok {loadTestProgress.okCount} · fail {loadTestProgress.failCount} · concurrency {loadTestProgress.concurrency}
+                    ok {loadTestProgress.okCount} · fail{" "}
+                    {loadTestProgress.failCount} · concurrency{" "}
+                    {loadTestProgress.concurrency}
                   </div>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
@@ -2585,9 +2750,11 @@ export default function AdminSqlPage() {
                       width: `${Math.min(
                         100,
                         loadTestProgress.totalRequests > 0
-                          ? (loadTestProgress.completed / loadTestProgress.totalRequests) * 100
-                          : 0
-                      )}%`
+                          ? (loadTestProgress.completed /
+                              loadTestProgress.totalRequests) *
+                              100
+                          : 0,
+                      )}%`,
                     }}
                   />
                 </div>
@@ -2597,22 +2764,40 @@ export default function AdminSqlPage() {
               <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                 <div className="grid gap-2 text-[11px] text-slate-600 sm:grid-cols-2">
                   <div>
-                    Всего времени: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.totalDurationMs)}</span>
+                    Всего времени:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(loadTestSummary.totalDurationMs)}
+                    </span>
                   </div>
                   <div>
-                    Скорость: <span className="font-semibold text-slate-800">{loadTestSummary.requestsPerSecond.toFixed(1)} req/s</span>
+                    Скорость:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {loadTestSummary.requestsPerSecond.toFixed(1)} req/s
+                    </span>
                   </div>
                   <div>
-                    Средняя задержка: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.avgMs)}</span>
+                    Средняя задержка:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(loadTestSummary.avgMs)}
+                    </span>
                   </div>
                   <div>
-                    P95: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.p95Ms)}</span>
+                    P95:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(loadTestSummary.p95Ms)}
+                    </span>
                   </div>
                   <div>
-                    Max: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.maxMs)}</span>
+                    Max:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(loadTestSummary.maxMs)}
+                    </span>
                   </div>
                   <div>
-                    Server P95: <span className="font-semibold text-slate-800">{formatMs(loadTestSummary.p95ServerMs)}</span>
+                    Server P95:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(loadTestSummary.p95ServerMs)}
+                    </span>
                   </div>
                 </div>
                 <p className="mt-3 text-[11px] text-slate-500">
@@ -2632,9 +2817,10 @@ export default function AdminSqlPage() {
               Синтетические пользователи
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Это приближённая симуляция онлайн-пользователей: виртуальные пользователи
-              крутят реальные сценарии проекта с паузами между действиями. Профиль:
-              карта 40%, мои питомцы 25%, мемориал 20%, подарок 10%, редактирование 5%.
+              Это приближённая симуляция онлайн-пользователей: виртуальные
+              пользователи крутят реальные сценарии проекта с паузами между
+              действиями. Профиль: карта 40%, мои питомцы 25%, мемориал 20%,
+              подарок 10%, редактирование 5%.
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
               {SYNTHETIC_USER_PRESETS.map((preset) => (
@@ -2647,7 +2833,8 @@ export default function AdminSqlPage() {
                 >
                   <div>{preset.label}</div>
                   <div className="mt-1 text-[10px] font-normal text-slate-500">
-                    {Math.round(preset.durationMs / 1000)} сек, до {preset.virtualUsers} VU
+                    {Math.round(preset.durationMs / 1000)} сек, до{" "}
+                    {preset.virtualUsers} VU
                   </div>
                 </button>
               ))}
@@ -2665,10 +2852,14 @@ export default function AdminSqlPage() {
               <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-xs font-semibold text-slate-800">
-                    {syntheticProgress.label}: {Math.round(syntheticProgress.elapsedMs / 1000)} / {Math.round(syntheticProgress.durationMs / 1000)} сек
+                    {syntheticProgress.label}:{" "}
+                    {Math.round(syntheticProgress.elapsedMs / 1000)} /{" "}
+                    {Math.round(syntheticProgress.durationMs / 1000)} сек
                   </div>
                   <div className="text-[11px] text-slate-500">
-                    active {syntheticProgress.activeUsers} · flows {syntheticProgress.completedFlows} · req {syntheticProgress.totalRequests}
+                    active {syntheticProgress.activeUsers} · flows{" "}
+                    {syntheticProgress.completedFlows} · req{" "}
+                    {syntheticProgress.totalRequests}
                   </div>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
@@ -2678,18 +2869,26 @@ export default function AdminSqlPage() {
                       width: `${Math.min(
                         100,
                         syntheticProgress.durationMs > 0
-                          ? (syntheticProgress.elapsedMs / syntheticProgress.durationMs) * 100
-                          : 0
-                      )}%`
+                          ? (syntheticProgress.elapsedMs /
+                              syntheticProgress.durationMs) *
+                              100
+                          : 0,
+                      )}%`,
                     }}
                   />
                 </div>
                 <div className="mt-3 grid gap-2 text-[11px] text-slate-600 sm:grid-cols-2">
-                  <div>ok {syntheticProgress.okCount} · fail {syntheticProgress.failCount}</div>
-                  <div>виртуальных пользователей: {syntheticProgress.virtualUsers}</div>
+                  <div>
+                    ok {syntheticProgress.okCount} · fail{" "}
+                    {syntheticProgress.failCount}
+                  </div>
+                  <div>
+                    виртуальных пользователей: {syntheticProgress.virtualUsers}
+                  </div>
                   {SYNTHETIC_SCENARIOS.map((scenario) => (
                     <div key={scenario.id}>
-                      {scenario.label}: {syntheticProgress.scenarioCounts[scenario.id]}
+                      {scenario.label}:{" "}
+                      {syntheticProgress.scenarioCounts[scenario.id]}
                     </div>
                   ))}
                 </div>
@@ -2699,28 +2898,52 @@ export default function AdminSqlPage() {
               <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                 <div className="grid gap-2 text-[11px] text-slate-600 sm:grid-cols-2">
                   <div>
-                    Длительность: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.actualDurationMs)}</span>
+                    Длительность:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.actualDurationMs)}
+                    </span>
                   </div>
                   <div>
-                    Скорость: <span className="font-semibold text-slate-800">{syntheticSummary.requestsPerSecond.toFixed(1)} req/s</span>
+                    Скорость:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {syntheticSummary.requestsPerSecond.toFixed(1)} req/s
+                    </span>
                   </div>
                   <div>
-                    Средний request: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.avgRequestMs)}</span>
+                    Средний request:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.avgRequestMs)}
+                    </span>
                   </div>
                   <div>
-                    P95 request: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.p95RequestMs)}</span>
+                    P95 request:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.p95RequestMs)}
+                    </span>
                   </div>
                   <div>
-                    Средний flow: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.avgFlowMs)}</span>
+                    Средний flow:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.avgFlowMs)}
+                    </span>
                   </div>
                   <div>
-                    P95 flow: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.p95FlowMs)}</span>
+                    P95 flow:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.p95FlowMs)}
+                    </span>
                   </div>
                   <div>
-                    Max request: <span className="font-semibold text-slate-800">{formatMs(syntheticSummary.maxRequestMs)}</span>
+                    Max request:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.maxRequestMs)}
+                    </span>
                   </div>
                   <div>
-                    Flow/min: <span className="font-semibold text-slate-800">{syntheticSummary.flowsPerMinute.toFixed(1)}</span>
+                    Flow/min:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {syntheticSummary.flowsPerMinute.toFixed(1)}
+                    </span>
                   </div>
                 </div>
                 <p className="mt-3 text-[11px] text-slate-500">
@@ -2737,7 +2960,9 @@ export default function AdminSqlPage() {
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center justify-between">
-              <div className="text-xs font-semibold uppercase text-slate-500">Таблицы</div>
+              <div className="text-xs font-semibold uppercase text-slate-500">
+                Таблицы
+              </div>
               <button
                 type="button"
                 onClick={refreshSchema}
@@ -2766,7 +2991,10 @@ export default function AdminSqlPage() {
                 <div className="text-xs text-slate-500">Ничего не найдено</div>
               ) : null}
               {filteredTables.map((table) => (
-                <div key={table.name} className="rounded-lg border border-slate-200 bg-white p-2">
+                <div
+                  key={table.name}
+                  className="rounded-lg border border-slate-200 bg-white p-2"
+                >
                   <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
@@ -2795,7 +3023,10 @@ export default function AdminSqlPage() {
                   {expandedTables[table.name] ? (
                     <div className="mt-2 space-y-1 text-[11px] text-slate-600">
                       {table.columns.map((column) => (
-                        <div key={column.name} className="flex items-center justify-between">
+                        <div
+                          key={column.name}
+                          className="flex items-center justify-between"
+                        >
                           <span>{column.name}</span>
                           <span className="text-slate-400">
                             {column.type}
@@ -2854,13 +3085,25 @@ export default function AdminSqlPage() {
   return (
     <main className="min-h-[calc(100vh-var(--app-header-height,56px))] bg-[#fcf8f5] px-6 py-10">
       <div className="mx-auto w-full max-w-[90vw] rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Админ · SQL консоль</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold text-slate-900">
+            Админ · SQL консоль
+          </h1>
+          <a
+            href="/admin/moderation"
+            className="rounded-[16px] bg-[#fffcf9] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_10px_24px_rgba(93,64,55,0.12)] transition hover:-translate-y-0.5"
+          >
+            Модерация
+          </a>
+        </div>
         <p className="mt-2 text-sm text-slate-600">
           Разрешены только SELECT, DELETE и UPDATE. Выполняется на сервере API.
         </p>
         {content}
       </div>
-      {error ? <ErrorToast message={error} onClose={() => setError(null)} /> : null}
+      {error ? (
+        <ErrorToast message={error} onClose={() => setError(null)} />
+      ) : null}
     </main>
   );
 }

@@ -9,37 +9,48 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UploadedFiles,
-  UseInterceptors
+  UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 import { Prisma } from "@prisma/client";
 import { Request } from "express";
 import { extname } from "path";
-import { canAccessAdmin, canManageAdmins, getAccessLevel, isOwnerUser } from "../auth/access-level";
+import {
+  canAccessAdmin,
+  canManageAdmins,
+  getAccessLevel,
+  isOwnerUser,
+} from "../auth/access-level";
 import * as bcrypt from "bcryptjs";
 import { AuthService } from "../auth/auth.service";
 import { GiftsService } from "../gifts/gifts.service";
+import { MailService } from "../mail/mail.service";
 import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { S3Service } from "../storage/s3.service";
 import { AdminBulkCreateUsersDto } from "./dto/admin-bulk-create-users.dto";
 import { AdminDocumentUploadDto } from "./dto/admin-document.dto";
+import {
+  AdminModerationDto,
+  MODERATION_STATUSES,
+} from "./dto/admin-moderation.dto";
 import { AdminNewsDto } from "./dto/admin-news.dto";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
 import { AdminAddCoinsDto } from "./dto/admin-add-coins.dto";
 import {
   AdminLoadingTipCreateDto,
-  AdminLoadingTipUpdateDto
+  AdminLoadingTipUpdateDto,
 } from "./dto/admin-loading-tip.dto";
 import { AdminUpdateMemorialLimitDto } from "./dto/admin-update-memorial-limit.dto";
 import { AdminUpdateUserRoleDto } from "./dto/admin-update-user-role.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
 import {
   AdminUpdateGiftPriceDto,
-  AdminUpdateMemorialPlanPriceDto
+  AdminUpdateMemorialPlanPriceDto,
 } from "./dto/admin-pricing.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
 
@@ -54,8 +65,8 @@ const toSafeJson = (value: unknown): unknown => {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
         key,
-        toSafeJson(entry)
-      ])
+        toSafeJson(entry),
+      ]),
     );
   }
   return value;
@@ -80,7 +91,8 @@ export class AdminController {
     @Inject(AuthService) private readonly authService: AuthService,
     @Inject(GiftsService) private readonly giftsService: GiftsService,
     @Inject(PricingService) private readonly pricingService: PricingService,
-    @Inject(S3Service) private readonly s3: S3Service
+    @Inject(S3Service) private readonly s3: S3Service,
+    @Inject(MailService) private readonly mailService: MailService,
   ) {}
 
   private async ensureAdmin(req: Request) {
@@ -109,12 +121,23 @@ export class AdminController {
       return;
     }
     await this.prisma.loadingTip.createMany({
-      data: DEFAULT_LOADING_TIPS.map((text: string) => ({ text }))
+      data: DEFAULT_LOADING_TIPS.map((text: string) => ({ text })),
     });
   }
 
+  private getFrontendUrl() {
+    return (process.env.FRONTEND_URL ?? "https://xn--80aeb9a9a9d.com").replace(
+      /\/+$/,
+      "",
+    );
+  }
+
   private async uploadNewsPhotos(
-    files: Array<{ originalname: string; mimetype?: string; buffer: Buffer }> = []
+    files: Array<{
+      originalname: string;
+      mimetype?: string;
+      buffer: Buffer;
+    }> = [],
   ) {
     if (!files.length) {
       return [];
@@ -136,8 +159,12 @@ export class AdminController {
           throw new BadRequestException("Можно загружать только изображения");
         }
         const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${safeExt}`;
-        return this.s3.uploadPublic(`news/posts/${fileName}`, file.buffer, contentType);
-      })
+        return this.s3.uploadPublic(
+          `news/posts/${fileName}`,
+          file.buffer,
+          contentType,
+        );
+      }),
     );
   }
 
@@ -168,7 +195,9 @@ export class AdminController {
       accessLevel !== "OWNER" &&
       /^(update|delete)\s+"?user"?\b/i.test(trimmed)
     ) {
-      throw new ForbiddenException("Только владелец может изменять пользователей через SQL");
+      throw new ForbiddenException(
+        "Только владелец может изменять пользователей через SQL",
+      );
     }
 
     if (isSelect) {
@@ -177,7 +206,7 @@ export class AdminController {
       return {
         type: "select",
         rowCount: Array.isArray(rows) ? rows.length : 0,
-        rows: safeRows
+        rows: safeRows,
       };
     }
 
@@ -188,14 +217,14 @@ export class AdminController {
       return {
         type: isUpdate ? "update" : "delete",
         rowCount: Array.isArray(rows) ? rows.length : 0,
-        rows: safeRows
+        rows: safeRows,
       };
     }
 
     const affected = await this.prisma.$executeRawUnsafe(trimmed);
     return {
       type: isUpdate ? "update" : "delete",
-      affected: typeof affected === "bigint" ? affected.toString() : affected
+      affected: typeof affected === "bigint" ? affected.toString() : affected,
     };
   }
 
@@ -203,29 +232,42 @@ export class AdminController {
   async getSchema(@Req() req: Request) {
     await this.ensureAdmin(req);
     const rawTables = (await this.prisma.$queryRawUnsafe(
-      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name"
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name",
     )) as Array<{ table_name: string }>;
     const rawColumns = (await this.prisma.$queryRawUnsafe(
-      "SELECT table_name, column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, ordinal_position"
-    )) as Array<{ table_name: string; column_name: string; data_type: string; is_nullable: string }>;
+      "SELECT table_name, column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = 'public' ORDER BY table_name, ordinal_position",
+    )) as Array<{
+      table_name: string;
+      column_name: string;
+      data_type: string;
+      is_nullable: string;
+    }>;
 
-    const tableMap = new Map<string, { name: string; columns: { name: string; type: string; nullable: boolean }[] }>();
+    const tableMap = new Map<
+      string,
+      {
+        name: string;
+        columns: { name: string; type: string; nullable: boolean }[];
+      }
+    >();
     rawTables.forEach((table) => {
       tableMap.set(table.table_name, { name: table.table_name, columns: [] });
     });
     rawColumns.forEach((column) => {
-      const entry =
-        tableMap.get(column.table_name) ?? { name: column.table_name, columns: [] };
+      const entry = tableMap.get(column.table_name) ?? {
+        name: column.table_name,
+        columns: [],
+      };
       entry.columns.push({
         name: column.column_name,
         type: column.data_type,
-        nullable: column.is_nullable === "YES"
+        nullable: column.is_nullable === "YES",
       });
       tableMap.set(column.table_name, entry);
     });
 
     const tables = Array.from(tableMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
+      a.name.localeCompare(b.name),
     );
     return { tables };
   }
@@ -242,8 +284,111 @@ export class AdminController {
       ok: true,
       dbMs,
       serverMs,
-      at: new Date().toISOString()
+      at: new Date().toISOString(),
     };
+  }
+
+  @Get("moderation")
+  async listModerationQueue(
+    @Req() req: Request,
+    @Query("status") status?: string,
+  ) {
+    await this.ensureAdmin(req);
+    const normalizedStatus = String(status ?? "PENDING").toUpperCase();
+    const where =
+      normalizedStatus === "ALL"
+        ? {}
+        : {
+            moderationStatus: MODERATION_STATUSES.includes(
+              normalizedStatus as (typeof MODERATION_STATUSES)[number],
+            )
+              ? normalizedStatus
+              : "PENDING",
+          };
+    const pets = await this.prisma.pet.findMany({
+      where: {
+        ...where,
+        isActive: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 120,
+      include: {
+        owner: { select: { id: true, email: true, login: true } },
+        marker: true,
+        memorial: true,
+        photos: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+    return { pets };
+  }
+
+  @Patch("moderation/:id")
+  async updateModerationStatus(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() dto: AdminModerationDto,
+  ) {
+    const moderator = await this.ensureAdmin(req);
+    const pet = await this.prisma.pet.findUnique({
+      where: { id },
+      include: {
+        owner: { select: { id: true, email: true, login: true } },
+        memorial: true,
+      },
+    });
+    if (!pet) {
+      throw new BadRequestException("Мемориал не найден");
+    }
+    const now = new Date();
+    const comment = dto.comment?.trim() ?? "";
+    if (dto.status === "NEEDS_CHANGES" && !comment) {
+      throw new BadRequestException("Укажите, что нужно поправить");
+    }
+
+    const updated = await this.prisma.pet.update({
+      where: { id },
+      data: {
+        moderationStatus: dto.status,
+        moderationComment: dto.status === "NEEDS_CHANGES" ? comment : null,
+        moderatedAt: now,
+        moderatorId: moderator.id,
+      },
+      include: {
+        owner: { select: { id: true, email: true, login: true } },
+        marker: true,
+        memorial: true,
+        photos: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+
+    let mailSent = false;
+    let mailError: string | null = null;
+    try {
+      const frontendUrl = this.getFrontendUrl();
+      if (dto.status === "APPROVED") {
+        await this.mailService.sendMemorialApproved(
+          pet.owner.email,
+          pet.name,
+          `${frontendUrl}/pets/${pet.id}`,
+          pet.isPublic,
+        );
+        mailSent = true;
+      } else if (dto.status === "NEEDS_CHANGES") {
+        await this.mailService.sendMemorialNeedsChanges(
+          pet.owner.email,
+          pet.name,
+          `${frontendUrl}/create?edit=${pet.id}`,
+          comment,
+        );
+        mailSent = true;
+      }
+    } catch (error) {
+      mailError =
+        error instanceof Error ? error.message : "Не удалось отправить письмо";
+      console.warn("Memorial moderation email failed", error);
+    }
+
+    return { pet: updated, mailSent, mailError };
   }
 
   @Get("access/users")
@@ -258,43 +403,50 @@ export class AdminController {
         role: true,
         maxMemorials: true,
         createdAt: true,
-        _count: { select: { pets: true } }
-      }
+        _count: { select: { pets: true } },
+      },
     });
     return {
-      users: users.map((user: {
-        id: string;
-        email: string;
-        login: string | null;
-        role: string;
-        maxMemorials: number | null;
-        createdAt: Date;
-        _count: { pets: number };
-      }) => ({
-        ...user,
-        accessLevel: getAccessLevel(user),
-        isOwner: isOwnerUser(user),
-        maxMemorials: isOwnerUser(user) ? 10000 : user.maxMemorials ?? 5,
-        memorialCount: user._count.pets,
-        _count: undefined
-      }))
+      users: users.map(
+        (user: {
+          id: string;
+          email: string;
+          login: string | null;
+          role: string;
+          maxMemorials: number | null;
+          createdAt: Date;
+          _count: { pets: number };
+        }) => ({
+          ...user,
+          accessLevel: getAccessLevel(user),
+          isOwner: isOwnerUser(user),
+          maxMemorials: isOwnerUser(user) ? 10000 : (user.maxMemorials ?? 5),
+          memorialCount: user._count.pets,
+          _count: undefined,
+        }),
+      ),
     };
   }
 
   @Patch("access/role")
-  async updateUserRole(@Req() req: Request, @Body() dto: AdminUpdateUserRoleDto) {
+  async updateUserRole(
+    @Req() req: Request,
+    @Body() dto: AdminUpdateUserRoleDto,
+  ) {
     await this.ensureOwner(req);
     const email = dto.email.trim().toLowerCase();
     const role = dto.role;
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, login: true, role: true }
+      select: { id: true, email: true, login: true, role: true },
     });
     if (!user) {
       throw new BadRequestException("Пользователь не найден");
     }
     if (isOwnerUser(user)) {
-      throw new BadRequestException("Нельзя изменять уровень доступа владельца");
+      throw new BadRequestException(
+        "Нельзя изменять уровень доступа владельца",
+      );
     }
     const updated = await this.prisma.user.update({
       where: { id: user.id },
@@ -306,8 +458,8 @@ export class AdminController {
         role: true,
         maxMemorials: true,
         createdAt: true,
-        _count: { select: { pets: true } }
-      }
+        _count: { select: { pets: true } },
+      },
     });
     return {
       user: {
@@ -316,40 +468,44 @@ export class AdminController {
         isOwner: false,
         maxMemorials: updated.maxMemorials ?? 5,
         memorialCount: updated._count.pets,
-        _count: undefined
-      }
+        _count: undefined,
+      },
     };
   }
 
   @Patch("access/memorial-limit")
   async updateMemorialLimit(
     @Req() req: Request,
-    @Body() dto: AdminUpdateMemorialLimitDto
+    @Body() dto: AdminUpdateMemorialLimitDto,
   ) {
     await this.ensureAdmin(req);
     const emails = Array.from(
-      new Set(dto.emails.map((email) => email.trim().toLowerCase()).filter(Boolean))
+      new Set(
+        dto.emails.map((email) => email.trim().toLowerCase()).filter(Boolean),
+      ),
     );
     if (emails.length === 0) {
       throw new BadRequestException("Укажите хотя бы один email");
     }
     const users = (await this.prisma.user.findMany({
       where: { email: { in: emails } },
-      select: { id: true, email: true, login: true }
+      select: { id: true, email: true, login: true },
     })) as Array<{ id: string; email: string; login: string | null }>;
     const editableUsers = users.filter(
-      (user: { id: string; email: string; login: string | null }) => !isOwnerUser(user)
+      (user: { id: string; email: string; login: string | null }) =>
+        !isOwnerUser(user),
     );
     if (editableUsers.length > 0) {
       await this.prisma.user.updateMany({
         where: {
           id: {
             in: editableUsers.map(
-              (user: { id: string; email: string; login: string | null }) => user.id
-            )
-          }
+              (user: { id: string; email: string; login: string | null }) =>
+                user.id,
+            ),
+          },
         },
-        data: { maxMemorials: dto.maxMemorials }
+        data: { maxMemorials: dto.maxMemorials },
       });
     }
     const updatedUsers = await this.prisma.user.findMany({
@@ -362,35 +518,43 @@ export class AdminController {
         role: true,
         maxMemorials: true,
         createdAt: true,
-        _count: { select: { pets: true } }
-      }
+        _count: { select: { pets: true } },
+      },
     });
     return {
-      users: updatedUsers.map((user: {
-        id: string;
-        email: string;
-        login: string | null;
-        role: string;
-        maxMemorials: number | null;
-        createdAt: Date;
-        _count: { pets: number };
-      }) => ({
-        ...user,
-        accessLevel: getAccessLevel(user),
-        isOwner: isOwnerUser(user),
-        maxMemorials: isOwnerUser(user) ? 10000 : user.maxMemorials ?? 5,
-        memorialCount: user._count.pets,
-        _count: undefined
-      })),
+      users: updatedUsers.map(
+        (user: {
+          id: string;
+          email: string;
+          login: string | null;
+          role: string;
+          maxMemorials: number | null;
+          createdAt: Date;
+          _count: { pets: number };
+        }) => ({
+          ...user,
+          accessLevel: getAccessLevel(user),
+          isOwner: isOwnerUser(user),
+          maxMemorials: isOwnerUser(user) ? 10000 : (user.maxMemorials ?? 5),
+          memorialCount: user._count.pets,
+          _count: undefined,
+        }),
+      ),
       skippedOwners: users
-        .filter((user: { id: string; email: string; login: string | null }) => isOwnerUser(user))
-        .map((user: { id: string; email: string; login: string | null }) => user.email),
+        .filter((user: { id: string; email: string; login: string | null }) =>
+          isOwnerUser(user),
+        )
+        .map(
+          (user: { id: string; email: string; login: string | null }) =>
+            user.email,
+        ),
       missingEmails: emails.filter(
         (email: string) =>
           !users.some(
-            (user: { id: string; email: string; login: string | null }) => user.email === email
-          )
-      )
+            (user: { id: string; email: string; login: string | null }) =>
+              user.email === email,
+          ),
+      ),
     };
   }
 
@@ -403,59 +567,80 @@ export class AdminController {
     }
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, login: true, coinBalance: true }
+      select: { id: true, email: true, login: true, coinBalance: true },
     });
     if (!user) {
       throw new BadRequestException("Пользователь не найден");
     }
-    const updated = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const updatedUser = await tx.user.update({
-        where: { id: user.id },
-        data: { coinBalance: { increment: dto.amount } },
-        select: { id: true, email: true, login: true, coinBalance: true }
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId: user.id,
-          amount: dto.amount,
-          balanceAfter: updatedUser.coinBalance,
-          type: "admin_add_coins",
-          title: "Админское начисление",
-          details: `Начислено администратором: ${dto.amount} монет`
-        }
-      });
-      return updatedUser;
-    });
+    const updated = await this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: { coinBalance: { increment: dto.amount } },
+          select: { id: true, email: true, login: true, coinBalance: true },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            userId: user.id,
+            amount: dto.amount,
+            balanceAfter: updatedUser.coinBalance,
+            type: "admin_add_coins",
+            title: "Админское начисление",
+            details: `Начислено администратором: ${dto.amount} монет`,
+          },
+        });
+        return updatedUser;
+      },
+    );
     return { user: updated, amount: dto.amount };
   }
 
   @Post("users/bulk-create")
-  async bulkCreateUsers(@Req() req: Request, @Body() dto: AdminBulkCreateUsersDto) {
+  async bulkCreateUsers(
+    @Req() req: Request,
+    @Body() dto: AdminBulkCreateUsersDto,
+  ) {
     await this.ensureAdmin(req);
     const rows = Array.isArray(dto.rows) ? dto.rows : [];
     if (rows.length === 0) {
       throw new BadRequestException("CSV не содержит строк пользователей");
     }
     if (rows.length > 200) {
-      throw new BadRequestException("За один раз можно создать не больше 200 аккаунтов");
+      throw new BadRequestException(
+        "За один раз можно создать не больше 200 аккаунтов",
+      );
     }
 
     const normalizedRows = rows.map((row, index) => {
       const login = String(row.login ?? "").trim();
-      const email = String(row.email ?? "").trim().toLowerCase();
+      const email = String(row.email ?? "")
+        .trim()
+        .toLowerCase();
       const password = String(row.password ?? "").trim();
       const initialBalance = Number(row.initialBalance ?? 0);
       if (!/^[A-Za-z0-9_]{3,30}$/.test(login)) {
-        throw new BadRequestException(`Строка ${index + 1}: некорректный логин`);
+        throw new BadRequestException(
+          `Строка ${index + 1}: некорректный логин`,
+        );
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new BadRequestException(`Строка ${index + 1}: некорректный email`);
+        throw new BadRequestException(
+          `Строка ${index + 1}: некорректный email`,
+        );
       }
       if (password.length < 6 || password.length > 200) {
-        throw new BadRequestException(`Строка ${index + 1}: пароль должен быть от 6 до 200 символов`);
+        throw new BadRequestException(
+          `Строка ${index + 1}: пароль должен быть от 6 до 200 символов`,
+        );
       }
-      if (!Number.isInteger(initialBalance) || initialBalance < 0 || initialBalance > 1_000_000) {
-        throw new BadRequestException(`Строка ${index + 1}: баланс должен быть целым числом от 0 до 1000000`);
+      if (
+        !Number.isInteger(initialBalance) ||
+        initialBalance < 0 ||
+        initialBalance > 1_000_000
+      ) {
+        throw new BadRequestException(
+          `Строка ${index + 1}: баланс должен быть целым числом от 0 до 1000000`,
+        );
       }
       return { login, email, password, initialBalance };
     });
@@ -467,24 +652,29 @@ export class AdminController {
       .map((row) => row.login.toLowerCase())
       .filter((login, index, logins) => logins.indexOf(login) !== index);
     if (duplicateEmails.length > 0 || duplicateLogins.length > 0) {
-      throw new BadRequestException("CSV содержит повторяющиеся email или логины");
+      throw new BadRequestException(
+        "CSV содержит повторяющиеся email или логины",
+      );
     }
 
     const existing = await this.prisma.user.findMany({
       where: {
         OR: [
           { email: { in: normalizedRows.map((row) => row.email) } },
-          { login: { in: normalizedRows.map((row) => row.login) } }
-        ]
+          { login: { in: normalizedRows.map((row) => row.login) } },
+        ],
       },
-      select: { email: true, login: true }
+      select: { email: true, login: true },
     });
     if (existing.length > 0) {
       throw new BadRequestException(
         `Уже существуют: ${existing
-          .map((user: { email: string; login: string | null }) => user.email || user.login)
+          .map(
+            (user: { email: string; login: string | null }) =>
+              user.email || user.login,
+          )
           .filter(Boolean)
-          .join(", ")}`
+          .join(", ")}`,
       );
     }
 
@@ -511,12 +701,12 @@ export class AdminController {
                     type: "admin_initial_balance",
                     title: "Начальный баланс",
                     details: "Создано через CSV-импорт",
-                    createdAt: now
-                  }
+                    createdAt: now,
+                  },
                 }
-              : undefined
+              : undefined,
         },
-        select: { id: true, email: true, login: true, coinBalance: true }
+        select: { id: true, email: true, login: true, coinBalance: true },
       });
       created.push(user);
     }
@@ -528,7 +718,7 @@ export class AdminController {
     await this.ensureAdmin(req);
     const [memorialPlanPrices, gifts] = await Promise.all([
       this.pricingService.listMemorialPlanPrices(),
-      this.giftsService.listCatalog()
+      this.giftsService.listCatalog(),
     ]);
     return { memorialPlanPrices, gifts };
   }
@@ -536,12 +726,12 @@ export class AdminController {
   @Patch("pricing/memorial-plan")
   async updateMemorialPlanPrice(
     @Req() req: Request,
-    @Body() dto: AdminUpdateMemorialPlanPriceDto
+    @Body() dto: AdminUpdateMemorialPlanPriceDto,
   ) {
     await this.ensureAdmin(req);
     const plan = await this.pricingService.updateMemorialPlanPrice(
       dto.years,
-      dto.price
+      dto.price,
     );
     return { plan };
   }
@@ -550,7 +740,7 @@ export class AdminController {
   async updateGiftPrice(
     @Req() req: Request,
     @Param("id") id: string,
-    @Body() dto: AdminUpdateGiftPriceDto
+    @Body() dto: AdminUpdateGiftPriceDto,
   ) {
     await this.ensureAdmin(req);
     const name = dto.name?.trim();
@@ -560,8 +750,8 @@ export class AdminController {
       data: {
         price: dto.price,
         ...(name ? { name } : {}),
-        ...(typeof description === "string" ? { description } : {})
-      }
+        ...(typeof description === "string" ? { description } : {}),
+      },
     });
     return { gift };
   }
@@ -582,12 +772,14 @@ export class AdminController {
       throw new BadRequestException("Пользователь не найден");
     }
     if (isOwnerUser(user) && !canManageAdmins(currentUser)) {
-      throw new ForbiddenException("Только владелец может изменять пароль владельца");
+      throw new ForbiddenException(
+        "Только владелец может изменять пароль владельца",
+      );
     }
     const passwordHash = await bcrypt.hash(nextPassword, 10);
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash }
+      data: { passwordHash },
     });
     return { ok: true };
   }
@@ -597,22 +789,30 @@ export class AdminController {
     await this.ensureAdmin(req);
     await this.ensureLoadingTipsSeeded();
     const tips = await this.prisma.loadingTip.findMany({
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "asc" },
     });
     return {
       tips: tips.map(
-        (tip: { id: string; text: string; isActive: boolean; createdAt: Date }) => ({
+        (tip: {
+          id: string;
+          text: string;
+          isActive: boolean;
+          createdAt: Date;
+        }) => ({
           id: tip.id,
           text: tip.text,
           isActive: tip.isActive,
-          createdAt: tip.createdAt
-        })
-      )
+          createdAt: tip.createdAt,
+        }),
+      ),
     };
   }
 
   @Post("loading-tips")
-  async createLoadingTip(@Req() req: Request, @Body() dto: AdminLoadingTipCreateDto) {
+  async createLoadingTip(
+    @Req() req: Request,
+    @Body() dto: AdminLoadingTipCreateDto,
+  ) {
     await this.ensureAdmin(req);
     const text = (dto.text ?? "").trim();
     if (!text) {
@@ -621,8 +821,8 @@ export class AdminController {
     const tip = await this.prisma.loadingTip.create({
       data: {
         text,
-        isActive: dto.isActive ?? true
-      }
+        isActive: dto.isActive ?? true,
+      },
     });
     return { id: tip.id };
   }
@@ -631,7 +831,7 @@ export class AdminController {
   async updateLoadingTip(
     @Req() req: Request,
     @Param("id") id: string,
-    @Body() dto: AdminLoadingTipUpdateDto
+    @Body() dto: AdminLoadingTipUpdateDto,
   ) {
     await this.ensureAdmin(req);
     const data: { text?: string; isActive?: boolean } = {};
@@ -647,7 +847,7 @@ export class AdminController {
     }
     await this.prisma.loadingTip.update({
       where: { id },
-      data
+      data,
     });
     return { ok: true };
   }
@@ -664,7 +864,7 @@ export class AdminController {
     await this.ensureAdmin(req);
     const posts = await this.prisma.newsPost.findMany({
       orderBy: { createdAt: "desc" },
-      take: 100
+      take: 100,
     });
     return { posts };
   }
@@ -672,8 +872,8 @@ export class AdminController {
   @Post("news")
   @UseInterceptors(
     FilesInterceptor("photos", 8, {
-      limits: { fileSize: 6 * 1024 * 1024 }
-    })
+      limits: { fileSize: 6 * 1024 * 1024 },
+    }),
   )
   async createNews(
     @Req() req: Request,
@@ -684,7 +884,11 @@ export class AdminController {
       isActive?: boolean | string;
     },
     @UploadedFiles()
-    files: Array<{ originalname: string; mimetype?: string; buffer: Buffer }> = []
+    files: Array<{
+      originalname: string;
+      mimetype?: string;
+      buffer: Buffer;
+    }> = [],
   ) {
     await this.ensureAdmin(req);
     const title = dto.title?.trim();
@@ -706,8 +910,8 @@ export class AdminController {
           dto.isActive === true ||
           dto.isActive === "true" ||
           dto.isActive === "1" ||
-          dto.isActive === "on"
-      }
+          dto.isActive === "on",
+      },
     });
     return { post };
   }
@@ -716,7 +920,7 @@ export class AdminController {
   async updateNews(
     @Req() req: Request,
     @Param("id") id: string,
-    @Body() dto: AdminNewsDto
+    @Body() dto: AdminNewsDto,
   ) {
     await this.ensureAdmin(req);
     const post = await this.prisma.newsPost.update({
@@ -724,8 +928,8 @@ export class AdminController {
       data: {
         title: dto.title.trim(),
         body: dto.body.trim(),
-        isActive: dto.isActive ?? true
-      }
+        isActive: dto.isActive ?? true,
+      },
     });
     return { post };
   }
@@ -742,7 +946,7 @@ export class AdminController {
     await this.ensureAdmin(req);
     const revisions = await this.prisma.documentRevision.findMany({
       orderBy: { createdAt: "desc" },
-      take: 120
+      take: 120,
     });
     return { revisions };
   }
@@ -750,13 +954,14 @@ export class AdminController {
   @Post("documents")
   @UseInterceptors(
     FileInterceptor("file", {
-      limits: { fileSize: 20 * 1024 * 1024 }
-    })
+      limits: { fileSize: 20 * 1024 * 1024 },
+    }),
   )
   async uploadDocumentRevision(
     @Req() req: Request,
     @Body() dto: AdminDocumentUploadDto,
-    @UploadedFile() file?: { originalname: string; mimetype?: string; buffer: Buffer }
+    @UploadedFile()
+    file?: { originalname: string; mimetype?: string; buffer: Buffer },
   ) {
     const user = await this.ensureAdmin(req);
     if (!file) {
@@ -770,15 +975,19 @@ export class AdminController {
     }
     const safeName = file.originalname.replace(/[^\wа-яА-ЯёЁ.\-]+/g, "_");
     const key = `documents/${dto.documentType}/${Date.now()}-${safeName}`;
-    const fileUrl = await this.s3.uploadPublic(key, file.buffer, "application/pdf");
+    const fileUrl = await this.s3.uploadPublic(
+      key,
+      file.buffer,
+      "application/pdf",
+    );
     const revision = await this.prisma.documentRevision.create({
       data: {
         documentType: dto.documentType,
         title: dto.title.trim(),
         fileUrl,
         fileName: safeName,
-        uploadedById: user.id
-      }
+        uploadedById: user.id,
+      },
     });
     return { revision };
   }

@@ -11,11 +11,16 @@ export function middleware(request: NextRequest) {
   redirectUrl.pathname = "/auth";
   redirectUrl.searchParams.set(
     "next",
-    `${request.nextUrl.pathname}${request.nextUrl.search}`
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
   );
   return NextResponse.redirect(redirectUrl);
 }
 
 export const config = {
-  matcher: ["/my-pets/:path*", "/profile/:path*", "/admin/sql/:path*"]
+  matcher: [
+    "/my-pets/:path*",
+    "/profile/:path*",
+    "/admin/sql/:path*",
+    "/admin/moderation/:path*",
+  ],
 };
