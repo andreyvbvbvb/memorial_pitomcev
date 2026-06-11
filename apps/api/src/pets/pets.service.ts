@@ -30,6 +30,7 @@ const DEFAULT_MAX_MEMORIALS = 5;
 const OWNER_MAX_MEMORIALS = 10000;
 const MODERATION_PENDING = "PENDING";
 const MODERATION_APPROVED = "APPROVED";
+const MODERATION_NEEDS_CHANGES = "NEEDS_CHANGES";
 type DirtSlotName = (typeof DIRT_SLOT_NAMES)[number];
 type MemorialDirtState = {
   slots: DirtSlotName[];
@@ -75,6 +76,26 @@ export class PetsService {
       !Array.isArray(sceneJson)
       ? (sceneJson as Record<string, unknown>)
       : {};
+  }
+
+  private moderationResetData() {
+    return {
+      moderationStatus: MODERATION_PENDING,
+      moderationComment: null,
+      moderatedAt: null,
+      moderatorId: null,
+    } satisfies Prisma.PetUpdateInput;
+  }
+
+  private shouldResetModeration(
+    viewer: AuthenticatedUser,
+    pet: { moderationStatus?: string | null },
+    hasContentChanges: boolean,
+  ) {
+    return (
+      !canAccessAdmin(viewer) &&
+      (hasContentChanges || pet.moderationStatus === MODERATION_NEEDS_CHANGES)
+    );
   }
 
   private normalizeDirtSlot(value: unknown): DirtSlotName | null {
@@ -757,7 +778,23 @@ export class PetsService {
       };
     }
 
-    const shouldResetModeration = !canAccessAdmin(viewer);
+    const hasContentChanges = [
+      "name",
+      "species",
+      "birthDate",
+      "deathDate",
+      "epitaph",
+      "favoriteTreats",
+      "favoriteToys",
+      "favoriteSleepPlaces",
+      "story",
+      "isPublic",
+    ].some((key) => typeof dto[key as keyof UpdatePetDto] !== "undefined");
+    const shouldResetModeration = this.shouldResetModeration(
+      viewer,
+      pet,
+      hasContentChanges,
+    );
 
     return this.prisma.pet.update({
       where: { id },
@@ -772,14 +809,7 @@ export class PetsService {
         favoriteSleepPlaces: dto.favoriteSleepPlaces,
         story: dto.story,
         isPublic: dto.isPublic,
-        ...(shouldResetModeration
-          ? {
-              moderationStatus: MODERATION_PENDING,
-              moderationComment: null,
-              moderatedAt: null,
-              moderatorId: null,
-            }
-          : {}),
+        ...(shouldResetModeration ? this.moderationResetData() : {}),
         memorial: memorialUpdate,
       },
     });
@@ -907,12 +937,22 @@ export class PetsService {
       ? "image/png"
       : "image/jpeg";
     const url = await this.s3.uploadPublic(key, file.buffer, contentType);
-    return this.prisma.petPhoto.create({
-      data: {
-        petId,
-        url,
-        sortOrder: count,
-      },
+    const shouldResetModeration = this.shouldResetModeration(viewer, pet, true);
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const photo = await tx.petPhoto.create({
+        data: {
+          petId,
+          url,
+          sortOrder: count,
+        },
+      });
+      if (shouldResetModeration) {
+        await tx.pet.update({
+          where: { id: petId },
+          data: this.moderationResetData(),
+        });
+      }
+      return photo;
     });
   }
 
@@ -948,6 +988,12 @@ export class PetsService {
         await tx.mapMarker.update({
           where: { petId },
           data: { previewPhotoId: remaining[0]?.id ?? null },
+        });
+      }
+      if (this.shouldResetModeration(viewer, pet, true)) {
+        await tx.pet.update({
+          where: { id: petId },
+          data: this.moderationResetData(),
         });
       }
     });
@@ -1023,9 +1069,22 @@ export class PetsService {
     if (!marker) {
       throw new BadRequestException("Маркер не найден для мемориала");
     }
-    await this.prisma.mapMarker.update({
-      where: { petId },
-      data: { previewPhotoId: photoId },
+    const shouldResetModeration = this.shouldResetModeration(
+      viewer,
+      pet,
+      marker.previewPhotoId !== photoId,
+    );
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.mapMarker.update({
+        where: { petId },
+        data: { previewPhotoId: photoId },
+      });
+      if (shouldResetModeration) {
+        await tx.pet.update({
+          where: { id: petId },
+          data: this.moderationResetData(),
+        });
+      }
     });
     return { ok: true };
   }

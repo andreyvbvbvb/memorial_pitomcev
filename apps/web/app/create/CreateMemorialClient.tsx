@@ -202,6 +202,8 @@ type EditMemorialPet = {
   epitaph: string | null;
   story: string | null;
   isPublic: boolean;
+  moderationStatus?: "PENDING" | "APPROVED" | "NEEDS_CHANGES" | string;
+  moderationComment?: string | null;
   marker?: {
     lat: number;
     lng: number;
@@ -1051,6 +1053,16 @@ export default function CreateMemorialClient({
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
   const [moderationNoticePetId, setModerationNoticePetId] = useState<
+    string | null
+  >(null);
+  const [publishModerationConfirmOpen, setPublishModerationConfirmOpen] =
+    useState(false);
+  const [editModerationConfirmOpen, setEditModerationConfirmOpen] =
+    useState(false);
+  const [editModerationStatus, setEditModerationStatus] = useState<
+    string | null
+  >(null);
+  const [initialPreviewPhotoId, setInitialPreviewPhotoId] = useState<
     string | null
   >(null);
   const [mobileBuilderMenuOpen, setMobileBuilderMenuOpen] = useState(false);
@@ -2297,17 +2309,17 @@ export default function CreateMemorialClient({
                 url: normalizePhotoUrl(photo.url),
               }))
             : [];
+          const nextPreviewPhotoId =
+            pet.marker?.previewPhotoId &&
+            nextPhotos.some((photo) => photo.id === pet.marker?.previewPhotoId)
+              ? pet.marker.previewPhotoId
+              : (nextPhotos[0]?.id ?? null);
           setForm(buildEditFormState(pet, data.id));
           setPhotos(nextPhotos);
           setRemovedPhotoIds([]);
-          setPreviewPhotoId(
-            pet.marker?.previewPhotoId &&
-              nextPhotos.some(
-                (photo) => photo.id === pet.marker?.previewPhotoId,
-              )
-              ? pet.marker.previewPhotoId
-              : (nextPhotos[0]?.id ?? null),
-          );
+          setPreviewPhotoId(nextPreviewPhotoId);
+          setInitialPreviewPhotoId(nextPreviewPhotoId);
+          setEditModerationStatus(pet.moderationStatus ?? "APPROVED");
           setStep(1);
           setActiveStep3Tab("house");
           setActiveOverlay("details");
@@ -3096,8 +3108,38 @@ export default function CreateMemorialClient({
     ],
   );
 
-  const handleSubmit = async () => {
+  const hasEditedPhotoChanges = useMemo(() => {
+    if (!isEditMode) {
+      return false;
+    }
+    return (
+      removedPhotoIds.length > 0 ||
+      photos.some((photo) => Boolean(photo.file)) ||
+      previewPhotoId !== initialPreviewPhotoId
+    );
+  }, [
+    initialPreviewPhotoId,
+    isEditMode,
+    photos,
+    previewPhotoId,
+    removedPhotoIds,
+  ]);
+
+  const editSaveRequiresModeration = Boolean(
+    isEditMode &&
+    (hasEditedPhotoChanges || editModerationStatus === "NEEDS_CHANGES"),
+  );
+
+  const handleSubmit = async (options?: {
+    confirmedModeration?: boolean;
+    confirmedEditModeration?: boolean;
+  }) => {
     if (isEditMode && editId) {
+      if (editSaveRequiresModeration && !options?.confirmedEditModeration) {
+        setEditModerationConfirmOpen(true);
+        return;
+      }
+      setEditModerationConfirmOpen(false);
       setLoading(true);
       setError(null);
       try {
@@ -3169,6 +3211,12 @@ export default function CreateMemorialClient({
       openTopUp();
       return;
     }
+
+    if (!options?.confirmedModeration) {
+      setPublishModerationConfirmOpen(true);
+      return;
+    }
+    setPublishModerationConfirmOpen(false);
 
     setLoading(true);
     setError(null);
@@ -6407,7 +6455,7 @@ export default function CreateMemorialClient({
                         )}
                         <button
                           type="button"
-                          onClick={handleSubmit}
+                          onClick={() => void handleSubmit()}
                           className="group mt-2 inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
                           disabled={loading}
                         >
@@ -6432,6 +6480,50 @@ export default function CreateMemorialClient({
           ) : null}
         </>
       )}
+
+      <ConfirmDialog
+        open={publishModerationConfirmOpen}
+        eyebrow="Модерация"
+        title="Отправить мемориал на проверку?"
+        message="После подтверждения мы спишем монеты, опубликуем мемориал только для вас и отправим его на модерацию."
+        helperText="После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
+        cancelAction={{
+          label: "Вернуться",
+          onClick: () => setPublishModerationConfirmOpen(false),
+          variant: "secondary",
+        }}
+        confirmAction={{
+          label: loading ? "Публикация..." : "Подтвердить",
+          onClick: () => void handleSubmit({ confirmedModeration: true }),
+          disabled: loading,
+          variant: "primary",
+        }}
+        onClose={() => setPublishModerationConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={editModerationConfirmOpen}
+        eyebrow="Модерация"
+        title="Отправить изменения на проверку?"
+        message={
+          editModerationStatus === "NEEDS_CHANGES"
+            ? "После сохранения мемориал снова перейдет в статус «На проверке», чтобы модератор увидел исправления."
+            : "Вы изменили фотографии или обложку. После сохранения мемориал снова перейдет на модерацию."
+        }
+        helperText="Пока проверка не завершится, мемориал будет виден только вам. После модерации мы отправим уведомление на почту."
+        cancelAction={{
+          label: "Вернуться",
+          onClick: () => setEditModerationConfirmOpen(false),
+          variant: "secondary",
+        }}
+        confirmAction={{
+          label: loading ? "Сохранение..." : "Сохранить",
+          onClick: () => void handleSubmit({ confirmedEditModeration: true }),
+          disabled: loading,
+          variant: "primary",
+        }}
+        onClose={() => setEditModerationConfirmOpen(false)}
+      />
 
       <ConfirmDialog
         open={Boolean(moderationNoticePetId)}
