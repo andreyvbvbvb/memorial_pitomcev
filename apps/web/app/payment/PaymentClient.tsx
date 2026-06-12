@@ -126,7 +126,6 @@ export default function PaymentClient() {
   );
   const [error, setError] = useState<string | null>(null);
   const [currentInvoiceId, setCurrentInvoiceId] = useState<string | null>(null);
-  const [saveCard, setSaveCard] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,7 +180,10 @@ export default function PaymentClient() {
       }
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
     }
-    setMessage("Платёж принят. Баланс обновится после подтверждения банка.");
+    setError(
+      "Платёж не завершён. Если вы закрыли окно оплаты, деньги не списаны и баланс не изменился.",
+    );
+    setMessage("Можно открыть оплату ещё раз или выбрать другой способ.");
     return false;
   };
 
@@ -247,11 +249,11 @@ export default function PaymentClient() {
           userId: order.accountId,
           coins: order.coins,
         },
-        tokenize: saveCard,
         retryPayment: false,
         emailBehavior: "Optional",
       });
       setMessage("Окно оплаты закрыто. Проверяем статус платежа.");
+      setError(null);
       void pollPaymentStatus(order.invoiceId);
     } catch (paymentError) {
       setError(
@@ -327,23 +329,6 @@ export default function PaymentClient() {
         <p className="mt-5 text-sm font-bold leading-relaxed text-[#8d6e63]">
           {message}
         </p>
-        <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-[22px] border-[3px] border-white bg-[#fffcf9] px-4 py-3 text-left shadow-[0_12px_28px_-24px_rgba(93,64,55,0.45)]">
-          <input
-            type="checkbox"
-            checked={saveCard}
-            onChange={(event) => setSaveCard(event.target.checked)}
-            className="h-5 w-5 rounded border-[#d8cfc9] accent-[#3bceac]"
-          />
-          <span>
-            <span className="block text-sm font-black text-[#5d4037]">
-              Сохранить карту
-            </span>
-            <span className="mt-0.5 block text-xs font-semibold leading-snug text-[#8d6e63]">
-              Если выключено, мы не просим CloudPayments сохранять карту для
-              будущих платежей.
-            </span>
-          </span>
-        </label>
         {error ? (
           <div className="mt-4 rounded-2xl border border-[#f2c6bd] bg-[#fff5f2] px-4 py-3 text-sm font-bold text-[#9a5a4c]">
             {error}
