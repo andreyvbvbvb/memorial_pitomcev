@@ -160,6 +160,16 @@ type FormState = {
   soulPath: SoulPathState;
 };
 
+type EditContentSnapshot = {
+  name: string;
+  species: string;
+  birthDate: string;
+  deathDate: string;
+  epitaph: string;
+  story: string;
+  isPublic: boolean;
+};
+
 type SoulPathPointState = {
   id: string;
   x: number;
@@ -830,6 +840,16 @@ const buildEditFormState = (
   };
 };
 
+const buildEditContentSnapshot = (state: FormState): EditContentSnapshot => ({
+  name: state.name.trim(),
+  species: state.species,
+  birthDate: state.birthDate,
+  deathDate: state.deathDate,
+  epitaph: state.epitaph.trim(),
+  story: state.story.trim(),
+  isPublic: state.isPublic,
+});
+
 const buildDraftFormState = (
   draft: MemorialDraftDto,
   ownerId: string,
@@ -1052,9 +1072,6 @@ export default function CreateMemorialClient({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
   const [reviewAttempted, setReviewAttempted] = useState(false);
-  const [moderationNoticePetId, setModerationNoticePetId] = useState<
-    string | null
-  >(null);
   const [publishModerationConfirmOpen, setPublishModerationConfirmOpen] =
     useState(false);
   const [editModerationConfirmOpen, setEditModerationConfirmOpen] =
@@ -1065,6 +1082,7 @@ export default function CreateMemorialClient({
   const [initialPreviewPhotoId, setInitialPreviewPhotoId] = useState<
     string | null
   >(null);
+  const editInitialContentRef = useRef<EditContentSnapshot | null>(null);
   const [mobileBuilderMenuOpen, setMobileBuilderMenuOpen] = useState(false);
   const [mobileBuilderMenuVisible, setMobileBuilderMenuVisible] =
     useState(false);
@@ -2292,7 +2310,7 @@ export default function CreateMemorialClient({
             return;
           }
           const pet = (await petResponse.json()) as EditMemorialPet;
-          if (pet.ownerId !== data.id) {
+          if (pet.ownerId !== data.id && !canAccessAdmin(data.accessLevel)) {
             router.replace(`/pets/${editId}`);
             return;
           }
@@ -2314,7 +2332,9 @@ export default function CreateMemorialClient({
             nextPhotos.some((photo) => photo.id === pet.marker?.previewPhotoId)
               ? pet.marker.previewPhotoId
               : (nextPhotos[0]?.id ?? null);
-          setForm(buildEditFormState(pet, data.id));
+          const nextForm = buildEditFormState(pet, data.id);
+          editInitialContentRef.current = buildEditContentSnapshot(nextForm);
+          setForm(nextForm);
           setPhotos(nextPhotos);
           setRemovedPhotoIds([]);
           setPreviewPhotoId(nextPreviewPhotoId);
@@ -2665,26 +2685,34 @@ export default function CreateMemorialClient({
 
   const todayInputValue = useMemo(() => formatDateInputValue(today), [today]);
 
+  const validateBasicInfo = (checkAuth: boolean) => {
+    if (checkAuth && !authReady) {
+      return "Проверяем авторизацию...";
+    }
+    if (!form.name.trim()) {
+      return "Имя питомца обязательно";
+    }
+    if (!form.birthDate) {
+      return "Нужно указать дату рождения";
+    }
+    if (!form.deathDate) {
+      return "Нужно указать дату ухода";
+    }
+    if (dateValidationMessage) {
+      return dateValidationMessage;
+    }
+    return null;
+  };
+
   const validateStep = (current: Step) => {
     if (isEditMode) {
-      return null;
+      return current === 0 ? validateBasicInfo(false) : null;
     }
     if (current === 0) {
       if (!authReady) {
         return "Проверяем авторизацию...";
       }
-      if (!form.name.trim()) {
-        return "Имя питомца обязательно";
-      }
-      if (!form.birthDate) {
-        return "Нужно указать дату рождения";
-      }
-      if (!form.deathDate) {
-        return "Нужно указать дату ухода";
-      }
-      if (dateValidationMessage) {
-        return dateValidationMessage;
-      }
+      return validateBasicInfo(false);
     }
     if (current === 1) {
       if (!canShowMarker) {
@@ -3125,9 +3153,66 @@ export default function CreateMemorialClient({
     removedPhotoIds,
   ]);
 
+  const editedContentPatch = useMemo(() => {
+    if (!isEditMode || !editInitialContentRef.current) {
+      return {};
+    }
+    const initial = editInitialContentRef.current;
+    const current = buildEditContentSnapshot(form);
+    const patch: Partial<{
+      name: string;
+      species: string;
+      birthDate?: string;
+      deathDate?: string;
+      epitaph?: string;
+      story?: string;
+      isPublic: boolean;
+    }> = {};
+
+    if (current.name !== initial.name) {
+      patch.name = current.name;
+    }
+    if (current.species !== initial.species) {
+      patch.species = current.species;
+    }
+    if (current.birthDate !== initial.birthDate) {
+      patch.birthDate = current.birthDate || undefined;
+    }
+    if (current.deathDate !== initial.deathDate) {
+      patch.deathDate = current.deathDate || undefined;
+    }
+    if (current.epitaph !== initial.epitaph) {
+      patch.epitaph = current.epitaph;
+    }
+    if (current.story !== initial.story) {
+      patch.story = current.story;
+    }
+    if (current.isPublic !== initial.isPublic) {
+      patch.isPublic = current.isPublic;
+    }
+
+    return patch;
+  }, [
+    form.birthDate,
+    form.deathDate,
+    form.epitaph,
+    form.isPublic,
+    form.name,
+    form.species,
+    form.story,
+    isEditMode,
+  ]);
+
+  const hasEditedContentChanges = useMemo(
+    () => Object.keys(editedContentPatch).length > 0,
+    [editedContentPatch],
+  );
+
   const editSaveRequiresModeration = Boolean(
     isEditMode &&
-    (hasEditedPhotoChanges || editModerationStatus === "NEEDS_CHANGES"),
+    (hasEditedContentChanges ||
+      hasEditedPhotoChanges ||
+      editModerationStatus === "NEEDS_CHANGES"),
   );
 
   const handleSubmit = async (options?: {
@@ -3135,6 +3220,11 @@ export default function CreateMemorialClient({
     confirmedEditModeration?: boolean;
   }) => {
     if (isEditMode && editId) {
+      const editValidationMessage = validateBasicInfo(false);
+      if (editValidationMessage) {
+        setError(editValidationMessage);
+        return;
+      }
       if (editSaveRequiresModeration && !options?.confirmedEditModeration) {
         setEditModerationConfirmOpen(true);
         return;
@@ -3148,6 +3238,7 @@ export default function CreateMemorialClient({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
+            ...editedContentPatch,
             houseId: form.houseId,
             sceneJson: buildCurrentSceneJson(),
           }),
@@ -3319,7 +3410,15 @@ export default function CreateMemorialClient({
       setLoading(false);
       setFarewellPlaying(false);
       setSoulSceneMode("idle");
-      setModerationNoticePetId(created.id);
+      try {
+        window.sessionStorage.setItem(
+          "memorial-page-toast",
+          "Ваш мемориал был успешно отправлен на проверку.",
+        );
+      } catch {
+        // Ignore storage errors; redirect still completes the publish flow.
+      }
+      router.push("/my-pets");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка создания");
     } finally {
@@ -3361,6 +3460,8 @@ export default function CreateMemorialClient({
     if (
       isEditMode &&
       panel !== "details" &&
+      panel !== "base" &&
+      panel !== "story" &&
       panel !== "photos" &&
       panel !== "soul"
     ) {
@@ -5424,13 +5525,13 @@ export default function CreateMemorialClient({
     {
       id: "base",
       label: "Основные данные",
-      disabled: isEditMode,
+      disabled: false,
       highlight: !isEditMode && isBuilderStep && !visitedOverlays.base,
     },
     {
       id: "story",
       label: "История",
-      disabled: isEditMode,
+      disabled: false,
       highlight: !isEditMode && isBuilderStep && !visitedOverlays.story,
     },
     {
@@ -5922,11 +6023,10 @@ export default function CreateMemorialClient({
                       onClick={() => toggleOverlay("base")}
                       aria-label="Основные данные"
                       title="Основные данные"
-                      disabled={isEditMode}
                       className={`${panelButtonClass(
                         activeOverlay === "base",
                         !isEditMode && isBuilderStep && !visitedOverlays.base,
-                      )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                      )}`}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -5955,11 +6055,10 @@ export default function CreateMemorialClient({
                       onClick={() => toggleOverlay("story")}
                       aria-label="История"
                       title="История"
-                      disabled={isEditMode}
                       className={`${panelButtonClass(
                         activeOverlay === "story",
                         !isEditMode && isBuilderStep && !visitedOverlays.story,
-                      )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                      )}`}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -6417,8 +6516,8 @@ export default function CreateMemorialClient({
                         </p>
                         {isEditMode ? (
                           <p className="text-xs text-[#8d6e63]">
-                            Сохраним только домик и его детали. Остальные данные
-                            мемориала не изменятся.
+                            Сохраним оформление, основные данные, историю и
+                            фотографии, которые вы изменили.
                           </p>
                         ) : (
                           <>
@@ -6508,7 +6607,7 @@ export default function CreateMemorialClient({
         message={
           editModerationStatus === "NEEDS_CHANGES"
             ? "После сохранения мемориал снова перейдет в статус «На проверке», чтобы модератор увидел исправления."
-            : "Вы изменили фотографии или обложку. После сохранения мемориал снова перейдет на модерацию."
+            : "Вы изменили основные данные, историю или фотографии. После сохранения мемориал снова перейдет на модерацию."
         }
         helperText="Пока проверка не завершится, мемориал будет виден только вам. После модерации мы отправим уведомление на почту."
         cancelAction={{
@@ -6523,35 +6622,6 @@ export default function CreateMemorialClient({
           variant: "primary",
         }}
         onClose={() => setEditModerationConfirmOpen(false)}
-      />
-
-      <ConfirmDialog
-        open={Boolean(moderationNoticePetId)}
-        eyebrow="Модерация"
-        title="Мемориал отправлен на проверку"
-        message="Сейчас мемориал опубликован только для вас и одновременно отправлен на модерацию."
-        helperText="После проверки вам придет письмо. Если мемориал публичный, после одобрения он станет виден другим пользователям на карте. Если приватный — он останется доступен только вам. Если модератор найдет вопрос, в письме будет написано, что нужно поправить."
-        cancelAction={{
-          label: "Мои питомцы",
-          onClick: () => router.push("/my-pets"),
-          variant: "secondary",
-        }}
-        confirmAction={{
-          label: "Открыть мемориал",
-          onClick: () => {
-            if (moderationNoticePetId) {
-              router.push(`/pets/${moderationNoticePetId}`);
-            }
-          },
-          variant: "primary",
-        }}
-        onClose={() =>
-          router.push(
-            moderationNoticePetId
-              ? `/pets/${moderationNoticePetId}`
-              : "/my-pets",
-          )
-        }
       />
 
       <ConfirmDialog

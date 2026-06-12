@@ -4,7 +4,8 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  Length
+  Length,
+  MaxLength
 } from "class-validator";
 
 export class UpdatePetDto {
@@ -28,27 +29,27 @@ export class UpdatePetDto {
 
   @IsOptional()
   @IsString()
-  @Length(1, 200)
+  @MaxLength(200)
   epitaph?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 200)
+  @MaxLength(200)
   favoriteTreats?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 200)
+  @MaxLength(200)
   favoriteToys?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 200)
+  @MaxLength(200)
   favoriteSleepPlaces?: string;
 
   @IsOptional()
   @IsString()
-  @Length(1, 2000)
+  @MaxLength(2000)
   story?: string;
 
   @IsOptional()

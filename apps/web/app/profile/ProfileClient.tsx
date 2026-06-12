@@ -485,8 +485,17 @@ export default function ProfileClient() {
                         История монет
                       </h2>
                     </div>
-                    <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-                      {profile?.coinBalance ?? 0} монет
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                        {profile?.coinBalance ?? 0} монет
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/payment?coins=300&currency=RUB")}
+                        className="rounded-full bg-[#111827] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-[0_3px_0_0_#000] transition hover:bg-[#1f2937] active:translate-y-[2px] active:shadow-none"
+                      >
+                        Пополнить баланс
+                      </button>
                     </div>
                   </div>
                   {walletTransactions.length > 0 ? (

@@ -116,7 +116,11 @@ export class WalletController {
     if (!amountMinor) {
       throw new BadRequestException("Такого тарифа пополнения нет");
     }
+    const owner = await this.ensureOwner(user.id);
     const invoiceId = `mg-${Date.now()}-${randomUUID().slice(0, 8)}`;
+    const amount = this.minorToAmount(amountMinor);
+    const description = `Пополнение баланса МЯУГАВ: ${dto.coins} монет`;
+    const receiptItemLabel = `Пополнение баланса МЯУГАВ, ${dto.coins} монет`;
     const order = await this.prisma.paymentOrder.create({
       data: {
         userId: user.id,
@@ -131,10 +135,30 @@ export class WalletController {
       publicId,
       invoiceId: order.invoiceId,
       accountId: user.id,
-      amount: this.minorToAmount(order.amountMinor),
+      email: owner.email,
+      amount,
       currency: order.currency,
       coins: order.coins,
-      description: `Пополнение баланса МЯУГАВ: ${order.coins} монет`,
+      description,
+      receipt: {
+        Items: [
+          {
+            label: receiptItemLabel,
+            price: amount,
+            quantity: 1,
+            amount,
+            vat: 0,
+            method: 0,
+            object: 0,
+            measurementUnit: "шт",
+          },
+        ],
+        taxationSystem: 0,
+        email: owner.email,
+        amounts: {
+          electronic: amount,
+        },
+      },
     };
   }
 

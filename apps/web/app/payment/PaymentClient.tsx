@@ -17,10 +17,12 @@ type PaymentOrderResponse = {
   publicId: string;
   invoiceId: string;
   accountId: string;
+  email: string;
   amount: number;
   currency: "RUB" | "USD";
   coins: number;
   description: string;
+  receipt: Record<string, unknown>;
 };
 
 type PaymentStatusResponse = {
@@ -215,6 +217,7 @@ export default function PaymentClient() {
       }
       const widget = new window.cp.CloudPayments();
       await widget.start({
+        publicId: order.publicId,
         publicTerminalId: order.publicId,
         description: order.description,
         paymentSchema: "Single",
@@ -222,19 +225,31 @@ export default function PaymentClient() {
         currency: order.currency,
         culture: "ru-RU",
         skin: "classic",
+        invoiceId: order.invoiceId,
         externalId: order.invoiceId,
+        accountId: order.accountId,
+        email: order.email,
+        receiptEmail: order.email,
+        receipt: order.receipt,
         userInfo: {
           accountId: order.accountId,
-          email: user.email,
+          email: order.email,
         },
         metadata: {
+          userId: order.accountId,
+          coins: order.coins,
+        },
+        data: {
+          CloudPayments: {
+            CustomerReceipt: order.receipt,
+          },
           userId: order.accountId,
           coins: order.coins,
         },
         retryPayment: false,
         emailBehavior: "Optional",
       });
-      setMessage("Оплата прошла. Ждем подтверждение CloudPayments.");
+      setMessage("Окно оплаты закрыто. Проверяем статус платежа.");
       void pollPaymentStatus(order.invoiceId);
     } catch (paymentError) {
       setError(
