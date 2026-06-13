@@ -219,7 +219,7 @@ type NewsPost = {
 
 type DocumentRevision = {
   id: string;
-  documentType: "terms" | "offer" | string;
+  documentType: "offer" | "politics" | string;
   title: string;
   fileUrl: string;
   fileName: string;
@@ -491,7 +491,7 @@ export default function AdminSqlPage() {
   const [documentLoading, setDocumentLoading] = useState(false);
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentNotice, setDocumentNotice] = useState<string | null>(null);
-  const [documentType, setDocumentType] = useState<"terms" | "offer">("offer");
+  const [documentType, setDocumentType] = useState<"offer" | "politics">("offer");
   const [documentTitle, setDocumentTitle] = useState("");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [memorialPlanPrices, setMemorialPlanPrices] = useState<
@@ -2608,18 +2608,20 @@ export default function AdminSqlPage() {
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
               Загруженные PDF попадают в историю документа на страницах
-              соглашения и оферты.
+              политики и оферты.
             </p>
             <div className="mt-3 grid gap-2">
               <select
                 value={documentType}
                 onChange={(event) =>
-                  setDocumentType(event.target.value as "terms" | "offer")
+                  setDocumentType(event.target.value as "offer" | "politics")
                 }
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
               >
-                <option value="terms">Пользовательское соглашение</option>
                 <option value="offer">Публичная оферта</option>
+                <option value="politics">
+                  Политика обработки персональных данных
+                </option>
               </select>
               <input
                 value={documentTitle}
@@ -2663,8 +2665,8 @@ export default function AdminSqlPage() {
                     className="block rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-600 hover:border-slate-300"
                   >
                     <span className="font-semibold text-slate-800">
-                      {revision.documentType === "terms"
-                        ? "Соглашение"
+                      {revision.documentType === "politics"
+                        ? "Политика"
                         : "Оферта"}{" "}
                       · {revision.title}
                     </span>

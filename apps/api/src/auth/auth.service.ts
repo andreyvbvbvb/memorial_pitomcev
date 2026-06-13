@@ -23,7 +23,9 @@ export class AuthService {
     const email = dto.email.trim().toLowerCase();
     const login = dto.login.trim();
     if (!dto.acceptTerms || !dto.acceptOffer) {
-      throw new BadRequestException("Нужно принять условия соглашения и оферты");
+      throw new BadRequestException(
+        "Нужно принять политику обработки персональных данных и публичную оферту",
+      );
     }
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -78,7 +80,9 @@ export class AuthService {
 
   async acceptTerms(userId: string, dto: AcceptTermsDto) {
     if (!dto.acceptTerms || !dto.acceptOffer) {
-      throw new BadRequestException("Нужно принять условия соглашения и оферты");
+      throw new BadRequestException(
+        "Нужно принять политику обработки персональных данных и публичную оферту",
+      );
     }
     const now = new Date();
     return this.prisma.user.update({

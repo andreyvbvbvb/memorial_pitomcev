@@ -232,7 +232,7 @@ export default function AuthModal({
     }
 
     if (mode === "register" && (!acceptTerms || !acceptOffer)) {
-      setError("Нужно принять пользовательское соглашение и публичную оферту");
+      setError("Нужно принять политику обработки персональных данных и публичную оферту");
       return;
     }
 
@@ -321,7 +321,7 @@ export default function AuthModal({
 
   const handleAcceptTerms = async () => {
     if (!consentTerms || !consentOffer) {
-      setError("Нужно принять пользовательское соглашение и публичную оферту");
+      setError("Нужно принять политику обработки персональных данных и публичную оферту");
       return;
     }
     setConsentLoading(true);
@@ -503,8 +503,8 @@ export default function AuthModal({
                           />
                           <span>
                             Я принимаю{" "}
-                            <a href="/terms" className={authLinkClass} target="_blank" rel="noreferrer">
-                              пользовательское соглашение
+                            <a href="/politics" className={authLinkClass} target="_blank" rel="noreferrer">
+                              политику обработки персональных данных
                             </a>
                           </span>
                         </label>
@@ -585,7 +585,7 @@ export default function AuthModal({
             <div className={authDialogInnerClass}>
               <h3 className={authTitleClass}>Подтвердите согласие с условиями</h3>
               <p className={`mt-3 ${authHelperTextClass}`}>
-                Чтобы продолжить, примите пользовательское соглашение и публичную оферту.
+                Чтобы продолжить, примите политику обработки персональных данных и публичную оферту.
               </p>
               <div className="mt-4 grid gap-3">
                 <label className={authCheckboxRowClass}>
@@ -597,8 +597,8 @@ export default function AuthModal({
                   />
                   <span>
                     Я принимаю{" "}
-                    <a href="/terms" className={authLinkClass} target="_blank" rel="noreferrer">
-                      пользовательское соглашение
+                    <a href="/politics" className={authLinkClass} target="_blank" rel="noreferrer">
+                      политику обработки персональных данных
                     </a>
                   </span>
                 </label>

@@ -93,7 +93,10 @@ export class ContentController {
 
   @Get("documents/:documentType/revisions")
   async getDocumentRevisions(@Param("documentType") documentType: string) {
-    const type = documentType === "terms" || documentType === "offer" ? documentType : null;
+    const type =
+      documentType === "offer" || documentType === "politics"
+        ? documentType
+        : null;
     if (!type) {
       return { revisions: [] };
     }

@@ -39,10 +39,10 @@ export default function AboutPage() {
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Link
-              href="/terms"
+              href="/politics"
               className="rounded-[22px] border-[3px] border-white bg-[#f7f1ee] px-5 py-4 font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.06)] transition hover:-translate-y-0.5 hover:bg-white"
             >
-              Пользовательское соглашение
+              Политика обработки персональных данных
             </Link>
             <Link
               href="/offer"
@@ -51,6 +51,43 @@ export default function AboutPage() {
               Публичная оферта
             </Link>
           </div>
+        </section>
+
+        <section className="mt-8 rounded-[30px] border-[4px] border-white bg-white/90 p-5 shadow-[0_24px_60px_-34px_rgba(93,64,55,0.55)] sm:p-6">
+          <h2 className="text-xl font-black text-[#5d4037]">Реквизиты ИП</h2>
+          <dl className="mt-4 grid gap-3 text-sm font-semibold leading-relaxed text-[#7b6a63] sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            {[
+              ["Наименование", "ИП Гайтерова Анастасия Сергеевна"],
+              ["ОГРН / ОГРНИП", "326784700202709"],
+              ["ИНН", "780448549611"],
+              ["Расчётный счёт", "40802810720001017530"],
+              ["Название банка", "ООО \"Банк Точка\""],
+              ["БИК", "044525104"],
+              ["Корреспондентский счёт", "30101810745374525104"],
+              ["Адрес электронной почты", "support@мяугав.com"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="rounded-[18px] border border-[#eadfd9] bg-[#f7f1ee] px-4 py-3 sm:contents"
+              >
+                <dt className="text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f]">
+                  {label}
+                </dt>
+                <dd className="mt-1 break-words text-[#5d4037] sm:mt-0">
+                  {label === "Адрес электронной почты" ? (
+                    <a
+                      href="mailto:support@мяугав.com"
+                      className="underline decoration-[#d3a27f] underline-offset-4"
+                    >
+                      {value}
+                    </a>
+                  ) : (
+                    value
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </div>
     </main>

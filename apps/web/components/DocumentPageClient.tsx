@@ -12,12 +12,35 @@ type DocumentRevision = {
   createdAt: string;
 };
 
+type LegalDocumentType = "offer" | "politics";
+
+const builtInRevisions: Record<LegalDocumentType, DocumentRevision[]> = {
+  offer: [
+    {
+      id: "offer-2026-06-13",
+      title: "Публичная оферта от 13.06.2026",
+      fileUrl: "/documents/offer-2026-06-13.pdf",
+      fileName: "offer-2026-06-13.pdf",
+      createdAt: "2026-06-13T12:00:00.000Z"
+    }
+  ],
+  politics: [
+    {
+      id: "politics-2026-06-13",
+      title: "Политика в отношении обработки персональных данных от 13.06.2026",
+      fileUrl: "/documents/politics-2026-06-13.pdf",
+      fileName: "politics-2026-06-13.pdf",
+      createdAt: "2026-06-13T12:00:00.000Z"
+    }
+  ]
+};
+
 export default function DocumentPageClient({
   documentType,
   title,
   children
 }: {
-  documentType: "terms" | "offer";
+  documentType: LegalDocumentType;
   title: string;
   children: ReactNode;
 }) {
@@ -28,15 +51,36 @@ export default function DocumentPageClient({
   useEffect(() => {
     let isMounted = true;
     const loadRevisions = async () => {
-      const response = await fetch(
-        `${apiUrl}/content/documents/${documentType}/revisions`
-      );
-      if (!response.ok) {
-        return;
-      }
-      const data = (await response.json()) as { revisions?: DocumentRevision[] };
-      if (isMounted) {
-        setRevisions(Array.isArray(data.revisions) ? data.revisions : []);
+      try {
+        const response = await fetch(
+          `${apiUrl}/content/documents/${documentType}/revisions`
+        );
+        if (!response.ok) {
+          if (isMounted) {
+            setRevisions(builtInRevisions[documentType]);
+          }
+          return;
+        }
+        const data = (await response.json()) as { revisions?: DocumentRevision[] };
+        if (isMounted) {
+          const apiRevisions = Array.isArray(data.revisions)
+            ? data.revisions
+            : [];
+          const mergedRevisions = [
+            ...apiRevisions,
+            ...builtInRevisions[documentType].filter(
+              (builtIn) =>
+                !apiRevisions.some(
+                  (revision) => revision.fileUrl === builtIn.fileUrl
+                )
+            )
+          ];
+          setRevisions(mergedRevisions);
+        }
+      } catch {
+        if (isMounted) {
+          setRevisions(builtInRevisions[documentType]);
+        }
       }
     };
     void loadRevisions();

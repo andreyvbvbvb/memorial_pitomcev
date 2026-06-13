@@ -157,30 +157,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <section className="border-t border-white bg-[#f7f1ee] px-4 py-6 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 text-xs font-semibold leading-relaxed text-[#7b6b65] md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
-              Реквизиты
-            </p>
-            <p className="mt-1">
-              ИП Иванов Иван Иванович · ИНН 770000000000 · ОГРНИП
-              326770000000000 · г. Москва, ул. Памяти, 1
-            </p>
-            <p className="mt-1">
-              Данные временные и будут заменены на фактические реквизиты перед
-              публичным запуском.
-            </p>
-          </div>
-          <Link
-            href="/about"
-            className="inline-flex w-full items-center justify-center rounded-[18px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_12px_28px_-22px_rgba(93,64,55,0.55)] transition hover:bg-[#fff7f2] md:w-auto"
-          >
-            О проекте
-          </Link>
-        </div>
-      </section>
     </main>
   );
 }
