@@ -68,6 +68,8 @@ model Pet {
   isActive  Boolean  @default(true)
   moderationStatus String @default("APPROVED")
   moderationComment String?
+  moderationReviewType String @default("INITIAL")
+  moderationChangedBlocks String[] @default([])
   moderatedAt DateTime?
   moderatorId String?
   deactivatedAt DateTime?
@@ -83,6 +85,7 @@ model Pet {
 
   @@index([ownerId, isActive])
   @@index([moderationStatus, createdAt])
+  @@index([moderationStatus, moderationReviewType])
 }
 
 model Memorial {

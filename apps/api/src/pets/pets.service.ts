@@ -30,7 +30,10 @@ const DEFAULT_MAX_MEMORIALS = 5;
 const OWNER_MAX_MEMORIALS = 10000;
 const MODERATION_PENDING = "PENDING";
 const MODERATION_APPROVED = "APPROVED";
-const MODERATION_NEEDS_CHANGES = "NEEDS_CHANGES";
+const MODERATION_REVIEW_INITIAL = "INITIAL";
+const MODERATION_REVIEW_REVISION = "REVISION";
+const MODERATION_CHANGED_BLOCKS = ["basic", "story", "photos"] as const;
+type ModerationChangedBlock = (typeof MODERATION_CHANGED_BLOCKS)[number];
 type DirtSlotName = (typeof DIRT_SLOT_NAMES)[number];
 type MemorialDirtState = {
   slots: DirtSlotName[];
@@ -78,10 +81,24 @@ export class PetsService {
       : {};
   }
 
-  private moderationResetData() {
+  private moderationResetData(
+    pet: { moderationChangedBlocks?: string[] | null },
+    changedBlocks: ModerationChangedBlock[],
+  ) {
+    const mergedBlocks = Array.from(
+      new Set([
+        ...(pet.moderationChangedBlocks ?? []).filter(
+          (block): block is ModerationChangedBlock =>
+            (MODERATION_CHANGED_BLOCKS as readonly string[]).includes(block),
+        ),
+        ...changedBlocks,
+      ]),
+    );
     return {
       moderationStatus: MODERATION_PENDING,
       moderationComment: null,
+      moderationReviewType: MODERATION_REVIEW_REVISION,
+      moderationChangedBlocks: { set: mergedBlocks },
       moderatedAt: null,
       moderatorId: null,
     } satisfies Prisma.PetUpdateInput;
@@ -89,13 +106,32 @@ export class PetsService {
 
   private shouldResetModeration(
     viewer: AuthenticatedUser,
-    pet: { moderationStatus?: string | null },
-    hasContentChanges: boolean,
+    hasModeratedChanges: boolean,
   ) {
-    return (
-      !canAccessAdmin(viewer) &&
-      (hasContentChanges || pet.moderationStatus === MODERATION_NEEDS_CHANGES)
-    );
+    return !canAccessAdmin(viewer) && hasModeratedChanges;
+  }
+
+  private getModerationChangedBlocks(dto: UpdatePetDto) {
+    const changedBlocks = new Set<ModerationChangedBlock>();
+    if (
+      ["name", "species", "birthDate", "deathDate", "isPublic"].some(
+        (key) => typeof dto[key as keyof UpdatePetDto] !== "undefined",
+      )
+    ) {
+      changedBlocks.add("basic");
+    }
+    if (
+      [
+        "epitaph",
+        "favoriteTreats",
+        "favoriteToys",
+        "favoriteSleepPlaces",
+        "story",
+      ].some((key) => typeof dto[key as keyof UpdatePetDto] !== "undefined")
+    ) {
+      changedBlocks.add("story");
+    }
+    return Array.from(changedBlocks);
   }
 
   private normalizeDirtSlot(value: unknown): DirtSlotName | null {
@@ -408,6 +444,8 @@ export class PetsService {
             isPublic: dto.isPublic ?? false,
             moderationStatus: MODERATION_PENDING,
             moderationComment: null,
+            moderationReviewType: MODERATION_REVIEW_INITIAL,
+            moderationChangedBlocks: [],
             moderatedAt: null,
             moderatorId: null,
             isActive: true,
@@ -778,22 +816,10 @@ export class PetsService {
       };
     }
 
-    const hasContentChanges = [
-      "name",
-      "species",
-      "birthDate",
-      "deathDate",
-      "epitaph",
-      "favoriteTreats",
-      "favoriteToys",
-      "favoriteSleepPlaces",
-      "story",
-      "isPublic",
-    ].some((key) => typeof dto[key as keyof UpdatePetDto] !== "undefined");
+    const moderationChangedBlocks = this.getModerationChangedBlocks(dto);
     const shouldResetModeration = this.shouldResetModeration(
       viewer,
-      pet,
-      hasContentChanges,
+      moderationChangedBlocks.length > 0,
     );
 
     return this.prisma.pet.update({
@@ -809,7 +835,9 @@ export class PetsService {
         favoriteSleepPlaces: dto.favoriteSleepPlaces,
         story: dto.story,
         isPublic: dto.isPublic,
-        ...(shouldResetModeration ? this.moderationResetData() : {}),
+        ...(shouldResetModeration
+          ? this.moderationResetData(pet, moderationChangedBlocks)
+          : {}),
         memorial: memorialUpdate,
       },
     });
@@ -937,7 +965,7 @@ export class PetsService {
       ? "image/png"
       : "image/jpeg";
     const url = await this.s3.uploadPublic(key, file.buffer, contentType);
-    const shouldResetModeration = this.shouldResetModeration(viewer, pet, true);
+    const shouldResetModeration = this.shouldResetModeration(viewer, true);
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const photo = await tx.petPhoto.create({
         data: {
@@ -949,7 +977,7 @@ export class PetsService {
       if (shouldResetModeration) {
         await tx.pet.update({
           where: { id: petId },
-          data: this.moderationResetData(),
+          data: this.moderationResetData(pet, ["photos"]),
         });
       }
       return photo;
@@ -990,10 +1018,10 @@ export class PetsService {
           data: { previewPhotoId: remaining[0]?.id ?? null },
         });
       }
-      if (this.shouldResetModeration(viewer, pet, true)) {
+      if (this.shouldResetModeration(viewer, true)) {
         await tx.pet.update({
           where: { id: petId },
-          data: this.moderationResetData(),
+          data: this.moderationResetData(pet, ["photos"]),
         });
       }
     });
@@ -1071,7 +1099,6 @@ export class PetsService {
     }
     const shouldResetModeration = this.shouldResetModeration(
       viewer,
-      pet,
       marker.previewPhotoId !== photoId,
     );
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -1082,7 +1109,7 @@ export class PetsService {
       if (shouldResetModeration) {
         await tx.pet.update({
           where: { id: petId },
-          data: this.moderationResetData(),
+          data: this.moderationResetData(pet, ["photos"]),
         });
       }
     });

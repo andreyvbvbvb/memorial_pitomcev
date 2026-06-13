@@ -54,6 +54,8 @@ import {
 } from "./dto/admin-pricing.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
 
+const MODERATION_REVIEW_REVISION = "REVISION";
+
 const toSafeJson = (value: unknown): unknown => {
   if (typeof value === "bigint") {
     return value.toString();
@@ -310,7 +312,7 @@ export class AdminController {
         ...where,
         isActive: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
       take: 120,
       include: {
         owner: { select: { id: true, email: true, login: true } },
@@ -350,6 +352,14 @@ export class AdminController {
       data: {
         moderationStatus: dto.status,
         moderationComment: dto.status === "NEEDS_CHANGES" ? comment : null,
+        ...(dto.status === "NEEDS_CHANGES"
+          ? {
+              moderationReviewType: MODERATION_REVIEW_REVISION,
+              moderationChangedBlocks: { set: [] },
+            }
+          : dto.status === "APPROVED"
+            ? { moderationChangedBlocks: { set: [] } }
+            : {}),
         moderatedAt: now,
         moderatorId: moderator.id,
       },

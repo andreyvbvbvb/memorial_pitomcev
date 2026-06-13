@@ -14,6 +14,7 @@ type AuthUser = {
 };
 
 type ModerationStatus = "PENDING" | "APPROVED" | "NEEDS_CHANGES" | "ALL";
+type PendingReviewFilter = "ALL" | "INITIAL" | "REVISION";
 
 type ModerationPet = {
   id: string;
@@ -26,6 +27,8 @@ type ModerationPet = {
   isPublic: boolean;
   moderationStatus: Exclude<ModerationStatus, "ALL">;
   moderationComment?: string | null;
+  moderationReviewType?: "INITIAL" | "REVISION" | string | null;
+  moderationChangedBlocks?: string[] | null;
   createdAt: string;
   owner?: { id: string; email: string; login?: string | null } | null;
   marker?: { lat: number; lng: number; markerStyle?: string | null } | null;
@@ -50,6 +53,18 @@ const statusLabels: Record<Exclude<ModerationStatus, "ALL">, string> = {
   NEEDS_CHANGES: "Нужно поправить",
 };
 
+const pendingReviewTabs: Array<{ value: PendingReviewFilter; label: string }> = [
+  { value: "ALL", label: "Все" },
+  { value: "INITIAL", label: "Первичная" },
+  { value: "REVISION", label: "Повторная" },
+];
+
+const moderationBlockLabels: Record<string, string> = {
+  basic: "Основные данные",
+  story: "История",
+  photos: "Фотографии",
+};
+
 const formatDate = (value?: string | null) => {
   if (!value) {
     return "Без даты";
@@ -63,6 +78,8 @@ export default function AdminModerationClient() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [status, setStatus] = useState<ModerationStatus>("PENDING");
+  const [pendingReviewFilter, setPendingReviewFilter] =
+    useState<PendingReviewFilter>("ALL");
   const [pets, setPets] = useState<ModerationPet[]>([]);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -175,6 +192,17 @@ export default function AdminModerationClient() {
     }
   };
 
+  const visiblePets = useMemo(() => {
+    if (status !== "PENDING" || pendingReviewFilter === "ALL") {
+      return pets;
+    }
+    return pets.filter((pet) =>
+      pendingReviewFilter === "REVISION"
+        ? pet.moderationReviewType === "REVISION"
+        : pet.moderationReviewType !== "REVISION",
+    );
+  }, [pendingReviewFilter, pets, status]);
+
   return (
     <main className="min-h-[calc(100vh-var(--app-header-height,56px))] bg-[#fcf8f5] px-4 py-8 text-[#5d4037] sm:px-6">
       <div className="mx-auto w-full max-w-[1320px]">
@@ -211,6 +239,24 @@ export default function AdminModerationClient() {
                 </button>
               ))}
             </div>
+            {status === "PENDING" ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {pendingReviewTabs.map((tab) => (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    onClick={() => setPendingReviewFilter(tab.value)}
+                    className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] transition ${
+                      pendingReviewFilter === tab.value
+                        ? "bg-[#5d4037] text-white"
+                        : "bg-[#fffcf9] text-[#8d6e63] hover:bg-white"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             {!authChecked ? (
               <div className="mt-6 rounded-2xl bg-[#f7f1ee] p-5 text-sm font-bold text-[#8d6e63]">
@@ -224,14 +270,18 @@ export default function AdminModerationClient() {
               <div className="mt-6 rounded-2xl bg-[#f7f1ee] p-5 text-sm font-bold text-[#8d6e63]">
                 Загружаем очередь...
               </div>
-            ) : pets.length === 0 ? (
+            ) : visiblePets.length === 0 ? (
               <div className="mt-6 rounded-2xl bg-[#f7f1ee] p-5 text-sm font-bold text-[#8d6e63]">
                 Мемориалов в этом статусе нет.
               </div>
             ) : (
               <div className="mt-6 grid gap-4">
-                {pets.map((pet) => {
+                {visiblePets.map((pet) => {
                   const previewUrl = resolveImageUrl(pet.photos?.[0]?.url);
+                  const isRevision = pet.moderationReviewType === "REVISION";
+                  const changedBlocks = (pet.moderationChangedBlocks ?? [])
+                    .map((block) => moderationBlockLabels[block] ?? block)
+                    .filter(Boolean);
                   return (
                     <article
                       key={pet.id}
@@ -259,6 +309,17 @@ export default function AdminModerationClient() {
                           <span className="rounded-full bg-[#f7f1ee] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
                             {pet.isPublic ? "Публичный" : "Приватный"}
                           </span>
+                          {pet.moderationStatus === "PENDING" ? (
+                            <span
+                              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                                isRevision
+                                  ? "bg-[#fff2ef] text-[#9a5a4c]"
+                                  : "bg-[#e9f6ef] text-[#3b6b58]"
+                              }`}
+                            >
+                              {isRevision ? "Повторная проверка" : "Первичная проверка"}
+                            </span>
+                          ) : null}
                         </div>
                         <h2 className="mt-3 truncate text-2xl font-black">
                           {pet.name}
@@ -289,6 +350,14 @@ export default function AdminModerationClient() {
                               Последний комментарий: {pet.moderationComment}
                             </p>
                           ) : null}
+                          {pet.moderationStatus === "PENDING" && isRevision ? (
+                            <p className="rounded-2xl bg-[#f7f1ee] px-3 py-2 font-bold text-[#6d4c41]">
+                              Изменения после доработки:{" "}
+                              {changedBlocks.length > 0
+                                ? changedBlocks.join(", ")
+                                : "не указаны"}
+                            </p>
+                          ) : null}
                         </div>
                         <div className="mt-4 flex flex-wrap gap-2">
                           <Link
@@ -315,7 +384,7 @@ export default function AdminModerationClient() {
                               [pet.id]: event.target.value,
                             }))
                           }
-                          className="min-h-[130px] resize-none rounded-[20px] border border-white bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] outline-none focus:ring-2 focus:ring-[#3bceac]/50"
+                          className="min-h-[130px] resize-none rounded-[20px] border border-white bg-[#f7f1ee] px-4 py-3 text-[16px] font-bold text-[#5d4037] outline-none focus:ring-2 focus:ring-[#3bceac]/50 sm:text-sm"
                           placeholder="Что нужно поправить, если возвращаем на правки"
                         />
                         <button

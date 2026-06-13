@@ -1008,12 +1008,12 @@ export default function CreateMemorialClient({
     camera: THREE.Camera;
   } | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<BuilderOverlayId | null>(
-    null,
+    "details",
   );
   const [markerPanelTab, setMarkerPanelTab] =
     useState<MarkerPanelTab>("marker");
   const [visitedOverlays, setVisitedOverlays] = useState({
-    details: false,
+    details: true,
     marker: false,
     photos: false,
     story: false,
@@ -3209,10 +3209,7 @@ export default function CreateMemorialClient({
   );
 
   const editSaveRequiresModeration = Boolean(
-    isEditMode &&
-    (hasEditedContentChanges ||
-      hasEditedPhotoChanges ||
-      editModerationStatus === "NEEDS_CHANGES"),
+    isEditMode && (hasEditedContentChanges || hasEditedPhotoChanges),
   );
 
   const handleSubmit = async (options?: {
@@ -5044,7 +5041,11 @@ export default function CreateMemorialClient({
       </p>
       {photos.length > 0 ? (
         <div
-          className="grid gap-2"
+          className={
+            isPortraitLayout
+              ? "grid min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
+              : "grid gap-2"
+          }
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
@@ -5520,7 +5521,7 @@ export default function CreateMemorialClient({
       id: "details",
       label: "Редактор",
       disabled: false,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.details,
+      highlight: false,
     },
     {
       id: "base",
@@ -5958,8 +5959,10 @@ export default function CreateMemorialClient({
                         }
                         className="relative z-10 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-3"
                       >
-                        {isPortraitLayout && activeOverlay
-                          ? renderActiveOverlayContent()
+                        {isPortraitLayout
+                          ? activeOverlay
+                            ? renderActiveOverlayContent()
+                            : null
                           : renderStep3TabContent()}
                       </div>
                     </div>
