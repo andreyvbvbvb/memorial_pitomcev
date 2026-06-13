@@ -9,6 +9,7 @@ import {
   useCallback,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -63,7 +64,7 @@ import {
   markerStyles,
   markerVariantsForSpecies,
 } from "../../lib/markers";
-import MemorialPreview from "./MemorialPreview";
+import MemorialPreview, { type DetailPartOverrides } from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import usePortraitLayout from "../../components/usePortraitLayout";
@@ -1118,6 +1119,8 @@ export default function CreateMemorialClient({
   const [houseScaleOverrides, setHouseScaleOverrides] = useState<
     Record<string, number>
   >({});
+  const [detailPartOverrides, setDetailPartOverrides] =
+    useState<DetailPartOverrides>({});
   const [cameraOffsetAdjustments] = useState<Record<string, CameraOffset>>({
     dom_slot_environment: { x: 0.75, y: 4.94, z: 8.85 },
     dom_slot_house: { x: 2.11, y: 2.94, z: 3.3 },
@@ -1870,6 +1873,28 @@ export default function CreateMemorialClient({
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
     return mapping;
   }, [houseSlots]);
+  const activeDetailSlot = useMemo(() => {
+    switch (activeStep3Tab) {
+      case "roof":
+        return houseSlots.roof ?? null;
+      case "wall":
+        return houseSlots.wall ?? null;
+      case "sign":
+        return houseSlots.sign ?? null;
+      case "frameLeft":
+        return houseSlots.frameLeft ?? null;
+      case "frameRight":
+        return houseSlots.frameRight ?? null;
+      case "mat":
+        return houseSlots.mat ?? null;
+      case "bowlFood":
+        return houseSlots.bowlFood ?? null;
+      case "bowlWater":
+        return houseSlots.bowlWater ?? null;
+      default:
+        return null;
+    }
+  }, [activeStep3Tab, houseSlots]);
   const getCameraFocusKey = (
     slot: string | null,
     tabId: Step3TabId = activeStep3Tab,
@@ -1914,6 +1939,30 @@ export default function CreateMemorialClient({
   ].filter((part): part is { slot: string; url: string } =>
     Boolean(part && part.url),
   );
+  const currentDetailPartOverrides = useMemo(() => {
+    const overrides: DetailPartOverrides = {};
+    partList.forEach((part) => {
+      const override =
+        detailPartOverrides[`${form.houseId}::${part.slot}`] ??
+        detailPartOverrides[`${selectedHouseBaseId}::${part.slot}`];
+      if (override) {
+        overrides[part.slot] = override;
+      }
+    });
+    return overrides;
+  }, [detailPartOverrides, form.houseId, partList, selectedHouseBaseId]);
+  const previewDetailPartOverrides = useMemo(() => {
+    const overrides: DetailPartOverrides = {};
+    partList.forEach((part) => {
+      const override =
+        detailPartOverrides[`${housePreviewId}::${part.slot}`] ??
+        detailPartOverrides[`${previewHouseBaseId}::${part.slot}`];
+      if (override) {
+        overrides[part.slot] = override;
+      }
+    });
+    return overrides;
+  }, [detailPartOverrides, housePreviewId, partList, previewHouseBaseId]);
   const colorOverrides = {
     roof_paint: form.roofColor,
     wall_paint: form.wallColor,
@@ -1924,6 +1973,97 @@ export default function CreateMemorialClient({
     bowl_food_paint: form.bowlFoodColor,
     bowl_water_paint: form.bowlWaterColor,
   };
+  const activeDetailOverrideKey = activeDetailSlot
+    ? `${form.houseId}::${activeDetailSlot}`
+    : null;
+  const activeDetailOverride =
+    (activeDetailOverrideKey
+      ? detailPartOverrides[activeDetailOverrideKey]
+      : null) ?? {
+      scale: 1,
+      position: { x: 0, y: 0, z: 0 },
+    };
+  const updateActiveDetailOverride = useCallback(
+    (
+      patch: Partial<{
+        scale: number;
+        position: Partial<{ x: number; y: number; z: number }>;
+      }>,
+    ) => {
+      if (!activeDetailSlot) {
+        return;
+      }
+      const key = `${form.houseId}::${activeDetailSlot}`;
+      setDetailPartOverrides((previous) => {
+        const current = previous[key] ?? {
+          scale: 1,
+          position: { x: 0, y: 0, z: 0 },
+        };
+        return {
+          ...previous,
+          [key]: {
+            scale: patch.scale ?? current.scale,
+            position: {
+              ...current.position,
+              ...(patch.position ?? {}),
+            },
+          },
+        };
+      });
+    },
+    [activeDetailSlot, form.houseId],
+  );
+  const resetActiveDetailOverride = useCallback(() => {
+    if (!activeDetailSlot) {
+      return;
+    }
+    const key = `${form.houseId}::${activeDetailSlot}`;
+    setDetailPartOverrides((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
+  }, [activeDetailSlot, form.houseId]);
+  const detailCalibrationJson = useMemo(() => {
+    const grouped: Record<
+      string,
+      Record<
+        string,
+        { scale: number; position: { x: number; y: number; z: number } }
+      >
+    > = {};
+    Object.entries(detailPartOverrides).forEach(([key, value]) => {
+      const separatorIndex = key.indexOf("::");
+      if (separatorIndex < 0) {
+        return;
+      }
+      const houseId = key.slice(0, separatorIndex);
+      const slot = key.slice(separatorIndex + 2);
+      if (!houseId || !slot) {
+        return;
+      }
+      grouped[houseId] = grouped[houseId] ?? {};
+      grouped[houseId][slot] = {
+        scale: Number(value.scale.toFixed(3)),
+        position: {
+          x: Number(value.position.x.toFixed(3)),
+          y: Number(value.position.y.toFixed(3)),
+          z: Number(value.position.z.toFixed(3)),
+        },
+      };
+    });
+    return JSON.stringify(grouped, null, 2);
+  }, [detailPartOverrides]);
+  const copyDetailCalibrationJson = useCallback(() => {
+    if (!navigator.clipboard) {
+      setDraftNotice("JSON можно скопировать из поля ниже.");
+      return;
+    }
+    void navigator.clipboard
+      .writeText(detailCalibrationJson)
+      .then(() => setDraftNotice("JSON калибровки скопирован."))
+      .catch(() => setDraftNotice("JSON можно скопировать из поля ниже."));
+  }, [detailCalibrationJson]);
   const currentEnvironmentId = form.environmentSeasonAuto
     ? form.environmentId
     : `${form.environmentId}_${form.environmentSeason}`;
@@ -4284,88 +4424,72 @@ export default function CreateMemorialClient({
           </div>
         );
       case "roof":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
-              handleChange("roofId", id);
-            })}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid("roof", roofOptions, form.roofId, (id) => {
+            handleChange("roofId", id);
+          }),
         );
       case "wall":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
-              handleChange("wallId", id);
-            })}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid("wall", wallOptions, form.wallId, (id) => {
+            handleChange("wallId", id);
+          }),
         );
       case "sign":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid("sign", signOptions, form.signId, (id) => {
-              handleChange("signId", id);
-            })}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid("sign", signOptions, form.signId, (id) => {
+            handleChange("signId", id);
+          }),
         );
       case "frameLeft":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid(
-              "frame-left",
-              frameLeftOptions,
-              form.frameLeftId,
-              (id) => {
-                handleChange("frameLeftId", id);
-              },
-            )}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid(
+            "frame-left",
+            frameLeftOptions,
+            form.frameLeftId,
+            (id) => {
+              handleChange("frameLeftId", id);
+            },
+          ),
         );
       case "frameRight":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid(
-              "frame-right",
-              frameRightOptions,
-              form.frameRightId,
-              (id) => {
-                handleChange("frameRightId", id);
-              },
-            )}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid(
+            "frame-right",
+            frameRightOptions,
+            form.frameRightId,
+            (id) => {
+              handleChange("frameRightId", id);
+            },
+          ),
         );
       case "mat":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid("mat", matOptions, form.matId, (id) => {
-              handleChange("matId", id);
-            })}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid("mat", matOptions, form.matId, (id) => {
+            handleChange("matId", id);
+          }),
         );
       case "bowlFood":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid(
-              "bowl-food",
-              bowlFoodOptions,
-              form.bowlFoodId,
-              (id) => {
-                handleChange("bowlFoodId", id);
-              },
-            )}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid(
+            "bowl-food",
+            bowlFoodOptions,
+            form.bowlFoodId,
+            (id) => {
+              handleChange("bowlFoodId", id);
+            },
+          ),
         );
       case "bowlWater":
-        return (
-          <div className="grid gap-3">
-            {renderOptionGrid(
-              "bowl-water",
-              bowlWaterOptions,
-              form.bowlWaterId,
-              (id) => {
-                handleChange("bowlWaterId", id);
-              },
-            )}
-          </div>
+        return renderPartEditorPanel(
+          renderOptionGrid(
+            "bowl-water",
+            bowlWaterOptions,
+            form.bowlWaterId,
+            (id) => {
+              handleChange("bowlWaterId", id);
+            },
+          ),
         );
       default:
         return null;
@@ -5105,6 +5229,138 @@ export default function CreateMemorialClient({
     </div>
   );
 
+  const renderDetailCalibrationPanel = () => {
+    if (!canUseCalibration(accessLevel) || !activeDetailSlot) {
+      return null;
+    }
+
+    const activeTabLabel =
+      step3Tabs.find((tab) => tab.id === activeStep3Tab)?.label ?? "Деталь";
+    const numberInputClass =
+      "w-20 rounded-xl border border-white bg-[#fffcf9] px-2 py-1 text-right text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition focus:border-[#3bceac] focus:ring-2 focus:ring-[#3bceac]/20";
+    const rangeClass = "h-2 w-full accent-[#3bceac]";
+    const updatePosition = (axis: "x" | "y" | "z", value: number) => {
+      updateActiveDetailOverride({
+        position: { [axis]: value },
+      });
+    };
+
+    return (
+      <div className="grid gap-3 rounded-2xl border border-[#eadfd9] bg-[#fffcf9] p-3 text-xs text-[#6f6360]">
+        <div className="grid gap-1">
+          <div className="text-xs font-semibold text-[#5d4037]">
+            Временная настройка детали
+          </div>
+          <div className="text-[11px] leading-snug text-[#8d6e63]">
+            Домик:{" "}
+            <span className="font-semibold text-[#6f6360]">
+              {form.houseId}
+            </span>
+            {" · "}Деталь:{" "}
+            <span className="font-semibold text-[#6f6360]">
+              {activeTabLabel}
+            </span>
+            {" · "}Слот:{" "}
+            <span className="font-semibold text-[#6f6360]">
+              {activeDetailSlot}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          <label className="flex items-center justify-between gap-3">
+            <span>Масштаб</span>
+            <input
+              type="number"
+              min={0.05}
+              max={4}
+              step={0.01}
+              value={activeDetailOverride.scale}
+              onChange={(event) =>
+                updateActiveDetailOverride({
+                  scale: Number(event.target.value) || 0.05,
+                })
+              }
+              className={numberInputClass}
+            />
+          </label>
+          <input
+            type="range"
+            min={0.05}
+            max={4}
+            step={0.01}
+            value={activeDetailOverride.scale}
+            onChange={(event) =>
+              updateActiveDetailOverride({ scale: Number(event.target.value) })
+            }
+            className={rangeClass}
+          />
+        </div>
+
+        {(["x", "y", "z"] as const).map((axis) => (
+          <div key={axis} className="grid gap-2">
+            <label className="flex items-center justify-between gap-3">
+              <span>Сдвиг {axis.toUpperCase()}</span>
+              <input
+                type="number"
+                min={-3}
+                max={3}
+                step={0.01}
+                value={activeDetailOverride.position[axis]}
+                onChange={(event) =>
+                  updatePosition(axis, Number(event.target.value) || 0)
+                }
+                className={numberInputClass}
+              />
+            </label>
+            <input
+              type="range"
+              min={-3}
+              max={3}
+              step={0.01}
+              value={activeDetailOverride.position[axis]}
+              onChange={(event) =>
+                updatePosition(axis, Number(event.target.value))
+              }
+              className={rangeClass}
+            />
+          </div>
+        ))}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={resetActiveDetailOverride}
+            className="rounded-full border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-[#8d6e63] transition hover:border-[#d3a27f]"
+          >
+            Сбросить деталь
+          </button>
+          <button
+            type="button"
+            onClick={copyDetailCalibrationJson}
+            className="rounded-full bg-[#111827] px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-white shadow-sm transition hover:-translate-y-0.5"
+          >
+            Скопировать JSON
+          </button>
+        </div>
+
+        <textarea
+          readOnly
+          value={detailCalibrationJson}
+          className="min-h-[120px] resize-y rounded-2xl border border-[#eadfd9] bg-white px-3 py-2 font-mono text-[11px] leading-relaxed text-[#5d4037] outline-none"
+          aria-label="JSON временной калибровки деталей"
+        />
+      </div>
+    );
+  };
+
+  const renderPartEditorPanel = (children: ReactNode) => (
+    <div className="grid gap-3">
+      {children}
+      {renderDetailCalibrationPanel()}
+    </div>
+  );
+
   const renderSoulPathCalibrationPanel = () => {
     if (!canUseCalibration(accessLevel)) {
       return null;
@@ -5713,6 +5969,7 @@ export default function CreateMemorialClient({
               showMeterGrid={canUseCalibration(accessLevel) && showMeterGrid}
               soulMode={soulSceneMode}
               parts={partList}
+              detailPartOverrides={previewDetailPartOverrides}
               gifts={
                 !mapPreviewCaptureWithoutGifts && giftPreviewEnabled
                   ? previewGifts
@@ -6506,6 +6763,7 @@ export default function CreateMemorialClient({
                       showSoulPathMarkers={canUseCalibration(accessLevel)}
                       soulMode="idle"
                       parts={partList}
+                      detailPartOverrides={currentDetailPartOverrides}
                       colors={colorOverrides}
                       softEdges
                       className="h-[420px]"

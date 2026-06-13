@@ -40,12 +40,24 @@ import TunedSkyDome from "../../components/TunedSkyDome";
 
 ensureDracoLoader();
 
+export type DetailPartOverride = {
+  scale: number;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+};
+
+export type DetailPartOverrides = Record<string, DetailPartOverride>;
+
 type Props = {
   terrainUrl?: string | null;
   terrainId?: string | null;
   houseUrl?: string | null;
   houseId?: string | null;
   parts?: { slot: string; url: string }[];
+  detailPartOverrides?: DetailPartOverrides;
   dirtUrl?: string | null;
   dirtUrls?: string[] | null;
   dirtSlots?: DirtSlotPlacement[] | null;
@@ -781,13 +793,15 @@ function PartAttachment({
   slot,
   url,
   colors,
-  houseBaseId
+  houseBaseId,
+  override
 }: {
   house: THREE.Object3D;
   slot: string;
   url: string;
   colors?: Record<string, string>;
   houseBaseId?: string;
+  override?: DetailPartOverride;
 }) {
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
@@ -812,8 +826,25 @@ function PartAttachment({
       const scale = houseBaseId === "budka_1" ? 0.85 : 1;
       applyPartFitWidthHeight(cloned, 1 * scale, 0.4 * scale);
     }
+    if (override) {
+      const scale = Number.isFinite(override.scale) && override.scale > 0 ? override.scale : 1;
+      cloned.scale.multiplyScalar(scale);
+      cloned.position.set(
+        Number.isFinite(override.position.x) ? override.position.x : 0,
+        Number.isFinite(override.position.y) ? override.position.y : 0,
+        Number.isFinite(override.position.z) ? override.position.z : 0
+      );
+    }
     return cloned;
-  }, [houseBaseId, scene, slot]);
+  }, [
+    houseBaseId,
+    override?.position.x,
+    override?.position.y,
+    override?.position.z,
+    override?.scale,
+    scene,
+    slot
+  ]);
 
   useEffect(() => {
     const anchor = house.getObjectByName(slot);
@@ -1153,6 +1184,7 @@ function TerrainWithHouse({
   terrainUrl,
   houseUrl,
   parts,
+  detailPartOverrides,
   dirtUrl,
   dirtUrls,
   dirtSlots,
@@ -1198,6 +1230,7 @@ function TerrainWithHouse({
   terrainUrl: string;
   houseUrl: string;
   parts?: { slot: string; url: string }[];
+  detailPartOverrides?: DetailPartOverrides;
   dirtUrl?: string | null;
   dirtUrls?: string[] | null;
   dirtSlots?: DirtSlotPlacement[] | null;
@@ -1652,6 +1685,7 @@ function TerrainWithHouse({
           url={part.url}
           colors={colors}
           houseBaseId={houseBaseId}
+          override={detailPartOverrides?.[part.slot]}
         />
       ))}
       {dirtSlots && dirtSlots.length > 0 ? (
@@ -1780,6 +1814,7 @@ export default function MemorialPreview({
   houseUrl,
   houseId,
   parts,
+  detailPartOverrides,
   dirtUrl,
   dirtUrls,
   dirtSlots,
@@ -2208,6 +2243,7 @@ export default function MemorialPreview({
               terrainUrl={activeAssets.terrainUrl}
               houseUrl={activeAssets.houseUrl}
               parts={activeAssets.parts}
+              detailPartOverrides={detailPartOverrides}
               dirtUrl={activeAssets.dirtUrl}
               dirtUrls={activeAssets.dirtUrls}
               dirtSlots={activeAssets.dirtSlots}
