@@ -111,7 +111,30 @@ export const houseSlotsGenerated = {
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
   },
+  "kotik_2__base": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "kotik_2__second": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
   "kotik_3__base": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "kotik_4__base": {
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "kotik_5__base": {
+    "mat": "mat_slot",
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
+  },
+  "kotik_6__base": {
+    "mat": "mat_slot",
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
   },

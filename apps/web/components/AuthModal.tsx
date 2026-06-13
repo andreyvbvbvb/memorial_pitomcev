@@ -101,6 +101,23 @@ function PasswordInput({
   );
 }
 
+function LegalConsentText() {
+  return (
+    <span>
+      Я ознакомлен(а) с{" "}
+      <a href="/politics" className={authLinkClass} target="_blank" rel="noreferrer">
+        Политикой конфиденциальности
+      </a>{" "}
+      и даю согласие на обработку моих персональных данных в соответствии с
+      ней. Также принимаю{" "}
+      <a href="/offer" className={authLinkClass} target="_blank" rel="noreferrer">
+        Публичную оферту
+      </a>
+      .
+    </span>
+  );
+}
+
 export default function AuthModal({
   open,
   visible,
@@ -319,6 +336,16 @@ export default function AuthModal({
     handleSubmit();
   };
 
+  const setRegisterConsent = (checked: boolean) => {
+    setAcceptTerms(checked);
+    setAcceptOffer(checked);
+  };
+
+  const setLoginConsent = (checked: boolean) => {
+    setConsentTerms(checked);
+    setConsentOffer(checked);
+  };
+
   const handleAcceptTerms = async () => {
     if (!consentTerms || !consentOffer) {
       setError("Нужно принять политику обработки персональных данных и публичную оферту");
@@ -493,36 +520,15 @@ export default function AuthModal({
                         visible={showConfirmPassword}
                         onToggle={() => setShowConfirmPassword((prev) => !prev)}
                       />
-                      <div className="grid gap-2 sm:gap-3">
-                        <label className={authCheckboxRowClass}>
-                          <input
-                            type="checkbox"
-                            className={authCheckboxInputClass}
-                            checked={acceptTerms}
-                            onChange={(event) => setAcceptTerms(event.target.checked)}
-                          />
-                          <span>
-                            Я принимаю{" "}
-                            <a href="/politics" className={authLinkClass} target="_blank" rel="noreferrer">
-                              политику обработки персональных данных
-                            </a>
-                          </span>
-                        </label>
-                        <label className={authCheckboxRowClass}>
-                          <input
-                            type="checkbox"
-                            className={authCheckboxInputClass}
-                            checked={acceptOffer}
-                            onChange={(event) => setAcceptOffer(event.target.checked)}
-                          />
-                          <span>
-                            Я принимаю{" "}
-                            <a href="/offer" className={authLinkClass} target="_blank" rel="noreferrer">
-                              публичную оферту
-                            </a>
-                          </span>
-                        </label>
-                      </div>
+                      <label className={authCheckboxRowClass}>
+                        <input
+                          type="checkbox"
+                          className={authCheckboxInputClass}
+                          checked={acceptTerms && acceptOffer}
+                          onChange={(event) => setRegisterConsent(event.target.checked)}
+                        />
+                        <LegalConsentText />
+                      </label>
                     </>
                   )}
 
@@ -587,36 +593,15 @@ export default function AuthModal({
               <p className={`mt-3 ${authHelperTextClass}`}>
                 Чтобы продолжить, примите политику обработки персональных данных и публичную оферту.
               </p>
-              <div className="mt-4 grid gap-3">
-                <label className={authCheckboxRowClass}>
-                  <input
-                    type="checkbox"
-                    className={authCheckboxInputClass}
-                    checked={consentTerms}
-                    onChange={(event) => setConsentTerms(event.target.checked)}
-                  />
-                  <span>
-                    Я принимаю{" "}
-                    <a href="/politics" className={authLinkClass} target="_blank" rel="noreferrer">
-                      политику обработки персональных данных
-                    </a>
-                  </span>
-                </label>
-                <label className={authCheckboxRowClass}>
-                  <input
-                    type="checkbox"
-                    className={authCheckboxInputClass}
-                    checked={consentOffer}
-                    onChange={(event) => setConsentOffer(event.target.checked)}
-                  />
-                  <span>
-                    Я принимаю{" "}
-                    <a href="/offer" className={authLinkClass} target="_blank" rel="noreferrer">
-                      публичную оферту
-                    </a>
-                  </span>
-                </label>
-              </div>
+              <label className={`mt-4 ${authCheckboxRowClass}`}>
+                <input
+                  type="checkbox"
+                  className={authCheckboxInputClass}
+                  checked={consentTerms && consentOffer}
+                  onChange={(event) => setLoginConsent(event.target.checked)}
+                />
+                <LegalConsentText />
+              </label>
               <button
                 type="button"
                 onClick={handleAcceptTerms}

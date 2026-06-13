@@ -19,9 +19,6 @@ export const giftModelsGenerated = {
   "candle_12": {
     "candle": "/models/gifts/candle/candle_12.glb"
   },
-  "candle_13": {
-    "candle": "/models/gifts/candle/candle_13.glb"
-  },
   "candle_2": {
     "candle": "/models/gifts/candle/candle_2.glb"
   },
