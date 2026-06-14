@@ -18,6 +18,98 @@ export type HousePartFitBounds = {
   maxLength: number;
 };
 
+export type HousePartAdjustment = {
+  scale: number;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+};
+
+const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>> = {
+  "budka_1__base": {
+    mat_slot: { scale: 1, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 1.1, position: { x: 0.02, y: 0, z: 0 } }
+  },
+  "kotik_1__base": {
+    bowl_food_slot: { scale: 0.4, position: { x: -0.01, y: 0, z: -0.03 } },
+    bowl_water_slot: { scale: 0.34, position: { x: 0, y: 0, z: 0 } }
+  },
+  "mat_1__base": {
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+  },
+  "mat_1__second": {
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+  },
+  "mat_1__third": {
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+  },
+  "mat_1__fourth": {
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+  },
+  "budka_2__base": {
+    bowl_food_slot: { scale: 1.21, position: { x: 0.16, y: 0, z: 0 } }
+  },
+  "kotik_2__base": {
+    bowl_food_slot: { scale: 0.54, position: { x: 0.35, y: 0, z: 0.32 } },
+    bowl_water_slot: { scale: 0.4, position: { x: 0.11, y: 0, z: 0 } }
+  },
+  "budka_3__base": {
+    mat_slot: { scale: 0.49, position: { x: 0.08, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 1.16, position: { x: 0.06, y: 0, z: 0 } }
+  },
+  "kotik_3__base": {
+    bowl_food_slot: { scale: 1.2, position: { x: 0, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1, position: { x: 0.01, y: 0, z: 0.5 } }
+  },
+  "budka_4__base": {
+    mat_slot: { scale: 0.8, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 1.41, position: { x: 0, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1.14, position: { x: 0, y: 0, z: 0 } }
+  },
+  "kotik_4__base": {
+    mat_slot: { scale: 0.19, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 0.45, position: { x: 0.45, y: 0, z: 0.11 } },
+    bowl_water_slot: { scale: 0.32, position: { x: 0.01, y: 0, z: 0.34 } }
+  },
+  "budka_5__base": {
+    mat_slot: { scale: 1, position: { x: 0, y: 0, z: 0.07 } },
+    bowl_food_slot: { scale: 2.14, position: { x: -0.12, y: 0.03, z: 0.15 } },
+    bowl_water_slot: { scale: 1.9, position: { x: -0.02, y: 0.03, z: 0.13 } }
+  },
+  "kotik_5__base": {
+    mat_slot: { scale: 0.11, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 0.24, position: { x: -0.02, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 0.17, position: { x: 0, y: 0, z: 0 } }
+  },
+  "budka_6__base": {
+    sign_slot: { scale: 1, position: { x: 0.08, y: 0, z: 0 } },
+    mat_slot: { scale: 1.2, position: { x: 0, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1.21, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 1.61, position: { x: 0, y: 0, z: 0.38 } }
+  },
+  "kotik_6__base": {
+    mat_slot: { scale: 0.26, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 0.4, position: { x: -0.04, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 0.34, position: { x: -0.01, y: 0, z: 0.07 } }
+  },
+  "budka_7__base": {
+    bowl_water_slot: { scale: 1.14, position: { x: 0.52, y: 0, z: 0.01 } },
+    bowl_food_slot: { scale: 1.22, position: { x: -1.01, y: 0, z: -0.05 } }
+  },
+  "budka_8__base": {
+    bowl_food_slot: { scale: 1.49, position: { x: 0, y: 0, z: 0 } },
+    bowl_water_slot: { scale: 1.4, position: { x: 0, y: 0, z: 0 } },
+    sign_slot: { scale: 1, position: { x: 0.06, y: 0, z: 0 } },
+    mat_slot: { scale: 1.24, position: { x: 0, y: 0, z: 0 } }
+  }
+};
+
 const DEFAULT_HOUSE_TRANSFORM: HouseTransform = {
   offsetX: 0,
   offsetZ: 0,
@@ -116,6 +208,38 @@ export const getHousePartFitBounds = (
     return { maxWidth: 0.18, maxLength: 0.18 };
   }
   return null;
+};
+
+export const getHousePartAdjustment = (
+  houseId?: string | null,
+  slot?: string | null
+): HousePartAdjustment | null => {
+  if (!houseId || !slot) {
+    return null;
+  }
+  const variantId = houseId.trim();
+  const baseId = splitHouseVariantId(variantId).baseId || variantId;
+  return (
+    HOUSE_PART_ADJUSTMENTS[variantId]?.[slot] ??
+    HOUSE_PART_ADJUSTMENTS[baseId]?.[slot] ??
+    null
+  );
+};
+
+export const applyHousePartAdjustment = (
+  target: THREE.Object3D,
+  houseId?: string | null,
+  slot?: string | null
+) => {
+  const adjustment = getHousePartAdjustment(houseId, slot);
+  if (!adjustment) {
+    return;
+  }
+  const scale = Number.isFinite(adjustment.scale) && adjustment.scale > 0 ? adjustment.scale : 1;
+  target.scale.multiplyScalar(scale);
+  target.position.x += adjustment.position.x;
+  target.position.y += adjustment.position.y;
+  target.position.z += adjustment.position.z;
 };
 
 export const applyHousePlacement = (

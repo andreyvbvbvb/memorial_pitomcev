@@ -36,6 +36,7 @@ ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
 import {
+  applyHousePartAdjustment,
   applyHousePlacement,
   getHousePartFitBounds,
   getHousePartScaleMultiplier,
@@ -255,6 +256,7 @@ function PartAttachment({
         applyPartScale(cloned, 0.575 * getHousePartScaleMultiplier(houseId, slot), "x");
       }
     }
+    applyHousePartAdjustment(cloned, houseId, slot);
     return cloned;
   }, [houseId, scene, slot]);
 

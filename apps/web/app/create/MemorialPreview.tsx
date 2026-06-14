@@ -18,6 +18,7 @@ import {
 import type { HouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
 import {
+  applyHousePartAdjustment,
   applyHousePlacement,
   getHousePartFitBounds,
   getHousePartScaleMultiplier,
@@ -794,6 +795,7 @@ function PartAttachment({
   url,
   colors,
   houseBaseId,
+  houseId,
   override
 }: {
   house: THREE.Object3D;
@@ -801,6 +803,7 @@ function PartAttachment({
   url: string;
   colors?: Record<string, string>;
   houseBaseId?: string;
+  houseId?: string | null;
   override?: DetailPartOverride;
 }) {
   const { scene } = useGLTF(url);
@@ -826,6 +829,7 @@ function PartAttachment({
       const scale = houseBaseId === "budka_1" ? 0.85 : 1;
       applyPartFitWidthHeight(cloned, 1 * scale, 0.4 * scale);
     }
+    applyHousePartAdjustment(cloned, houseId ?? houseBaseId, slot);
     if (override) {
       const scale = Number.isFinite(override.scale) && override.scale > 0 ? override.scale : 1;
       cloned.scale.multiplyScalar(scale);
@@ -838,6 +842,7 @@ function PartAttachment({
     return cloned;
   }, [
     houseBaseId,
+    houseId,
     override?.position.x,
     override?.position.y,
     override?.position.z,
@@ -1211,6 +1216,7 @@ function TerrainWithHouse({
   allowFocus,
   terrainId,
   houseBaseId,
+  houseId,
   houseOffsetX,
   houseOffsetZ,
   houseRotationY,
@@ -1264,6 +1270,7 @@ function TerrainWithHouse({
   allowFocus?: boolean;
   terrainId?: string | null;
   houseBaseId?: string;
+  houseId?: string | null;
   houseOffsetX?: number;
   houseOffsetZ?: number;
   houseRotationY?: number;
@@ -1685,6 +1692,7 @@ function TerrainWithHouse({
           url={part.url}
           colors={colors}
           houseBaseId={houseBaseId}
+          houseId={houseId}
           override={detailPartOverrides?.[part.slot]}
         />
       ))}
@@ -2270,6 +2278,7 @@ export default function MemorialPreview({
               allowFocus={allowFocus}
               terrainId={activeHousePresentation.terrainId}
               houseBaseId={activeHouseBaseId}
+              houseId={activeAssets.houseId}
               houseOffsetX={activeHousePresentation.houseOffsetX}
               houseOffsetZ={activeHousePresentation.houseOffsetZ}
               houseRotationY={activeHousePresentation.houseRotationY}
@@ -2350,6 +2359,7 @@ export default function MemorialPreview({
                   allowFocus={false}
                   terrainId={pendingHousePresentation?.terrainId}
                   houseBaseId={pendingHouseBaseId}
+                  houseId={pendingAssets.houseId}
                   houseOffsetX={pendingHousePresentation?.houseOffsetX}
                   houseOffsetZ={pendingHousePresentation?.houseOffsetZ}
                   houseRotationY={pendingHousePresentation?.houseRotationY}
