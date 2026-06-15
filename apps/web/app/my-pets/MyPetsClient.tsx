@@ -272,7 +272,8 @@ export default function MyPetsClient() {
                       Мои питомцы
                     </p>
                     <AuthHelpHint
-                      className="h-6 w-6 border-2 text-[10px]"
+                      placement={isPortraitLayout ? "right" : "bottom"}
+                      className={isPortraitLayout ? "h-6 w-6 border-2 text-[10px] [&>span]:!w-[min(18rem,calc(100vw-4rem))]" : "h-6 w-6 border-2 text-[10px]"}
                       text="На этой странице можно открыть опубликованные мемориалы, переключиться в 3D-режим и продолжить работу с сохраненными черновиками. Черновики хранят данные мемориала без фотографий: фотографии загружаются только при публикации."
                     />
                   </div>

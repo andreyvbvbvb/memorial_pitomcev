@@ -3605,6 +3605,7 @@ export default function CreateMemorialClient({
       panel !== "details" &&
       panel !== "base" &&
       panel !== "story" &&
+      panel !== "marker" &&
       panel !== "photos" &&
       panel !== "soul"
     ) {
@@ -5830,7 +5831,7 @@ export default function CreateMemorialClient({
     {
       id: "marker",
       label: "Маркер на карте",
-      disabled: isEditMode,
+      disabled: false,
       highlight: !isEditMode && isBuilderStep && !visitedOverlays.marker,
     },
     {

@@ -645,7 +645,11 @@ export class PetsService {
                 id: true,
                 email: true,
                 login: true,
-                pets: { select: { id: true, name: true } },
+                pets: {
+                  select: { id: true, name: true },
+                  orderBy: { createdAt: "desc" },
+                  take: 3,
+                },
               },
             },
           },

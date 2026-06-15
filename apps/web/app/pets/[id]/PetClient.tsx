@@ -2529,7 +2529,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     bowl_water_paint: draftAppearance.bowlWaterColor,
   };
   const giftInstances = activeGifts.map((gift) => {
-    const ownerPets = gift.owner?.pets ?? [];
+    const ownerPets = (gift.owner?.pets ?? []).slice(0, 3);
     const ownerLabel =
       ownerPets.length > 0
         ? ownerPets.map((petItem) => petItem.name).join(", ")
@@ -3325,7 +3325,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         {activeGifts.length > 0 ? (
                           <div className="grid gap-2 text-sm text-[#6f6360]">
                             {activeGifts.map((gift) => {
-                              const ownerPets = gift.owner?.pets ?? [];
+                              const ownerPets = (gift.owner?.pets ?? []).slice(0, 3);
                               const ownerName =
                                 gift.owner?.login ??
                                 gift.owner?.email ??

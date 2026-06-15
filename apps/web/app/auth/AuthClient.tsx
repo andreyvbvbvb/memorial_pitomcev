@@ -587,6 +587,7 @@ export default function AuthClient() {
 	                    <h3 className={authTitleClass}>Подтверждение email</h3>
 	                    <AuthHelpHint
 	                      placement="top"
+	                      className="[&>span]:!fixed [&>span]:!bottom-auto [&>span]:!right-auto [&>span]:!left-1/2 [&>span]:!top-[max(1rem,calc(env(safe-area-inset-top)+1rem))] [&>span]:!z-[3000] [&>span]:!w-[min(20rem,calc(100vw-2rem))] [&>span]:!-translate-x-1/2 [&>span]:!translate-y-0"
 	                      text="Код действует 10 минут. Если письмо не пришло во Входящие, проверьте папку Спам на почте."
 	                    />
 	                  </div>

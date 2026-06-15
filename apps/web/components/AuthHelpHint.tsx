@@ -3,7 +3,7 @@
 type AuthHelpHintProps = {
   text: string;
   className?: string;
-  placement?: "top" | "bottom";
+  placement?: "top" | "bottom" | "right" | "left";
 };
 
 export default function AuthHelpHint({
@@ -14,7 +14,11 @@ export default function AuthHelpHint({
   const tooltipPositionClass =
     placement === "top"
       ? "bottom-[calc(100%+0.5rem)] right-0"
-      : "right-0 top-[calc(100%+0.5rem)]";
+      : placement === "right"
+        ? "left-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2"
+        : placement === "left"
+          ? "right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2"
+          : "right-0 top-[calc(100%+0.5rem)]";
 
   return (
     <span

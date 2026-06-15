@@ -692,16 +692,18 @@ function TerrainWithHouseScene({
           houseId={data.houseId}
         />
       ))}
-      {data.gifts?.map((gift) => (
-        <GiftInstance
-          key={`${gift.slot}-${gift.url}`}
-          terrain={terrain}
-          slot={gift.slot}
-          url={gift.url}
-          size={gift.size}
-          enableFlames={active === true}
-        />
-      ))}
+      {active
+        ? data.gifts?.map((gift) => (
+            <GiftInstance
+              key={`${gift.slot}-${gift.url}`}
+              terrain={terrain}
+              slot={gift.slot}
+              url={gift.url}
+              size={gift.size}
+              enableFlames
+            />
+          ))
+        : null}
       <DirtSlotAttachments terrain={terrain} house={house} placements={data.dirtSlots ?? []} />
       {data.soul?.enabled !== false ? (
         <SoulAnchor
@@ -722,6 +724,7 @@ function TerrainWithHouseScene({
 function MemorialInstance({
   data,
   tone,
+  active,
   innerRef,
   onSelect,
   onPressStart,
@@ -732,6 +735,7 @@ function MemorialInstance({
 }: {
   data: MemorialSceneData | null;
   tone: number;
+  active?: boolean;
   innerRef: (node: THREE.Group | null) => void;
   onSelect?: () => void;
   onPressStart?: (event: any) => void;
@@ -794,7 +798,7 @@ function MemorialInstance({
       }}
     >
       <Group>
-        <TerrainWithHouseScene data={data} tone={tone} active={tone >= 0.98} />
+        <TerrainWithHouseScene data={data} tone={tone} active={active === true} />
       </Group>
     </Group>
   );
@@ -1255,6 +1259,7 @@ function RowCarouselStage({
             key={item.id}
             data={item.data}
             tone={1}
+            active={idx === activeIndex}
             innerRef={(node) => {
               instanceRefs.current[idx] = node;
               placeInstance(node, idx);
@@ -1932,14 +1937,20 @@ export default function MapClient() {
 
   const renderMemorialInfoContent = (
     marker: MarkerDto,
-    options?: { onClose?: () => void; compact?: boolean; stacked?: boolean }
+    options?: { onClose?: () => void; compact?: boolean; stacked?: boolean; unframed?: boolean }
   ) => {
     const pet = petCache[marker.petId];
     const previewSrc = resolvePreviewSrc(getMarkerCoverSrc(marker));
     const compact = options?.compact ?? isPortraitLayout;
     const stacked = options?.stacked ?? false;
+    const unframed = options?.unframed ?? false;
+    const shellClass = compact
+      ? unframed
+        ? "relative mx-auto flex min-h-full w-full max-w-[25rem] flex-col overflow-x-hidden px-2.5 pb-1 pt-0"
+        : `relative flex min-h-full flex-col overflow-x-hidden p-2.5 ${hudCardSurfaceClass(true)}`
+      : `relative flex h-full min-h-0 flex-col overflow-x-hidden p-4 ${hudCardSurfaceClass(false)} [@media(max-height:640px)]:rounded-[20px] [@media(max-height:640px)]:p-3`;
     return (
-      <div className={compact ? `relative flex min-h-full flex-col overflow-x-hidden p-2.5 ${hudCardSurfaceClass(true)}` : `relative flex h-full min-h-0 flex-col overflow-x-hidden p-4 ${hudCardSurfaceClass(false)} [@media(max-height:640px)]:rounded-[20px] [@media(max-height:640px)]:p-3`}>
+      <div className={shellClass}>
         {options?.onClose ? (
           <button
             type="button"
@@ -2050,7 +2061,10 @@ export default function MapClient() {
   };
 
   const activeCarouselInfoContent = activeCarouselMarker ? (
-    renderMemorialInfoContent(activeCarouselMarker, { stacked: true })
+    renderMemorialInfoContent(activeCarouselMarker, {
+      stacked: true,
+      unframed: isPortraitLayout,
+    })
   ) : (
     <p className={hudEmptyStateTextClass}>Нет мемориалов</p>
   );
