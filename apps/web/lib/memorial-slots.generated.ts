@@ -149,5 +149,9 @@ export const houseSlotsGenerated = {
   "mat_1__second": {
     "bowlFood": "bowl_food_slot",
     "bowlWater": "bowl_water_slot"
+  },
+  "mat_1__third": {
+    "bowlFood": "bowl_food_slot",
+    "bowlWater": "bowl_water_slot"
   }
 } as const;

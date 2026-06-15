@@ -14,6 +14,7 @@ import {
   Source_Sans_3
 } from "next/font/google";
 import AppHeader from "../components/AppHeader";
+import CookieNotice from "../components/CookieNotice";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       >
         <AppHeader />
         {children}
+        <CookieNotice />
       </body>
     </html>
   );
