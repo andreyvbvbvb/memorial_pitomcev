@@ -30,6 +30,8 @@ import {
   authTitleClass
 } from "../../components/authTheme";
 
+const PASSWORD_REQUIREMENTS_PATTERN = /^(?=.*[A-Z])(?=.*[0-9])[A-Za-z0-9]+$/;
+
 function PasswordInput({
   label,
   value,
@@ -113,6 +115,8 @@ export default function AuthClient() {
   const [emailCode, setEmailCode] = useState("");
   const [emailCodeSent, setEmailCodeSent] = useState(false);
   const [emailCodeLoading, setEmailCodeLoading] = useState(false);
+  const [emailCodeDialogOpen, setEmailCodeDialogOpen] = useState(false);
+  const [emailCodeCooldown, setEmailCodeCooldown] = useState(0);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -140,6 +144,16 @@ export default function AuthClient() {
       setRedirectPath(next);
     }
   }, []);
+
+  useEffect(() => {
+    if (!emailCodeDialogOpen || emailCodeCooldown <= 0) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setEmailCodeCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [emailCodeDialogOpen, emailCodeCooldown]);
 
   const parseApiError = async (response: Response) => {
     const text = await response.text();
@@ -184,6 +198,10 @@ export default function AuthClient() {
     }
     if (password.trim().length < 6) {
       setError("Пароль должен быть минимум 6 символов");
+      return false;
+    }
+    if (!PASSWORD_REQUIREMENTS_PATTERN.test(password.trim())) {
+      setError("Пароль: только латинские буквы и цифры, минимум одна заглавная буква и одна цифра");
       return false;
     }
     if (password.trim() !== confirmPassword.trim()) {
@@ -239,11 +257,56 @@ export default function AuthClient() {
       }
       setEmailCodeSent(true);
       setEmailCode("");
+      setEmailCodeCooldown(60);
       setNotice("Код подтверждения отправлен на email");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не удалось отправить код");
     } finally {
       setEmailCodeLoading(false);
+    }
+  };
+
+  const handleRegisterWithCode = async () => {
+    if (loading || !validateRegisterFields(true)) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(`${apiUrl}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          login: login.trim(),
+          email: email.trim(),
+          password: password.trim(),
+          emailCode: emailCode.trim(),
+          acceptTerms,
+          acceptOffer
+        })
+      });
+
+      if (!response.ok) {
+        const message = await parseApiError(response);
+        if (message.toLowerCase().includes("логин")) {
+          setLoginError(message);
+        } else if (message.toLowerCase().includes("email")) {
+          setEmailError(message);
+        }
+        setError(message || "Ошибка регистрации");
+        return;
+      }
+
+      setEmailCodeDialogOpen(false);
+      setNotice("Готово! Перенаправляем...");
+      router.push(redirectPath);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка регистрации");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -261,42 +324,28 @@ export default function AuthClient() {
         setError("Пароль должен быть минимум 6 символов");
         return;
       }
-    } else if (!validateRegisterFields(true)) {
+    } else {
+      if (!validateRegisterFields(false)) {
+        return;
+      }
+      setEmailCodeDialogOpen(true);
+      if (!emailCodeSent && emailCodeCooldown === 0) {
+        void handleSendEmailCode();
+      }
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`${apiUrl}/auth/${mode === "register" ? "register" : "login"}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(
-            mode === "register"
-              ? {
-                  login: login.trim(),
-                  email: email.trim(),
-                  password: password.trim(),
-                  emailCode: emailCode.trim(),
-                  acceptTerms,
-                  acceptOffer
-                }
-              : { email: identifier.trim(), password: password.trim() }
-          )
-        }
-      );
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: identifier.trim(), password: password.trim() })
+      });
       if (!response.ok) {
         const message = await parseApiError(response);
-        if (mode === "register" && message.toLowerCase().includes("логин")) {
-          setLoginError(message);
-          setError(message);
-        } else if (mode === "register" && message.toLowerCase().includes("email")) {
-          setEmailError(message);
-          setError(message);
-        } else {
-          setError(message || "Ошибка авторизации");
-        }
+        setError(message || "Ошибка авторизации");
         return;
       }
       const data = (await response.json()) as {
@@ -370,7 +419,7 @@ export default function AuthClient() {
       <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
       <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-      <div className="w-full max-w-[32rem]">
+	      <div className="w-full max-w-[32rem]">
         <form className={authCardClass} onSubmit={handleSubmitEvent}>
           <div className={authInnerShellClass}>
             <div className={authTabsRailClass}>
@@ -438,26 +487,27 @@ export default function AuthClient() {
                   </label>
                   <label className={authLabelClass}>
                     Email
-                    <input
-                      className={authInputClass}
+	                    <input
+	                      className={authInputClass}
 	                      value={email}
 	                      onChange={(event) => {
 	                        setEmail(event.target.value);
 	                        setEmailError(null);
 	                        setEmailCode("");
 	                        setEmailCodeSent(false);
+	                        setEmailCodeCooldown(0);
 	                      }}
-                      placeholder="user@example.com"
-                    />
-                  </label>
+	                      placeholder="user@example.com"
+	                    />
+	                  </label>
                   <PasswordInput
                     label="Пароль"
                     value={password}
                     onChange={setPassword}
                     visible={showPassword}
                     onToggle={() => setShowPassword((prev) => !prev)}
-                    hint={<AuthHelpHint text="Минимум 6 символов. Пароль чувствителен к регистру, поэтому заглавные и строчные буквы считаются разными." />}
-                  />
+	                    hint={<AuthHelpHint text="Минимум 6 символов. Только латинские буквы и цифры. Нужна хотя бы одна заглавная буква и одна цифра от 0 до 9." />}
+	                  />
                   <PasswordInput
                     label="Подтверждение пароля"
                     value={confirmPassword}
@@ -466,55 +516,16 @@ export default function AuthClient() {
                     onToggle={() => setShowConfirmPassword((prev) => !prev)}
                   />
                   <label className={authCheckboxRowClass}>
-                    <input
-                      type="checkbox"
-                      className={authCheckboxInputClass}
-                      checked={acceptTerms && acceptOffer}
-                      onChange={(event) => setRegisterConsent(event.target.checked)}
+	                    <input
+	                      type="checkbox"
+	                      className={authCheckboxInputClass}
+	                      checked={acceptTerms && acceptOffer}
+	                      onChange={(event) => setRegisterConsent(event.target.checked)}
 	                    />
 	                    <LegalConsentText />
 	                  </label>
-	                  <div className="rounded-[18px] border-2 border-white bg-[#fffcf9] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-	                    <div className="flex flex-wrap items-center justify-between gap-2">
-	                      <div>
-	                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63]">
-	                          Подтверждение email
-	                        </p>
-	                        <p className="mt-1 text-xs font-semibold leading-snug text-[#6f6360]">
-	                          Код придет на указанную почту и будет действовать 10 минут.
-	                        </p>
-	                      </div>
-	                      <button
-	                        type="button"
-	                        onClick={handleSendEmailCode}
-	                        disabled={emailCodeLoading || loading}
-	                        className="rounded-full bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_2px_0_0_#eadfd9] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-	                      >
-	                        {emailCodeLoading
-	                          ? "Отправляем..."
-	                          : emailCodeSent
-	                            ? "Отправить еще раз"
-	                            : "Отправить код"}
-	                      </button>
-	                    </div>
-	                    {emailCodeSent ? (
-	                      <label className={`${authLabelClass} mt-3`}>
-	                        Код из письма
-	                        <input
-	                          className={`${authInputClass} text-center tracking-[0.3em]`}
-	                          value={emailCode}
-	                          onChange={(event) =>
-	                            setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))
-	                          }
-	                          inputMode="numeric"
-	                          autoComplete="one-time-code"
-	                          placeholder="000000"
-	                        />
-	                      </label>
-	                    ) : null}
-	                  </div>
-	                </>
-	              )}
+		                </>
+		              )}
 
               <button type="submit" className={authPrimaryButtonClass} disabled={loading}>
                 {loading
@@ -543,7 +554,7 @@ export default function AuthClient() {
         </form>
       </div>
 
-      {forgotPopupOpen ? (
+	      {forgotPopupOpen ? (
         <div className={authDialogOverlayClass}>
           <div className={authDialogCardClass}>
             <div className={authDialogInnerClass}>
@@ -564,9 +575,76 @@ export default function AuthClient() {
             </div>
           </div>
         </div>
-      ) : null}
+	      ) : null}
 
-      {consentOpen ? (
+	      {emailCodeDialogOpen ? (
+	        <div className={authDialogOverlayClass}>
+	          <div className={authDialogCardClass}>
+	            <div className={authDialogInnerClass}>
+	              <div className="flex items-start justify-between gap-4">
+	                <div className="min-w-0">
+	                  <div className="flex items-center gap-2">
+	                    <h3 className={authTitleClass}>Подтверждение email</h3>
+	                    <AuthHelpHint
+	                      placement="top"
+	                      text="Код действует 10 минут. Если письмо не пришло во Входящие, проверьте папку Спам на почте."
+	                    />
+	                  </div>
+	                  <p className="mt-2 text-xs font-semibold leading-relaxed text-[#8d6e63]">
+	                    Код отправлен на {email.trim() || "указанный email"}.
+	                  </p>
+	                </div>
+	                <button
+	                  type="button"
+	                  onClick={() => setEmailCodeDialogOpen(false)}
+	                  className={authCloseButtonClass}
+	                  aria-label="Закрыть"
+	                >
+	                  ×
+	                </button>
+	              </div>
+	              <form
+	                className="mt-4 grid gap-3"
+	                onSubmit={(event) => {
+	                  event.preventDefault();
+	                  handleRegisterWithCode();
+	                }}
+	              >
+	                <label className={authLabelClass}>
+	                  Код из письма
+	                  <input
+	                    className={`${authInputClass} text-center tracking-[0.3em]`}
+	                    value={emailCode}
+	                    onChange={(event) =>
+	                      setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+	                    }
+	                    inputMode="numeric"
+	                    autoComplete="one-time-code"
+	                    placeholder="000000"
+	                  />
+	                </label>
+	                <button type="submit" className={authPrimaryButtonClass} disabled={loading}>
+	                  {loading ? "Проверяем..." : "Подтвердить и создать"}
+	                </button>
+	                <button
+	                  type="button"
+	                  onClick={handleSendEmailCode}
+	                  disabled={emailCodeLoading || loading || emailCodeCooldown > 0}
+	                  className="inline-flex w-full items-center justify-center rounded-[15px] border-2 border-white bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_2px_0_0_#eadfd9] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
+	                >
+	                  {emailCodeLoading
+	                    ? "Отправляем..."
+	                    : emailCodeCooldown > 0
+	                      ? `Отправить код через ${emailCodeCooldown} с`
+	                      : "Отправить код"}
+	                </button>
+	              </form>
+	            </div>
+	          </div>
+	        </div>
+	      ) : null}
+
+	      {consentOpen ? (
         <div className={authDialogOverlayClass}>
           <div className={authDialogCardClass}>
             <div className={authDialogInnerClass}>

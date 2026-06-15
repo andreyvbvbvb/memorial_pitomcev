@@ -65,6 +65,31 @@ export class CharityService {
     return report;
   }
 
+  async deleteReport(id: string) {
+    const reportId = id?.trim();
+    if (!reportId) {
+      throw new BadRequestException("Отчёт не найден");
+    }
+
+    const report = await this.prisma.charityReport.findUnique({
+      where: { id: reportId }
+    });
+    if (!report) {
+      throw new BadRequestException("Отчёт не найден");
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.charityReport.delete({ where: { id: reportId } }),
+      this.prisma.charityTotals.upsert({
+        where: { id: DEFAULT_TOTALS_ID },
+        create: { id: DEFAULT_TOTALS_ID, totalPaid: 0 },
+        update: { totalPaid: { decrement: report.amount } }
+      })
+    ]);
+
+    return { ok: true };
+  }
+
   private async uploadPhotos(files: Array<{ originalname: string; buffer: Buffer }>) {
     if (!files.length) {
       return [];

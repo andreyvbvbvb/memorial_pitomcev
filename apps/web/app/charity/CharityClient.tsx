@@ -56,6 +56,7 @@ export default function CharityClient() {
   const [body, setBody] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [photoViewer, setPhotoViewer] = useState<{
     photos: string[];
@@ -223,6 +224,34 @@ export default function CharityClient() {
     }
   };
 
+  const handleDeleteReport = async (report: CharityReport) => {
+    if (deletingReportId) {
+      return;
+    }
+    if (!window.confirm(`Удалить отчёт «${report.title}»?`)) {
+      return;
+    }
+    setDeletingReportId(report.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(`${apiUrl}/charity/reports/${encodeURIComponent(report.id)}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось удалить отчёт");
+      }
+      setNotice("Отчёт удалён");
+      await loadSummary();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка удаления");
+    } finally {
+      setDeletingReportId(null);
+    }
+  };
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#fcf8f5] px-4 pb-16 pt-[calc(var(--app-header-height,56px)+28px)] sm:px-6">
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
@@ -299,10 +328,22 @@ export default function CharityClient() {
                           {report.title}
                         </h3>
                       </div>
-                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-xs font-black uppercase text-[#8d6e63]">
-                        {formatNumber(report.amount)} монет
-                      </div>
-                    </div>
+	                      <div className="flex flex-wrap items-center gap-2">
+	                        <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-xs font-black uppercase text-[#8d6e63]">
+	                          {formatNumber(report.amount)} монет
+	                        </div>
+	                        {isAdmin ? (
+	                          <button
+	                            type="button"
+	                            onClick={() => handleDeleteReport(report)}
+	                            disabled={deletingReportId === report.id}
+	                            className="rounded-full border-2 border-white bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] shadow-[0_2px_0_0_#eadfd9] transition hover:-translate-y-0.5 hover:text-[#5d4037] disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
+	                          >
+	                            {deletingReportId === report.id ? "Удаляем..." : "Удалить"}
+	                          </button>
+	                        ) : null}
+	                      </div>
+	                    </div>
 
                     <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed text-[#6f6360]">
                       {report.body}

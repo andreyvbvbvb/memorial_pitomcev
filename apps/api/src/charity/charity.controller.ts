@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Inject,
+  Param,
   Post,
   Req,
   UploadedFiles,
@@ -57,5 +59,11 @@ export class CharityController {
       throw new BadRequestException("Данные отчёта не найдены");
     }
     return this.charityService.createReport(dto, files ?? []);
+  }
+
+  @Delete("reports/:id")
+  async deleteReport(@Req() req: Request, @Param("id") id: string) {
+    await this.ensureAdmin(req);
+    return this.charityService.deleteReport(id);
   }
 }

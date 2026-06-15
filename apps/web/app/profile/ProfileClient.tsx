@@ -15,6 +15,7 @@ import {
   authPageShellClass,
   authTitleClass
 } from "../../components/authTheme";
+import usePortraitLayout from "../../components/usePortraitLayout";
 
 type Profile = {
   id: string;
@@ -82,6 +83,7 @@ function HelpHint({ text, className = "" }: { text: string; className?: string }
 }
 
 export default function ProfileClient() {
+  const isPortraitLayout = usePortraitLayout();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
@@ -318,7 +320,7 @@ export default function ProfileClient() {
 
   if (loadingProfile) {
     return (
-      <div className={authPageShellClass}>
+      <div className={isPortraitLayout ? "relative min-h-screen bg-[#fcf8f5] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3" : authPageShellClass}>
         <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
         <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
       </div>
@@ -326,13 +328,13 @@ export default function ProfileClient() {
   }
 
   return (
-    <div className={authPageShellClass}>
+    <div className={isPortraitLayout ? "relative min-h-screen overflow-hidden bg-[#fcf8f5] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-3" : authPageShellClass}>
       <div className={`${authBackdropGlowClass} -right-20 top-[-5rem] h-72 w-72 bg-white/35`} />
       <div className={`${authBackdropGlowClass} -left-16 bottom-[-7rem] h-80 w-80 bg-[#fdf2e9]/70`} />
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl -translate-y-[calc(var(--app-header-height,56px)/2)]">
-        <section className={authCardClass}>
-          <div className={`${authInnerShellClass} relative overflow-visible`}>
+      <div className={isPortraitLayout ? "relative z-10 mx-auto w-full max-w-4xl" : "relative z-10 mx-auto w-full max-w-4xl -translate-y-[calc(var(--app-header-height,56px)/2)]"}>
+        <section className={isPortraitLayout ? "w-full" : authCardClass}>
+          <div className={isPortraitLayout ? "relative overflow-visible" : `${authInnerShellClass} relative overflow-visible`}>
             <div className="flex gap-1 overflow-x-auto rounded-[22px] border-2 border-white bg-[#fffcf9] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
               {profileTabs.map((tab) => {
                 const isActive = activeProfileTab === tab.id;
@@ -363,7 +365,7 @@ export default function ProfileClient() {
               })}
             </div>
 
-            <div className="mt-5 h-[min(70dvh,38rem)] overflow-hidden rounded-[30px] border-[3px] border-white bg-[#fffcf9]/86 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_28px_-24px_rgba(93,64,55,0.45)] sm:p-5">
+            <div className={isPortraitLayout ? "mt-3 h-[calc(100dvh-10rem-env(safe-area-inset-bottom))] overflow-hidden" : "mt-5 h-[min(70dvh,38rem)] overflow-hidden rounded-[30px] border-[3px] border-white bg-[#fffcf9]/86 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_28px_-24px_rgba(93,64,55,0.45)] sm:p-5"}>
               {activeProfileTab === "profile" ? (
                 <div className="relative h-full overflow-y-auto pr-1">
                   <span className="absolute right-0 top-0">

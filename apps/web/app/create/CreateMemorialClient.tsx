@@ -1977,35 +1977,39 @@ export default function CreateMemorialClient({
     ? `${form.houseId}::${activeDetailSlot}`
     : null;
   const activeDetailOverride =
-    (activeDetailOverrideKey
-      ? detailPartOverrides[activeDetailOverrideKey]
-      : null) ?? {
-      scale: 1,
-      position: { x: 0, y: 0, z: 0 },
-    };
+	    (activeDetailOverrideKey
+	      ? detailPartOverrides[activeDetailOverrideKey]
+	      : null) ?? {
+	      scale: 1,
+	      rotationY: 0,
+	      position: { x: 0, y: 0, z: 0 },
+	    };
   const updateActiveDetailOverride = useCallback(
     (
       patch: Partial<{
-        scale: number;
-        position: Partial<{ x: number; y: number; z: number }>;
-      }>,
+	        scale: number;
+	        rotationY: number;
+	        position: Partial<{ x: number; y: number; z: number }>;
+	      }>,
     ) => {
       if (!activeDetailSlot) {
         return;
       }
       const key = `${form.houseId}::${activeDetailSlot}`;
       setDetailPartOverrides((previous) => {
-        const current = previous[key] ?? {
-          scale: 1,
-          position: { x: 0, y: 0, z: 0 },
-        };
+	        const current = previous[key] ?? {
+	          scale: 1,
+	          rotationY: 0,
+	          position: { x: 0, y: 0, z: 0 },
+	        };
         return {
           ...previous,
-          [key]: {
-            scale: patch.scale ?? current.scale,
-            position: {
-              ...current.position,
-              ...(patch.position ?? {}),
+	          [key]: {
+	            scale: patch.scale ?? current.scale,
+	            rotationY: patch.rotationY ?? current.rotationY ?? 0,
+	            position: {
+	              ...current.position,
+	              ...(patch.position ?? {}),
             },
           },
         };
@@ -2029,7 +2033,11 @@ export default function CreateMemorialClient({
       string,
       Record<
         string,
-        { scale: number; position: { x: number; y: number; z: number } }
+	        {
+	          scale: number;
+	          rotationY?: number;
+	          position: { x: number; y: number; z: number };
+	        }
       >
     > = {};
     Object.entries(detailPartOverrides).forEach(([key, value]) => {
@@ -2043,9 +2051,12 @@ export default function CreateMemorialClient({
         return;
       }
       grouped[houseId] = grouped[houseId] ?? {};
-      grouped[houseId][slot] = {
-        scale: Number(value.scale.toFixed(3)),
-        position: {
+	      grouped[houseId][slot] = {
+	        scale: Number(value.scale.toFixed(3)),
+	        ...(Number.isFinite(value.rotationY) && Math.abs(value.rotationY ?? 0) > 0.0005
+	          ? { rotationY: Number((value.rotationY ?? 0).toFixed(2)) }
+	          : {}),
+	        position: {
           x: Number(value.position.x.toFixed(3)),
           y: Number(value.position.y.toFixed(3)),
           z: Number(value.position.z.toFixed(3)),
@@ -2338,9 +2349,6 @@ export default function CreateMemorialClient({
   };
 
   const handleStep3TabSelect = (tab: Step3Tab) => {
-    if (isEditMode && tab.id === "environment") {
-      return;
-    }
     setActiveOverlay(null);
     clearStep3TooltipTimer();
     setTooltipTabId(null);
@@ -2351,9 +2359,6 @@ export default function CreateMemorialClient({
   };
 
   const handleMobileDetailsTabSelect = (tab: Step3Tab) => {
-    if (isEditMode && tab.id === "environment") {
-      return;
-    }
     clearStep3TooltipTimer();
     setTooltipTabId(null);
     setActiveOverlay("details");
@@ -2378,9 +2383,6 @@ export default function CreateMemorialClient({
       }
     }
     if (detail.area === "environment") {
-      if (isEditMode) {
-        return;
-      }
       setActiveStep3Tab("environment");
       requestFocus("dom_slot", "environment");
       return;
@@ -3376,6 +3378,10 @@ export default function CreateMemorialClient({
           credentials: "include",
           body: JSON.stringify({
             ...editedContentPatch,
+            lat: canShowMarker ? lat : undefined,
+            lng: canShowMarker ? lng : undefined,
+            markerStyle: form.markerStyle,
+            environmentId: currentEnvironmentId,
             houseId: form.houseId,
             sceneJson: buildCurrentSceneJson(),
           }),
@@ -5297,8 +5303,38 @@ export default function CreateMemorialClient({
           />
         </div>
 
-        {(["x", "y", "z"] as const).map((axis) => (
-          <div key={axis} className="grid gap-2">
+        <div className="grid gap-2">
+	          <label className="flex items-center justify-between gap-3">
+	            <span>Поворот Y</span>
+	            <input
+	              type="number"
+	              min={-180}
+	              max={180}
+	              step={1}
+	              value={activeDetailOverride.rotationY ?? 0}
+	              onChange={(event) =>
+	                updateActiveDetailOverride({
+	                  rotationY: Number(event.target.value) || 0,
+	                })
+	              }
+	              className={numberInputClass}
+	            />
+	          </label>
+	          <input
+	            type="range"
+	            min={-180}
+	            max={180}
+	            step={1}
+	            value={activeDetailOverride.rotationY ?? 0}
+	            onChange={(event) =>
+	              updateActiveDetailOverride({ rotationY: Number(event.target.value) })
+	            }
+	            className={rangeClass}
+	          />
+	        </div>
+
+	        {(["x", "y", "z"] as const).map((axis) => (
+	          <div key={axis} className="grid gap-2">
             <label className="flex items-center justify-between gap-3">
               <span>Сдвиг {axis.toUpperCase()}</span>
               <input
@@ -5632,7 +5668,7 @@ export default function CreateMemorialClient({
       <div className={builderTabRailClass}>
         {step3Tabs.map((tab) => {
           const isActive = activeStep3Tab === tab.id;
-          const isDisabled = isEditMode && tab.id === "environment";
+          const isDisabled = false;
           return (
             <button
               key={tab.id}
@@ -6143,8 +6179,7 @@ export default function CreateMemorialClient({
                       <div className={builderTabRailClass}>
                         {step3Tabs.map((tab) => {
                           const isActive = activeStep3Tab === tab.id;
-                          const isDisabled =
-                            isEditMode && tab.id === "environment";
+                          const isDisabled = false;
                           const isTooltipVisible = tooltipTabId === tab.id;
                           const description = STEP3_TAB_DESCRIPTIONS[tab.id];
                           return (
@@ -6346,11 +6381,10 @@ export default function CreateMemorialClient({
                       onClick={() => toggleOverlay("marker")}
                       aria-label="Маркер"
                       title="Маркер"
-                      disabled={isEditMode}
                       className={`${panelButtonClass(
                         activeOverlay === "marker",
                         !isEditMode && isBuilderStep && !visitedOverlays.marker,
-                      )} ${isEditMode ? "pointer-events-none cursor-not-allowed opacity-40" : ""}`}
+                      )}`}
                     >
                       <svg
                         viewBox="0 0 24 24"

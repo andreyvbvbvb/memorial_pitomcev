@@ -221,12 +221,12 @@ export default function MyPetsClient() {
       setDeletingDraftId(null);
     }
   };
-  const pageContentClass = isPortraitLayout
-    ? "relative z-10 mx-auto max-w-6xl pointer-events-none px-3 pb-20 pt-3"
-    : "relative z-10 mx-auto max-w-6xl pointer-events-none px-6 py-12";
-  const cardsSectionClass = isPortraitLayout
-    ? "rounded-[24px] border-[3px] border-white bg-white/82 p-3 shadow-[0_16px_34px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md"
-    : "rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6";
+	  const pageContentClass = isPortraitLayout
+	    ? "relative z-10 mx-auto max-w-6xl pointer-events-none px-3 pb-20 pt-3"
+	    : "relative z-10 mx-auto max-w-6xl pointer-events-none px-6 py-12";
+	  const cardsSectionClass = isPortraitLayout
+	    ? "grid gap-3"
+	    : "rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6";
   const petCardClass = isPortraitLayout
     ? "group relative rounded-[24px] border-[3px] border-[#fdf2e9] bg-white p-2.5 shadow-[0_6px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_9px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_4px_0_0_#f0e1d1]"
     : "group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]";

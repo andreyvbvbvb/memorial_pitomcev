@@ -24,6 +24,10 @@ export class RegisterDto {
   @IsString()
   @MinLength(6)
   @MaxLength(200)
+  @Matches(/^(?=.*[A-Z])(?=.*[0-9])[A-Za-z0-9]+$/, {
+    message:
+      "Пароль должен содержать только латинские буквы и цифры, минимум одну заглавную букву и одну цифру"
+  })
   password!: string;
 
   @IsString()

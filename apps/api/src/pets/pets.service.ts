@@ -750,10 +750,18 @@ export class PetsService {
     const pet = await this.findOne(id, viewer);
     this.assertCanManagePet(viewer, pet);
     const shouldUpdateMemorial =
+      typeof dto.environmentId !== "undefined" ||
       typeof dto.houseId !== "undefined" ||
       typeof dto.sceneJson !== "undefined";
+    const shouldUpdateMarker =
+      typeof dto.lat !== "undefined" ||
+      typeof dto.lng !== "undefined" ||
+      typeof dto.markerStyle !== "undefined";
     let memorialUpdate:
       | Prisma.MemorialUpdateOneWithoutPetNestedInput
+      | undefined;
+    let markerUpdate:
+      | Prisma.MapMarkerUpdateOneWithoutPetNestedInput
       | undefined;
 
     if (shouldUpdateMemorial) {
@@ -807,6 +815,9 @@ export class PetsService {
 
       memorialUpdate = {
         update: {
+          ...(typeof dto.environmentId !== "undefined"
+            ? { environmentId: dto.environmentId }
+            : {}),
           ...(typeof dto.houseId !== "undefined"
             ? { houseId: dto.houseId }
             : {}),
@@ -814,6 +825,35 @@ export class PetsService {
           needsPreviewRefresh: true,
         },
       };
+    }
+
+    if (shouldUpdateMarker) {
+      const nextLat =
+        typeof dto.lat !== "undefined" ? dto.lat : pet.marker?.lat;
+      const nextLng =
+        typeof dto.lng !== "undefined" ? dto.lng : pet.marker?.lng;
+      if (typeof nextLat !== "number" || typeof nextLng !== "number") {
+        throw new BadRequestException("Укажите точку на карте");
+      }
+      const markerStyle =
+        typeof dto.markerStyle !== "undefined"
+          ? dto.markerStyle
+          : (pet.marker?.markerStyle ?? null);
+      markerUpdate = pet.marker
+        ? {
+            update: {
+              lat: nextLat,
+              lng: nextLng,
+              markerStyle,
+            },
+          }
+        : {
+            create: {
+              lat: nextLat,
+              lng: nextLng,
+              markerStyle,
+            },
+          };
     }
 
     const moderationChangedBlocks = this.getModerationChangedBlocks(dto);
@@ -839,6 +879,7 @@ export class PetsService {
           ? this.moderationResetData(pet, moderationChangedBlocks)
           : {}),
         memorial: memorialUpdate,
+        marker: markerUpdate,
       },
     });
   }

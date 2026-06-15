@@ -5,15 +5,15 @@ export const authBackdropGlowClass =
   "pointer-events-none absolute rounded-full blur-[100px]";
 
 export const authCardClass =
-  "relative overflow-visible rounded-[24px] border-[3px] border-white bg-white/90 p-2 shadow-[0_28px_70px_-28px_rgba(93,64,55,0.46)] backdrop-blur sm:rounded-[38px] sm:border-[4px] sm:p-4";
+  "relative overflow-visible rounded-[22px] border-[3px] border-white bg-white/90 p-1.5 shadow-[0_28px_70px_-28px_rgba(93,64,55,0.46)] backdrop-blur sm:rounded-[34px] sm:border-[4px] sm:p-3";
 
 export const authInnerShellClass =
-  "rounded-[18px] bg-[#fffaf6] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] sm:rounded-[30px] sm:p-5";
+  "rounded-[17px] bg-[#fffaf6] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] sm:rounded-[26px] sm:p-4";
 
-export const authTabsRailClass = "flex gap-1 rounded-[16px] bg-[#f1e7e0] p-1 sm:gap-1.5 sm:rounded-[20px] sm:p-1.5";
+export const authTabsRailClass = "flex gap-1 rounded-[15px] bg-[#f1e7e0] p-1 sm:gap-1.5 sm:rounded-[18px] sm:p-1";
 
 export const authTabClass = (active: boolean) =>
-  `flex-1 rounded-[12px] px-2 py-2 text-[10px] font-black uppercase tracking-[0.1em] transition-all sm:rounded-[15px] sm:px-3 sm:py-3 sm:text-[11px] sm:tracking-[0.16em] ${
+  `flex-1 rounded-[12px] px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] transition-all sm:rounded-[14px] sm:px-3 sm:py-2.5 sm:text-[11px] sm:tracking-[0.16em] ${
     active
       ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
       : "text-[#8d6e63] hover:bg-white/70"
@@ -25,14 +25,14 @@ export const authLabelClass =
   "grid gap-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#8d6e63] sm:gap-2 sm:text-[11px] sm:tracking-[0.14em]";
 
 export const authInputClass =
-  "w-full rounded-[15px] border-2 border-white bg-[#f7f1ee] px-3 py-2.5 text-base font-bold text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.07)] outline-none transition-all placeholder:text-[#c2a79a] focus:border-[#3bceac] focus:bg-white sm:rounded-[18px] sm:border-[3px] sm:px-4 sm:py-3.5";
+  "w-full rounded-[14px] border-2 border-white bg-[#f7f1ee] px-3 py-2.5 text-base font-bold text-[#5d4037] shadow-[inset_0_2px_6px_rgba(93,64,55,0.07)] outline-none transition-all placeholder:text-[#c2a79a] focus:border-[#3bceac] focus:bg-white sm:rounded-[16px] sm:border-[3px] sm:px-4 sm:py-3";
 
 export const authErrorTextClass = "text-xs font-bold text-[#d64550]";
 
 export const authHelperTextClass = "text-xs font-semibold leading-relaxed text-[#8d6e63]";
 
 export const authPrimaryButtonClass =
-  "inline-flex w-full items-center justify-center rounded-[16px] bg-[#111827] px-5 py-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none sm:rounded-[18px] sm:px-6 sm:py-4 sm:text-[11px] sm:tracking-[0.16em]";
+  "inline-flex w-full items-center justify-center rounded-[15px] bg-[#111827] px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none sm:rounded-[17px] sm:px-6 sm:py-3.5 sm:text-[11px] sm:tracking-[0.16em]";
 
 export const authSecondaryButtonClass =
   "inline-flex w-full items-center justify-center rounded-[16px] border-2 border-white bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] shadow-[0_12px_26px_-20px_rgba(93,64,55,0.55)] transition-all hover:bg-[#fff7f1] sm:rounded-[18px] sm:border-[3px] sm:px-5 sm:py-3 sm:tracking-[0.16em]";
@@ -41,7 +41,7 @@ export const authTextButtonClass =
   "text-[11px] font-black uppercase tracking-[0.16em] text-[#548ca8] transition hover:text-[#3bceac]";
 
 export const authCheckboxRowClass =
-  "flex items-start gap-2 rounded-[16px] border-2 border-white bg-[#f7f1ee] px-3 py-2.5 text-xs font-semibold text-[#6f6360] shadow-[inset_0_2px_6px_rgba(93,64,55,0.05)] sm:gap-3 sm:rounded-[18px] sm:border-[3px] sm:px-4 sm:py-3 sm:text-sm";
+  "flex items-start gap-2 rounded-[15px] border-2 border-white bg-[#f7f1ee] px-3 py-2 text-xs font-semibold text-[#6f6360] shadow-[inset_0_2px_6px_rgba(93,64,55,0.05)] sm:gap-3 sm:rounded-[17px] sm:border-[3px] sm:px-4 sm:py-2.5 sm:text-sm";
 
 export const authCheckboxInputClass =
   "mt-1 h-4 w-4 accent-[#3bceac]";

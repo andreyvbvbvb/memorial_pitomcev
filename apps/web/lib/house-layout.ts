@@ -25,6 +25,7 @@ export type HousePartAdjustment = {
     y: number;
     z: number;
   };
+  rotationY?: number;
 };
 
 const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>> = {
@@ -240,6 +241,9 @@ export const applyHousePartAdjustment = (
   target.position.x += adjustment.position.x;
   target.position.y += adjustment.position.y;
   target.position.z += adjustment.position.z;
+  if (Number.isFinite(adjustment.rotationY)) {
+    target.rotation.y += THREE.MathUtils.degToRad(adjustment.rotationY ?? 0);
+  }
 };
 
 export const applyHousePlacement = (

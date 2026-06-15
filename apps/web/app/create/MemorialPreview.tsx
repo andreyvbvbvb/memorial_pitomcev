@@ -43,6 +43,7 @@ ensureDracoLoader();
 
 export type DetailPartOverride = {
   scale: number;
+  rotationY?: number;
   position: {
     x: number;
     y: number;
@@ -838,6 +839,9 @@ function PartAttachment({
         Number.isFinite(override.position.y) ? override.position.y : 0,
         Number.isFinite(override.position.z) ? override.position.z : 0
       );
+      if (Number.isFinite(override.rotationY)) {
+        cloned.rotation.y += THREE.MathUtils.degToRad(override.rotationY ?? 0);
+      }
     }
     return cloned;
   }, [
@@ -846,6 +850,7 @@ function PartAttachment({
     override?.position.x,
     override?.position.y,
     override?.position.z,
+    override?.rotationY,
     override?.scale,
     scene,
     slot

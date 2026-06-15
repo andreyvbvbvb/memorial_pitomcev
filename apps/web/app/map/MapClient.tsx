@@ -498,12 +498,14 @@ function GiftInstance({
   terrain,
   slot,
   url,
-  size
+  size,
+  enableFlames = true
 }: {
   terrain: THREE.Object3D;
   slot: string;
   url: string;
   size?: string | null;
+  enableFlames?: boolean;
 }) {
   const { scene } = useGLTF(url);
   const gift = useMemo(() => {
@@ -535,7 +537,7 @@ function GiftInstance({
     };
   }, [terrain, slot, gift]);
 
-  return <GiftFlames root={gift} />;
+  return enableFlames ? <GiftFlames root={gift} /> : null;
 }
 
 function SoulAnchor({
@@ -691,7 +693,14 @@ function TerrainWithHouseScene({
         />
       ))}
       {data.gifts?.map((gift) => (
-        <GiftInstance key={`${gift.slot}-${gift.url}`} terrain={terrain} slot={gift.slot} url={gift.url} size={gift.size} />
+        <GiftInstance
+          key={`${gift.slot}-${gift.url}`}
+          terrain={terrain}
+          slot={gift.slot}
+          url={gift.url}
+          size={gift.size}
+          enableFlames={active === true}
+        />
       ))}
       <DirtSlotAttachments terrain={terrain} house={house} placements={data.dirtSlots ?? []} />
       {data.soul?.enabled !== false ? (
@@ -1538,24 +1547,24 @@ export default function MapClient() {
     "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-sm font-extrabold text-[#5d4037] outline-none transition focus:ring-2 focus:ring-[#d3a27f]/35";
   const simsResetButtonClass =
     "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
-  const mobileContentClass = isPortraitLayout
-    ? "relative z-10 flex h-full min-h-0 w-full flex-col gap-2.5 overflow-hidden px-2.5 pb-3"
-    : "relative z-10 flex h-full min-h-0 flex-col gap-3 overflow-hidden px-4 pb-4";
-  const mobileTopBarClass = isPortraitLayout
-    ? "flex items-center justify-between gap-2"
-    : "flex items-center justify-between gap-3";
-  const mobilePanelClass = isPortraitLayout
-    ? `${hudFloatingPanelClass(true)} transition-all duration-300`
-    : simsPanelClass;
-  const mobileSidebarClass = isPortraitLayout
-    ? `min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${hudSidebarChromeClass(true)}`
-    : `min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 overscroll-contain ${simsSidebarClass}`;
-  const mobileMapSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(13rem,34dvh,20rem)] shrink-0"
-    : "h-[38dvh] shrink-0";
-  const mobileCarouselSceneHeightClass = isPortraitLayout
-    ? "h-[clamp(12rem,36dvh,20rem)] shrink-0"
-    : "h-[48dvh] shrink-0";
+	  const mobileContentClass = isPortraitLayout
+	    ? "relative z-10 flex h-full min-h-0 w-full flex-col gap-2 overflow-hidden px-0 pb-[calc(5.6rem+env(safe-area-inset-bottom))]"
+	    : "relative z-10 flex h-full min-h-0 flex-col gap-3 overflow-hidden px-4 pb-4";
+	  const mobileTopBarClass = isPortraitLayout
+	    ? "flex items-center justify-between gap-2 px-2.5"
+	    : "flex items-center justify-between gap-3";
+	  const mobilePanelClass = isPortraitLayout
+	    ? "transition-all duration-300"
+	    : simsPanelClass;
+	  const mobileSidebarClass = isPortraitLayout
+	    ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2.5 overscroll-contain"
+	    : `min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 overscroll-contain ${simsSidebarClass}`;
+	  const mobileMapSceneHeightClass = isPortraitLayout
+	    ? "h-[clamp(14rem,38dvh,22rem)] shrink-0"
+	    : "h-[38dvh] shrink-0";
+	  const mobileCarouselSceneHeightClass = isPortraitLayout
+	    ? "h-[clamp(14rem,42dvh,23rem)] shrink-0"
+	    : "h-[48dvh] shrink-0";
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
   const modeToggleButtonClass = (active: boolean) =>
@@ -2297,9 +2306,9 @@ export default function MapClient() {
                   </button>
                 </div>
               </div>
-              <div className={isPortraitLayout ? `min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${hudInfoPanelChromeClass(true)}` : `min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${hudInfoPanelChromeClass(false)}`}>
-                {activeCarouselInfoContent}
-              </div>
+	              <div className={isPortraitLayout ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2.5 overscroll-contain" : `min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain ${hudInfoPanelChromeClass(false)}`}>
+	                {activeCarouselInfoContent}
+	              </div>
             </>
           )}
         </div>

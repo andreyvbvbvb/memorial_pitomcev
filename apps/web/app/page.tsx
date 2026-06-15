@@ -44,7 +44,7 @@ export default function HomePage() {
     <main className="relative overflow-hidden bg-[#fcf8f5] text-[#5d4037]">
       <HomeHero />
 
-      <section className="relative border-y border-white/80 bg-[#f7f1ee] px-4 py-10 sm:px-6 lg:py-14">
+      <section className="relative border-y border-white/80 bg-[#fcf8f5] px-4 py-10 sm:px-6 lg:py-14">
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div className="grid gap-3">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#d3a27f]">

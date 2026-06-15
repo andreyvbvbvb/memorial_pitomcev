@@ -1,12 +1,16 @@
 import {
   IsBoolean,
   IsDateString,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
   Length,
-  MaxLength
+  Max,
+  MaxLength,
+  Min
 } from "class-validator";
+import { Type } from "class-transformer";
 
 export class UpdatePetDto {
   @IsOptional()
@@ -55,6 +59,30 @@ export class UpdatePetDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng?: number;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  markerStyle?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  environmentId?: string;
 
   @IsOptional()
   @IsString()

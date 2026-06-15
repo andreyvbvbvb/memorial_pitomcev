@@ -7,12 +7,12 @@ export default function HomeHero() {
     <section className="relative flex min-h-[calc(100svh_-_var(--app-header-height,64px)_-_4rem)] flex-col items-center justify-center overflow-hidden px-4 pb-16 pt-10 text-center sm:px-6 lg:min-h-[calc(100dvh_-_var(--app-header-height,64px)_-_5rem)]">
       <div className="pointer-events-none absolute inset-0 z-0">
         <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 44%, rgba(255,255,255,0.98) 0%, rgba(252,248,245,0.9) 34%, rgba(241,231,224,0.48) 68%, rgba(241,231,224,0.82) 100%), linear-gradient(180deg, #fcf8f5 0%, #fffaf6 48%, #f1e7e0 100%)"
-          }}
-        />
+	          className="absolute inset-0"
+	          style={{
+	            background:
+	              "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.74) 0%, rgba(252,248,245,0.96) 46%, rgba(252,248,245,1) 100%), #fcf8f5"
+	          }}
+	        />
       </div>
 
       <div className="hero-stagger relative z-10 flex w-full max-w-[66rem] flex-col items-center gap-7">
