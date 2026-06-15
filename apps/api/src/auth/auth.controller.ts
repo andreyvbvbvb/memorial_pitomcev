@@ -15,6 +15,7 @@ import { AcceptTermsDto } from "./dto/accept-terms.dto";
 import { ForgotPasswordDto } from "./dto/forgot-password.dto";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
+import { RequestEmailCodeDto } from "./dto/request-email-code.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 
 @Controller("auth")
@@ -57,6 +58,11 @@ export class AuthController {
       termsAccepted: user.termsAccepted,
       offerAccepted: user.offerAccepted
     };
+  }
+
+  @Post("email-code")
+  async requestEmailCode(@Body() dto: RequestEmailCodeDto) {
+    return this.authService.requestEmailVerificationCode(dto);
   }
 
   @Post("register")

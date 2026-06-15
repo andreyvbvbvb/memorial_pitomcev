@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsEmail,
   IsString,
+  Length,
   Matches,
   MaxLength,
   MinLength
@@ -24,6 +25,13 @@ export class RegisterDto {
   @MinLength(6)
   @MaxLength(200)
   password!: string;
+
+  @IsString()
+  @Length(6, 6)
+  @Matches(/^[0-9]{6}$/, {
+    message: "Код подтверждения должен состоять из 6 цифр"
+  })
+  emailCode!: string;
 
   @IsBoolean()
   acceptTerms!: boolean;

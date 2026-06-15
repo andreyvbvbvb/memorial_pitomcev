@@ -52,6 +52,19 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
+model EmailVerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email, consumedAt])
+  @@index([expiresAt])
+}
+
 model Pet {
   id        String   @id @default(cuid())
   ownerId   String

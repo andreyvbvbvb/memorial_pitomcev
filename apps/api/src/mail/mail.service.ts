@@ -64,6 +64,41 @@ export class MailService {
     });
   }
 
+  async sendEmailVerificationCode(email: string, code: string) {
+    const transporter = this.getTransporter();
+    const from =
+      process.env.SMTP_FROM ??
+      process.env.SMTP_USER ??
+      "no-reply@memorial.local";
+    const text = [
+      "Здравствуйте!",
+      "",
+      "Ваш код подтверждения email для регистрации в МЯУГАВ:",
+      code,
+      "",
+      "Код действует 10 минут. Если вы не регистрировались в МЯУГАВ, просто проигнорируйте это письмо.",
+      "Если возникнут вопросы, напишите нам: support@мяугав.com",
+    ].join("\n");
+
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject: "Код подтверждения email — МЯУГАВ",
+      text,
+      html: `
+        <div style="font-family: 'Noto Sans', Arial, sans-serif; color: #5d4037; line-height: 1.55;">
+          <h2 style="margin: 0 0 16px;">Подтверждение email</h2>
+          <p>Введите этот код на странице регистрации МЯУГАВ:</p>
+          <div style="display: inline-block; margin: 16px 0; padding: 14px 22px; border-radius: 18px; background: #f7f1ee; color: #111827; font-size: 28px; font-weight: 900; letter-spacing: 0.22em;">
+            ${this.escapeHtml(code)}
+          </div>
+          <p>Код действует 10 минут.</p>
+          <p style="color: #8d6e63;">Если вы не регистрировались в МЯУГАВ, просто проигнорируйте это письмо.</p>
+        </div>
+      `,
+    });
+  }
+
   async sendMemorialApproved(
     email: string,
     petName: string,

@@ -133,6 +133,9 @@ export default function AuthModal({
   const [identifier, setIdentifier] = useState("");
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const [emailCodeLoading, setEmailCodeLoading] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -165,6 +168,9 @@ export default function AuthModal({
       setIdentifier("");
       setLogin("");
       setEmail("");
+      setEmailCode("");
+      setEmailCodeSent(false);
+      setEmailCodeLoading(false);
       setPassword("");
       setConfirmPassword("");
       setShowPassword(false);
@@ -207,6 +213,112 @@ export default function AuthModal({
     };
   }, [open, consentOpen]);
 
+  const parseApiError = async (response: Response) => {
+    const text = await response.text();
+    let message = text;
+    try {
+      const parsed = JSON.parse(text) as { message?: string | string[] };
+      if (Array.isArray(parsed?.message)) {
+        message = parsed.message.join(", ");
+      } else if (parsed?.message) {
+        message = parsed.message;
+      }
+    } catch {
+      // ignore
+    }
+    return message;
+  };
+
+  const validateRegisterFields = (requireCode: boolean) => {
+    if (!login.trim()) {
+      const message = "Введите логин";
+      setLoginError(message);
+      setError(message);
+      return false;
+    }
+    if (!email.trim()) {
+      const message = "Введите email";
+      setEmailError(message);
+      setError(message);
+      return false;
+    }
+    if (!/^[A-Za-z0-9_]+$/.test(login.trim())) {
+      const message = "Логин: только A-Z, a-z, 0-9 и _";
+      setLoginError(message);
+      setError(message);
+      return false;
+    }
+    if (!email.includes("@")) {
+      const message = "Укажите корректный email";
+      setEmailError(message);
+      setError(message);
+      return false;
+    }
+    if (!acceptTerms || !acceptOffer) {
+      setError("Нужно принять политику обработки персональных данных и публичную оферту");
+      return false;
+    }
+    if (password.trim().length < 6) {
+      setError("Пароль должен быть минимум 6 символов");
+      return false;
+    }
+    if (password.trim() !== confirmPassword.trim()) {
+      setError("Пароли не совпадают");
+      return false;
+    }
+    if (requireCode && !/^[0-9]{6}$/.test(emailCode.trim())) {
+      setError(
+        emailCodeSent
+          ? "Введите 6 цифр из письма"
+          : "Сначала отправьте код подтверждения на email",
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const handleSendEmailCode = async () => {
+    if (emailCodeLoading || loading) {
+      return;
+    }
+    setError(null);
+    setEmailError(null);
+    setLoginError(null);
+    setNotice(null);
+    if (!validateRegisterFields(false)) {
+      return;
+    }
+    setEmailCodeLoading(true);
+    try {
+      const response = await fetch(`${apiUrl}/auth/email-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          login: login.trim(),
+          email: email.trim()
+        })
+      });
+      if (!response.ok) {
+        const message = await parseApiError(response);
+        if (message.toLowerCase().includes("логин")) {
+          setLoginError(message);
+        } else if (message.toLowerCase().includes("email")) {
+          setEmailError(message);
+        }
+        setError(message || "Не удалось отправить код");
+        return;
+      }
+      setEmailCodeSent(true);
+      setEmailCode("");
+      setNotice("Код подтверждения отправлен на email");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось отправить код");
+    } finally {
+      setEmailCodeLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (loading) {
       return;
@@ -221,44 +333,11 @@ export default function AuthModal({
         setError("Введите email (или логин) и пароль");
         return;
       }
-    } else {
-      if (!login.trim()) {
-        const message = "Введите логин";
-        setLoginError(message);
-        setError(message);
+      if (password.trim().length < 6) {
+        setError("Пароль должен быть минимум 6 символов");
         return;
       }
-      if (!email.trim()) {
-        const message = "Введите email";
-        setEmailError(message);
-        setError(message);
-        return;
-      }
-      if (!/^[A-Za-z0-9_]+$/.test(login.trim())) {
-        const message = "Логин: только A-Z, a-z, 0-9 и _";
-        setLoginError(message);
-        setError(message);
-        return;
-      }
-      if (!email.includes("@")) {
-        const message = "Укажите корректный email";
-        setEmailError(message);
-        setError(message);
-        return;
-      }
-    }
-
-    if (mode === "register" && (!acceptTerms || !acceptOffer)) {
-      setError("Нужно принять политику обработки персональных данных и публичную оферту");
-      return;
-    }
-
-    if (password.trim().length < 6) {
-      setError("Пароль должен быть минимум 6 символов");
-      return;
-    }
-    if (mode === "register" && password.trim() !== confirmPassword.trim()) {
-      setError("Пароли не совпадают");
+    } else if (!validateRegisterFields(true)) {
       return;
     }
 
@@ -271,30 +350,22 @@ export default function AuthModal({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(
-            mode === "register"
-              ? {
-                  login: login.trim(),
-                  email: email.trim(),
-                  password: password.trim(),
-                  acceptTerms,
-                  acceptOffer
-                }
+	            mode === "register"
+	              ? {
+	                  login: login.trim(),
+	                  email: email.trim(),
+	                  password: password.trim(),
+	                  emailCode: emailCode.trim(),
+	                  acceptTerms,
+	                  acceptOffer
+	                }
               : { email: identifier.trim(), password: password.trim() }
           )
         }
       );
 
       if (!response.ok) {
-        const text = await response.text();
-        let message = text;
-        try {
-          const parsed = JSON.parse(text) as { message?: string };
-          if (parsed?.message) {
-            message = parsed.message;
-          }
-        } catch {
-          // ignore
-        }
+        const message = await parseApiError(response);
         if (mode === "register" && message.toLowerCase().includes("логин")) {
           setLoginError(message);
           setError(message);
@@ -497,11 +568,13 @@ export default function AuthModal({
                         Email
                         <input
                           className={authInputClass}
-                          value={email}
-                          onChange={(event) => {
-                            setEmail(event.target.value);
-                            setEmailError(null);
-                          }}
+	                          value={email}
+	                          onChange={(event) => {
+	                            setEmail(event.target.value);
+	                            setEmailError(null);
+	                            setEmailCode("");
+	                            setEmailCodeSent(false);
+	                          }}
                           placeholder="user@example.com"
                         />
                       </label>
@@ -526,11 +599,50 @@ export default function AuthModal({
                           className={authCheckboxInputClass}
                           checked={acceptTerms && acceptOffer}
                           onChange={(event) => setRegisterConsent(event.target.checked)}
-                        />
-                        <LegalConsentText />
-                      </label>
-                    </>
-                  )}
+	                        />
+	                        <LegalConsentText />
+	                      </label>
+	                      <div className="rounded-[18px] border-2 border-white bg-[#fffcf9] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+	                        <div className="flex flex-wrap items-center justify-between gap-2">
+	                          <div>
+	                            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63]">
+	                              Подтверждение email
+	                            </p>
+	                            <p className="mt-1 text-xs font-semibold leading-snug text-[#6f6360]">
+	                              Код придет на указанную почту и будет действовать 10 минут.
+	                            </p>
+	                          </div>
+	                          <button
+	                            type="button"
+	                            onClick={handleSendEmailCode}
+	                            disabled={emailCodeLoading || loading}
+	                            className="rounded-full bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_2px_0_0_#eadfd9] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+	                          >
+	                            {emailCodeLoading
+	                              ? "Отправляем..."
+	                              : emailCodeSent
+	                                ? "Отправить еще раз"
+	                                : "Отправить код"}
+	                          </button>
+	                        </div>
+	                        {emailCodeSent ? (
+	                          <label className={`${authLabelClass} mt-3`}>
+	                            Код из письма
+	                            <input
+	                              className={`${authInputClass} text-center tracking-[0.3em]`}
+	                              value={emailCode}
+	                              onChange={(event) =>
+	                                setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+	                              }
+	                              inputMode="numeric"
+	                              autoComplete="one-time-code"
+	                              placeholder="000000"
+	                            />
+	                          </label>
+	                        ) : null}
+	                      </div>
+	                    </>
+	                  )}
 
                   <button
                     type="submit"

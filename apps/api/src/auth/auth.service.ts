@@ -1,15 +1,20 @@
 import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { Prisma } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
-import { createHash, randomBytes } from "crypto";
+import { createHash, randomBytes, randomInt } from "crypto";
 import { MailService } from "../mail/mail.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { AcceptTermsDto } from "./dto/accept-terms.dto";
+import { RequestEmailCodeDto } from "./dto/request-email-code.dto";
 
 const REGISTRATION_BONUS_COINS = 150;
 const PASSWORD_RESET_TOKEN_TTL_MS = 1000 * 60 * 60;
+const EMAIL_VERIFICATION_CODE_TTL_MS = 1000 * 60 * 10;
+const EMAIL_VERIFICATION_RESEND_COOLDOWN_MS = 1000 * 60;
+const EMAIL_VERIFICATION_MAX_ATTEMPTS = 5;
 
 @Injectable()
 export class AuthService {
@@ -19,6 +24,62 @@ export class AuthService {
     @Inject(MailService) private readonly mailService: MailService
   ) {}
 
+  async requestEmailVerificationCode(dto: RequestEmailCodeDto) {
+    const email = dto.email.trim().toLowerCase();
+    const login = dto.login?.trim();
+
+    await this.assertEmailAvailable(email);
+    if (login) {
+      await this.assertLoginAvailable(login);
+    }
+
+    await this.prisma.emailVerificationCode.deleteMany({
+      where: { expiresAt: { lt: new Date() } }
+    });
+
+    const latestCode = await this.prisma.emailVerificationCode.findFirst({
+      where: { email, consumedAt: null },
+      orderBy: { createdAt: "desc" }
+    });
+    if (
+      latestCode &&
+      latestCode.createdAt.getTime() >
+        Date.now() - EMAIL_VERIFICATION_RESEND_COOLDOWN_MS
+    ) {
+      throw new BadRequestException(
+        "Код уже отправлен. Повторить отправку можно через минуту",
+      );
+    }
+
+    const code = this.generateEmailVerificationCode();
+    await this.prisma.emailVerificationCode.deleteMany({
+      where: { email, consumedAt: null }
+    });
+    const verificationCode = await this.prisma.emailVerificationCode.create({
+      data: {
+        email,
+        codeHash: this.hashEmailVerificationCode(email, code),
+        expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_CODE_TTL_MS)
+      }
+    });
+
+    try {
+      await this.mailService.sendEmailVerificationCode(email, code);
+    } catch (err) {
+      await this.prisma.emailVerificationCode.delete({
+        where: { id: verificationCode.id }
+      });
+      throw err instanceof Error
+        ? err
+        : new BadRequestException("Не удалось отправить код подтверждения");
+    }
+
+    return {
+      ok: true,
+      expiresInSeconds: Math.floor(EMAIL_VERIFICATION_CODE_TTL_MS / 1000)
+    };
+  }
+
   async register(dto: RegisterDto) {
     const email = dto.email.trim().toLowerCase();
     const login = dto.login.trim();
@@ -27,40 +88,50 @@ export class AuthService {
         "Нужно принять политику обработки персональных данных и публичную оферту",
       );
     }
-    const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      throw new BadRequestException("Пользователь с таким email уже существует");
-    }
-    const existingLogin = await this.prisma.user.findFirst({
-      where: { login: { equals: login, mode: "insensitive" } }
-    });
-    if (existingLogin) {
-      throw new BadRequestException("Логин уже занят");
-    }
+    await this.assertEmailAvailable(email);
+    await this.assertLoginAvailable(login);
+    const verificationCode = await this.verifyEmailCode(email, dto.emailCode);
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const now = new Date();
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        login,
-        coinBalance: REGISTRATION_BONUS_COINS,
-        createdAt: now,
-        termsAccepted: true,
-        offerAccepted: true,
-        termsAcceptedAt: now,
-        offerAcceptedAt: now,
-        walletTransactions: {
-          create: {
-            amount: REGISTRATION_BONUS_COINS,
-            balanceAfter: REGISTRATION_BONUS_COINS,
-            type: "registration_bonus",
-            title: "Бонус за регистрацию",
-            details: "Стартовые монеты нового аккаунта",
-            createdAt: now
+
+    const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const consumed = await tx.emailVerificationCode.updateMany({
+        where: {
+          id: verificationCode.id,
+          email,
+          codeHash: verificationCode.codeHash,
+          consumedAt: null,
+          expiresAt: { gt: now }
+        },
+        data: { consumedAt: now }
+      });
+      if (consumed.count === 0) {
+        throw new BadRequestException("Код подтверждения недействителен или устарел");
+      }
+
+      return tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          login,
+          coinBalance: REGISTRATION_BONUS_COINS,
+          createdAt: now,
+          termsAccepted: true,
+          offerAccepted: true,
+          termsAcceptedAt: now,
+          offerAcceptedAt: now,
+          walletTransactions: {
+            create: {
+              amount: REGISTRATION_BONUS_COINS,
+              balanceAfter: REGISTRATION_BONUS_COINS,
+              type: "registration_bonus",
+              title: "Бонус за регистрацию",
+              details: "Стартовые монеты нового аккаунта",
+              createdAt: now
+            }
           }
         }
-      }
+      });
     });
     return user;
   }
@@ -180,6 +251,58 @@ export class AuthService {
     return this.prisma.user.findFirst({
       where: { login: { equals: identifier, mode: "insensitive" } }
     });
+  }
+
+  private async assertEmailAvailable(email: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new BadRequestException("Пользователь с таким email уже существует");
+    }
+  }
+
+  private async assertLoginAvailable(login: string) {
+    const existingLogin = await this.prisma.user.findFirst({
+      where: { login: { equals: login, mode: "insensitive" } }
+    });
+    if (existingLogin) {
+      throw new BadRequestException("Логин уже занят");
+    }
+  }
+
+  private async verifyEmailCode(email: string, code: string) {
+    const verificationCode = await this.prisma.emailVerificationCode.findFirst({
+      where: {
+        email,
+        consumedAt: null,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    if (!verificationCode) {
+      throw new BadRequestException("Код подтверждения недействителен или устарел");
+    }
+    if (verificationCode.attempts >= EMAIL_VERIFICATION_MAX_ATTEMPTS) {
+      throw new BadRequestException("Слишком много попыток. Запросите новый код");
+    }
+    const codeHash = this.hashEmailVerificationCode(email, code);
+    if (verificationCode.codeHash !== codeHash) {
+      await this.prisma.emailVerificationCode.update({
+        where: { id: verificationCode.id },
+        data: { attempts: { increment: 1 } }
+      });
+      throw new BadRequestException("Неверный код подтверждения");
+    }
+    return verificationCode;
+  }
+
+  private generateEmailVerificationCode() {
+    return randomInt(0, 1_000_000).toString().padStart(6, "0");
+  }
+
+  private hashEmailVerificationCode(email: string, code: string) {
+    return createHash("sha256")
+      .update(`${email.trim().toLowerCase()}:${code.trim()}`)
+      .digest("hex");
   }
 
   private generateResetToken() {
