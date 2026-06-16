@@ -382,7 +382,7 @@ export class PetsService {
     });
     if (currentCount >= maxMemorials) {
       throw new BadRequestException(
-        `Достигнут лимит мемориалов: ${maxMemorials}. Для увеличения лимита напишите на primer@gmail.com`,
+        `Достигнут лимит мемориалов: ${maxMemorials}. Для увеличения лимита напишите на support@мяугав.com`,
       );
     }
     const planYears =

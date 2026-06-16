@@ -692,8 +692,9 @@ function TerrainWithHouseScene({
           houseId={data.houseId}
         />
       ))}
-      {active
-        ? data.gifts?.map((gift) => (
+      {active ? (
+        <Suspense fallback={null}>
+          {data.gifts?.map((gift) => (
             <GiftInstance
               key={`${gift.slot}-${gift.url}`}
               terrain={terrain}
@@ -702,8 +703,9 @@ function TerrainWithHouseScene({
               size={gift.size}
               enableFlames
             />
-          ))
-        : null}
+          ))}
+        </Suspense>
+      ) : null}
       <DirtSlotAttachments terrain={terrain} house={house} placements={data.dirtSlots ?? []} />
       {data.soul?.enabled !== false ? (
         <SoulAnchor
@@ -1313,6 +1315,18 @@ function CarouselScene({
     () => items.map((item) => `${item.id}:${item.data ? "ready" : "empty"}`).join("|"),
     [items]
   );
+  const giftUrls = useMemo(() => {
+    const urls = new Set<string>();
+    items.forEach((item) => {
+      item.data?.gifts?.forEach((gift) => {
+        if (gift.url) {
+          urls.add(gift.url);
+        }
+      });
+    });
+    return Array.from(urls);
+  }, [items]);
+  const giftUrlsSignature = giftUrls.join("|");
   const handleSceneReady = useCallback(() => setSceneReady(true), []);
   const initialCameraPosition = useMemo(() => {
     const count = Math.max(1, items.length);
@@ -1330,6 +1344,12 @@ function CarouselScene({
   useEffect(() => {
     setSceneReady(false);
   }, [itemsSignature]);
+
+  useEffect(() => {
+    giftUrls.forEach((url) => {
+      useGLTF.preload(url);
+    });
+  }, [giftUrls, giftUrlsSignature]);
 
   return (
     <div className="relative h-full w-full">

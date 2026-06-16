@@ -78,6 +78,12 @@ type MemorialDraft = {
   updatedAt: string;
 };
 
+type CreationLimit = {
+  currentCount: number;
+  maxMemorials: number;
+  canCreate: boolean;
+};
+
 export default function MyPetsClient() {
   const isPortraitLayout = usePortraitLayout();
   const [pets, setPets] = useState<Pet[]>([]);
@@ -89,6 +95,7 @@ export default function MyPetsClient() {
   const [viewMode, setViewMode] = useState<4 | 5>(4);
   const [draftToDelete, setDraftToDelete] = useState<MemorialDraft | null>(null);
   const [deletingDraftId, setDeletingDraftId] = useState<string | null>(null);
+  const [creationLimit, setCreationLimit] = useState<CreationLimit | null>(null);
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
@@ -126,13 +133,22 @@ export default function MyPetsClient() {
         if (!draftsResponse.ok) {
           throw new Error("Не удалось загрузить черновики");
         }
-        const [petsData, draftsData] = await Promise.all([
+        const limitResponse = await fetch(
+          `${apiUrl}/pets/create-limit/${encodeURIComponent(data.id)}`,
+          { credentials: "include" }
+        );
+        if (!limitResponse.ok) {
+          throw new Error("Не удалось загрузить лимит мемориалов");
+        }
+        const [petsData, draftsData, limitData] = await Promise.all([
           petsResponse.json() as Promise<Pet[]>,
-          draftsResponse.json() as Promise<MemorialDraft[]>
+          draftsResponse.json() as Promise<MemorialDraft[]>,
+          limitResponse.json() as Promise<CreationLimit>
         ]);
         if (isMounted) {
           setPets(petsData);
           setDrafts(draftsData);
+          setCreationLimit(limitData);
         }
       } catch (err) {
         if (isMounted) {
@@ -271,10 +287,15 @@ export default function MyPetsClient() {
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#adb5bd]">
                       Мои питомцы
                     </p>
+                    {creationLimit ? (
+                      <span className="inline-flex shrink-0 items-center rounded-full border-2 border-white bg-[#fffcf9] px-2.5 py-1 text-[10px] font-black text-[#5d4037] shadow-[0_8px_22px_-18px_rgba(93,64,55,0.45)]">
+                        {creationLimit.currentCount} / {creationLimit.maxMemorials}
+                      </span>
+                    ) : null}
                     <AuthHelpHint
                       placement={isPortraitLayout ? "right" : "bottom"}
                       className={isPortraitLayout ? "h-6 w-6 border-2 text-[10px] [&>span]:!w-[min(18rem,calc(100vw-4rem))]" : "h-6 w-6 border-2 text-[10px]"}
-                      text="На этой странице можно открыть опубликованные мемориалы, переключиться в 3D-режим и продолжить работу с сохраненными черновиками. Черновики хранят данные мемориала без фотографий: фотографии загружаются только при публикации."
+                      text="На этой странице можно открыть опубликованные мемориалы, переключиться в 3D-режим и продолжить работу с сохраненными черновиками. Счетчик показывает, сколько активных мемориалов использовано из доступного лимита. Для увеличения лимита напишите на support@мяугав.com. Черновики хранят данные мемориала без фотографий: фотографии загружаются только при публикации."
                     />
                   </div>
                 </div>

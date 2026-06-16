@@ -31,81 +31,84 @@ export type HousePartAdjustment = {
 const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>> = {
   "budka_1__base": {
     mat_slot: { scale: 1, position: { x: 0, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 1.1, position: { x: 0.02, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.1, position: { x: 0.02, y: 0, z: 0 }, rotationY: -90 },
+    bowl_water_slot: { scale: 1, position: { x: 0, y: 0, z: 0 }, rotationY: -90 }
   },
   "kotik_1__base": {
-    bowl_food_slot: { scale: 0.4, position: { x: -0.01, y: 0, z: -0.03 } },
-    bowl_water_slot: { scale: 0.34, position: { x: 0, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 0.4, position: { x: -0.01, y: 0, z: -0.03 }, rotationY: -38 },
+    bowl_water_slot: { scale: 0.34, position: { x: 0, y: 0, z: 0 }, rotationY: -44 }
   },
   "mat_1__base": {
-    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 }, rotationY: -60 },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 }, rotationY: -60 }
   },
   "mat_1__second": {
-    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 }, rotationY: -60 },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 }, rotationY: -60 }
   },
   "mat_1__third": {
-    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 }, rotationY: -60 },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 }, rotationY: -60 }
   },
   "mat_1__fourth": {
-    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 }, rotationY: -60 },
+    bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 }, rotationY: -60 }
   },
   "budka_2__base": {
-    bowl_food_slot: { scale: 1.21, position: { x: 0.16, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.21, position: { x: 0.16, y: 0, z: 0 }, rotationY: -90 },
+    bowl_water_slot: { scale: 1, position: { x: 0, y: 0, z: 0 }, rotationY: -90 }
   },
   "kotik_2__base": {
-    bowl_food_slot: { scale: 0.54, position: { x: 0.35, y: 0, z: 0.32 } },
-    bowl_water_slot: { scale: 0.4, position: { x: 0.11, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 0.54, position: { x: 0.35, y: 0, z: 0.32 }, rotationY: -90 },
+    bowl_water_slot: { scale: 0.4, position: { x: 0.11, y: 0, z: 0 }, rotationY: -90 }
   },
   "budka_3__base": {
     mat_slot: { scale: 0.49, position: { x: 0.08, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 1.16, position: { x: 0.06, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.16, position: { x: 0.06, y: 0, z: 0 }, rotationY: -90 },
+    bowl_water_slot: { scale: 1, position: { x: 0, y: 0, z: 0 }, rotationY: -90 }
   },
   "kotik_3__base": {
-    bowl_food_slot: { scale: 1.2, position: { x: 0, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1, position: { x: 0.01, y: 0, z: 0.5 } }
+    bowl_food_slot: { scale: 1.2, position: { x: 0, y: 0, z: 0 }, rotationY: -90 },
+    bowl_water_slot: { scale: 1, position: { x: 0.01, y: 0, z: 0.5 }, rotationY: -90 }
   },
   "budka_4__base": {
     mat_slot: { scale: 0.8, position: { x: 0, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 1.41, position: { x: 0, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1.14, position: { x: 0, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 1.41, position: { x: 0, y: 0, z: 0 }, rotationY: -90 },
+    bowl_water_slot: { scale: 1.14, position: { x: 0, y: 0, z: 0 }, rotationY: -90 }
   },
   "kotik_4__base": {
     mat_slot: { scale: 0.19, position: { x: 0, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 0.45, position: { x: 0.45, y: 0, z: 0.11 } },
-    bowl_water_slot: { scale: 0.32, position: { x: 0.01, y: 0, z: 0.34 } }
+    bowl_food_slot: { scale: 0.45, position: { x: 0.45, y: 0, z: 0.11 }, rotationY: -95 },
+    bowl_water_slot: { scale: 0.32, position: { x: 0.01, y: 0, z: 0.34 }, rotationY: -93 }
   },
   "budka_5__base": {
     mat_slot: { scale: 1, position: { x: 0, y: 0, z: 0.07 } },
-    bowl_food_slot: { scale: 2.14, position: { x: -0.12, y: 0.03, z: 0.15 } },
-    bowl_water_slot: { scale: 1.9, position: { x: -0.02, y: 0.03, z: 0.13 } }
+    bowl_food_slot: { scale: 2.14, position: { x: -0.12, y: 0.03, z: 0.15 }, rotationY: 90 },
+    bowl_water_slot: { scale: 1.9, position: { x: -0.02, y: 0.03, z: 0.13 }, rotationY: 90 }
   },
   "kotik_5__base": {
     mat_slot: { scale: 0.11, position: { x: 0, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 0.24, position: { x: -0.02, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 0.17, position: { x: 0, y: 0, z: 0 } }
+    bowl_food_slot: { scale: 0.24, position: { x: -0.02, y: 0, z: 0 }, rotationY: -130 },
+    bowl_water_slot: { scale: 0.17, position: { x: 0, y: 0, z: 0 }, rotationY: -130 }
   },
   "budka_6__base": {
     sign_slot: { scale: 1, position: { x: 0.08, y: 0, z: 0 } },
     mat_slot: { scale: 1.2, position: { x: 0, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1.21, position: { x: 0, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 1.61, position: { x: 0, y: 0, z: 0.38 } }
+    bowl_water_slot: { scale: 1.21, position: { x: 0, y: 0, z: 0 }, rotationY: -180 },
+    bowl_food_slot: { scale: 1.61, position: { x: 0, y: 0, z: 0.38 }, rotationY: -180 }
   },
   "kotik_6__base": {
     mat_slot: { scale: 0.26, position: { x: 0, y: 0, z: 0 } },
-    bowl_food_slot: { scale: 0.4, position: { x: -0.04, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 0.34, position: { x: -0.01, y: 0, z: 0.07 } }
+    bowl_food_slot: { scale: 0.4, position: { x: -0.04, y: 0, z: 0 }, rotationY: -130 },
+    bowl_water_slot: { scale: 0.34, position: { x: -0.01, y: 0, z: 0.07 }, rotationY: -130 }
   },
   "budka_7__base": {
-    bowl_water_slot: { scale: 1.14, position: { x: 0.52, y: 0, z: 0.01 } },
-    bowl_food_slot: { scale: 1.22, position: { x: -1.01, y: 0, z: -0.05 } }
+    bowl_water_slot: { scale: 1.14, position: { x: 0.52, y: 0, z: 0.01 }, rotationY: -90 },
+    bowl_food_slot: { scale: 1.22, position: { x: -1.01, y: 0, z: -0.05 }, rotationY: -90 }
   },
   "budka_8__base": {
-    bowl_food_slot: { scale: 1.49, position: { x: 0, y: 0, z: 0 } },
-    bowl_water_slot: { scale: 1.4, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 1.49, position: { x: 0, y: 0, z: 0 }, rotationY: -180 },
+    bowl_water_slot: { scale: 1.4, position: { x: 0, y: 0, z: 0 }, rotationY: -180 },
     sign_slot: { scale: 1, position: { x: 0.06, y: 0, z: 0 } },
     mat_slot: { scale: 1.24, position: { x: 0, y: 0, z: 0 } }
   }
