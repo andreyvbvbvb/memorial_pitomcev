@@ -4,15 +4,19 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
+export type GiftFlameMode = "full" | "lite" | "static" | "off";
+
 type FlameLayer = {
   group: THREE.Group;
   outer: THREE.Sprite;
-  inner: THREE.Sprite;
-  light: THREE.PointLight;
+  inner?: THREE.Sprite;
+  light?: THREE.PointLight;
   seed: number;
+  lastFrameAt: number;
 };
 
 const FIRE_SLOT_PATTERN = /^fire_slot(?:_\d+)?$/i;
+const LITE_FRAME_INTERVAL = 1 / 20;
 
 function createFlameTexture() {
   if (typeof document === "undefined") {
@@ -65,12 +69,21 @@ function createSprite(texture: THREE.Texture, color: string, opacity: number) {
   return sprite;
 }
 
-export default function GiftFlames({ root }: { root: THREE.Object3D }) {
-  const texture = useMemo(() => createFlameTexture(), []);
+export default function GiftFlames({
+  root,
+  mode = "full"
+}: {
+  root: THREE.Object3D;
+  mode?: GiftFlameMode;
+}) {
+  const texture = useMemo(
+    () => (mode === "off" ? null : createFlameTexture()),
+    [mode]
+  );
   const flamesRef = useRef<FlameLayer[]>([]);
 
   useEffect(() => {
-    if (!texture) {
+    if (!texture || mode === "off") {
       return;
     }
 
@@ -86,16 +99,38 @@ export default function GiftFlames({ root }: { root: THREE.Object3D }) {
       group.name = `__animated_flame_${slot.name}`;
       group.position.set(0, 0.015, 0);
 
-      const outer = createSprite(texture, "#ff8a24", 0.58);
-      const inner = createSprite(texture, "#fff3b2", 0.9);
-      const light = new THREE.PointLight("#ffb45f", 0.22, 0.85, 2.2);
+      const outer = createSprite(
+        texture,
+        mode === "static" ? "#ffad54" : "#ff8a24",
+        mode === "static" ? 0.52 : 0.58
+      );
+      const inner =
+        mode === "full" ? createSprite(texture, "#fff3b2", 0.9) : undefined;
+      const light =
+        mode === "full"
+          ? new THREE.PointLight("#ffb45f", 0.22, 0.85, 2.2)
+          : undefined;
 
-      outer.scale.set(0.16, 0.34, 1);
-      inner.scale.set(0.08, 0.22, 1);
-      inner.position.set(0, 0.01, 0.002);
-      light.position.set(0, 0.08, 0);
+      outer.scale.set(
+        mode === "full" ? 0.16 : 0.14,
+        mode === "full" ? 0.34 : 0.3,
+        1
+      );
+      if (inner) {
+        inner.scale.set(0.08, 0.22, 1);
+        inner.position.set(0, 0.01, 0.002);
+      }
+      if (light) {
+        light.position.set(0, 0.08, 0);
+      }
 
-      group.add(outer, inner, light);
+      group.add(outer);
+      if (inner) {
+        group.add(inner);
+      }
+      if (light) {
+        group.add(light);
+      }
       slot.add(group);
 
       return {
@@ -103,7 +138,8 @@ export default function GiftFlames({ root }: { root: THREE.Object3D }) {
         outer,
         inner,
         light,
-        seed: index * 1.37 + Math.random() * Math.PI * 2
+        seed: index * 1.37 + Math.random() * Math.PI * 2,
+        lastFrameAt: 0
       };
     });
 
@@ -113,14 +149,14 @@ export default function GiftFlames({ root }: { root: THREE.Object3D }) {
       flames.forEach((flame) => {
         flame.group.parent?.remove(flame.group);
         [flame.outer, flame.inner].forEach((sprite) => {
-          if (sprite.material instanceof THREE.Material) {
+          if (sprite?.material instanceof THREE.Material) {
             sprite.material.dispose();
           }
         });
       });
       flamesRef.current = [];
     };
-  }, [root, texture]);
+  }, [mode, root, texture]);
 
   useEffect(() => {
     return () => {
@@ -129,20 +165,54 @@ export default function GiftFlames({ root }: { root: THREE.Object3D }) {
   }, [texture]);
 
   useFrame(({ clock }) => {
+    if (mode === "off" || mode === "static") {
+      return;
+    }
+
     const t = clock.elapsedTime;
     flamesRef.current.forEach((flame) => {
-      const flicker = Math.sin(t * 9.5 + flame.seed) * 0.08 + Math.sin(t * 17.3 + flame.seed * 0.7) * 0.05;
+      if (mode === "lite" && t - flame.lastFrameAt < LITE_FRAME_INTERVAL) {
+        return;
+      }
+      flame.lastFrameAt = t;
+
+      const flicker =
+        Math.sin(t * 9.5 + flame.seed) * 0.08 +
+        Math.sin(t * 17.3 + flame.seed * 0.7) * 0.05;
       const sway = Math.sin(t * 4.1 + flame.seed) * 0.018;
       const height = 1 + flicker;
       const width = 1 - flicker * 0.35;
 
-      flame.group.position.x = sway;
-      flame.group.position.z = Math.cos(t * 3.2 + flame.seed) * 0.012;
-      flame.outer.scale.set(0.16 * width, 0.34 * height, 1);
-      flame.inner.scale.set(0.08 * (1 + flicker * 0.18), 0.22 * (1 + flicker * 0.45), 1);
-      flame.outer.material.opacity = THREE.MathUtils.clamp(0.52 + flicker * 0.75, 0.34, 0.68);
-      flame.inner.material.opacity = THREE.MathUtils.clamp(0.82 + flicker * 0.9, 0.58, 0.98);
-      flame.light.intensity = THREE.MathUtils.clamp(0.18 + flicker * 0.8, 0.08, 0.32);
+      flame.group.position.x = mode === "full" ? sway : sway * 0.55;
+      flame.group.position.z =
+        Math.cos(t * 3.2 + flame.seed) * (mode === "full" ? 0.012 : 0.006);
+      flame.outer.scale.set(
+        (mode === "full" ? 0.16 : 0.14) * width,
+        (mode === "full" ? 0.34 : 0.3) * height,
+        1
+      );
+      flame.outer.material.opacity = THREE.MathUtils.clamp(
+        (mode === "full" ? 0.52 : 0.5) +
+          flicker * (mode === "full" ? 0.75 : 0.4),
+        mode === "full" ? 0.34 : 0.38,
+        mode === "full" ? 0.68 : 0.62
+      );
+
+      if (flame.inner) {
+        flame.inner.scale.set(
+          0.08 * (1 + flicker * 0.18),
+          0.22 * (1 + flicker * 0.45),
+          1
+        );
+        flame.inner.material.opacity = THREE.MathUtils.clamp(
+          0.82 + flicker * 0.9,
+          0.58,
+          0.98
+        );
+      }
+      if (flame.light) {
+        flame.light.intensity = THREE.MathUtils.clamp(0.18 + flicker * 0.8, 0.08, 0.32);
+      }
     });
   });
 

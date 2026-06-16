@@ -64,7 +64,10 @@ import {
   markerStyles,
   markerVariantsForSpecies,
 } from "../../lib/markers";
-import MemorialPreview, { type DetailPartOverrides } from "./MemorialPreview";
+import MemorialPreview, {
+  type DetailPartOverrides,
+  type GiftFlameMode,
+} from "./MemorialPreview";
 import ErrorToast from "../../components/ErrorToast";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import usePortraitLayout from "../../components/usePortraitLayout";
@@ -267,6 +270,34 @@ type MemorialPlan = {
   label: string;
   price: number;
 };
+
+const GIFT_FLAME_MODE_OPTIONS: {
+  id: GiftFlameMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "full",
+    label: "Полное",
+    description: "Два слоя пламени, мерцание и точечный свет. Самый красивый, но самый тяжелый вариант.",
+  },
+  {
+    id: "lite",
+    label: "Легкое",
+    description: "Один слой пламени без отдельного света, анимация обновляется реже.",
+  },
+  {
+    id: "static",
+    label: "Статика",
+    description: "Один неподвижный слой пламени без анимации и света.",
+  },
+  {
+    id: "off",
+    label: "Выкл.",
+    description: "Пламя не показывается. Удобно сравнить нагрузку без эффекта.",
+  },
+];
+
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 
 type Step3TabId =
@@ -983,6 +1014,8 @@ export default function CreateMemorialClient({
   const gltfLoadCacheRef = useRef<Map<string, Promise<void>>>(new Map());
   const gltfQueueRef = useRef<Promise<void>>(Promise.resolve());
   const [giftPreviewEnabled, setGiftPreviewEnabled] = useState(false);
+  const [giftFlameMode, setGiftFlameMode] =
+    useState<GiftFlameMode>("full");
   const [showMeterGrid, setShowMeterGrid] = useState(false);
   const [mapPreviewCaptureWithoutGifts, setMapPreviewCaptureWithoutGifts] =
     useState(false);
@@ -6024,6 +6057,7 @@ export default function CreateMemorialClient({
                 giftPreviewEnabled &&
                 previewPlaceholderSlots.length > 0
               }
+              giftFlameMode={giftFlameMode}
               enableHoverHighlight
               colors={colorOverrides}
               focusSlot={focusSlot}
@@ -6115,6 +6149,41 @@ export default function CreateMemorialClient({
                             подарков, чтобы было видно, как они размещаются.
                           </span>
                         </label>
+                        {canUseCalibration(accessLevel) ? (
+                          <div
+                            className={
+                              isPortraitLayout
+                                ? "group relative z-[120] flex max-w-full items-center gap-1 rounded-full bg-[#fffcf9] p-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#3b8d76]"
+                                : "group relative z-[120] flex items-center gap-1 rounded-full bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.1em] text-[#3b8d76]"
+                            }
+                          >
+                            <span className="px-1 text-[#8d6e63]">
+                              Пламя
+                            </span>
+                            {GIFT_FLAME_MODE_OPTIONS.map((option) => {
+                              const isActive = giftFlameMode === option.id;
+                              return (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  title={option.description}
+                                  onClick={() => setGiftFlameMode(option.id)}
+                                  className={`rounded-full px-2 py-1 transition ${
+                                    isActive
+                                      ? "bg-[#111827] text-white shadow-sm"
+                                      : "text-[#6f6360] hover:bg-[#f2e9e4]"
+                                  }`}
+                                >
+                                  {option.label}
+                                </button>
+                              );
+                            })}
+                            <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                              Переключатель тестовых режимов пламени у свечей:
+                              можно сравнить качество и нагрузку прямо в сцене.
+                            </span>
+                          </div>
+                        ) : null}
                         {canUseCalibration(accessLevel) ? (
                           <label
                             className={

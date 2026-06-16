@@ -7,7 +7,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { ensureDracoLoader } from "../../lib/draco";
 import type { DirtSlotPlacement } from "../../lib/dirt-models";
 import DirtSlotAttachments from "../../components/DirtSlotAttachments";
-import GiftFlames from "../../components/GiftFlames";
+import GiftFlames, { type GiftFlameMode } from "../../components/GiftFlames";
 import {
   getGiftCodeFromUrl,
   isGiftSlotName,
@@ -40,6 +40,8 @@ import {
 import TunedSkyDome from "../../components/TunedSkyDome";
 
 ensureDracoLoader();
+
+export type { GiftFlameMode };
 
 export type DetailPartOverride = {
   scale: number;
@@ -74,6 +76,7 @@ type Props = {
   }[];
   giftSlots?: string[];
   dimmedGiftSlots?: string[];
+  giftFlameMode?: GiftFlameMode;
   selectedSlot?: string | null;
   onSelectSlot?: (slot: string) => void;
   onGiftSlotsDetected?: (slots: string[]) => void;
@@ -696,6 +699,7 @@ function GiftPlacementAttachment({
   url,
   info,
   size,
+  flameMode,
   onHover,
   onLeave
 }: {
@@ -704,6 +708,7 @@ function GiftPlacementAttachment({
   url: string;
   info?: { name?: string; owner?: string; expiresAt?: string | null };
   size?: string | null;
+  flameMode?: GiftFlameMode;
   onHover?: (gift: GiftHover) => void;
   onLeave?: () => void;
 }) {
@@ -763,7 +768,7 @@ function GiftPlacementAttachment({
       }}
     >
       <Primitive object={gift} />
-      <GiftFlames root={gift} />
+      <GiftFlames root={gift} mode={flameMode} />
       {isStarGift ? (
         <PointLight
           intensity={0.6}
@@ -1200,6 +1205,7 @@ function TerrainWithHouse({
   dirtSlots,
   dirtLevel = 0,
   gifts,
+  giftFlameMode,
   colors,
   showGiftSlots,
   giftSlots,
@@ -1254,6 +1260,7 @@ function TerrainWithHouse({
     expiresAt?: string | null;
     size?: string | null;
   }[];
+  giftFlameMode?: GiftFlameMode;
   colors?: Record<string, string>;
   showGiftSlots: boolean;
   giftSlots?: string[];
@@ -1684,6 +1691,7 @@ function TerrainWithHouse({
             url={gift.url}
             info={{ name: gift.name, owner: gift.owner, expiresAt: gift.expiresAt }}
             size={gift.size ?? undefined}
+            flameMode={giftFlameMode}
             onHover={onGiftHover}
             onLeave={onGiftLeave}
           />
@@ -1835,6 +1843,7 @@ export default function MemorialPreview({
   gifts,
   giftSlots,
   dimmedGiftSlots,
+  giftFlameMode = "full",
   selectedSlot,
   onSelectSlot,
   onGiftSlotsDetected,
@@ -2262,6 +2271,7 @@ export default function MemorialPreview({
               dirtSlots={activeAssets.dirtSlots}
               dirtLevel={activeAssets.dirtLevel ?? 0}
               gifts={activeAssets.gifts}
+              giftFlameMode={giftFlameMode}
               colors={activeAssets.colors}
               showGiftSlots={giftSlotsVisible}
               giftSlots={giftSlots}
@@ -2343,6 +2353,7 @@ export default function MemorialPreview({
                   dirtSlots={pendingAssets.dirtSlots}
                   dirtLevel={pendingAssets.dirtLevel ?? 0}
                   gifts={pendingAssets.gifts}
+                  giftFlameMode="off"
                   colors={pendingAssets.colors}
                   showGiftSlots={false}
                   giftSlots={undefined}
