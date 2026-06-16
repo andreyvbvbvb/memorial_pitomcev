@@ -313,8 +313,8 @@ export default function ProfileClient() {
   ];
   const topUpOptions = [
     { coins: 100, rub: 99, usd: 1.49 },
-    { coins: 300, rub: 299, usd: 4.49 },
-    { coins: 800, rub: 699, usd: 9.99 },
+    { coins: 300, rub: 299, usd: 3.99 },
+    { coins: 800, rub: 399, usd: 4.99 },
     { coins: 2000, rub: 1799, usd: 22.99 }
   ];
 
