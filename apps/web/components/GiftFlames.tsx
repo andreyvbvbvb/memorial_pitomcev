@@ -4,13 +4,11 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
-export type GiftFlameMode = "full" | "lite" | "static" | "off";
+export type GiftFlameMode = "lite" | "off";
 
 type FlameLayer = {
   group: THREE.Group;
   outer: THREE.Sprite;
-  inner?: THREE.Sprite;
-  light?: THREE.PointLight;
   seed: number;
   lastFrameAt: number;
 };
@@ -71,7 +69,7 @@ function createSprite(texture: THREE.Texture, color: string, opacity: number) {
 
 export default function GiftFlames({
   root,
-  mode = "full"
+  mode = "lite"
 }: {
   root: THREE.Object3D;
   mode?: GiftFlameMode;
@@ -99,45 +97,16 @@ export default function GiftFlames({
       group.name = `__animated_flame_${slot.name}`;
       group.position.set(0, 0.015, 0);
 
-      const outer = createSprite(
-        texture,
-        mode === "static" ? "#ffad54" : "#ff8a24",
-        mode === "static" ? 0.52 : 0.58
-      );
-      const inner =
-        mode === "full" ? createSprite(texture, "#fff3b2", 0.9) : undefined;
-      const light =
-        mode === "full"
-          ? new THREE.PointLight("#ffb45f", 0.22, 0.85, 2.2)
-          : undefined;
+      const outer = createSprite(texture, "#ff8a24", 0.58);
 
-      outer.scale.set(
-        mode === "full" ? 0.16 : 0.14,
-        mode === "full" ? 0.34 : 0.3,
-        1
-      );
-      if (inner) {
-        inner.scale.set(0.08, 0.22, 1);
-        inner.position.set(0, 0.01, 0.002);
-      }
-      if (light) {
-        light.position.set(0, 0.08, 0);
-      }
+      outer.scale.set(0.14, 0.3, 1);
 
       group.add(outer);
-      if (inner) {
-        group.add(inner);
-      }
-      if (light) {
-        group.add(light);
-      }
       slot.add(group);
 
       return {
         group,
         outer,
-        inner,
-        light,
         seed: index * 1.37 + Math.random() * Math.PI * 2,
         lastFrameAt: 0
       };
@@ -148,11 +117,9 @@ export default function GiftFlames({
     return () => {
       flames.forEach((flame) => {
         flame.group.parent?.remove(flame.group);
-        [flame.outer, flame.inner].forEach((sprite) => {
-          if (sprite?.material instanceof THREE.Material) {
-            sprite.material.dispose();
-          }
-        });
+        if (flame.outer.material instanceof THREE.Material) {
+          flame.outer.material.dispose();
+        }
       });
       flamesRef.current = [];
     };
@@ -165,13 +132,13 @@ export default function GiftFlames({
   }, [texture]);
 
   useFrame(({ clock }) => {
-    if (mode === "off" || mode === "static") {
+    if (mode === "off") {
       return;
     }
 
     const t = clock.elapsedTime;
     flamesRef.current.forEach((flame) => {
-      if (mode === "lite" && t - flame.lastFrameAt < LITE_FRAME_INTERVAL) {
+      if (t - flame.lastFrameAt < LITE_FRAME_INTERVAL) {
         return;
       }
       flame.lastFrameAt = t;
@@ -183,36 +150,14 @@ export default function GiftFlames({
       const height = 1 + flicker;
       const width = 1 - flicker * 0.35;
 
-      flame.group.position.x = mode === "full" ? sway : sway * 0.55;
-      flame.group.position.z =
-        Math.cos(t * 3.2 + flame.seed) * (mode === "full" ? 0.012 : 0.006);
-      flame.outer.scale.set(
-        (mode === "full" ? 0.16 : 0.14) * width,
-        (mode === "full" ? 0.34 : 0.3) * height,
-        1
-      );
+      flame.group.position.x = sway * 0.55;
+      flame.group.position.z = Math.cos(t * 3.2 + flame.seed) * 0.006;
+      flame.outer.scale.set(0.14 * width, 0.3 * height, 1);
       flame.outer.material.opacity = THREE.MathUtils.clamp(
-        (mode === "full" ? 0.52 : 0.5) +
-          flicker * (mode === "full" ? 0.75 : 0.4),
-        mode === "full" ? 0.34 : 0.38,
-        mode === "full" ? 0.68 : 0.62
+        0.5 + flicker * 0.4,
+        0.38,
+        0.62
       );
-
-      if (flame.inner) {
-        flame.inner.scale.set(
-          0.08 * (1 + flicker * 0.18),
-          0.22 * (1 + flicker * 0.45),
-          1
-        );
-        flame.inner.material.opacity = THREE.MathUtils.clamp(
-          0.82 + flicker * 0.9,
-          0.58,
-          0.98
-        );
-      }
-      if (flame.light) {
-        flame.light.intensity = THREE.MathUtils.clamp(0.18 + flicker * 0.8, 0.08, 0.32);
-      }
     });
   });
 

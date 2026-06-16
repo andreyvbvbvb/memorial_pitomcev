@@ -835,7 +835,6 @@ function PartAttachment({
       const scale = houseBaseId === "budka_1" ? 0.85 : 1;
       applyPartFitWidthHeight(cloned, 1 * scale, 0.4 * scale);
     }
-    applyHousePartAdjustment(cloned, houseId ?? houseBaseId, slot);
     if (override) {
       const scale = Number.isFinite(override.scale) && override.scale > 0 ? override.scale : 1;
       cloned.scale.multiplyScalar(scale);
@@ -847,6 +846,8 @@ function PartAttachment({
       if (Number.isFinite(override.rotationY)) {
         cloned.rotation.y += THREE.MathUtils.degToRad(override.rotationY ?? 0);
       }
+    } else {
+      applyHousePartAdjustment(cloned, houseId ?? houseBaseId, slot);
     }
     return cloned;
   }, [
@@ -1843,7 +1844,7 @@ export default function MemorialPreview({
   gifts,
   giftSlots,
   dimmedGiftSlots,
-  giftFlameMode = "full",
+  giftFlameMode = "lite",
   selectedSlot,
   onSelectSlot,
   onGiftSlotsDetected,
