@@ -13,6 +13,13 @@ const DEFAULT_GIFTS = [
   }
 ];
 
+const GIFT_DURATION_PRICE_MULTIPLIERS: Record<number, number> = {
+  1: 1,
+  3: 1.5,
+  6: 2,
+  12: 3
+};
+
 const genericGiftNamePattern =
   /^(Свеча|Цветок|Еда|Игрушка|Звезда|Птица|Подарок)(?:\s+\d+)?$/;
 
@@ -247,7 +254,11 @@ export class GiftsService {
     }
 
     const durationMonths = months ?? 1;
-    const totalPrice = gift.price * durationMonths;
+    const durationMultiplier = GIFT_DURATION_PRICE_MULTIPLIERS[durationMonths];
+    if (!durationMultiplier) {
+      throw new BadRequestException("Недоступный срок подарка");
+    }
+    const totalPrice = Math.round(gift.price * durationMultiplier);
     const active = await this.prisma.giftPlacement.findFirst({
       where: {
         petId,

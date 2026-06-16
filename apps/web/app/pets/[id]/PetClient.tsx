@@ -82,7 +82,24 @@ const DIRT_SLOTS = [
   "dirt_slot_3",
   "dirt_slot_4",
 ] as const;
-const DURATION_OPTIONS = [1, 2, 3, 6, 12] as const;
+const DURATION_OPTIONS = [1, 3, 6, 12] as const;
+const GIFT_DURATION_PRICE_MULTIPLIERS: Record<
+  (typeof DURATION_OPTIONS)[number],
+  number
+> = {
+  1: 1,
+  3: 1.5,
+  6: 2,
+  12: 3,
+};
+
+const getGiftDurationPrice = (basePrice: number, months: number) => {
+  const multiplier =
+    GIFT_DURATION_PRICE_MULTIPLIERS[
+      months as (typeof DURATION_OPTIONS)[number]
+    ];
+  return Math.round(basePrice * (multiplier ?? months));
+};
 type GiftCatalogItem = {
   id: string;
   code?: string | null;
@@ -2571,7 +2588,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     : giftInstances;
   const totalPrice =
     selectedGift && selectedDuration
-      ? selectedGift.price * selectedDuration
+      ? getGiftDurationPrice(selectedGift.price, selectedDuration)
       : null;
 
   const formatDate = (value?: string | null) =>

@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString } from "class-validator";
 
 export class CreateGiftPlacementDto {
   @IsOptional()
@@ -17,7 +17,6 @@ export class CreateGiftPlacementDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Max(12)
+  @IsIn([1, 3, 6, 12])
   months?: number;
 }
