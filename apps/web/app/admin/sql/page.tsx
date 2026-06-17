@@ -12,6 +12,7 @@ import { resolveGiftIconUrl } from "../../../lib/gifts";
 import {
   bowlFoodOptions,
   bowlWaterOptions,
+  environmentOptions,
   frameLeftOptions,
   frameRightOptions,
   houseOptions,
@@ -24,6 +25,7 @@ import {
 import {
   resolveBowlFoodModel,
   resolveBowlWaterModel,
+  resolveEnvironmentModel,
   resolveFrameLeftModel,
   resolveFrameRightModel,
   resolveHouseModel,
@@ -186,11 +188,20 @@ type FontPreviewId = (typeof FONT_PREVIEW_OPTIONS)[number]["id"];
 
 const MODEL_METADATA_GROUPS = [
   {
+    category: "environment",
+    label: "Поверхности",
+    itemLabel: "Поверхность",
+    options: environmentOptions,
+    resolveModelUrl: (id?: string | null) => resolveEnvironmentModel(id, "summer"),
+    resolveImageUrl: (id: string) => `/memorial/options/environment/${id}.png`,
+  },
+  {
     category: "house",
     label: "Домики",
     itemLabel: "Домик",
     options: houseOptions,
     resolveModelUrl: resolveHouseModel,
+    resolveImageUrl: (id: string) => `/memorial/options/house-texture/${id}.png`,
   },
   {
     category: "roof",
@@ -198,6 +209,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Крыша",
     options: roofOptions,
     resolveModelUrl: resolveRoofModel,
+    resolveImageUrl: () => null,
   },
   {
     category: "wall",
@@ -205,6 +217,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Стена",
     options: wallOptions,
     resolveModelUrl: resolveWallModel,
+    resolveImageUrl: () => null,
   },
   {
     category: "sign",
@@ -212,6 +225,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Украшение",
     options: signOptions,
     resolveModelUrl: resolveSignModel,
+    resolveImageUrl: (id: string) => `/memorial/options/sign/${id}.png`,
   },
   {
     category: "frameLeft",
@@ -219,6 +233,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Левая рамка",
     options: frameLeftOptions,
     resolveModelUrl: resolveFrameLeftModel,
+    resolveImageUrl: () => null,
   },
   {
     category: "frameRight",
@@ -226,6 +241,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Правая рамка",
     options: frameRightOptions,
     resolveModelUrl: resolveFrameRightModel,
+    resolveImageUrl: () => null,
   },
   {
     category: "mat",
@@ -233,6 +249,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Коврик",
     options: matOptions,
     resolveModelUrl: resolveMatModel,
+    resolveImageUrl: (id: string) => `/memorial/options/mat/${id}.png`,
   },
   {
     category: "bowlFood",
@@ -240,6 +257,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Миска с едой",
     options: bowlFoodOptions,
     resolveModelUrl: resolveBowlFoodModel,
+    resolveImageUrl: (id: string) => `/memorial/options/bowl-food/${id}.png`,
   },
   {
     category: "bowlWater",
@@ -247,6 +265,7 @@ const MODEL_METADATA_GROUPS = [
     itemLabel: "Миска с водой",
     options: bowlWaterOptions,
     resolveModelUrl: resolveBowlWaterModel,
+    resolveImageUrl: (id: string) => `/memorial/options/bowl-water/${id}.png`,
   },
 ] as const satisfies readonly {
   category: string;
@@ -254,6 +273,7 @@ const MODEL_METADATA_GROUPS = [
   itemLabel: string;
   options: OptionItem[];
   resolveModelUrl: (id?: string | null) => string | null | undefined;
+  resolveImageUrl: (id: string) => string | null;
 }[];
 
 const MODEL_METADATA_GROUP_BY_CATEGORY = new Map<
@@ -318,6 +338,7 @@ type ModelMetadataItem = {
   name: string;
   description: string;
   modelUrl: string | null;
+  imageUrl: string | null;
 };
 
 type BulkAccountRow = {
@@ -482,6 +503,7 @@ const buildModelMetadataDefaults = (): ModelMetadataItem[] =>
         name: option.name,
         description: option.description,
         modelUrl: group.resolveModelUrl(option.id) ?? null,
+        imageUrl: group.resolveImageUrl(option.id),
       })),
   );
 
@@ -504,6 +526,7 @@ const mergeModelMetadataItems = (
           id: saved.id,
           name: saved.name,
           description: saved.description ?? "",
+          imageUrl: defaults.imageUrl,
         }
       : defaults;
   });
@@ -2646,10 +2669,14 @@ export default function AdminSqlPage() {
                       <div className="min-w-0">
                         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#fffcf9] p-2 shadow-sm">
                           <img
-                            src={MODEL_PLACEHOLDER_ICON}
+                            src={item.imageUrl ?? MODEL_PLACEHOLDER_ICON}
                             alt=""
-                            className="aspect-square w-full rounded-xl object-cover"
+                            className="aspect-square w-full rounded-xl bg-[#fff8f3] object-contain"
                             loading="lazy"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = MODEL_PLACEHOLDER_ICON;
+                            }}
                           />
                           <div className="mt-1 truncate px-1 text-center text-[10px] font-semibold text-slate-500">
                             {group?.itemLabel ?? item.category}
