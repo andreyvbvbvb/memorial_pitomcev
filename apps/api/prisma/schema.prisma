@@ -109,7 +109,9 @@ model Memorial {
   sceneJson     Json?
   dustStage     Int      @default(0)
   dustUpdatedAt DateTime?
+  dirtFullNotifiedAt DateTime?
   activeUntil   DateTime?
+  expirationReminderSentAt DateTime?
   deactivatedAt DateTime?
   deactivationReason String?
   needsPreviewRefresh Boolean @default(false)
@@ -304,6 +306,14 @@ model LoadingTip {
   id        String   @id @default(cuid())
   text      String
   isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteBanner {
+  id        String   @id @default("global")
+  text      String   @default("")
+  isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -186,6 +186,13 @@ type LoadingTip = {
   createdAt?: string;
 };
 
+type SiteBanner = {
+  id: string;
+  text: string;
+  isActive: boolean;
+  updatedAt?: string;
+};
+
 type MemorialPlanPrice = {
   years: number;
   price: number;
@@ -477,6 +484,15 @@ export default function AdminSqlPage() {
   const [savingTipId, setSavingTipId] = useState<string | null>(null);
   const [deletingTipId, setDeletingTipId] = useState<string | null>(null);
   const [creatingTip, setCreatingTip] = useState(false);
+  const [siteBanner, setSiteBanner] = useState<SiteBanner>({
+    id: "global",
+    text: "",
+    isActive: false,
+  });
+  const [siteBannerLoading, setSiteBannerLoading] = useState(false);
+  const [siteBannerSaving, setSiteBannerSaving] = useState(false);
+  const [siteBannerNotice, setSiteBannerNotice] = useState<string | null>(null);
+  const [siteBannerError, setSiteBannerError] = useState<string | null>(null);
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsSaving, setNewsSaving] = useState(false);
@@ -611,10 +627,12 @@ export default function AdminSqlPage() {
     const loadContentTools = async () => {
       setNewsLoading(true);
       setDocumentLoading(true);
+      setSiteBannerLoading(true);
       try {
-        const [newsResponse, documentsResponse] = await Promise.all([
+        const [newsResponse, documentsResponse, bannerResponse] = await Promise.all([
           fetch(`${apiUrl}/admin/news`, { credentials: "include" }),
           fetch(`${apiUrl}/admin/documents`, { credentials: "include" }),
+          fetch(`${apiUrl}/admin/site-banner`, { credentials: "include" }),
         ]);
         if (newsResponse.ok) {
           const data = (await newsResponse.json()) as { posts?: NewsPost[] };
@@ -632,10 +650,17 @@ export default function AdminSqlPage() {
             );
           }
         }
+        if (bannerResponse.ok) {
+          const data = (await bannerResponse.json()) as { banner?: SiteBanner };
+          if (isMounted && data.banner) {
+            setSiteBanner(data.banner);
+          }
+        }
       } finally {
         if (isMounted) {
           setNewsLoading(false);
           setDocumentLoading(false);
+          setSiteBannerLoading(false);
         }
       }
     };
@@ -1220,6 +1245,38 @@ export default function AdminSqlPage() {
       );
     } finally {
       setSavingGiftId(null);
+    }
+  };
+
+  const saveSiteBanner = async () => {
+    setSiteBannerSaving(true);
+    setSiteBannerNotice(null);
+    setSiteBannerError(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/site-banner`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          text: siteBanner.text,
+          isActive: siteBanner.isActive,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || "Не удалось сохранить плашку");
+      }
+      const data = (await response.json()) as { banner?: SiteBanner };
+      if (data.banner) {
+        setSiteBanner(data.banner);
+      }
+      setSiteBannerNotice("Плашка сохранена");
+    } catch (err) {
+      setSiteBannerError(
+        err instanceof Error ? err.message : "Ошибка сохранения плашки",
+      );
+    } finally {
+      setSiteBannerSaving(false);
     }
   };
 
@@ -2440,6 +2497,70 @@ export default function AdminSqlPage() {
             <p className="mt-2 text-[11px] text-slate-500">
               Удаление питомца также удалит маркер, мемориал и фото по каскаду.
             </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="text-xs font-semibold uppercase text-slate-500">
+              Верхняя плашка
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Тонкая плашка показывается сверху на главной странице, карте и
+              странице «Мои питомцы».
+            </p>
+            <div className="mt-3 grid gap-2">
+              <textarea
+                value={siteBanner.text}
+                onChange={(event) =>
+                  setSiteBanner((prev) => ({
+                    ...prev,
+                    text: event.target.value,
+                  }))
+                }
+                placeholder="Например: Сегодня ночью возможны технические работы."
+                className="min-h-[70px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+                maxLength={220}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="flex items-center gap-2 text-[11px] text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={siteBanner.isActive}
+                    onChange={(event) =>
+                      setSiteBanner((prev) => ({
+                        ...prev,
+                        isActive: event.target.checked,
+                      }))
+                    }
+                  />
+                  Показывать плашку
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  {siteBanner.text.length}/220
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={saveSiteBanner}
+                disabled={siteBannerSaving || siteBannerLoading}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+              >
+                {siteBannerSaving
+                  ? "Сохраняем..."
+                  : siteBannerLoading
+                    ? "Загрузка..."
+                    : "Сохранить плашку"}
+              </button>
+              {siteBannerNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {siteBannerNotice}
+                </div>
+              ) : null}
+              {siteBannerError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                  {siteBannerError}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">

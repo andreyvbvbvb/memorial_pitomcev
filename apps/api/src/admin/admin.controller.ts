@@ -48,6 +48,7 @@ import {
 import { AdminUpdateMemorialLimitDto } from "./dto/admin-update-memorial-limit.dto";
 import { AdminUpdateUserRoleDto } from "./dto/admin-update-user-role.dto";
 import { AdminSqlDto } from "./dto/admin-sql.dto";
+import { AdminSiteBannerDto } from "./dto/admin-site-banner.dto";
 import {
   AdminUpdateGiftPriceDto,
   AdminUpdateMemorialPlanPriceDto,
@@ -867,6 +868,42 @@ export class AdminController {
     await this.ensureAdmin(req);
     await this.prisma.loadingTip.delete({ where: { id } });
     return { ok: true };
+  }
+
+  @Get("site-banner")
+  async getSiteBanner(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const banner = await this.prisma.siteBanner.upsert({
+      where: { id: "global" },
+      create: { id: "global", text: "", isActive: false },
+      update: {},
+    });
+    return { banner };
+  }
+
+  @Patch("site-banner")
+  async updateSiteBanner(
+    @Req() req: Request,
+    @Body() dto: AdminSiteBannerDto,
+  ) {
+    await this.ensureAdmin(req);
+    const text = dto.text?.trim() ?? "";
+    if (dto.isActive && !text) {
+      throw new BadRequestException("Введите текст плашки");
+    }
+    const banner = await this.prisma.siteBanner.upsert({
+      where: { id: "global" },
+      create: {
+        id: "global",
+        text,
+        isActive: dto.isActive ?? false,
+      },
+      update: {
+        text,
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+    return { banner };
   }
 
   @Get("news")

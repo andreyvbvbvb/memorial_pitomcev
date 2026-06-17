@@ -42,6 +42,22 @@ export class ContentController {
     };
   }
 
+  @Get("site-banner")
+  async getSiteBanner() {
+    const banner = await this.prisma.siteBanner.findUnique({
+      where: { id: "global" },
+    });
+    if (!banner?.isActive || !banner.text.trim()) {
+      return { banner: null };
+    }
+    return {
+      banner: {
+        text: banner.text,
+        updatedAt: banner.updatedAt,
+      },
+    };
+  }
+
   @Get("news")
   async getNews(@Req() req: Request) {
     const user = await this.authService.getUserFromToken(req.cookies?.access_token);

@@ -191,6 +191,90 @@ export class MailService {
     });
   }
 
+  async sendMemorialCareReminder(
+    email: string,
+    petName: string,
+    memorialUrl: string,
+  ) {
+    const transporter = this.getTransporter();
+    const from =
+      process.env.SMTP_FROM ??
+      process.env.SMTP_USER ??
+      "no-reply@memorial.local";
+    const text = [
+      "Здравствуйте!",
+      "",
+      `Мемориал «${petName}» полностью покрылся следами времени.`,
+      "Мемориал всегда выглядит красивее, когда за ним ухаживают и очищают его.",
+      "Будет здорово, если вы заглянете и немного позаботитесь о нем.",
+      "",
+      `Открыть мемориал: ${memorialUrl}`,
+      "",
+      "Спасибо, что храните память вместе с МЯУГАВ.",
+    ].join("\n");
+
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject: "Мемориал ждёт ухода — МЯУГАВ",
+      text,
+      html: `
+        <div style="font-family: 'Noto Sans', Arial, sans-serif; color: #5d4037; line-height: 1.55;">
+          <h2 style="margin: 0 0 16px;">Мемориал ждёт ухода</h2>
+          <p>Мемориал «${this.escapeHtml(petName)}» полностью покрылся следами времени.</p>
+          <p>Мемориал всегда выглядит красивее, когда за ним ухаживают и очищают его. Будет здорово, если вы заглянете и немного позаботитесь о нем.</p>
+          <p style="margin: 20px 0;">
+            <a href="${memorialUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Открыть мемориал</a>
+          </p>
+          <p style="color: #8d6e63;">Спасибо, что храните память вместе с МЯУГАВ.</p>
+        </div>
+      `,
+    });
+  }
+
+  async sendMemorialExpirationReminder(
+    email: string,
+    petName: string,
+    memorialUrl: string,
+    activeUntil: Date,
+  ) {
+    const transporter = this.getTransporter();
+    const from =
+      process.env.SMTP_FROM ??
+      process.env.SMTP_USER ??
+      "no-reply@memorial.local";
+    const dateText = activeUntil.toLocaleDateString("ru-RU");
+    const text = [
+      "Здравствуйте!",
+      "",
+      `Поддержка мемориала «${petName}» заканчивается ${dateText}.`,
+      "Чтобы мемориал продолжил работать, откройте страницу мемориала и в блоке управления нажмите «Продлить».",
+      "После этого выберите срок продления и подтвердите оплату монетами.",
+      "",
+      `Открыть мемориал: ${memorialUrl}`,
+      "",
+      "Если возникнут вопросы, напишите нам: support@мяугав.com",
+    ].join("\n");
+
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject: "Поддержка мемориала скоро закончится — МЯУГАВ",
+      text,
+      html: `
+        <div style="font-family: 'Noto Sans', Arial, sans-serif; color: #5d4037; line-height: 1.55;">
+          <h2 style="margin: 0 0 16px;">Поддержка мемориала скоро закончится</h2>
+          <p>Поддержка мемориала «${this.escapeHtml(petName)}» заканчивается <strong>${this.escapeHtml(dateText)}</strong>.</p>
+          <p>Чтобы мемориал продолжил работать, откройте страницу мемориала и в блоке управления нажмите «Продлить». Затем выберите срок продления и подтвердите оплату монетами.</p>
+          <p style="margin: 20px 0;">
+            <a href="${memorialUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Открыть мемориал</a>
+          </p>
+          <p style="color: #8d6e63;">Если возникнут вопросы, напишите нам: support@мяугав.com</p>
+        </div>
+      `,
+    });
+  }
+
   private escapeHtml(value: string) {
     return value
       .replace(/&/g, "&amp;")

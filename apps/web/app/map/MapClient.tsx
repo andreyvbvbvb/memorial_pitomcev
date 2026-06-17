@@ -13,6 +13,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { ensureDracoLoader } from "../../lib/draco";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
+import SiteBanner from "../../components/SiteBanner";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import VisibilityIndicator from "../../components/VisibilityIndicator";
 import {
@@ -2415,6 +2416,7 @@ export default function MapClient() {
       className="relative w-screen overflow-hidden bg-[#fcf8f5]"
       style={mapViewportStyle}
     >
+      <SiteBanner variant="overlay" />
       <div className="absolute inset-0">
         {mapMode === "map" ? (
           !apiKey ? (

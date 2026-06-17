@@ -737,6 +737,9 @@ export class PetsService {
           nextSlots,
           nextSlotIndex,
         ),
+        ...(nextSlots.length < MAX_DUST_STAGE
+          ? { dirtFullNotifiedAt: null }
+          : {}),
         needsPreviewRefresh: true,
       },
     });

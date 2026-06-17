@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../../lib/config";
 import ErrorToast from "../../components/ErrorToast";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import SiteBanner from "../../components/SiteBanner";
 import usePortraitLayout from "../../components/usePortraitLayout";
 import AuthHelpHint from "../../components/AuthHelpHint";
 
@@ -274,6 +275,7 @@ export default function MyPetsClient() {
 
   return (
     <div className={viewMode === 5 ? "relative h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#fcf8f5] overscroll-none" : "relative min-h-screen overflow-hidden bg-[#fcf8f5]"}>
+      {viewMode === 4 ? <SiteBanner /> : <SiteBanner variant="overlay" />}
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
       <div className="pointer-events-none fixed bottom-0 left-0 h-80 w-80 rounded-full bg-[#d3a27f]/12 blur-[120px]" />
       {viewMode === 5 ? <MyPets3DView pets={petsWithPreview} loading={loading} fullScreen /> : null}
