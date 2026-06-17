@@ -188,6 +188,19 @@ model GiftCatalog {
   placements GiftPlacement[]
 }
 
+model ModelMetadata {
+  id          String   @id @default(cuid())
+  category    String
+  modelId     String
+  name        String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([category, modelId])
+  @@index([category])
+}
+
 model MemorialPlanPrice {
   years     Int      @id
   price     Int

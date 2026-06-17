@@ -41,6 +41,7 @@ import {
 import { AdminNewsDto } from "./dto/admin-news.dto";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
 import { AdminAddCoinsDto } from "./dto/admin-add-coins.dto";
+import { AdminModelMetadataDto } from "./dto/admin-model-metadata.dto";
 import {
   AdminLoadingTipCreateDto,
   AdminLoadingTipUpdateDto,
@@ -765,6 +766,54 @@ export class AdminController {
       },
     });
     return { gift };
+  }
+
+  @Get("model-metadata")
+  async getModelMetadata(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const items = await this.prisma.modelMetadata.findMany({
+      orderBy: [{ category: "asc" }, { modelId: "asc" }],
+    });
+    return { items };
+  }
+
+  @Patch("model-metadata/:category/:modelId")
+  async updateModelMetadata(
+    @Req() req: Request,
+    @Param("category") category: string,
+    @Param("modelId") modelId: string,
+    @Body() dto: AdminModelMetadataDto,
+  ) {
+    await this.ensureAdmin(req);
+    const safeCategory = category.trim();
+    const safeModelId = modelId.trim();
+    const name = dto.name.trim();
+    const description = dto.description.trim();
+    if (!safeCategory || !safeModelId) {
+      throw new BadRequestException("Не указана модель");
+    }
+    if (!name) {
+      throw new BadRequestException("Название обязательно");
+    }
+    const item = await this.prisma.modelMetadata.upsert({
+      where: {
+        category_modelId: {
+          category: safeCategory,
+          modelId: safeModelId,
+        },
+      },
+      create: {
+        category: safeCategory,
+        modelId: safeModelId,
+        name,
+        description,
+      },
+      update: {
+        name,
+        description,
+      },
+    });
+    return { item };
   }
 
   @Post("reset-password")

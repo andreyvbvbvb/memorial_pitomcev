@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, type GiftCatalog } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { generatedGifts } from "./gifts.generated";
 import { getGiftMetadata } from "./gift-metadata";
@@ -19,9 +19,6 @@ const GIFT_DURATION_PRICE_MULTIPLIERS: Record<number, number> = {
   6: 2,
   12: 3
 };
-
-const genericGiftNamePattern =
-  /^(Свеча|Цветок|Еда|Игрушка|Звезда|Птица|Подарок)(?:\s+\d+)?$/;
 
 @Injectable()
 export class GiftsService {
@@ -150,18 +147,9 @@ export class GiftsService {
 
   async listCatalog() {
     await this.ensureCatalogSeeded();
-    const gifts: GiftCatalog[] = await this.prisma.giftCatalog.findMany({
+    return this.prisma.giftCatalog.findMany({
       orderBy: { price: "asc" }
     });
-    return gifts.map((gift) => ({
-      ...gift,
-      name:
-        !gift.description.trim() && genericGiftNamePattern.test(gift.name)
-          ? getGiftMetadata(gift.code, gift.name).name
-          : gift.name,
-      description:
-        gift.description.trim() || getGiftMetadata(gift.code, gift.name).description
-    }));
   }
 
   async listUserGifts(ownerId: string) {

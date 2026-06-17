@@ -9,6 +9,29 @@ import {
   type AccessLevel,
 } from "../../../lib/access";
 import { resolveGiftIconUrl } from "../../../lib/gifts";
+import {
+  bowlFoodOptions,
+  bowlWaterOptions,
+  frameLeftOptions,
+  frameRightOptions,
+  houseOptions,
+  matOptions,
+  roofOptions,
+  signOptions,
+  wallOptions,
+  type OptionItem,
+} from "../../../lib/memorial-options";
+import {
+  resolveBowlFoodModel,
+  resolveBowlWaterModel,
+  resolveFrameLeftModel,
+  resolveFrameRightModel,
+  resolveHouseModel,
+  resolveMatModel,
+  resolveRoofModel,
+  resolveSignModel,
+  resolveWallModel,
+} from "../../../lib/memorial-models";
 import ErrorToast from "../../../components/ErrorToast";
 import DirtModelPreview from "../../../components/admin/DirtModelPreview";
 import SkyTuningPreview from "../../../components/admin/SkyTuningPreview";
@@ -161,6 +184,86 @@ const FONT_PREVIEW_OPTIONS = [
 
 type FontPreviewId = (typeof FONT_PREVIEW_OPTIONS)[number]["id"];
 
+const MODEL_METADATA_GROUPS = [
+  {
+    category: "house",
+    label: "Домики",
+    itemLabel: "Домик",
+    options: houseOptions,
+    resolveModelUrl: resolveHouseModel,
+  },
+  {
+    category: "roof",
+    label: "Крыши",
+    itemLabel: "Крыша",
+    options: roofOptions,
+    resolveModelUrl: resolveRoofModel,
+  },
+  {
+    category: "wall",
+    label: "Стены",
+    itemLabel: "Стена",
+    options: wallOptions,
+    resolveModelUrl: resolveWallModel,
+  },
+  {
+    category: "sign",
+    label: "Украшения",
+    itemLabel: "Украшение",
+    options: signOptions,
+    resolveModelUrl: resolveSignModel,
+  },
+  {
+    category: "frameLeft",
+    label: "Левые рамки",
+    itemLabel: "Левая рамка",
+    options: frameLeftOptions,
+    resolveModelUrl: resolveFrameLeftModel,
+  },
+  {
+    category: "frameRight",
+    label: "Правые рамки",
+    itemLabel: "Правая рамка",
+    options: frameRightOptions,
+    resolveModelUrl: resolveFrameRightModel,
+  },
+  {
+    category: "mat",
+    label: "Коврики",
+    itemLabel: "Коврик",
+    options: matOptions,
+    resolveModelUrl: resolveMatModel,
+  },
+  {
+    category: "bowlFood",
+    label: "Миски с едой",
+    itemLabel: "Миска с едой",
+    options: bowlFoodOptions,
+    resolveModelUrl: resolveBowlFoodModel,
+  },
+  {
+    category: "bowlWater",
+    label: "Миски с водой",
+    itemLabel: "Миска с водой",
+    options: bowlWaterOptions,
+    resolveModelUrl: resolveBowlWaterModel,
+  },
+] as const satisfies readonly {
+  category: string;
+  label: string;
+  itemLabel: string;
+  options: OptionItem[];
+  resolveModelUrl: (id?: string | null) => string | null | undefined;
+}[];
+
+const MODEL_METADATA_GROUP_BY_CATEGORY = new Map<
+  string,
+  (typeof MODEL_METADATA_GROUPS)[number]
+>(MODEL_METADATA_GROUPS.map((group) => [group.category, group]));
+
+const MODEL_PLACEHOLDER_ICON =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='22' fill='%23f7f1ee'/><path d='M28 83V51l36-22 36 22v32L64 104 28 83z' fill='%23d3a27f'/><path d='M44 56l20-12 20 12v20L64 88 44 76V56z' fill='%23fff8f3'/></svg>";
+
 type SqlResult = {
   type: "select" | "delete" | "update";
   rowCount?: number;
@@ -206,6 +309,15 @@ type GiftPrice = {
   description?: string | null;
   price: number;
   modelUrl: string;
+};
+
+type ModelMetadataItem = {
+  id?: string;
+  category: string;
+  modelId: string;
+  name: string;
+  description: string;
+  modelUrl: string | null;
 };
 
 type BulkAccountRow = {
@@ -355,6 +467,46 @@ const formatPlanYears = (years: number) => {
     return "1 год";
   }
   return `${years} года`;
+};
+
+const modelMetadataKey = (category: string, modelId: string) =>
+  `${category}:${modelId}`;
+
+const buildModelMetadataDefaults = (): ModelMetadataItem[] =>
+  MODEL_METADATA_GROUPS.flatMap((group) =>
+    group.options
+      .filter((option) => option.id !== "none")
+      .map((option) => ({
+        category: group.category,
+        modelId: option.id,
+        name: option.name,
+        description: option.description,
+        modelUrl: group.resolveModelUrl(option.id) ?? null,
+      })),
+  );
+
+const mergeModelMetadataItems = (
+  savedItems: ModelMetadataItem[],
+): ModelMetadataItem[] => {
+  const savedByKey = new Map(
+    savedItems.map((item) => [
+      modelMetadataKey(item.category, item.modelId),
+      item,
+    ]),
+  );
+  return buildModelMetadataDefaults().map((defaults) => {
+    const saved = savedByKey.get(
+      modelMetadataKey(defaults.category, defaults.modelId),
+    );
+    return saved
+      ? {
+          ...defaults,
+          id: saved.id,
+          name: saved.name,
+          description: saved.description ?? "",
+        }
+      : defaults;
+  });
 };
 
 const isAbortError = (value: unknown) =>
@@ -520,6 +672,20 @@ export default function AdminSqlPage() {
   const [savingPlanYears, setSavingPlanYears] = useState<number | null>(null);
   const [savingGiftId, setSavingGiftId] = useState<string | null>(null);
   const [giftPriceFilter, setGiftPriceFilter] = useState("");
+  const [modelMetadataItems, setModelMetadataItems] = useState<
+    ModelMetadataItem[]
+  >(() => buildModelMetadataDefaults());
+  const [modelMetadataLoading, setModelMetadataLoading] = useState(false);
+  const [modelMetadataSavingKey, setModelMetadataSavingKey] = useState<
+    string | null
+  >(null);
+  const [modelMetadataFilter, setModelMetadataFilter] = useState("");
+  const [modelMetadataNotice, setModelMetadataNotice] = useState<string | null>(
+    null,
+  );
+  const [modelMetadataError, setModelMetadataError] = useState<string | null>(
+    null,
+  );
   const [accessUsers, setAccessUsers] = useState<AccessUser[]>([]);
   const [accessUsersLoading, setAccessUsersLoading] = useState(false);
   const [accessUsersError, setAccessUsersError] = useState<string | null>(null);
@@ -710,6 +876,51 @@ export default function AdminSqlPage() {
       }
     };
     void loadPricing();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl, authChecked, isAdmin]);
+
+  useEffect(() => {
+    if (!authChecked || !isAdmin) {
+      return;
+    }
+    let isMounted = true;
+    const loadModelMetadata = async () => {
+      setModelMetadataLoading(true);
+      setModelMetadataError(null);
+      try {
+        const response = await fetch(`${apiUrl}/admin/model-metadata`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось загрузить подписи моделей");
+        }
+        const data = (await response.json()) as {
+          items?: ModelMetadataItem[];
+        };
+        if (!isMounted) {
+          return;
+        }
+        setModelMetadataItems(
+          mergeModelMetadataItems(Array.isArray(data.items) ? data.items : []),
+        );
+      } catch (err) {
+        if (isMounted) {
+          setModelMetadataError(
+            err instanceof Error
+              ? err.message
+              : "Ошибка загрузки подписей моделей",
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setModelMetadataLoading(false);
+        }
+      }
+    };
+    void loadModelMetadata();
     return () => {
       isMounted = false;
     };
@@ -1245,6 +1456,72 @@ export default function AdminSqlPage() {
       );
     } finally {
       setSavingGiftId(null);
+    }
+  };
+
+  const updateModelMetadataDraft = (
+    item: Pick<ModelMetadataItem, "category" | "modelId">,
+    patch: Partial<Pick<ModelMetadataItem, "name" | "description">>,
+  ) => {
+    setModelMetadataItems((prev) =>
+      prev.map((current) =>
+        current.category === item.category && current.modelId === item.modelId
+          ? { ...current, ...patch }
+          : current,
+      ),
+    );
+  };
+
+  const saveModelMetadataItem = async (item: ModelMetadataItem) => {
+    const name = item.name.trim();
+    const description = item.description.trim();
+    if (!name) {
+      setModelMetadataError("Название модели обязательно");
+      return;
+    }
+    const key = modelMetadataKey(item.category, item.modelId);
+    setModelMetadataSavingKey(key);
+    setModelMetadataNotice(null);
+    setModelMetadataError(null);
+    try {
+      const response = await fetch(
+        `${apiUrl}/admin/model-metadata/${encodeURIComponent(
+          item.category,
+        )}/${encodeURIComponent(item.modelId)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ name, description }),
+        },
+      );
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить подпись модели");
+      }
+      const data = (await response.json()) as { item?: ModelMetadataItem };
+      if (data.item) {
+        setModelMetadataItems((prev) =>
+          prev.map((current) =>
+            current.category === data.item?.category &&
+            current.modelId === data.item?.modelId
+              ? {
+                  ...current,
+                  id: data.item.id,
+                  name: data.item.name,
+                  description: data.item.description ?? "",
+                }
+              : current,
+          ),
+        );
+      }
+      setModelMetadataNotice("Подпись модели сохранена");
+    } catch (err) {
+      setModelMetadataError(
+        err instanceof Error ? err.message : "Ошибка сохранения подписи модели",
+      );
+    } finally {
+      setModelMetadataSavingKey(null);
     }
   };
 
@@ -1951,6 +2228,15 @@ export default function AdminSqlPage() {
         return haystack.includes(normalizedGiftPriceFilter);
       })
     : giftPrices;
+  const normalizedModelMetadataFilter = modelMetadataFilter.trim().toLowerCase();
+  const filteredModelMetadataItems = normalizedModelMetadataFilter
+    ? modelMetadataItems.filter((item) => {
+        const group = MODEL_METADATA_GROUP_BY_CATEGORY.get(item.category);
+        const haystack =
+          `${item.name} ${item.description} ${item.modelId} ${group?.label ?? ""}`.toLowerCase();
+        return haystack.includes(normalizedModelMetadataFilter);
+      })
+    : modelMetadataItems;
   const selectedFontPreview =
     FONT_PREVIEW_OPTIONS.find((option) => option.id === fontPreviewId) ??
     FONT_PREVIEW_OPTIONS[0];
@@ -2300,6 +2586,130 @@ export default function AdminSqlPage() {
                         </div>
                         <div className="truncate text-[10px] text-slate-400">
                           Модель: {gift.modelUrl}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2">
+              <div className="text-[11px] font-semibold uppercase text-slate-500">
+                Домики и детали
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Настройте название и описание для домиков и деталей. Эти данные
+                хранятся отдельно от генератора моделей и не слетают при
+                обновлении ассетов.
+              </p>
+              {modelMetadataNotice ? (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
+                  {modelMetadataNotice}
+                </div>
+              ) : null}
+              {modelMetadataError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                  {modelMetadataError}
+                </div>
+              ) : null}
+              <input
+                value={modelMetadataFilter}
+                onChange={(event) => setModelMetadataFilter(event.target.value)}
+                placeholder="Фильтр по названию, описанию, id или типу"
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+              />
+              <div className="max-h-[620px] space-y-3 overflow-auto pr-1">
+                {filteredModelMetadataItems.length === 0 &&
+                !modelMetadataLoading ? (
+                  <div className="text-xs text-slate-500">
+                    Модели не найдены
+                  </div>
+                ) : null}
+                {modelMetadataLoading ? (
+                  <div className="text-xs text-slate-500">
+                    Загружаем подписи моделей...
+                  </div>
+                ) : null}
+                {filteredModelMetadataItems.map((item) => {
+                  const group = MODEL_METADATA_GROUP_BY_CATEGORY.get(
+                    item.category,
+                  );
+                  const saveKey = modelMetadataKey(
+                    item.category,
+                    item.modelId,
+                  );
+                  return (
+                    <div
+                      key={saveKey}
+                      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-[104px_1fr]"
+                    >
+                      <div className="min-w-0">
+                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-[#fffcf9] p-2 shadow-sm">
+                          <img
+                            src={MODEL_PLACEHOLDER_ICON}
+                            alt=""
+                            className="aspect-square w-full rounded-xl object-cover"
+                            loading="lazy"
+                          />
+                          <div className="mt-1 truncate px-1 text-center text-[10px] font-semibold text-slate-500">
+                            {group?.itemLabel ?? item.category}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid min-w-0 gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-[#f7f1ee] px-2 py-1 text-[10px] font-semibold text-[#8d6e63]">
+                            {group?.label ?? item.category}
+                          </span>
+                          <span className="truncate text-[10px] text-slate-400">
+                            {item.modelId}
+                          </span>
+                        </div>
+                        <label className="grid gap-1">
+                          <span className="text-[10px] font-semibold uppercase text-slate-500">
+                            Название
+                          </span>
+                          <input
+                            value={item.name}
+                            onChange={(event) =>
+                              updateModelMetadataDraft(item, {
+                                name: event.target.value,
+                              })
+                            }
+                            maxLength={80}
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-800"
+                          />
+                        </label>
+                        <label className="grid gap-1">
+                          <span className="text-[10px] font-semibold uppercase text-slate-500">
+                            Описание
+                          </span>
+                          <textarea
+                            value={item.description}
+                            onChange={(event) =>
+                              updateModelMetadataDraft(item, {
+                                description: event.target.value,
+                              })
+                            }
+                            maxLength={260}
+                            rows={3}
+                            className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700"
+                          />
+                        </label>
+                        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+                          <div className="truncate text-[10px] text-slate-400">
+                            Модель: {item.modelUrl ?? "нет отдельной модели"}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => saveModelMetadataItem(item)}
+                            disabled={modelMetadataSavingKey === saveKey}
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-60"
+                          >
+                            {modelMetadataSavingKey === saveKey
+                              ? "Сохраняем..."
+                              : "Сохранить"}
+                          </button>
                         </div>
                       </div>
                     </div>
