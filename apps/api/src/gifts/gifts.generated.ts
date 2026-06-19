@@ -2,18 +2,6 @@
 
 export const generatedGifts = [
   {
-    "code": "bird_1",
-    "name": "Птица 1",
-    "price": 20,
-    "modelUrl": "/models/gifts/bird/bird_1.glb"
-  },
-  {
-    "code": "bird_2",
-    "name": "Птица 2",
-    "price": 20,
-    "modelUrl": "/models/gifts/bird/bird_2.glb"
-  },
-  {
     "code": "candle_1",
     "name": "Свеча 1",
     "price": 30,
@@ -294,12 +282,6 @@ export const generatedGifts = [
     "name": "Звезда 8",
     "price": 20,
     "modelUrl": "/models/gifts/star/star_8.glb"
-  },
-  {
-    "code": "star_9",
-    "name": "Звезда 9",
-    "price": 20,
-    "modelUrl": "/models/gifts/star/star_9.glb"
   },
   {
     "code": "toy_1",
