@@ -144,6 +144,14 @@ type GiftScaleRow = {
   scale: number;
 };
 
+type MemorialPanel =
+  | "info"
+  | "photos"
+  | "gifts"
+  | "memorials"
+  | "manage"
+  | "giftScale";
+
 const MEMORIAL_EXTENSION_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
   { id: "2y", years: 2, label: "2 года", price: 200 },
@@ -419,9 +427,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     useState(false);
   const [giftAuthOpen, setGiftAuthOpen] = useState(false);
   const [giftAuthVisible, setGiftAuthVisible] = useState(false);
-  const [activePanel, setActivePanel] = useState<
-    "info" | "photos" | "gifts" | "memorials" | "manage" | null
-  >(null);
+  const [activePanel, setActivePanel] = useState<MemorialPanel | null>(null);
   const [detectedSlots, setDetectedSlots] = useState<string[] | null>(null);
   const [slotManuallyCleared, setSlotManuallyCleared] = useState(false);
   const [ownerMemorials, setOwnerMemorials] = useState<OwnerMemorial[]>([]);
@@ -1230,9 +1236,24 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const availableSlots = terrainGiftSlots.filter(
     (slot) => !occupiedSlots.has(slot),
   );
-  const canCalibrateGiftScales = currentUser?.accessLevel === "OWNER";
+  const canCalibrateGiftScales =
+    currentUser?.accessLevel === "OWNER" ||
+    currentUser?.email?.toLowerCase() === "andreyvbvbvb@gmail.com" ||
+    currentUser?.login?.toLowerCase() === "andreyvbvbvb";
   const giftScaleRows = useMemo<GiftScaleRow[]>(() => {
     const rows = new Map<string, GiftScaleRow>();
+    giftCatalog.forEach((gift) => {
+      const code = getGiftCode(gift) ?? null;
+      const key = code ?? gift.modelUrl;
+      rows.set(key, {
+        key,
+        name: gift.name,
+        code,
+        iconUrl: resolveGiftIconUrl(gift),
+        slots: [],
+        scale: giftScaleOverrides[key] ?? DEFAULT_GIFT_SCALE,
+      });
+    });
     activeGifts.forEach((placement) => {
       const slotType = getGiftSlotType(placement.slotName);
       const resolvedUrl =
@@ -1262,7 +1283,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     return Array.from(rows.values()).sort((left, right) =>
       left.name.localeCompare(right.name, "ru"),
     );
-  }, [activeGifts, giftScaleOverrides]);
+  }, [activeGifts, giftCatalog, giftScaleOverrides]);
   const giftScaleExport = useMemo(
     () =>
       giftScaleRows.reduce<Record<string, number>>((acc, row) => {
@@ -1494,9 +1515,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
       return next;
     });
-  const togglePanel = (
-    panel: "info" | "photos" | "gifts" | "memorials" | "manage",
-  ) =>
+  const togglePanel = (panel: MemorialPanel) =>
     setActivePanel((prev) => {
       const next = prev === panel ? null : panel;
       if (next) {
@@ -3216,114 +3235,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
               </div>
             ) : null}
 
-            {canCalibrateGiftScales && activeGifts.length > 0 ? (
-              <div
-                className={`pointer-events-auto absolute z-30 overflow-hidden rounded-[24px] border-[3px] border-white bg-[#fffcf9]/95 text-[#5d4037] shadow-[0_20px_48px_-24px_rgba(93,64,55,0.5)] backdrop-blur ${
-                  isPortraitLayout
-                    ? "left-2 right-2 top-[calc(var(--app-header-height,0px)+0.5rem)] max-h-[34dvh]"
-                    : "right-4 top-[calc(var(--app-header-height,0px)+1rem)] w-[370px] max-h-[62vh]"
-                }`}
-              >
-                <div className="grid max-h-[inherit] gap-3 overflow-y-auto p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className={panelLabelClass}>Для владельца</p>
-                      <p className="mt-1 text-sm font-black leading-tight text-[#5d4037]">
-                        Масштаб подарков
-                      </p>
-                      <p className="mt-1 text-[11px] font-semibold leading-snug text-[#8d6e63]">
-                        Временная настройка для подбора значений. Передай JSON,
-                        и я зафиксирую масштаб глобально.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={resetGiftScaleOverrides}
-                      className="shrink-0 rounded-[16px] border-2 border-[#fdf2e9] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] transition hover:bg-[#fdf2e9]"
-                    >
-                      Сброс
-                    </button>
-                  </div>
-
-                  <div className="grid gap-2">
-                    {giftScaleRows.map((row) => (
-                      <div
-                        key={row.key}
-                        className="rounded-[18px] border-2 border-white bg-[#f7f1ee]/70 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-[12px] bg-white shadow-inner">
-                            {row.iconUrl ? (
-                              <img
-                                src={row.iconUrl}
-                                alt=""
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : null}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs font-black text-[#5d4037]">
-                              {row.name}
-                            </p>
-                            <p className="truncate text-[10px] font-semibold text-[#8d6e63]">
-                              {row.code ?? row.key}
-                            </p>
-                          </div>
-                          <input
-                            type="number"
-                            min={MIN_GIFT_SCALE}
-                            max={MAX_GIFT_SCALE}
-                            step={0.01}
-                            value={formatGiftScale(row.scale)}
-                            onChange={(event) =>
-                              handleGiftScaleOverrideChange(
-                                row.key,
-                                Number(event.target.value),
-                              )
-                            }
-                            className="h-9 w-16 rounded-[12px] border-2 border-white bg-white px-2 text-center text-xs font-black text-[#5d4037] outline-none focus:border-[#3bceac]"
-                            aria-label={`Масштаб ${row.name}`}
-                          />
-                        </div>
-                        <input
-                          type="range"
-                          min={MIN_GIFT_SCALE}
-                          max={MAX_GIFT_SCALE}
-                          step={0.01}
-                          value={formatGiftScale(row.scale)}
-                          onChange={(event) =>
-                            handleGiftScaleOverrideChange(
-                              row.key,
-                              Number(event.target.value),
-                            )
-                          }
-                          className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9] accent-[#3bceac]"
-                          aria-label={`Ползунок масштаба ${row.name}`}
-                        />
-                        <div className="mt-1 flex items-center justify-between gap-2 text-[10px] font-semibold text-[#adb5bd]">
-                          <span>{MIN_GIFT_SCALE.toFixed(1)}x</span>
-                          <span className="truncate">
-                            Слоты: {row.slots.join(", ")}
-                          </span>
-                          <span>{MAX_GIFT_SCALE.toFixed(1)}x</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <label className="grid gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#adb5bd]">
-                    JSON для фиксации
-                    <textarea
-                      readOnly
-                      value={JSON.stringify(giftScaleExport, null, 2)}
-                      className="min-h-24 resize-none rounded-[18px] border-2 border-white bg-white/90 p-3 font-mono text-[10px] font-semibold normal-case tracking-normal text-[#5d4037] outline-none"
-                    />
-                  </label>
-                </div>
-              </div>
-            ) : null}
-
             <div className={memorialControlsWrapClass}>
               <div className="relative">
                 <div className={memorialControlsClass}>
@@ -3455,6 +3366,40 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </span>
                     </div>
                   ) : null}
+                  {canCalibrateGiftScales ? (
+                    <div className="group/control relative">
+                      <button
+                        type="button"
+                        onClick={() => togglePanel("giftScale")}
+                        aria-label="Масштаб подарков"
+                        title="Масштаб подарков"
+                        className={panelButtonClass(activePanel === "giftScale")}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.6}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M4 6h8" />
+                          <path d="M16 6h4" />
+                          <circle cx="14" cy="6" r="2" />
+                          <path d="M4 12h3" />
+                          <path d="M11 12h9" />
+                          <circle cx="9" cy="12" r="2" />
+                          <path d="M4 18h11" />
+                          <path d="M19 18h1" />
+                          <circle cx="17" cy="18" r="2" />
+                        </svg>
+                      </button>
+                      <span className={memorialControlTooltipClass}>
+                        Масштаб подарков
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
 
                 {activePanel === "info" ? (
@@ -3470,7 +3415,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </div>
                       <div>
                         <p className={panelLabelClass}>История</p>
-                        <p className="mt-2 text-sm font-semibold leading-relaxed text-[#6f6360]">
+                        <p
+                          className={`mt-2 overflow-y-auto pr-1 text-sm font-semibold leading-relaxed text-[#6f6360] ${
+                            isPortraitLayout ? "max-h-[18dvh]" : "max-h-[44vh]"
+                          }`}
+                        >
                           {pet.story ?? "История пока не заполнена."}
                         </p>
                       </div>
@@ -3496,6 +3445,116 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           Почистить мемориал
                         </button>
                       </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {canCalibrateGiftScales && activePanel === "giftScale" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div className={panelSectionClass}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className={panelLabelClass}>Для владельца</p>
+                          <p className="mt-1 text-sm font-black leading-tight text-[#5d4037]">
+                            Масштаб подарков
+                          </p>
+                          <p className="mt-1 text-[11px] font-semibold leading-snug text-[#8d6e63]">
+                            Подбери масштаб по каталогу. Если подарок стоит на
+                            сцене или включен как превью, изменение видно сразу.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={resetGiftScaleOverrides}
+                          className="shrink-0 rounded-[16px] border-2 border-[#fdf2e9] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] transition hover:bg-[#fdf2e9]"
+                        >
+                          Сброс
+                        </button>
+                      </div>
+
+                      <div className="grid max-h-[42vh] gap-2 overflow-y-auto pr-1">
+                        {giftScaleRows.length > 0 ? (
+                          giftScaleRows.map((row) => (
+                            <div
+                              key={row.key}
+                              className="rounded-[18px] border-2 border-white bg-[#f7f1ee]/70 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-[12px] bg-white shadow-inner">
+                                  {row.iconUrl ? (
+                                    <img
+                                      src={row.iconUrl}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : null}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-xs font-black text-[#5d4037]">
+                                    {row.name}
+                                  </p>
+                                  <p className="truncate text-[10px] font-semibold text-[#8d6e63]">
+                                    {row.code ?? row.key}
+                                  </p>
+                                </div>
+                                <input
+                                  type="number"
+                                  min={MIN_GIFT_SCALE}
+                                  max={MAX_GIFT_SCALE}
+                                  step={0.01}
+                                  value={formatGiftScale(row.scale)}
+                                  onChange={(event) =>
+                                    handleGiftScaleOverrideChange(
+                                      row.key,
+                                      Number(event.target.value),
+                                    )
+                                  }
+                                  className="h-9 w-16 rounded-[12px] border-2 border-white bg-white px-2 text-center text-xs font-black text-[#5d4037] outline-none focus:border-[#3bceac]"
+                                  aria-label={`Масштаб ${row.name}`}
+                                />
+                              </div>
+                              <input
+                                type="range"
+                                min={MIN_GIFT_SCALE}
+                                max={MAX_GIFT_SCALE}
+                                step={0.01}
+                                value={formatGiftScale(row.scale)}
+                                onChange={(event) =>
+                                  handleGiftScaleOverrideChange(
+                                    row.key,
+                                    Number(event.target.value),
+                                  )
+                                }
+                                className="mt-2 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#eadfd9] accent-[#3bceac]"
+                                aria-label={`Ползунок масштаба ${row.name}`}
+                              />
+                              <div className="mt-1 flex items-center justify-between gap-2 text-[10px] font-semibold text-[#adb5bd]">
+                                <span>{MIN_GIFT_SCALE.toFixed(1)}x</span>
+                                <span className="truncate">
+                                  {row.slots.length > 0
+                                    ? `На сцене: ${row.slots.join(", ")}`
+                                    : "Каталог"}
+                                </span>
+                                <span>{MAX_GIFT_SCALE.toFixed(1)}x</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm font-semibold text-[#8d6e63]">
+                            Каталог подарков еще загружается.
+                          </p>
+                        )}
+                      </div>
+
+                      <label className="grid gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#adb5bd]">
+                        JSON для фиксации
+                        <textarea
+                          readOnly
+                          value={JSON.stringify(giftScaleExport, null, 2)}
+                          className="min-h-24 resize-none rounded-[18px] border-2 border-white bg-white/90 p-3 font-mono text-[10px] font-semibold normal-case tracking-normal text-[#5d4037] outline-none"
+                        />
+                      </label>
                     </div>
                   </div>
                 ) : null}
