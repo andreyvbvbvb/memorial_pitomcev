@@ -73,6 +73,7 @@ type Props = {
     owner?: string;
     expiresAt?: string | null;
     size?: string | null;
+    scaleMultiplier?: number;
   }[];
   giftSlots?: string[];
   dimmedGiftSlots?: string[];
@@ -156,6 +157,7 @@ type SceneAssets = {
     owner?: string;
     expiresAt?: string | null;
     size?: string | null;
+    scaleMultiplier?: number;
   }[];
   colors?: Record<string, string>;
 };
@@ -699,6 +701,7 @@ function GiftPlacementAttachment({
   url,
   info,
   size,
+  scaleMultiplier = 1,
   flameMode,
   onHover,
   onLeave
@@ -708,6 +711,7 @@ function GiftPlacementAttachment({
   url: string;
   info?: { name?: string; owner?: string; expiresAt?: string | null };
   size?: string | null;
+  scaleMultiplier?: number;
   flameMode?: GiftFlameMode;
   onHover?: (gift: GiftHover) => void;
   onLeave?: () => void;
@@ -727,8 +731,15 @@ function GiftPlacementAttachment({
     if (sizeMultiplier && sizeMultiplier !== 1) {
       cloned.scale.multiplyScalar(sizeMultiplier);
     }
+    if (
+      Number.isFinite(scaleMultiplier) &&
+      scaleMultiplier > 0 &&
+      scaleMultiplier !== 1
+    ) {
+      cloned.scale.multiplyScalar(scaleMultiplier);
+    }
     return cloned;
-  }, [scene, url, size]);
+  }, [scene, url, size, scaleMultiplier]);
   const [position, setPosition] = useState<[number, number, number] | null>(null);
   const giftGroupRef = useRef<THREE.Group | null>(null);
 
@@ -1260,6 +1271,7 @@ function TerrainWithHouse({
     owner?: string;
     expiresAt?: string | null;
     size?: string | null;
+    scaleMultiplier?: number;
   }[];
   giftFlameMode?: GiftFlameMode;
   colors?: Record<string, string>;
@@ -1692,6 +1704,7 @@ function TerrainWithHouse({
             url={gift.url}
             info={{ name: gift.name, owner: gift.owner, expiresAt: gift.expiresAt }}
             size={gift.size ?? undefined}
+            scaleMultiplier={gift.scaleMultiplier}
             flameMode={giftFlameMode}
             onHover={onGiftHover}
             onLeave={onGiftLeave}
