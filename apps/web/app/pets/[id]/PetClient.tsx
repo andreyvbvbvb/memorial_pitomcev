@@ -1510,9 +1510,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const toggleGiftPanel = () =>
     setGiftPanelOpen((prev) => {
       const next = !prev;
-      if (next) {
-        setActivePanel(null);
-      }
+      setActivePanel(next && canCalibrateGiftScales ? "giftScale" : null);
       return next;
     });
   const togglePanel = (panel: MemorialPanel) =>
@@ -3373,7 +3371,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         onClick={() => togglePanel("giftScale")}
                         aria-label="Масштаб подарков"
                         title="Масштаб подарков"
-                        className={panelButtonClass(activePanel === "giftScale")}
+                        className={panelButtonClass(
+                          activePanel === "giftScale" || giftPanelOpen,
+                        )}
                       >
                         <svg
                           viewBox="0 0 24 24"
@@ -3449,7 +3449,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   </div>
                 ) : null}
 
-                {canCalibrateGiftScales && activePanel === "giftScale" ? (
+                {canCalibrateGiftScales &&
+                (activePanel === "giftScale" || giftPanelOpen) ? (
                   <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
                     <div className={panelSectionClass}>
                       <div className="flex items-start justify-between gap-3">
