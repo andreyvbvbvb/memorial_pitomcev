@@ -6,7 +6,10 @@
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "format": "pnpm -r format"
+    "format": "pnpm -r format",
+    "k6:public": "k6 run load-tests/k6/public-browse.js",
+    "k6:auth": "k6 run load-tests/k6/authenticated-user.js",
+    "k6:admin": "k6 run load-tests/k6/admin-probe.js"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
