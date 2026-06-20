@@ -1968,7 +1968,6 @@ export default function CreateMemorialClient({
       ...prev,
       ...nextFormPatch,
     }));
-    setDraftNotice("Мемориал собран случайно. Данные питомца не изменены.");
   }, [
     bowlFoodOptions,
     bowlWaterOptions,
@@ -6239,10 +6238,11 @@ export default function CreateMemorialClient({
                           onClick={randomizeMemorialModels}
                           className={
                             isPortraitLayout
-                              ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white"
-                              : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white"
+                              ? "group relative z-[120] flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fffcf9] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d4037]"
+                              : "group relative z-[120] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fffcf9] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d4037]"
                           }
                           title="Собрать случайный мемориал"
+                          aria-label="Собрать случайный мемориал"
                         >
                           <svg
                             viewBox="0 0 24 24"
@@ -6259,8 +6259,13 @@ export default function CreateMemorialClient({
                             <rect x="4" y="4" width="16" height="16" rx="4" />
                             <path d="M9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01" />
                           </svg>
-                          <span className="truncate">Случайно</span>
-                          <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-60 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                          <span
+                            className={
+                              isPortraitLayout
+                                ? "pointer-events-none fixed right-3 top-20 z-[9999] w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                                : "pointer-events-none fixed right-8 top-24 z-[9999] w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                            }
+                          >
                             Случайно выбирает поверхность, домик, текстуру и
                             детали. Данные питомца не меняются.
                           </span>

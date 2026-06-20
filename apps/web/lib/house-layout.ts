@@ -38,6 +38,10 @@ const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>
     bowl_food_slot: { scale: 0.4, position: { x: -0.01, y: 0, z: -0.03 }, rotationY: -38 },
     bowl_water_slot: { scale: 0.34, position: { x: 0, y: 0, z: 0 }, rotationY: -44 }
   },
+  "kotik_1__second": {
+    bowl_food_slot: { scale: 0.37, position: { x: -0.12, y: 0, z: 0 }, rotationY: -48 },
+    bowl_water_slot: { scale: 0.39, position: { x: -0.06, y: 0, z: 0 }, rotationY: -42 }
+  },
   "mat_1__base": {
     bowl_food_slot: { scale: 1.1, position: { x: -0.19, y: 0, z: 0 }, rotationY: -60 },
     bowl_water_slot: { scale: 1, position: { x: -0.17, y: 0, z: 0 }, rotationY: -60 }
@@ -58,9 +62,17 @@ const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>
     bowl_food_slot: { scale: 1.21, position: { x: 0.16, y: 0, z: 0 }, rotationY: -90 },
     bowl_water_slot: { scale: 1, position: { x: 0, y: 0, z: 0 }, rotationY: -90 }
   },
+  "budka_2__second": {
+    bowl_food_slot: { scale: 1.21, position: { x: 0.16, y: 0, z: 0 }, rotationY: -90 },
+    bowl_water_slot: { scale: 1, position: { x: 0, y: 0, z: 0 }, rotationY: -90 }
+  },
   "kotik_2__base": {
-    bowl_food_slot: { scale: 0.54, position: { x: 0.35, y: 0, z: 0.32 }, rotationY: -90 },
-    bowl_water_slot: { scale: 0.4, position: { x: 0.11, y: 0, z: 0 }, rotationY: -90 }
+    bowl_food_slot: { scale: 0.54, position: { x: 0.35, y: 0, z: 0.32 }, rotationY: 180 },
+    bowl_water_slot: { scale: 0.4, position: { x: 0.11, y: 0, z: 0 }, rotationY: 180 }
+  },
+  "kotik_2__second": {
+    bowl_food_slot: { scale: 0.54, position: { x: 0.35, y: 0, z: 0.32 }, rotationY: 180 },
+    bowl_water_slot: { scale: 0.4, position: { x: 0.11, y: 0, z: 0 }, rotationY: 180 }
   },
   "budka_3__base": {
     mat_slot: { scale: 0.49, position: { x: 0.08, y: 0, z: 0 } },
@@ -81,15 +93,35 @@ const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>
     bowl_food_slot: { scale: 0.45, position: { x: 0.45, y: 0, z: 0.11 }, rotationY: -95 },
     bowl_water_slot: { scale: 0.32, position: { x: 0.01, y: 0, z: 0.34 }, rotationY: -93 }
   },
+  "kotik_4__second": {
+    mat_slot: { scale: 0.19, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 0.45, position: { x: 0.09, y: 0, z: 0.24 }, rotationY: -95 },
+    bowl_water_slot: { scale: 0.32, position: { x: 0.06, y: 0, z: 0.44 }, rotationY: -93 }
+  },
+  "kotik_4__third": {
+    mat_slot: { scale: 0.19, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 0.45, position: { x: 0.12, y: 0, z: 0.2 }, rotationY: -95 },
+    bowl_water_slot: { scale: 0.32, position: { x: 0.08, y: 0, z: 0.39 }, rotationY: -93 }
+  },
   "budka_5__base": {
     mat_slot: { scale: 1, position: { x: 0, y: 0, z: 0.07 } },
     bowl_food_slot: { scale: 2.14, position: { x: -0.12, y: 0.03, z: 0.15 }, rotationY: 90 },
     bowl_water_slot: { scale: 1.9, position: { x: -0.02, y: 0.03, z: 0.13 }, rotationY: 90 }
   },
+  "budka_5__second": {
+    mat_slot: { scale: 1, position: { x: 0, y: 0, z: 0.06 } },
+    bowl_food_slot: { scale: 2.14, position: { x: -0.11, y: 0, z: 0.14 }, rotationY: 90 },
+    bowl_water_slot: { scale: 1.79, position: { x: 0.03, y: 0, z: 0.15 }, rotationY: 90 }
+  },
   "kotik_5__base": {
     mat_slot: { scale: 0.11, position: { x: 0, y: 0, z: 0 } },
     bowl_food_slot: { scale: 0.24, position: { x: -0.02, y: 0, z: 0 }, rotationY: -130 },
     bowl_water_slot: { scale: 0.17, position: { x: 0, y: 0, z: 0 }, rotationY: -130 }
+  },
+  "kotik_5__second": {
+    mat_slot: { scale: 0.13, position: { x: 0, y: 0, z: 0 } },
+    bowl_food_slot: { scale: 0.36, position: { x: -0.08, y: 0, z: 0.09 }, rotationY: -135 },
+    bowl_water_slot: { scale: 0.28, position: { x: 0, y: 0, z: 0.13 }, rotationY: -135 }
   },
   "budka_6__base": {
     sign_slot: { scale: 1, position: { x: 0.08, y: 0, z: 0 } },
@@ -223,9 +255,14 @@ export const getHousePartAdjustment = (
   }
   const variantId = houseId.trim();
   const baseId = splitHouseVariantId(variantId).baseId || variantId;
+  const baseVariantFallback =
+    baseId === "budka_7" || baseId === "budka_8" ? `${baseId}__base` : null;
   return (
     HOUSE_PART_ADJUSTMENTS[variantId]?.[slot] ??
     HOUSE_PART_ADJUSTMENTS[baseId]?.[slot] ??
+    (baseVariantFallback
+      ? (HOUSE_PART_ADJUSTMENTS[baseVariantFallback]?.[slot] ?? null)
+      : null) ??
     null
   );
 };
