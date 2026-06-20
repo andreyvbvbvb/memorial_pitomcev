@@ -731,6 +731,34 @@ const initialState: FormState = {
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
 
+const randomArrayItem = <T,>(items: readonly T[]): T | null => {
+  if (items.length === 0) {
+    return null;
+  }
+  return items[Math.floor(Math.random() * items.length)] ?? null;
+};
+
+const randomOptionId = (options: readonly OptionItem[], fallback: string) =>
+  randomArrayItem(options)?.id ?? fallback;
+
+const randomOptionalOptionId = (
+  options: readonly OptionItem[],
+  fallback: string,
+) => {
+  const visibleOptions = options.filter((option) => option.id !== "none");
+  const noneOption = options.find((option) => option.id === "none");
+
+  if (visibleOptions.length === 0) {
+    return noneOption?.id ?? fallback;
+  }
+
+  if (noneOption && Math.random() < 0.12) {
+    return noneOption.id;
+  }
+
+  return randomArrayItem(visibleOptions)?.id ?? fallback;
+};
+
 const parseEnvironmentDraft = (
   rawEnvironmentId?: string | null,
 ): {
@@ -1863,6 +1891,99 @@ export default function CreateMemorialClient({
       tabs.push({ id: "bowlWater", label: "Миска (вода)" });
     return tabs;
   }, [houseSlots]);
+  const randomizeMemorialModels = useCallback(() => {
+    const nextEnvironmentId = randomOptionId(
+      environmentOptions,
+      initialState.environmentId,
+    );
+    const nextEnvironmentSeasons = getEnvironmentSeasons(nextEnvironmentId);
+    const nextEnvironmentSeason =
+      randomArrayItem(nextEnvironmentSeasons) ?? getSeasonForDate();
+    const nextHouseBase = randomArrayItem(houseBaseOptions);
+    const nextHouseTextureOptions = nextHouseBase
+      ? (houseVariantGroup.textureOptionsByBase[nextHouseBase.id] ?? [])
+      : [];
+    const nextDefaultHouseVariantId = nextHouseBase
+      ? (houseVariantGroup.defaultVariantByBase[nextHouseBase.id] ??
+        nextHouseBase.id)
+      : null;
+    const nextHouseId =
+      randomArrayItem(nextHouseTextureOptions)?.id ??
+      nextDefaultHouseVariantId ??
+      randomOptionId(houseOptions, initialState.houseId);
+
+    const nextFormPatch: Pick<
+      FormState,
+      | "environmentId"
+      | "environmentSeason"
+      | "environmentSeasonAuto"
+      | "houseId"
+      | "roofId"
+      | "wallId"
+      | "signId"
+      | "frameLeftId"
+      | "frameRightId"
+      | "matId"
+      | "bowlFoodId"
+      | "bowlWaterId"
+    > = {
+      environmentId: nextEnvironmentId,
+      environmentSeason: nextEnvironmentSeason,
+      environmentSeasonAuto: false,
+      houseId: nextHouseId,
+      roofId: randomOptionId(roofOptions, initialState.roofId),
+      wallId: randomOptionId(wallOptions, initialState.wallId),
+      signId: randomOptionalOptionId(signOptions, initialState.signId),
+      frameLeftId: randomOptionalOptionId(
+        frameLeftOptions,
+        initialState.frameLeftId,
+      ),
+      frameRightId: randomOptionalOptionId(
+        frameRightOptions,
+        initialState.frameRightId,
+      ),
+      matId: randomOptionalOptionId(matOptions, initialState.matId),
+      bowlFoodId: randomOptionalOptionId(
+        bowlFoodOptions,
+        initialState.bowlFoodId,
+      ),
+      bowlWaterId: randomOptionalOptionId(
+        bowlWaterOptions,
+        initialState.bowlWaterId,
+      ),
+    };
+
+    hoverIntentRef.current = null;
+    previewGiftAssignmentsRef.current.clear();
+    setHoveredOption(null);
+    setDetailTooltip(null);
+    setTooltipTabId(null);
+    setFocusSlot(null);
+    setCameraFocusKey(null);
+    setDetectedGiftSlots(null);
+    setDetectedHouseSlots(getConfiguredHouseSlots(nextHouseId));
+    setActiveOverlay("details");
+    setActiveStep3Tab("environment");
+    setForm((prev) => ({
+      ...prev,
+      ...nextFormPatch,
+    }));
+    setDraftNotice("Мемориал собран случайно. Данные питомца не изменены.");
+  }, [
+    bowlFoodOptions,
+    bowlWaterOptions,
+    environmentOptions,
+    frameLeftOptions,
+    frameRightOptions,
+    houseBaseOptions,
+    houseOptions,
+    houseVariantGroup.defaultVariantByBase,
+    houseVariantGroup.textureOptionsByBase,
+    matOptions,
+    roofOptions,
+    signOptions,
+    wallOptions,
+  ]);
   const step3TabBySlot = useMemo(() => {
     const mapping = new Map<string, Step3TabId>();
     if (houseSlots.roof) mapping.set(houseSlots.roof, "roof");
@@ -6113,6 +6234,37 @@ export default function CreateMemorialClient({
                             Только оформление
                           </span>
                         ) : null}
+                        <button
+                          type="button"
+                          onClick={randomizeMemorialModels}
+                          className={
+                            isPortraitLayout
+                              ? "group relative z-[120] flex max-w-full items-center gap-1.5 rounded-full bg-[#fffcf9] px-2 py-1 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white"
+                              : "group relative z-[120] flex items-center gap-2 rounded-full bg-[#fffcf9] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white"
+                          }
+                          title="Собрать случайный мемориал"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            className={
+                              isPortraitLayout ? "h-3.5 w-3.5" : "h-4 w-4"
+                            }
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            aria-hidden="true"
+                          >
+                            <rect x="4" y="4" width="16" height="16" rx="4" />
+                            <path d="M9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01" />
+                          </svg>
+                          <span className="truncate">Случайно</span>
+                          <span className="pointer-events-none absolute right-0 top-full z-[1000] mt-2 w-60 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                            Случайно выбирает поверхность, домик, текстуру и
+                            детали. Данные питомца не меняются.
+                          </span>
+                        </button>
                         <label
                           className={
                             isPortraitLayout
