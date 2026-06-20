@@ -59,6 +59,7 @@ ensureDracoLoader();
 import {
   getGiftSlotType,
   resolveGiftModelUrl,
+  resolveGiftScaleMultiplier,
   resolveGiftSizeMultiplier,
   resolveGiftTargetWidth
 } from "../../lib/gifts";
@@ -519,6 +520,10 @@ function GiftInstance({
     const sizeMultiplier = resolveGiftSizeMultiplier({ gift: { modelUrl: url }, size });
     if (sizeMultiplier && sizeMultiplier !== 1) {
       cloned.scale.multiplyScalar(sizeMultiplier);
+    }
+    const configuredMultiplier = resolveGiftScaleMultiplier({ modelUrl: url });
+    if (configuredMultiplier !== 1) {
+      cloned.scale.multiplyScalar(configuredMultiplier);
     }
     return cloned;
   }, [scene, url, size]);

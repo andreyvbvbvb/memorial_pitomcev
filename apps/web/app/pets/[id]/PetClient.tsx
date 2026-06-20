@@ -53,6 +53,7 @@ import {
   getGiftCode,
   resolveGiftModelUrl,
   resolveGiftIconUrl,
+  resolveGiftScaleMultiplier,
 } from "../../../lib/gifts";
 import {
   buildHouseVariantGroup,
@@ -1245,13 +1246,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
     giftCatalog.forEach((gift) => {
       const code = getGiftCode(gift) ?? null;
       const key = code ?? gift.modelUrl;
+      const configuredScale = resolveGiftScaleMultiplier(gift);
       rows.set(key, {
         key,
         name: gift.name,
         code,
         iconUrl: resolveGiftIconUrl(gift),
         slots: [],
-        scale: giftScaleOverrides[key] ?? DEFAULT_GIFT_SCALE,
+        scale: giftScaleOverrides[key] ?? configuredScale,
       });
     });
     activeGifts.forEach((placement) => {
@@ -1264,6 +1266,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
         }) ?? placement.gift.modelUrl;
       const code = getGiftCode(placement.gift) ?? null;
       const key = code ?? resolvedUrl;
+      const configuredScale = resolveGiftScaleMultiplier({
+        code,
+        modelUrl: resolvedUrl,
+      });
       const existing = rows.get(key);
       if (existing) {
         if (!existing.slots.includes(placement.slotName)) {
@@ -1277,7 +1283,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         code,
         iconUrl: resolveGiftIconUrl(placement.gift),
         slots: [placement.slotName],
-        scale: giftScaleOverrides[key] ?? DEFAULT_GIFT_SCALE,
+        scale: giftScaleOverrides[key] ?? configuredScale,
       });
     });
     return Array.from(rows.values()).sort((left, right) =>
@@ -1296,11 +1302,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
     (key: string, value: number) => {
       const nextValue = formatGiftScale(value);
       setGiftScaleOverrides((prev) => {
-        if (nextValue === DEFAULT_GIFT_SCALE) {
-          const rest = { ...prev };
-          delete rest[key];
-          return rest;
-        }
         return {
           ...prev,
           [key]: nextValue,
@@ -2665,6 +2666,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
         fallbackUrl: gift.gift.modelUrl,
       }) ?? gift.gift.modelUrl;
     const scaleKey = getGiftCode(gift.gift) ?? resolvedUrl;
+    const configuredScale = resolveGiftScaleMultiplier({
+      code: getGiftCode(gift.gift),
+      modelUrl: resolvedUrl,
+    });
+    const overrideScale = giftScaleOverrides[scaleKey];
     return {
       slot: gift.slotName,
       url: resolvedUrl,
@@ -2672,9 +2678,23 @@ export default function PetClient({ id, mode = "view" }: Props) {
       owner: ownerLabel,
       expiresAt: gift.expiresAt ?? undefined,
       size: gift.size ?? null,
-      scaleMultiplier: giftScaleOverrides[scaleKey] ?? DEFAULT_GIFT_SCALE,
+      scaleMultiplier:
+        overrideScale !== undefined
+          ? overrideScale / configuredScale
+          : DEFAULT_GIFT_SCALE,
     };
   });
+  const previewGiftScaleKey =
+    selectedGift && previewGiftUrl
+      ? getGiftCode(selectedGift) ?? previewGiftUrl
+      : null;
+  const previewGiftConfiguredScale =
+    selectedGift && previewGiftUrl
+      ? resolveGiftScaleMultiplier({
+          code: getGiftCode(selectedGift),
+          modelUrl: previewGiftUrl,
+        })
+      : DEFAULT_GIFT_SCALE;
   const previewGift =
     giftPreviewEnabled &&
     selectedGift &&
@@ -2690,9 +2710,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
           expiresAt: null,
           size: selectedGiftSupportsSize ? selectedGiftSize : null,
           scaleMultiplier:
-            giftScaleOverrides[
-              getGiftCode(selectedGift) ?? previewGiftUrl
-            ] ?? DEFAULT_GIFT_SCALE,
+            previewGiftScaleKey &&
+            giftScaleOverrides[previewGiftScaleKey] !== undefined
+              ? giftScaleOverrides[previewGiftScaleKey] /
+                previewGiftConfiguredScale
+              : DEFAULT_GIFT_SCALE,
         }
       : null;
   const previewGifts = previewGift

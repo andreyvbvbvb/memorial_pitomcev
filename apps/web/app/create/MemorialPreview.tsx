@@ -12,6 +12,7 @@ import {
   getGiftCodeFromUrl,
   isGiftSlotName,
   parseGiftSlot,
+  resolveGiftScaleMultiplier,
   resolveGiftSizeMultiplier,
   resolveGiftTargetWidth
 } from "../../lib/gifts";
@@ -730,6 +731,10 @@ function GiftPlacementAttachment({
     const sizeMultiplier = resolveGiftSizeMultiplier({ gift: { modelUrl: url }, size });
     if (sizeMultiplier && sizeMultiplier !== 1) {
       cloned.scale.multiplyScalar(sizeMultiplier);
+    }
+    const configuredMultiplier = resolveGiftScaleMultiplier({ modelUrl: url });
+    if (configuredMultiplier !== 1) {
+      cloned.scale.multiplyScalar(configuredMultiplier);
     }
     if (
       Number.isFinite(scaleMultiplier) &&
