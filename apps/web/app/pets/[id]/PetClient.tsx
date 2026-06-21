@@ -159,6 +159,23 @@ const MEMORIAL_EXTENSION_PLANS = [
   { id: "5y", years: 5, label: "5 лет", price: 500 },
   { id: "lifetime", years: 0, label: "Навсегда", price: 1200 },
 ] as const;
+const HOUSE_DIRT_MODEL_IDS = new Set([
+  "budka_1",
+  "budka_2",
+  "budka_3",
+  "budka_4",
+  "budka_5",
+  "budka_6",
+  "budka_7",
+  "budka_8",
+  "kotik_1",
+  "kotik_2",
+  "kotik_3",
+  "kotik_4",
+  "kotik_5",
+  "kotik_6",
+  "mat_1",
+]);
 type MemorialExtensionPlan = {
   id: (typeof MEMORIAL_EXTENSION_PLANS)[number]["id"];
   years: 0 | 1 | 2 | 5;
@@ -168,7 +185,9 @@ type MemorialExtensionPlan = {
 
 const buildDirtModelUrls = (houseId?: string | null): string[] => {
   const baseId = splitHouseVariantId(houseId).baseId || houseId || "";
-  const prefix = baseId ? `/models/dirt/${baseId}` : "/models/dirt";
+  const prefix = HOUSE_DIRT_MODEL_IDS.has(baseId)
+    ? `/models/dirt/${baseId}`
+    : "/models/dirt";
   return [1, 2, 3, 4].map((index) => `${prefix}/dirt_${index}.glb`);
 };
 
