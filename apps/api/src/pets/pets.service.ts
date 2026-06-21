@@ -385,10 +385,14 @@ export class PetsService {
         `Достигнут лимит мемориалов: ${maxMemorials}. Для увеличения лимита напишите на support@мяугав.com`,
       );
     }
-    const planYears =
+    const publicationMode = await this.pricing.getMemorialPublicationMode();
+    const requestedPlanYears =
       typeof dto.memorialPlanYears === "number" ? dto.memorialPlanYears : 1;
-    const planPrice = await this.pricing.getMemorialPlanPrice(planYears);
-    if (owner.coinBalance < planPrice) {
+    const planYears = publicationMode.freeLifetime ? 0 : requestedPlanYears;
+    const planPrice = publicationMode.freeLifetime
+      ? 0
+      : await this.pricing.getMemorialPlanPrice(planYears);
+    if (!publicationMode.freeLifetime && owner.coinBalance < planPrice) {
       throw new BadRequestException(
         "Недостаточно монет для создания мемориала",
       );
@@ -409,26 +413,31 @@ export class PetsService {
       memorialPaidUntil: paidUntil ? paidUntil.toISOString() : null,
       memorialPlanYears: planYears,
       memorialPaidPrice: planPrice,
+      memorialPublicationMode: publicationMode.freeLifetime
+        ? "free_lifetime"
+        : "paid",
       activeDirtSlots: [],
       dirtNextSlotIndex: 1,
     };
 
     const pet = await this.prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
-        const updatedUser = await tx.user.update({
-          where: { id: owner.id },
-          data: { coinBalance: { decrement: planPrice } },
-        });
-        await tx.walletTransaction.create({
-          data: {
-            userId: owner.id,
-            amount: -planPrice,
-            balanceAfter: updatedUser.coinBalance,
-            type: "memorial_create",
-            title: "Создание мемориала",
-            details: `${name}: ${planYears === 0 ? "навсегда" : `${planYears} г.`}`,
-          },
-        });
+        if (planPrice > 0) {
+          const updatedUser = await tx.user.update({
+            where: { id: owner.id },
+            data: { coinBalance: { decrement: planPrice } },
+          });
+          await tx.walletTransaction.create({
+            data: {
+              userId: owner.id,
+              amount: -planPrice,
+              balanceAfter: updatedUser.coinBalance,
+              type: "memorial_create",
+              title: "Создание мемориала",
+              details: `${name}: ${planYears === 0 ? "навсегда" : `${planYears} г.`}`,
+            },
+          });
+        }
         return tx.pet.create({
           data: {
             ownerId: owner.id,

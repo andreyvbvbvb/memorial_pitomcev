@@ -53,6 +53,7 @@ import { AdminSiteBannerDto } from "./dto/admin-site-banner.dto";
 import {
   AdminUpdateGiftPriceDto,
   AdminUpdateMemorialPlanPriceDto,
+  AdminUpdateMemorialPublicationModeDto,
 } from "./dto/admin-pricing.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
 
@@ -728,11 +729,13 @@ export class AdminController {
   @Get("pricing")
   async getPricing(@Req() req: Request) {
     await this.ensureAdmin(req);
-    const [memorialPlanPrices, gifts] = await Promise.all([
-      this.pricingService.listMemorialPlanPrices(),
-      this.giftsService.listCatalog(),
-    ]);
-    return { memorialPlanPrices, gifts };
+    const [memorialPlanPrices, gifts, memorialPublicationMode] =
+      await Promise.all([
+        this.pricingService.listMemorialPlanPrices(),
+        this.giftsService.listCatalog(),
+        this.pricingService.getMemorialPublicationMode(),
+      ]);
+    return { memorialPlanPrices, gifts, memorialPublicationMode };
   }
 
   @Patch("pricing/memorial-plan")
@@ -746,6 +749,19 @@ export class AdminController {
       dto.price,
     );
     return { plan };
+  }
+
+  @Patch("pricing/memorial-publication-mode")
+  async updateMemorialPublicationMode(
+    @Req() req: Request,
+    @Body() dto: AdminUpdateMemorialPublicationModeDto,
+  ) {
+    await this.ensureAdmin(req);
+    const memorialPublicationMode =
+      await this.pricingService.updateMemorialPublicationMode(
+        dto.freeLifetime,
+      );
+    return { memorialPublicationMode };
   }
 
   @Patch("pricing/gifts/:id")

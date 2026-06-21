@@ -1,5 +1,13 @@
 import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from "class-validator";
 
 export class AdminUpdateMemorialPlanPriceDto {
   @Type(() => Number)
@@ -31,4 +39,9 @@ export class AdminUpdateGiftPriceDto {
   @IsString()
   @MaxLength(260)
   description?: string;
+}
+
+export class AdminUpdateMemorialPublicationModeDto {
+  @IsBoolean()
+  freeLifetime!: boolean;
 }

@@ -322,6 +322,10 @@ type MemorialPlanPrice = {
   updatedAt?: string;
 };
 
+type MemorialPublicationMode = {
+  freeLifetime: boolean;
+};
+
 type GiftPrice = {
   id: string;
   code: string;
@@ -688,11 +692,14 @@ export default function AdminSqlPage() {
   const [memorialPlanPrices, setMemorialPlanPrices] = useState<
     MemorialPlanPrice[]
   >([]);
+  const [memorialPublicationMode, setMemorialPublicationMode] =
+    useState<MemorialPublicationMode>({ freeLifetime: true });
   const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [pricingNotice, setPricingNotice] = useState<string | null>(null);
   const [savingPlanYears, setSavingPlanYears] = useState<number | null>(null);
+  const [savingPublicationMode, setSavingPublicationMode] = useState(false);
   const [savingGiftId, setSavingGiftId] = useState<string | null>(null);
   const [giftPriceFilter, setGiftPriceFilter] = useState("");
   const [modelMetadataItems, setModelMetadataItems] = useState<
@@ -877,6 +884,7 @@ export default function AdminSqlPage() {
         }
         const data = (await response.json()) as {
           memorialPlanPrices?: MemorialPlanPrice[];
+          memorialPublicationMode?: MemorialPublicationMode;
           gifts?: GiftPrice[];
         };
         if (!isMounted) {
@@ -885,6 +893,9 @@ export default function AdminSqlPage() {
         setMemorialPlanPrices(
           Array.isArray(data.memorialPlanPrices) ? data.memorialPlanPrices : [],
         );
+        setMemorialPublicationMode({
+          freeLifetime: data.memorialPublicationMode?.freeLifetime === true,
+        });
         setGiftPrices(Array.isArray(data.gifts) ? data.gifts : []);
       } catch (err) {
         if (isMounted) {
@@ -1393,6 +1404,52 @@ export default function AdminSqlPage() {
     setMemorialPlanPrices((prev) =>
       prev.map((plan) => (plan.years === years ? { ...plan, price } : plan)),
     );
+  };
+
+  const saveMemorialPublicationMode = async (freeLifetime: boolean) => {
+    setSavingPublicationMode(true);
+    setPricingError(null);
+    setPricingNotice(null);
+    try {
+      const response = await fetch(
+        `${apiUrl}/admin/pricing/memorial-publication-mode`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ freeLifetime }),
+        },
+      );
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить режим публикации");
+      }
+      const data = (await response.json()) as {
+        memorialPublicationMode?: MemorialPublicationMode;
+      };
+      setMemorialPublicationMode({
+        freeLifetime:
+          data.memorialPublicationMode?.freeLifetime === true
+            ? true
+            : freeLifetime,
+      });
+      setPricingNotice(
+        freeLifetime
+          ? "Публикация мемориалов сделана бесплатной и бессрочной"
+          : "Платные тарифы публикации снова включены",
+      );
+    } catch (err) {
+      setPricingError(
+        err instanceof Error
+          ? err.message
+          : "Ошибка сохранения режима публикации",
+      );
+      setMemorialPublicationMode((prev) => ({
+        freeLifetime: !prev.freeLifetime,
+      }));
+    } finally {
+      setSavingPublicationMode(false);
+    }
   };
 
   const saveMemorialPlanPrice = async (plan: MemorialPlanPrice) => {
@@ -2464,6 +2521,35 @@ export default function AdminSqlPage() {
                 {pricingNotice}
               </div>
             ) : null}
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3">
+              <input
+                type="checkbox"
+                checked={memorialPublicationMode.freeLifetime}
+                disabled={savingPublicationMode}
+                onChange={(event) => {
+                  const freeLifetime = event.target.checked;
+                  setMemorialPublicationMode({ freeLifetime });
+                  void saveMemorialPublicationMode(freeLifetime);
+                }}
+                className="mt-1 h-4 w-4 accent-emerald-500"
+              />
+              <span className="grid gap-1 text-xs text-slate-600">
+                <span className="font-semibold text-slate-800">
+                  Бесплатная бессрочная публикация
+                </span>
+                <span>
+                  Если включено, пользователи не видят выбор аренды при
+                  публикации, мемориал создается навсегда и монеты не
+                  списываются. Тарифы ниже сохраняются для будущего платного
+                  режима.
+                </span>
+                {savingPublicationMode ? (
+                  <span className="text-[11px] text-slate-400">
+                    Сохраняем режим...
+                  </span>
+                ) : null}
+              </span>
+            </label>
             <div className="mt-3 grid gap-2">
               <div className="text-[11px] font-semibold uppercase text-slate-500">
                 Аренда мемориала

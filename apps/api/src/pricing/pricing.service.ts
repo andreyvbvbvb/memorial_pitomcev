@@ -12,6 +12,26 @@ const SUPPORTED_PLAN_YEARS = new Set(
   DEFAULT_MEMORIAL_PLAN_PRICES.map((plan) => plan.years)
 );
 type MemorialPlanPriceRow = { years: number; price: number };
+export type MemorialPublicationMode = {
+  freeLifetime: boolean;
+};
+
+const MEMORIAL_PUBLICATION_MODE_KEY = "memorialPublicationMode";
+const DEFAULT_MEMORIAL_PUBLICATION_MODE: MemorialPublicationMode = {
+  freeLifetime: true,
+};
+
+const normalizeMemorialPublicationMode = (
+  value: unknown,
+): MemorialPublicationMode => {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return {
+      freeLifetime:
+        (value as { freeLifetime?: unknown }).freeLifetime === true,
+    };
+  }
+  return DEFAULT_MEMORIAL_PUBLICATION_MODE;
+};
 
 @Injectable()
 export class PricingService {
@@ -77,5 +97,25 @@ export class PricingService {
       update: { price },
       create: { years, price }
     });
+  }
+
+  async getMemorialPublicationMode() {
+    const row = await this.prisma.appSetting.findUnique({
+      where: { key: MEMORIAL_PUBLICATION_MODE_KEY },
+    });
+    return normalizeMemorialPublicationMode(row?.value);
+  }
+
+  async updateMemorialPublicationMode(freeLifetime: boolean) {
+    const mode: MemorialPublicationMode = { freeLifetime };
+    const row = await this.prisma.appSetting.upsert({
+      where: { key: MEMORIAL_PUBLICATION_MODE_KEY },
+      update: { value: mode },
+      create: {
+        key: MEMORIAL_PUBLICATION_MODE_KEY,
+        value: mode,
+      },
+    });
+    return normalizeMemorialPublicationMode(row.value);
   }
 }

@@ -14,6 +14,9 @@ export const environmentSeasonModelsByIdGenerated = {
 export const houseModelByIdGenerated = {
   "andreyvbvbvb_1": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_1.glb",
   "andreyvbvbvb_2": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_2.glb",
+  "andreyvbvbvb_3": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_3.glb",
+  "andreyvbvbvb_4": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_4.glb",
+  "andreyvbvbvb_5": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_5.glb",
   "budka_1__base": "/models/houses/DOM_budka_1__base.glb",
   "budka_2__base": "/models/houses/DOM_budka_2__base.glb",
   "budka_2__second": "/models/houses/DOM_budka_2__second.glb",

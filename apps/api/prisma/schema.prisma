@@ -208,6 +208,13 @@ model MemorialPlanPrice {
   updatedAt DateTime @updatedAt
 }
 
+model AppSetting {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model GiftPlacement {
   id        String   @id @default(cuid())
   petId     String

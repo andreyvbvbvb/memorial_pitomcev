@@ -9,4 +9,9 @@ export class PricingController {
   listMemorialPlans() {
     return this.pricing.listMemorialPlanPrices();
   }
+
+  @Get("memorial-publication-mode")
+  getMemorialPublicationMode() {
+    return this.pricing.getMemorialPublicationMode();
+  }
 }

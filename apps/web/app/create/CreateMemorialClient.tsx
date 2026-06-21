@@ -268,6 +268,9 @@ type MemorialPlan = {
   label: string;
   price: number;
 };
+type MemorialPublicationMode = {
+  freeLifetime: boolean;
+};
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 
@@ -985,6 +988,8 @@ export default function CreateMemorialClient({
   const [memorialPlans, setMemorialPlans] = useState<MemorialPlan[]>(() =>
     MEMORIAL_PLANS.map((plan) => ({ ...plan })),
   );
+  const [memorialPublicationMode, setMemorialPublicationMode] =
+    useState<MemorialPublicationMode>({ freeLifetime: true });
   const [detectedHouseSlots, setDetectedHouseSlots] =
     useState<HouseSlots | null>(null);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
@@ -1219,7 +1224,7 @@ export default function CreateMemorialClient({
       try {
         const response = await fetch(`${apiUrl}/pricing/memorial-plans`);
         if (!response.ok) {
-          return;
+          throw new Error("Не удалось загрузить тарифы");
         }
         const rows = (await response.json()) as {
           years?: number;
@@ -1244,6 +1249,25 @@ export default function CreateMemorialClient({
         );
       } catch {
         // Keep bundled fallback prices when pricing endpoint is unavailable.
+      }
+      try {
+        const response = await fetch(
+          `${apiUrl}/pricing/memorial-publication-mode`,
+        );
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as {
+          freeLifetime?: boolean;
+        };
+        if (!isMounted) {
+          return;
+        }
+        setMemorialPublicationMode({
+          freeLifetime: data.freeLifetime === true,
+        });
+      } catch {
+        // Keep bundled fallback publication mode when endpoint is unavailable.
       }
     };
     void loadMemorialPlans();
@@ -1374,6 +1398,12 @@ export default function CreateMemorialClient({
     [memorialPlanId, memorialPlans],
   );
   const memorialPrice = memorialPlan.price;
+  const isFreeLifetimePublication =
+    !isEditMode && memorialPublicationMode.freeLifetime;
+  const publicationPrice = isFreeLifetimePublication ? 0 : memorialPrice;
+  const publicationPlanYears = isFreeLifetimePublication
+    ? 0
+    : memorialPlan.years;
   const environmentSeasons = useMemo(
     () => getEnvironmentSeasons(form.environmentId),
     [form.environmentId],
@@ -3579,14 +3609,16 @@ export default function CreateMemorialClient({
       return;
     }
 
-    if (walletBalance === null) {
-      setError("Не удалось загрузить баланс для оплаты мемориала");
-      return;
-    }
-    if (walletBalance < memorialPrice) {
-      setError(null);
-      openTopUp();
-      return;
+    if (!isFreeLifetimePublication) {
+      if (walletBalance === null) {
+        setError("Не удалось загрузить баланс для оплаты мемориала");
+        return;
+      }
+      if (walletBalance < memorialPrice) {
+        setError(null);
+        openTopUp();
+        return;
+      }
     }
 
     if (!options?.confirmedModeration) {
@@ -3612,7 +3644,7 @@ export default function CreateMemorialClient({
       markerStyle: form.markerStyle,
       environmentId: currentEnvironmentId,
       houseId: form.houseId,
-      memorialPlanYears: memorialPlan.years,
+      memorialPlanYears: publicationPlanYears,
       sceneJson: buildCurrentSceneJson(),
     };
 
@@ -3677,9 +3709,13 @@ export default function CreateMemorialClient({
       } catch (err) {
         console.warn("Не удалось сохранить превью для карты", err);
       }
-      setWalletBalance((prev) =>
-        typeof prev === "number" ? Math.max(prev - memorialPrice, 0) : prev,
-      );
+      if (publicationPrice > 0) {
+        setWalletBalance((prev) =>
+          typeof prev === "number"
+            ? Math.max(prev - publicationPrice, 0)
+            : prev,
+        );
+      }
       if (currentDraftId) {
         await fetch(
           `${apiUrl}/pets/drafts/${encodeURIComponent(currentDraftId)}`,
@@ -6988,13 +7024,21 @@ export default function CreateMemorialClient({
                         <p className="font-semibold text-[#5d4037]">
                           {isEditMode
                             ? "Сохранение изменений"
-                            : "Оплата мемориала"}
+                            : isFreeLifetimePublication
+                              ? "Публикация мемориала"
+                              : "Оплата мемориала"}
                         </p>
                         {isEditMode ? (
                           <p className="text-xs text-[#8d6e63]">
                             Сохраним оформление, основные данные, историю и
                             фотографии, которые вы изменили.
                           </p>
+                        ) : isFreeLifetimePublication ? (
+                          <div className="rounded-2xl border border-[#eadfd9] bg-[#fffcf9] px-4 py-3 text-xs text-[#8d6e63]">
+                            Сейчас публикация бесплатная и бессрочная. После
+                            проверки мемориал будет доступен без ограничения по
+                            времени.
+                          </div>
                         ) : (
                           <>
                             <p className="text-xs text-[#8d6e63]">
@@ -7042,7 +7086,9 @@ export default function CreateMemorialClient({
                               : isEditMode
                                 ? "Сохранить"
                                 : form.ownerId
-                                  ? `Опубликовать мемориал • ${memorialPrice} монет`
+                                  ? isFreeLifetimePublication
+                                    ? "Опубликовать мемориал"
+                                    : `Опубликовать мемориал • ${memorialPrice} монет`
                                   : "Войти / зарегистрироваться и опубликовать"}
                           </span>
                         </button>
@@ -7060,8 +7106,16 @@ export default function CreateMemorialClient({
         open={publishModerationConfirmOpen}
         eyebrow="Модерация"
         title="Отправить мемориал на проверку?"
-        message="После подтверждения мы спишем монеты, опубликуем мемориал только для вас и отправим его на модерацию."
-        helperText="После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
+        message={
+          isFreeLifetimePublication
+            ? "После подтверждения мы бесплатно опубликуем мемориал только для вас и отправим его на модерацию."
+            : "После подтверждения мы спишем монеты, опубликуем мемориал только для вас и отправим его на модерацию."
+        }
+        helperText={
+          isFreeLifetimePublication
+            ? "Мемориал будет бессрочным. После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
+            : "После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
+        }
         cancelAction={{
           label: "Вернуться",
           onClick: () => setPublishModerationConfirmOpen(false),
