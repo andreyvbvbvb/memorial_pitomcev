@@ -16,6 +16,22 @@ export const environmentOptionsGenerated = [
 ] as const;
 export const houseOptionsGenerated = [
   {
+    "id": "andreyvbvbvb_1",
+    "name": "Будка 1",
+    "description": "Вариант 1",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
+    "id": "andreyvbvbvb_2",
+    "name": "Будка 2",
+    "description": "Вариант 2",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
     "id": "budka_1__base",
     "name": "Классическая будка",
     "description": "Небольшая деревянная будка на настиле с тёмной черепичной крышей."
@@ -106,6 +122,14 @@ export const houseOptionsGenerated = [
     "description": "Белый домик с чёрной крышей, светлой лестницей и аккуратной подставкой."
   },
   {
+    "id": "hatiko",
+    "name": "Будка",
+    "description": "Автодобавлено",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
     "id": "kotik_1__base",
     "name": "Когтеточка с домиком",
     "description": "Компактный кошачий комплекс с когтеточками, лежанкой и маленьким домиком."
@@ -179,6 +203,38 @@ export const houseOptionsGenerated = [
     "id": "mat_1__third",
     "name": "Клетчатая лежанка",
     "description": "Круглая розовая лежанка с клетчатым бортиком и мягким светлым центром."
+  },
+  {
+    "id": "musya",
+    "name": "Будка",
+    "description": "Автодобавлено",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
+    "id": "semen",
+    "name": "Будка",
+    "description": "Автодобавлено",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
+    "id": "stubby",
+    "name": "Будка",
+    "description": "Автодобавлено",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
+    "id": "towser",
+    "name": "Будка",
+    "description": "Автодобавлено",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
   }
 ] as const;
 export const roofOptionsGenerated = [

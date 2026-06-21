@@ -632,6 +632,13 @@ const readCategory = (category) => {
       if (!category.filePrefix) {
         return true;
       }
+      const relative = toPosixPath(path.relative(dirPath, filePath));
+      if (
+        category.key === "house" &&
+        relative.split("/").includes(EXTRA_DIR_NAME)
+      ) {
+        return true;
+      }
       return path.basename(file).startsWith(category.filePrefix);
     })
     .map((filePath) => {

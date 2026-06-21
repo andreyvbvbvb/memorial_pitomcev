@@ -12,6 +12,8 @@ export const environmentSeasonModelsByIdGenerated = {
   }
 } as const;
 export const houseModelByIdGenerated = {
+  "andreyvbvbvb_1": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_1.glb",
+  "andreyvbvbvb_2": "/models/houses/extra/andreyvbvbvb/DOM_andreyvbvbvb_2.glb",
   "budka_1__base": "/models/houses/DOM_budka_1__base.glb",
   "budka_2__base": "/models/houses/DOM_budka_2__base.glb",
   "budka_2__second": "/models/houses/DOM_budka_2__second.glb",
@@ -30,6 +32,7 @@ export const houseModelByIdGenerated = {
   "budka_8__stone": "/models/houses/DOM_budka_8__stone.glb",
   "budka_8__toy": "/models/houses/DOM_budka_8__toy.glb",
   "budka_8__white": "/models/houses/DOM_budka_8__white.glb",
+  "hatiko": "/models/houses/extra/andreyvbvbvb/hatiko.glb",
   "kotik_1__base": "/models/houses/DOM_kotik_1__base.glb",
   "kotik_1__second": "/models/houses/DOM_kotik_1__second.glb",
   "kotik_2__base": "/models/houses/DOM_kotik_2__base.glb",
@@ -44,7 +47,11 @@ export const houseModelByIdGenerated = {
   "mat_1__base": "/models/houses/DOM_mat_1__base.glb",
   "mat_1__fourth": "/models/houses/DOM_mat_1__fourth.glb",
   "mat_1__second": "/models/houses/DOM_mat_1__second.glb",
-  "mat_1__third": "/models/houses/DOM_mat_1__third.glb"
+  "mat_1__third": "/models/houses/DOM_mat_1__third.glb",
+  "musya": "/models/houses/extra/andreyvbvbvb/musya.glb",
+  "semen": "/models/houses/extra/andreyvbvbvb/semen.glb",
+  "stubby": "/models/houses/extra/andreyvbvbvb/stubby.glb",
+  "towser": "/models/houses/extra/andreyvbvbvb/towser.glb"
 } as const;
 export const roofModelByIdGenerated = {
   "roof_1": "/models/parts/roof/roof_1.glb",
