@@ -3735,12 +3735,20 @@ export default function AdminSqlPage() {
           <h1 className="text-xl font-semibold text-slate-900">
             Админ · SQL консоль
           </h1>
-          <a
-            href="/admin/moderation"
-            className="rounded-[16px] bg-[#fffcf9] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_10px_24px_rgba(93,64,55,0.12)] transition hover:-translate-y-0.5"
-          >
-            Модерация
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/admin/video"
+              className="rounded-[16px] bg-[#fffcf9] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_10px_24px_rgba(93,64,55,0.12)] transition hover:-translate-y-0.5"
+            >
+              Видео
+            </a>
+            <a
+              href="/admin/moderation"
+              className="rounded-[16px] bg-[#fffcf9] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_10px_24px_rgba(93,64,55,0.12)] transition hover:-translate-y-0.5"
+            >
+              Модерация
+            </a>
+          </div>
         </div>
         <p className="mt-2 text-sm text-slate-600">
           Разрешены только SELECT, DELETE и UPDATE. Выполняется на сервере API.

@@ -527,10 +527,18 @@ export default function AppHeader() {
                           <span className="text-xs font-black uppercase tracking-tight">Новости</span>
                         </Link>
                         {canAccessAdmin(user.accessLevel) ? (
-                          <Link className={menuItemClass} href="/admin/sql">
-                            <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
-                            <span className="text-xs font-black uppercase tracking-tight">Админ</span>
-                          </Link>
+                          <>
+                            <Link className={menuItemClass} href="/admin/sql">
+                              <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
+                              <span className="text-xs font-black uppercase tracking-tight">Админ</span>
+                            </Link>
+                            <Link className={menuItemClass} href="/admin/video">
+                              <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
+                              <span className="text-xs font-black uppercase tracking-tight">
+                                Видео
+                              </span>
+                            </Link>
+                          </>
                         ) : null}
                         <div className="mx-4 my-2 h-px bg-[#f8f9fa]" />
                         <button

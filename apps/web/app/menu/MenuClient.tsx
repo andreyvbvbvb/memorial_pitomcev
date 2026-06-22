@@ -283,7 +283,10 @@ export default function MenuClient() {
             <MenuItem href="/charity" icon="charity" label="Благотворительность" />
             <MenuItem href="/news" icon="news" label="Новости" badge={newsUnreadCount} />
             {user && canAccessAdmin(user.accessLevel) ? (
-              <MenuItem href="/admin/sql" icon="admin" label="Админ-панель" />
+              <>
+                <MenuItem href="/admin/sql" icon="admin" label="Админ-панель" />
+                <MenuItem href="/admin/video" icon="admin" label="Видеостудия" />
+              </>
             ) : null}
             {user ? (
               <button
