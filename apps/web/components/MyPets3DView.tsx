@@ -25,11 +25,19 @@ import {
   resolveBowlWaterModel
 } from "../lib/memorial-models";
 import {
+  getGiftSlotType,
+  resolveGiftModelUrl,
+  resolveGiftScaleMultiplier,
+  resolveGiftSizeMultiplier,
+  resolveGiftTargetWidth
+} from "../lib/gifts";
+import {
   buildDirtSlotPlacements,
   readActiveDirtSlots,
   type DirtSlotPlacement
 } from "../lib/dirt-models";
 import DirtSlotAttachments from "./DirtSlotAttachments";
+import GiftFlames from "./GiftFlames";
 import TunedSkyDome from "./TunedSkyDome";
 
 ensureDracoLoader();
@@ -75,6 +83,22 @@ type MemorialScene = {
   createdAt?: string | null;
 };
 
+type GiftPlacementDto = {
+  id: string;
+  slotName: string;
+  placedAt?: string | null;
+  expiresAt: string | null;
+  isActive?: boolean;
+  size?: string | null;
+  gift: {
+    id: string;
+    code?: string | null;
+    name: string;
+    price: number;
+    modelUrl: string;
+  };
+};
+
 export type MyPets3DViewPet = {
   id: string;
   name: string;
@@ -85,6 +109,7 @@ export type MyPets3DViewPet = {
   isPublic: boolean;
   previewUrl: string | null;
   memorial?: MemorialScene | null;
+  gifts?: GiftPlacementDto[];
 };
 
 type SceneItem = {
@@ -195,6 +220,20 @@ function applyMaterialColors(root: THREE.Object3D, colors?: Record<string, strin
   });
 }
 
+function cloneMeshMaterials(root: THREE.Object3D) {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    if (Array.isArray(mesh.material)) {
+      mesh.material = mesh.material.map((material) => material?.clone?.() ?? material);
+    } else if (mesh.material.clone) {
+      mesh.material = mesh.material.clone();
+    }
+  });
+}
+
 function applyPartScale(target: THREE.Object3D, size: number, axis: "x" | "z") {
   if (!size || size <= 0) {
     return;
@@ -222,6 +261,19 @@ function applyPartFitScale(target: THREE.Object3D, maxWidth: number, maxLength: 
   }
   const scale = Math.min(maxWidth / sizeVec.x, maxLength / sizeVec.z);
   target.scale.setScalar(scale);
+}
+
+function applyGiftScale(target: THREE.Object3D, width: number) {
+  if (!width || width <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0) {
+    return;
+  }
+  target.scale.setScalar(width / sizeVec.x);
 }
 
 function PartAttachment({
@@ -276,6 +328,57 @@ function PartAttachment({
   }, [part, colors]);
 
   return null;
+}
+
+function GiftInstance({
+  terrain,
+  slot,
+  url,
+  size,
+  enableFlames
+}: {
+  terrain: THREE.Object3D;
+  slot: string;
+  url: string;
+  size?: string | null;
+  enableFlames: boolean;
+}) {
+  const { scene } = useGLTF(url);
+  const gift = useMemo(() => {
+    const cloned = scene.clone(true);
+    cloneMeshMaterials(cloned);
+    const giftConfig = { modelUrl: url };
+    const targetWidth = resolveGiftTargetWidth(giftConfig);
+    if (targetWidth) {
+      applyGiftScale(cloned, targetWidth);
+    }
+    const sizeMultiplier = resolveGiftSizeMultiplier({ gift: giftConfig, size });
+    const modelMultiplier = resolveGiftScaleMultiplier(giftConfig);
+    cloned.scale.multiplyScalar(sizeMultiplier * modelMultiplier);
+    cloned.traverse((node) => {
+      node.frustumCulled = true;
+    });
+    return cloned;
+  }, [scene, size, url]);
+
+  useEffect(() => {
+    const anchor = terrain.getObjectByName(slot);
+    if (!anchor) {
+      return;
+    }
+    terrain.updateMatrixWorld(true);
+    anchor.updateMatrixWorld(true);
+    const worldPosition = new THREE.Vector3();
+    anchor.getWorldPosition(worldPosition);
+    terrain.worldToLocal(worldPosition);
+    gift.position.copy(worldPosition);
+    terrain.add(gift);
+    return () => {
+      terrain.remove(gift);
+    };
+  }, [gift, slot, terrain]);
+
+  return enableFlames ? <GiftFlames root={gift} /> : null;
 }
 
 function SoulAnchor({
@@ -402,6 +505,28 @@ function MemorialInstance({
       memorial?.houseId,
       memorial?.sceneJson
     ]
+  );
+  const gifts = useMemo(
+    () => {
+      const now = Date.now();
+      return (item.pet.gifts ?? [])
+        .filter((gift) => gift.isActive !== false && (!gift.expiresAt || new Date(gift.expiresAt).getTime() > now))
+        .map((gift) => {
+          const slotType = getGiftSlotType(gift.slotName);
+          const url =
+            resolveGiftModelUrl({
+              gift: gift.gift,
+              slotType,
+              fallbackUrl: gift.gift.modelUrl
+            }) ?? gift.gift.modelUrl;
+          return {
+            slot: gift.slotName,
+            url,
+            size: gift.size ?? null
+          };
+        });
+    },
+    [item.pet.gifts]
   );
   const soulSettings = readSoulSettings(memorial?.sceneJson as Record<string, unknown> | null);
   const parts = useMemo(
@@ -532,6 +657,18 @@ function MemorialInstance({
           houseId={memorial?.houseId}
         />
       ))}
+      <Suspense fallback={null}>
+        {gifts.map((gift) => (
+          <GiftInstance
+            key={`${gift.slot}-${gift.url}`}
+            terrain={terrain}
+            slot={gift.slot}
+            url={gift.url}
+            size={gift.size}
+            enableFlames={isActive}
+          />
+        ))}
+      </Suspense>
       <DirtSlotAttachments terrain={terrain} house={house} placements={dirtSlots} />
       <SoulAnchor
         root={root}

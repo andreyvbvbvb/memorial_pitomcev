@@ -31,6 +31,20 @@ import {
   getHouseTransform,
 } from "../../../lib/house-layout";
 import { splitHouseVariantId } from "../../../lib/house-variants";
+import {
+  buildDirtSlotPlacements,
+  readActiveDirtSlots,
+  type DirtSlotPlacement,
+} from "../../../lib/dirt-models";
+import {
+  getGiftSlotType,
+  resolveGiftModelUrl,
+  resolveGiftScaleMultiplier,
+  resolveGiftSizeMultiplier,
+  resolveGiftTargetWidth,
+} from "../../../lib/gifts";
+import DirtSlotAttachments from "../../../components/DirtSlotAttachments";
+import GiftFlames from "../../../components/GiftFlames";
 import TunedSkyDome from "../../../components/TunedSkyDome";
 import ErrorToast from "../../../components/ErrorToast";
 
@@ -58,6 +72,25 @@ type MemorialDto = {
   environmentId: string | null;
   houseId: string | null;
   sceneJson: Record<string, unknown> | null;
+  dustStage?: number | null;
+  dustUpdatedAt?: string | null;
+  createdAt?: string | null;
+};
+
+type GiftPlacementDto = {
+  id: string;
+  slotName: string;
+  placedAt?: string | null;
+  expiresAt: string | null;
+  isActive?: boolean;
+  size?: string | null;
+  gift: {
+    id: string;
+    code?: string | null;
+    name: string;
+    price: number;
+    modelUrl: string;
+  };
 };
 
 type PetDto = {
@@ -67,6 +100,7 @@ type PetDto = {
   birthDate?: string | null;
   deathDate?: string | null;
   memorial?: MemorialDto | null;
+  gifts?: GiftPlacementDto[];
 };
 
 type StudioItem = {
@@ -74,11 +108,13 @@ type StudioItem = {
   petId: string;
   petName: string;
   memorial: MemorialDto;
+  gifts: GiftPlacementDto[];
   x: number;
   y: number;
   z: number;
   rotationY: number;
   scale: number;
+  speed: number;
 };
 
 type DirectionVector = {
@@ -165,6 +201,19 @@ const applyPartFitScale = (
   target.scale.setScalar(Math.min(maxWidth / sizeVec.x, maxLength / sizeVec.z));
 };
 
+const applyGiftScale = (target: THREE.Object3D, width: number) => {
+  if (!width || width <= 0) {
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(target);
+  const sizeVec = new THREE.Vector3();
+  box.getSize(sizeVec);
+  if (sizeVec.x <= 0) {
+    return;
+  }
+  target.scale.setScalar(width / sizeVec.x);
+};
+
 const applyHouseScale = (
   target: THREE.Object3D,
   houseId?: string | null,
@@ -248,6 +297,56 @@ function PartAttachment({
   return null;
 }
 
+function GiftInstance({
+  terrain,
+  slot,
+  url,
+  size,
+  enableFlames = true,
+}: {
+  terrain: THREE.Object3D;
+  slot: string;
+  url: string;
+  size?: string | null;
+  enableFlames?: boolean;
+}) {
+  const { scene } = useGLTF(url);
+  const gift = useMemo(() => {
+    const cloned = scene.clone(true);
+    cloneMeshMaterials(cloned);
+    const targetWidth = resolveGiftTargetWidth({ modelUrl: url });
+    if (targetWidth) {
+      applyGiftScale(cloned, targetWidth);
+    }
+    const sizeMultiplier = resolveGiftSizeMultiplier({ gift: { modelUrl: url }, size });
+    if (sizeMultiplier && sizeMultiplier !== 1) {
+      cloned.scale.multiplyScalar(sizeMultiplier);
+    }
+    const configuredMultiplier = resolveGiftScaleMultiplier({ modelUrl: url });
+    if (configuredMultiplier !== 1) {
+      cloned.scale.multiplyScalar(configuredMultiplier);
+    }
+    return cloned;
+  }, [scene, size, url]);
+
+  useEffect(() => {
+    const anchor = terrain.getObjectByName(slot);
+    if (!anchor) {
+      return;
+    }
+    const position = new THREE.Vector3();
+    anchor.getWorldPosition(position);
+    terrain.worldToLocal(position);
+    gift.position.copy(position);
+    terrain.add(gift);
+    return () => {
+      terrain.remove(gift);
+    };
+  }, [gift, slot, terrain]);
+
+  return enableFlames ? <GiftFlames root={gift} /> : null;
+}
+
 function MemorialModel({ item }: { item: StudioItem }) {
   const sceneJson = (item.memorial.sceneJson ?? {}) as {
     parts?: SceneParts;
@@ -256,6 +355,49 @@ function MemorialModel({ item }: { item: StudioItem }) {
   const terrainUrl = resolveEnvironmentModel(item.memorial.environmentId) ?? FALLBACK_TERRAIN_URL;
   const houseUrl = resolveHouseModel(item.memorial.houseId) ?? FALLBACK_HOUSE_URL;
   const houseSlots = getHouseSlots(item.memorial.houseId);
+  const dirtSlots = useMemo<DirtSlotPlacement[]>(
+    () =>
+      buildDirtSlotPlacements({
+        houseId: item.memorial.houseId,
+        level: item.memorial.dustStage ?? 0,
+        activeSlots: readActiveDirtSlots(
+          item.memorial.sceneJson as Record<string, unknown> | null,
+          item.memorial.dustStage ?? 0,
+        ),
+        seed: `${item.petId}:${item.memorial.dustUpdatedAt ?? item.memorial.createdAt ?? ""}`,
+      }),
+    [
+      item.memorial.createdAt,
+      item.memorial.dustStage,
+      item.memorial.dustUpdatedAt,
+      item.memorial.houseId,
+      item.memorial.sceneJson,
+      item.petId,
+    ],
+  );
+  const gifts = useMemo(() => {
+    const now = Date.now();
+    return item.gifts
+      .filter(
+        (gift) =>
+          gift.isActive !== false &&
+          (!gift.expiresAt || new Date(gift.expiresAt).getTime() > now),
+      )
+      .map((gift) => {
+        const slotType = getGiftSlotType(gift.slotName);
+        const url =
+          resolveGiftModelUrl({
+            gift: gift.gift,
+            slotType,
+            fallbackUrl: gift.gift.modelUrl,
+          }) ?? gift.gift.modelUrl;
+        return {
+          slot: gift.slotName,
+          url,
+          size: gift.size ?? null,
+        };
+      });
+  }, [item.gifts]);
   const terrainGltf = useGLTF(terrainUrl) as unknown as { scene: THREE.Object3D };
   const houseGltf = useGLTF(houseUrl) as unknown as { scene: THREE.Object3D };
   const terrainScene = terrainGltf.scene;
@@ -345,6 +487,16 @@ function MemorialModel({ item }: { item: StudioItem }) {
           houseId={item.memorial.houseId}
         />
       ))}
+      {gifts.map((gift) => (
+        <GiftInstance
+          key={`${gift.slot}-${gift.url}`}
+          terrain={terrain}
+          slot={gift.slot}
+          url={gift.url}
+          size={gift.size}
+        />
+      ))}
+      <DirtSlotAttachments terrain={terrain} house={house} placements={dirtSlots} />
     </>
   );
 }
@@ -353,17 +505,15 @@ function FloatingMemorial({
   item,
   elapsed,
   direction,
-  speed,
 }: {
   item: StudioItem;
   elapsed: number;
   direction: DirectionVector;
-  speed: number;
 }) {
   const position: [number, number, number] = [
-    item.x + direction.x * speed * elapsed,
-    item.y + direction.y * speed * elapsed,
-    item.z + direction.z * speed * elapsed,
+    item.x + direction.x * item.speed * elapsed,
+    item.y + direction.y * item.speed * elapsed,
+    item.z + direction.z * item.speed * elapsed,
   ];
   return (
     <Group
@@ -380,12 +530,10 @@ function VideoScene({
   items,
   elapsed,
   direction,
-  speed,
 }: {
   items: StudioItem[];
   elapsed: number;
   direction: DirectionVector;
-  speed: number;
 }) {
   return (
     <>
@@ -402,7 +550,6 @@ function VideoScene({
             item={item}
             elapsed={elapsed}
             direction={direction}
-            speed={speed}
           />
         ))}
       </Suspense>
@@ -609,14 +756,16 @@ export default function AdminVideoStudioClient() {
       petId: pet.id,
       petName: pet.name,
       memorial: pet.memorial,
+      gifts: pet.gifts ?? [],
       ...position,
+      speed,
     };
     setItems((prev) => [...prev, instance]);
     setSelectedItemId(instance.instanceId);
-  }, [items.length, pets, selectedPetId]);
+  }, [items.length, pets, selectedPetId, speed]);
 
   const updateItem = useCallback(
-    (instanceId: string, patch: Partial<Omit<StudioItem, "instanceId" | "petId" | "petName" | "memorial">>) => {
+    (instanceId: string, patch: Partial<Omit<StudioItem, "instanceId" | "petId" | "petName" | "memorial" | "gifts">>) => {
       setItems((prev) =>
         prev.map((item) =>
           item.instanceId === instanceId ? { ...item, ...patch } : item,
@@ -755,7 +904,7 @@ export default function AdminVideoStudioClient() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="min-h-[620px] overflow-hidden rounded-[28px] border border-white bg-[#dcecff] shadow-[0_24px_60px_-40px_rgba(93,64,55,0.65)]">
+          <section className="aspect-video overflow-hidden rounded-[28px] border border-white bg-[#dcecff] shadow-[0_24px_60px_-40px_rgba(93,64,55,0.65)]">
             <Canvas
               camera={{ position: [0, 7.5, 16], fov: 42 }}
               dpr={[1, 1.8]}
@@ -763,13 +912,12 @@ export default function AdminVideoStudioClient() {
               onCreated={({ gl }) => {
                 canvasRef.current = gl.domElement;
               }}
-              className="h-[72vh] min-h-[620px] w-full"
+              className="h-full w-full"
             >
               <VideoScene
                 items={items}
                 elapsed={elapsed}
                 direction={direction}
-                speed={speed}
               />
             </Canvas>
           </section>
@@ -830,7 +978,7 @@ export default function AdminVideoStudioClient() {
                   />
                 </label>
                 <label className="grid gap-1 text-xs font-bold text-[#8d6e63]">
-                  Скорость
+                  Скорость для новых мемориалов
                   <input
                     type="number"
                     min={0}
@@ -938,16 +1086,16 @@ export default function AdminVideoStudioClient() {
                       >
                         {item.petName}
                       </button>
-                      <div className="mt-3 grid grid-cols-5 gap-2">
-                        {(["x", "y", "z", "rotationY", "scale"] as const).map((key) => (
+                      <div className="mt-3 grid grid-cols-6 gap-2">
+                        {(["x", "y", "z", "rotationY", "scale", "speed"] as const).map((key) => (
                           <label
                             key={key}
                             className="grid gap-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#8d6e63]"
                           >
-                            {key === "rotationY" ? "Y°" : key}
+                            {key === "rotationY" ? "Y°" : key === "speed" ? "скор." : key}
                             <input
                               type="number"
-                              step={key === "scale" ? 0.05 : 0.1}
+                              step={key === "scale" || key === "speed" ? 0.05 : 0.1}
                               value={item[key]}
                               onChange={(event) =>
                                 updateItem(item.instanceId, {
@@ -955,7 +1103,7 @@ export default function AdminVideoStudioClient() {
                                 } as Partial<
                                   Omit<
                                     StudioItem,
-                                    "instanceId" | "petId" | "petName" | "memorial"
+                                    "instanceId" | "petId" | "petName" | "memorial" | "gifts"
                                   >
                                 >)
                               }

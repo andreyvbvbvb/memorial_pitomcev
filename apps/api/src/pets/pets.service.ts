@@ -594,7 +594,12 @@ export class PetsService {
     }
 
     const pets: Prisma.PetGetPayload<{
-      include: { memorial: true; photos: true; marker: true };
+      include: {
+        memorial: true;
+        photos: true;
+        marker: true;
+        gifts: { include: { gift: true } };
+      };
     }>[] = await this.prisma.pet.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -604,6 +609,13 @@ export class PetsService {
           orderBy: { sortOrder: "asc" },
         },
         marker: true,
+        gifts: {
+          where: { isActive: true },
+          include: {
+            gift: true,
+          },
+          orderBy: { placedAt: "desc" },
+        },
       },
     });
     await Promise.all(
