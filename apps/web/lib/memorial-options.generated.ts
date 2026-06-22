@@ -56,6 +56,30 @@ export const houseOptionsGenerated = [
     ]
   },
   {
+    "id": "andreyvbvbvb_6",
+    "name": "Будка 6",
+    "description": "Вариант 6",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
+    "id": "andreyvbvbvb_7",
+    "name": "Будка 7",
+    "description": "Вариант 7",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
+    "id": "andreyvbvbvb_8",
+    "name": "Будка 8",
+    "description": "Вариант 8",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
     "id": "budka_1__base",
     "name": "Классическая будка",
     "description": "Небольшая деревянная будка на настиле с тёмной черепичной крышей."
