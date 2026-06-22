@@ -169,8 +169,11 @@ const DEFAULT_HOUSE_TRANSFORMS: Record<string, Partial<HouseTransform>> = {
   kotik_6: { offsetX: -2.5, offsetZ: 1.7, rotationY: 160, scale: 1 },
   budka_7: { offsetX: -1.7, offsetZ: 0.75, rotationY: 65, scale: 1.09 },
   budka_8: { offsetX: -1.7, offsetZ: 0.8, rotationY: 71, scale: 0.85 },
-  andreyvbvbvb_1: { offsetX: 0.65, offsetZ: -0.65, rotationY: -62, scale: 0.47 },
-  andreyvbvbvb_2: { offsetX: -1.25, offsetZ: 0.7, rotationY: -54, scale: 0.74 }
+  andreyvbvbvb_1: { offsetX: -1.9, offsetZ: 0.2, rotationY: -62, scale: 0.47 },
+  andreyvbvbvb_2: { offsetX: -1.25, offsetZ: 0.7, rotationY: -40, scale: 0.74 },
+  andreyvbvbvb_3: { offsetX: -1.6, offsetZ: 0.35, rotationY: -39, scale: 0.78 },
+  andreyvbvbvb_4: { offsetX: -1.35, offsetZ: -0.35, rotationY: -54, scale: 0.34 },
+  andreyvbvbvb_5: { offsetX: -1.65, offsetZ: 0.1, rotationY: -51, scale: 0.62 }
 };
 
 const TERRAIN_HOUSE_TRANSFORMS: Record<string, Record<string, Partial<HouseTransform>>> = {
