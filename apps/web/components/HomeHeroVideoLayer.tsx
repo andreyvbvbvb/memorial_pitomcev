@@ -1,0 +1,74 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { API_BASE } from "../lib/config";
+
+type HeroVideoResponse = {
+  heroVideo?: {
+    url?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export default function HomeHeroVideoLayer() {
+  const [videoUrl, setVideoUrl] = useState<string | null>(
+    process.env.NEXT_PUBLIC_HERO_VIDEO_URL?.trim() || null,
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadVideo = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/content/hero-video`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as HeroVideoResponse;
+        const nextUrl = data.heroVideo?.url?.trim() || null;
+        if (isMounted && nextUrl) {
+          setVideoUrl(nextUrl);
+        }
+      } catch {
+        // The static fallback background is enough when the content API is unreachable.
+      }
+    };
+    void loadVideo();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const sourceUrl = useMemo(() => {
+    if (!videoUrl) {
+      return null;
+    }
+    return `${videoUrl}${videoUrl.includes("?") ? "&" : "?"}v=hero`;
+  }, [videoUrl]);
+
+  return (
+    <>
+      {sourceUrl ? (
+        <video
+          key={sourceUrl}
+          className="absolute inset-0 h-full w-full scale-[1.02] object-cover opacity-[0.58]"
+          src={sourceUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+      ) : null}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.76) 0%, rgba(252,248,245,0.72) 44%, rgba(252,248,245,0.97) 100%), #fcf8f5",
+        }}
+      />
+    </>
+  );
+}

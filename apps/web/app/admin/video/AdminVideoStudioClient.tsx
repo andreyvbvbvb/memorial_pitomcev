@@ -117,6 +117,16 @@ type StudioItem = {
   speed: number;
 };
 
+type RecordingQuality = "compact" | "balanced" | "high";
+
+type HeroVideoSetting = {
+  url: string | null;
+  fileName?: string | null;
+  contentType?: string | null;
+  sizeBytes?: number | null;
+  updatedAt?: string | null;
+};
+
 type DirectionVector = {
   x: number;
   y: number;
@@ -585,6 +595,42 @@ const defaultPositionForIndex = (index: number) => ({
 
 const formatSeconds = (value: number) => `${value.toFixed(1)} c`;
 
+const recordingQualityOptions: Array<{
+  id: RecordingQuality;
+  label: string;
+  description: string;
+  bitrate: number;
+}> = [
+  {
+    id: "compact",
+    label: "Лёгкое",
+    description: "меньше вес, подходит для главной",
+    bitrate: 2_500_000,
+  },
+  {
+    id: "balanced",
+    label: "Среднее",
+    description: "баланс качества и веса",
+    bitrate: 4_500_000,
+  },
+  {
+    id: "high",
+    label: "Высокое",
+    description: "крупнее файл, лучше детализация",
+    bitrate: 8_000_000,
+  },
+];
+
+const formatFileSize = (bytes?: number | null) => {
+  if (!bytes || bytes <= 0) {
+    return "0 МБ";
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} КБ`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(2)} МБ`;
+};
+
 export default function AdminVideoStudioClient() {
   const apiUrl = API_BASE;
   const router = useRouter();
@@ -604,8 +650,13 @@ export default function AdminVideoStudioClient() {
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [recordingQuality, setRecordingQuality] = useState<RecordingQuality>("compact");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState("memorial-sky-video.webm");
+  const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null);
+  const [heroVideo, setHeroVideo] = useState<HeroVideoSetting | null>(null);
+  const [uploadingHeroVideo, setUploadingHeroVideo] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -744,6 +795,33 @@ export default function AdminVideoStudioClient() {
     };
   }, [downloadUrl]);
 
+  useEffect(() => {
+    if (!authChecked || !isAdmin) {
+      return;
+    }
+    let isMounted = true;
+    const loadHeroVideo = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/admin/hero-video`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as { heroVideo?: HeroVideoSetting };
+        if (isMounted) {
+          setHeroVideo(data.heroVideo ?? null);
+        }
+      } catch {
+        // The upload block stays usable even if the current value cannot be loaded.
+      }
+    };
+    void loadHeroVideo();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiUrl, authChecked, isAdmin]);
+
   const addSelectedPet = useCallback(() => {
     const pet = pets.find((item) => item.id === selectedPetId);
     if (!pet?.memorial) {
@@ -797,6 +875,7 @@ export default function AdminVideoStudioClient() {
       }
       return null;
     });
+    setDownloadBlob(null);
     elapsedRef.current = 0;
     setElapsed(0);
     setPlaying(true);
@@ -829,12 +908,18 @@ export default function AdminVideoStudioClient() {
       }
       return null;
     });
+    setDownloadBlob(null);
     chunksRef.current = [];
     const stream = canvasRef.current.captureStream(30);
     const mimeType = getSupportedMimeType();
+    const selectedQuality =
+      recordingQualityOptions.find((option) => option.id === recordingQuality) ??
+      recordingQualityOptions[0]!;
     const recorder = new MediaRecorder(
       stream,
-      mimeType ? { mimeType, videoBitsPerSecond: 8_000_000 } : undefined,
+      mimeType
+        ? { mimeType, videoBitsPerSecond: selectedQuality.bitrate }
+        : { videoBitsPerSecond: selectedQuality.bitrate },
     );
     recorderRef.current = recorder;
     recorder.ondataavailable = (event) => {
@@ -849,6 +934,7 @@ export default function AdminVideoStudioClient() {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-");
       setDownloadUrl(url);
       setDownloadName(`memorial-sky-video-${stamp}.webm`);
+      setDownloadBlob(blob);
       setRecording(false);
       setPlaying(false);
       stream.getTracks().forEach((track) => track.stop());
@@ -858,7 +944,36 @@ export default function AdminVideoStudioClient() {
     setRecording(true);
     setPlaying(true);
     recorder.start(250);
-  }, [items.length]);
+  }, [items.length, recordingQuality]);
+
+  const uploadHeroVideo = useCallback(async () => {
+    if (!downloadBlob) {
+      setError("Сначала запишите видео");
+      return;
+    }
+    setUploadingHeroVideo(true);
+    setNotice(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", downloadBlob, downloadName);
+      const response = await fetch(`${apiUrl}/admin/hero-video`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось загрузить видео на главную");
+      }
+      const data = (await response.json()) as { heroVideo?: HeroVideoSetting };
+      setHeroVideo(data.heroVideo ?? null);
+      setNotice("Видео загружено на главную страницу");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка загрузки видео");
+    } finally {
+      setUploadingHeroVideo(false);
+    }
+  }, [apiUrl, downloadBlob, downloadName]);
 
   if (!authChecked) {
     return (
@@ -907,7 +1022,7 @@ export default function AdminVideoStudioClient() {
           <section className="aspect-video overflow-hidden rounded-[28px] border border-white bg-[#dcecff] shadow-[0_24px_60px_-40px_rgba(93,64,55,0.65)]">
             <Canvas
               camera={{ position: [0, 7.5, 16], fov: 42 }}
-              dpr={[1, 1.8]}
+              dpr={recording ? 1 : [1, 1.8]}
               gl={{ antialias: true, alpha: false }}
               onCreated={({ gl }) => {
                 canvasRef.current = gl.domElement;
@@ -1009,6 +1124,41 @@ export default function AdminVideoStudioClient() {
                     className="rounded-[14px] border border-[#eadfd9] bg-white px-3 py-2 text-sm text-[#5d4037] outline-none"
                   />
                 </label>
+                <div className="grid gap-2 rounded-[18px] bg-white p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                      Сжатие
+                    </span>
+                    <span className="text-[11px] font-bold text-[#a8948b]">
+                      WebM, 16:9
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {recordingQualityOptions.map((option) => {
+                      const active = recordingQuality === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setRecordingQuality(option.id)}
+                          disabled={recording}
+                          className={`rounded-[14px] px-2 py-2 text-[10px] font-black uppercase tracking-[0.08em] transition disabled:opacity-60 ${
+                            active
+                              ? "bg-[#111827] text-white shadow-[0_4px_0_#000]"
+                              : "bg-[#f7f1ee] text-[#5d4037]"
+                          }`}
+                          title={option.description}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] font-semibold leading-snug text-[#8d6e63]">
+                    Для главной лучше «Лёгкое»: запись идёт с меньшим битрейтом и DPR 1,
+                    поэтому файл получается заметно легче.
+                  </p>
+                </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#eadfd9]">
                   <div
                     className="h-full rounded-full bg-[#3bceac]"
@@ -1044,13 +1194,49 @@ export default function AdminVideoStudioClient() {
                   </button>
                 </div>
                 {downloadUrl ? (
-                  <a
-                    href={downloadUrl}
-                    download={downloadName}
-                    className="rounded-[16px] bg-[#eafaf6] px-4 py-3 text-center text-xs font-black uppercase tracking-[0.1em] text-[#16866f]"
-                  >
-                    Скачать видео
-                  </a>
+                  <div className="grid gap-2 rounded-[18px] bg-[#eafaf6] p-3">
+                    <div className="text-xs font-black uppercase tracking-[0.1em] text-[#16866f]">
+                      Видео готово · {formatFileSize(downloadBlob?.size)}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <a
+                        href={downloadUrl}
+                        download={downloadName}
+                        className="rounded-[16px] bg-white px-4 py-3 text-center text-xs font-black uppercase tracking-[0.1em] text-[#16866f]"
+                      >
+                        Скачать
+                      </a>
+                      <button
+                        type="button"
+                        onClick={uploadHeroVideo}
+                        disabled={uploadingHeroVideo}
+                        className="rounded-[16px] bg-[#111827] px-4 py-3 text-xs font-black uppercase tracking-[0.1em] text-white shadow-[0_4px_0_#000] disabled:cursor-wait disabled:opacity-70"
+                      >
+                        {uploadingHeroVideo ? "Загрузка..." : "На главную"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {heroVideo?.url ? (
+                  <div className="rounded-[18px] bg-white px-4 py-3 text-xs font-semibold leading-relaxed text-[#8d6e63]">
+                    Сейчас на главной:
+                    <a
+                      href={heroVideo.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-1 font-black text-[#5d4037] underline"
+                    >
+                      {heroVideo.fileName || "hero-video"}
+                    </a>
+                    {heroVideo.sizeBytes ? (
+                      <span className="ml-1">({formatFileSize(heroVideo.sizeBytes)})</span>
+                    ) : null}
+                  </div>
+                ) : null}
+                {notice ? (
+                  <div className="rounded-[16px] bg-[#f0fffb] px-4 py-3 text-xs font-black uppercase tracking-[0.1em] text-[#16866f]">
+                    {notice}
+                  </div>
                 ) : null}
               </div>
             </section>

@@ -5,6 +5,10 @@ import { AuthService } from "../auth/auth.service";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { PrismaService } from "../prisma/prisma.service";
+import {
+  HERO_VIDEO_SETTING_KEY,
+  normalizeHeroVideoSetting,
+} from "./hero-video-setting";
 import { DEFAULT_LOADING_TIPS } from "./loading-tips.constants";
 
 @Controller("content")
@@ -55,6 +59,16 @@ export class ContentController {
         text: banner.text,
         updatedAt: banner.updatedAt,
       },
+    };
+  }
+
+  @Get("hero-video")
+  async getHeroVideo() {
+    const setting = await this.prisma.appSetting.findUnique({
+      where: { key: HERO_VIDEO_SETTING_KEY },
+    });
+    return {
+      heroVideo: normalizeHeroVideoSetting(setting?.value),
     };
   }
 

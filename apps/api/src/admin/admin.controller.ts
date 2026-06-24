@@ -56,6 +56,10 @@ import {
   AdminUpdateMemorialPublicationModeDto,
 } from "./dto/admin-pricing.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
+import {
+  HERO_VIDEO_SETTING_KEY,
+  normalizeHeroVideoSetting,
+} from "../content/hero-video-setting";
 
 const MODERATION_REVIEW_REVISION = "REVISION";
 
@@ -171,6 +175,19 @@ export class AdminController {
         );
       }),
     );
+  }
+
+  private assertVideoFile(file: {
+    originalname: string;
+    mimetype?: string;
+  }) {
+    const lowerName = file.originalname.toLowerCase();
+    const isWebm = file.mimetype === "video/webm" || lowerName.endsWith(".webm");
+    const isMp4 = file.mimetype === "video/mp4" || lowerName.endsWith(".mp4");
+    if (!isWebm && !isMp4) {
+      throw new BadRequestException("Можно загрузить только WebM или MP4");
+    }
+    return isMp4 ? "video/mp4" : "video/webm";
   }
 
   @Post("sql")
@@ -969,6 +986,59 @@ export class AdminController {
       },
     });
     return { banner };
+  }
+
+  @Get("hero-video")
+  async getHeroVideo(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    const setting = await this.prisma.appSetting.findUnique({
+      where: { key: HERO_VIDEO_SETTING_KEY },
+    });
+    return { heroVideo: normalizeHeroVideoSetting(setting?.value) };
+  }
+
+  @Post("hero-video")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: 80 * 1024 * 1024 },
+    }),
+  )
+  async uploadHeroVideo(
+    @Req() req: Request,
+    @UploadedFile()
+    file?: {
+      originalname: string;
+      mimetype?: string;
+      buffer: Buffer;
+      size?: number;
+    },
+  ) {
+    await this.ensureAdmin(req);
+    if (!file) {
+      throw new BadRequestException("Файл не найден");
+    }
+    const contentType = this.assertVideoFile(file);
+    const ext = contentType === "video/mp4" ? ".mp4" : ".webm";
+    const safeName = file.originalname.replace(/[^\wа-яА-ЯёЁ.\-]+/g, "_");
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const url = await this.s3.uploadPublic(
+      `site/hero-video/${fileName}`,
+      file.buffer,
+      contentType,
+    );
+    const value = {
+      url,
+      fileName: safeName || fileName,
+      contentType,
+      sizeBytes: file.size ?? file.buffer.length,
+      updatedAt: new Date().toISOString(),
+    };
+    const setting = await this.prisma.appSetting.upsert({
+      where: { key: HERO_VIDEO_SETTING_KEY },
+      create: { key: HERO_VIDEO_SETTING_KEY, value },
+      update: { value },
+    });
+    return { heroVideo: normalizeHeroVideoSetting(setting.value) };
   }
 
   @Get("news")

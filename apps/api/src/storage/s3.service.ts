@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { mkdir, writeFile } from "fs/promises";
+import { dirname, join } from "path";
 
 @Injectable()
 export class S3Service {
@@ -39,6 +41,13 @@ export class S3Service {
   }
 
   async uploadPublic(key: string, buffer: Buffer, contentType: string) {
+    if (!process.env.S3_PUBLIC_BASE_URL) {
+      const localPath = join(process.cwd(), "uploads", key);
+      await mkdir(dirname(localPath), { recursive: true });
+      await writeFile(localPath, buffer);
+      return `/uploads/${key}`;
+    }
+
     const client = this.getClient();
     if (!this.bucket || !this.publicBaseUrl) {
       throw new BadRequestException("S3 не настроен");
