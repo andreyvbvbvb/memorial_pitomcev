@@ -16,10 +16,7 @@ type HeroVideoState = {
 };
 
 export default function HomeHeroVideoLayer() {
-  const fallbackVideoUrl = process.env.NEXT_PUBLIC_HERO_VIDEO_URL?.trim() || null;
-  const [video, setVideo] = useState<HeroVideoState | null>(
-    fallbackVideoUrl ? { url: fallbackVideoUrl, version: "env" } : null,
-  );
+  const [video, setVideo] = useState<HeroVideoState | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -63,7 +60,7 @@ export default function HomeHeroVideoLayer() {
       {sourceUrl ? (
         <video
           key={sourceUrl}
-          className="absolute inset-0 h-full w-full scale-[1.02] object-cover opacity-[0.92]"
+          className="absolute inset-x-0 top-[calc(-1*var(--app-header-height,64px))] h-[calc(100%+var(--app-header-height,64px))] w-full scale-[1.03] object-cover object-top opacity-[0.92]"
           src={sourceUrl}
           autoPlay
           muted
