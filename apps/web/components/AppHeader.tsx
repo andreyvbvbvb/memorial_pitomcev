@@ -232,7 +232,11 @@ export default function AppHeader() {
     { coins: 800, rub: 399, usd: 4.99 },
     { coins: 2000, rub: 1799, usd: 22.99 }
   ];
+  const isHomePage = pathname === "/";
   const showMobileBottomNav = isPortraitLayout && pathname !== "/create";
+  const desktopHeaderClass = isHomePage
+    ? "app-desktop-header fixed left-0 right-0 top-0 z-40 bg-transparent"
+    : "app-desktop-header sticky top-0 z-40 bg-transparent";
 
   const headerInnerClass = isPortraitLayout
     ? "mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2"
@@ -386,7 +390,7 @@ export default function AppHeader() {
       {!isPortraitLayout ? (
       <header
         ref={headerRef}
-        className="app-desktop-header sticky top-0 z-40 bg-transparent"
+        className={desktopHeaderClass}
       >
         <div className={headerInnerClass}>
           <Link

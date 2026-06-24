@@ -5,7 +5,7 @@ import HomeHeroVideoLayer from "./HomeHeroVideoLayer";
 
 export default function HomeHero() {
   return (
-    <section className="relative flex min-h-[calc(100svh_-_var(--app-header-height,64px))] flex-col items-center justify-center overflow-hidden px-4 pb-16 pt-10 text-center sm:px-6 lg:min-h-[calc(100dvh_-_var(--app-header-height,64px))]">
+    <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-4 pb-16 pt-[calc(var(--app-header-height,64px)+2.5rem)] text-center sm:px-6 lg:min-h-[100dvh]">
       <div className="pointer-events-none absolute inset-0 z-0">
         <HomeHeroVideoLayer />
       </div>

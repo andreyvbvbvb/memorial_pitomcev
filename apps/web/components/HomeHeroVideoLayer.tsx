@@ -60,7 +60,7 @@ export default function HomeHeroVideoLayer() {
       {sourceUrl ? (
         <video
           key={sourceUrl}
-          className="absolute inset-x-0 top-[calc(-1*var(--app-header-height,64px))] h-[calc(100%+var(--app-header-height,64px))] w-full scale-[1.03] object-cover object-top opacity-[0.92]"
+          className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-top opacity-[0.92]"
           src={sourceUrl}
           autoPlay
           muted
