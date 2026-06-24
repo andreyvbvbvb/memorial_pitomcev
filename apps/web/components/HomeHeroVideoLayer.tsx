@@ -10,16 +10,23 @@ type HeroVideoResponse = {
   } | null;
 };
 
+type HeroVideoState = {
+  url: string;
+  version: string;
+};
+
 export default function HomeHeroVideoLayer() {
-  const [videoUrl, setVideoUrl] = useState<string | null>(
-    process.env.NEXT_PUBLIC_HERO_VIDEO_URL?.trim() || null,
+  const fallbackVideoUrl = process.env.NEXT_PUBLIC_HERO_VIDEO_URL?.trim() || null;
+  const [video, setVideo] = useState<HeroVideoState | null>(
+    fallbackVideoUrl ? { url: fallbackVideoUrl, version: "env" } : null,
   );
 
   useEffect(() => {
     let isMounted = true;
     const loadVideo = async () => {
       try {
-        const response = await fetch(`${API_BASE}/content/hero-video`, {
+        const response = await fetch(`${API_BASE}/content/hero-video?t=${Date.now()}`, {
+          cache: "no-store",
           credentials: "include",
         });
         if (!response.ok) {
@@ -28,7 +35,10 @@ export default function HomeHeroVideoLayer() {
         const data = (await response.json()) as HeroVideoResponse;
         const nextUrl = data.heroVideo?.url?.trim() || null;
         if (isMounted && nextUrl) {
-          setVideoUrl(nextUrl);
+          setVideo({
+            url: nextUrl,
+            version: data.heroVideo?.updatedAt || String(Date.now()),
+          });
         }
       } catch {
         // The static fallback background is enough when the content API is unreachable.
@@ -41,11 +51,11 @@ export default function HomeHeroVideoLayer() {
   }, []);
 
   const sourceUrl = useMemo(() => {
-    if (!videoUrl) {
+    if (!video?.url) {
       return null;
     }
-    return `${videoUrl}${videoUrl.includes("?") ? "&" : "?"}v=hero`;
-  }, [videoUrl]);
+    return `${video.url}${video.url.includes("?") ? "&" : "?"}v=${encodeURIComponent(video.version)}`;
+  }, [video]);
 
   return (
     <>

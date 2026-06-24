@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Header, Inject, Param, Post, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { AuthService } from "../auth/auth.service";
@@ -63,6 +63,7 @@ export class ContentController {
   }
 
   @Get("hero-video")
+  @Header("Cache-Control", "no-store, max-age=0")
   async getHeroVideo() {
     const setting = await this.prisma.appSetting.findUnique({
       where: { key: HERO_VIDEO_SETTING_KEY },
