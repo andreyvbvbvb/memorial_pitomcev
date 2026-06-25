@@ -609,7 +609,7 @@ const recordingQualityOptions: Array<{
     id: "compact",
     label: "Лёгкое",
     description: "минимальный вес, подходит для загрузки на главную",
-    bitrate: 1_200_000,
+    bitrate: 2_500_000,
   },
   {
     id: "balanced",
