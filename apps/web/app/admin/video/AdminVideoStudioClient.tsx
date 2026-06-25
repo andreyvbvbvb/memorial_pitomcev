@@ -592,7 +592,7 @@ const defaultPositionForIndex = (index: number) => ({
   x: (index % 3) * 4 - 4,
   y: Math.floor(index / 3) * 1.15,
   z: -Math.floor(index / 3) * 3,
-  rotationY: -25,
+  rotationY: 30,
   scale: 0.72,
 });
 
@@ -869,11 +869,11 @@ export default function AdminVideoStudioClient() {
     }
 
     const lanes = [
-      { y: -0.15, z: -2.2, scale: 0.82, rotationY: -24 },
-      { y: 0.55, z: -5.2, scale: 0.66, rotationY: -32 },
-      { y: 1.05, z: -8.5, scale: 0.54, rotationY: -18 },
-      { y: 1.55, z: -11.8, scale: 0.43, rotationY: -38 },
-      { y: 0.1, z: -7.2, scale: 0.58, rotationY: -28 },
+      { y: -0.15, z: -2.2, scale: 0.82, rotationY: 30 },
+      { y: 0.55, z: -5.2, scale: 0.66, rotationY: 30 },
+      { y: 1.05, z: -8.5, scale: 0.54, rotationY: 30 },
+      { y: 1.55, z: -11.8, scale: 0.43, rotationY: 30 },
+      { y: 0.1, z: -7.2, scale: 0.58, rotationY: 30 },
     ];
     const selectedPets = sourcePets.slice(0, SKY_PASS_MAX_ITEMS);
     const nextItems = selectedPets.map((pet, index) => {
