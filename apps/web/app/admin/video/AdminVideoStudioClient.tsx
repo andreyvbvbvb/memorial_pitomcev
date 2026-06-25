@@ -585,6 +585,9 @@ const getSupportedMimeType = () => {
 const createInstanceId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
+const SKY_PASS_DURATION = 90;
+const SKY_PASS_MAX_ITEMS = 12;
+
 const defaultPositionForIndex = (index: number) => ({
   x: (index % 3) * 4 - 4,
   y: Math.floor(index / 3) * 1.15,
@@ -858,6 +861,64 @@ export default function AdminVideoStudioClient() {
     setSelectedItemId((prev) => (prev === instanceId ? null : prev));
   }, []);
 
+  const buildSkyPassPreset = useCallback(() => {
+    const sourcePets = pets.filter((pet) => pet.memorial);
+    if (sourcePets.length === 0) {
+      setError("Нет доступных мемориалов для автосцены");
+      return;
+    }
+
+    const lanes = [
+      { y: -0.15, z: -2.2, scale: 0.82, rotationY: -24 },
+      { y: 0.55, z: -5.2, scale: 0.66, rotationY: -32 },
+      { y: 1.05, z: -8.5, scale: 0.54, rotationY: -18 },
+      { y: 1.55, z: -11.8, scale: 0.43, rotationY: -38 },
+      { y: 0.1, z: -7.2, scale: 0.58, rotationY: -28 },
+    ];
+    const selectedPets = sourcePets.slice(0, SKY_PASS_MAX_ITEMS);
+    const nextItems = selectedPets.map((pet, index) => {
+      const lane = lanes[index % lanes.length]!;
+      const wave = Math.floor(index / lanes.length);
+      const progress =
+        selectedPets.length <= 1 ? 0 : index / Math.max(1, selectedPets.length - 1);
+      const z = lane.z - wave * 1.8;
+      const distance = Math.abs(z);
+      const leftExit = -15.5 - distance * 0.78;
+      const rightExit = 17.5 + distance * 0.92;
+      const entryAt = 4 + progress * 60;
+      const visibleDuration = Math.max(17, Math.min(27, 24 - distance * 0.42));
+      const exitAt = Math.min(SKY_PASS_DURATION - 3, entryAt + visibleDuration);
+      const speed = (rightExit - leftExit) / Math.max(1, exitAt - entryAt);
+      const x = leftExit - speed * entryAt;
+      return {
+        instanceId: `${createInstanceId()}-${index}`,
+        petId: pet.id,
+        petName: pet.name,
+        memorial: pet.memorial!,
+        gifts: pet.gifts ?? [],
+        x: Number(x.toFixed(2)),
+        y: Number((lane.y + wave * 0.22).toFixed(2)),
+        z: Number(z.toFixed(2)),
+        rotationY: lane.rotationY,
+        scale: Number(Math.max(0.32, lane.scale - wave * 0.05).toFixed(2)),
+        speed: Number(speed.toFixed(3)),
+      };
+    });
+
+    setDuration(SKY_PASS_DURATION);
+    setDirectionYaw(0);
+    setVerticalSpeed(0);
+    setItems(nextItems);
+    setSelectedItemId(nextItems[0]?.instanceId ?? null);
+    elapsedRef.current = 0;
+    setElapsed(0);
+    setPlaying(false);
+    setRecording(false);
+    setNotice(
+      "Собран 90-секундный пролёт: начало и финал пустые, мемориалы идут слева направо.",
+    );
+  }, [pets]);
+
   const resetPlayback = useCallback(() => {
     elapsedRef.current = 0;
     setElapsed(0);
@@ -999,7 +1060,7 @@ export default function AdminVideoStudioClient() {
               Студия фонового видео
             </h1>
             <p className="mt-1 text-sm text-[#8d6e63]">
-              Расставьте мемориалы, задайте движение по небу и запишите короткий WebM-файл.
+              Расставьте мемориалы, задайте движение по небу и запишите WebM-файл.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1080,12 +1141,21 @@ export default function AdminVideoStudioClient() {
                 Движение
               </h2>
               <div className="mt-3 grid gap-3">
+                <button
+                  type="button"
+                  onClick={buildSkyPassPreset}
+                  disabled={recording || loading || pets.length === 0}
+                  className="rounded-[16px] bg-[#f0fffb] px-4 py-3 text-xs font-black uppercase tracking-[0.12em] text-[#16866f] shadow-sm transition hover:bg-[#e0faf3] disabled:cursor-not-allowed disabled:opacity-55"
+                  title="Автоматически собрать 90-секундное видео: чистое небо в начале и конце, мемориалы летят слева направо на разной глубине."
+                >
+                  Пресет 90 сек · слева направо
+                </button>
                 <label className="grid gap-1 text-xs font-bold text-[#8d6e63]">
                   Длительность, сек
                   <input
                     type="number"
                     min={1}
-                    max={60}
+                    max={120}
                     step={1}
                     value={duration}
                     onChange={(event) => setDuration(Math.max(1, Number(event.target.value)))}
