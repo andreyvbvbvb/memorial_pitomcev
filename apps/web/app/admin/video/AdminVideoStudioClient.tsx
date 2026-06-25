@@ -118,6 +118,7 @@ type StudioItem = {
 };
 
 type RecordingQuality = "compact" | "balanced" | "high";
+type RecordingFps = 24 | 30 | 60;
 
 type HeroVideoSetting = {
   url: string | null;
@@ -625,6 +626,8 @@ const recordingQualityOptions: Array<{
   },
 ];
 
+const recordingFpsOptions: RecordingFps[] = [24, 30, 60];
+
 const formatFileSize = (bytes?: number | null) => {
   if (!bytes || bytes <= 0) {
     return "0 МБ";
@@ -655,6 +658,7 @@ export default function AdminVideoStudioClient() {
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordingQuality, setRecordingQuality] = useState<RecordingQuality>("compact");
+  const [recordingFps, setRecordingFps] = useState<RecordingFps>(60);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState("memorial-sky-video.webm");
   const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null);
@@ -972,7 +976,7 @@ export default function AdminVideoStudioClient() {
     });
     setDownloadBlob(null);
     chunksRef.current = [];
-    const stream = canvasRef.current.captureStream(30);
+    const stream = canvasRef.current.captureStream(recordingFps);
     const mimeType = getSupportedMimeType();
     const selectedQuality =
       recordingQualityOptions.find((option) => option.id === recordingQuality) ??
@@ -1006,7 +1010,7 @@ export default function AdminVideoStudioClient() {
     setRecording(true);
     setPlaying(true);
     recorder.start(250);
-  }, [items.length, recordingQuality]);
+  }, [items.length, recordingFps, recordingQuality]);
 
   const uploadHeroVideo = useCallback(async () => {
     if (!downloadBlob) {
@@ -1230,6 +1234,36 @@ export default function AdminVideoStudioClient() {
                         </button>
                       );
                     })}
+                  </div>
+                  <div className="grid gap-2 rounded-[16px] bg-[#f7f1ee] p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                        FPS записи
+                      </span>
+                      <span className="text-[10px] font-bold text-[#a8948b]">
+                        больше FPS — плавнее и тяжелее
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {recordingFpsOptions.map((fps) => {
+                        const active = recordingFps === fps;
+                        return (
+                          <button
+                            key={fps}
+                            type="button"
+                            onClick={() => setRecordingFps(fps)}
+                            disabled={recording}
+                            className={`rounded-[12px] px-2 py-2 text-[10px] font-black uppercase tracking-[0.08em] transition disabled:opacity-60 ${
+                              active
+                                ? "bg-[#111827] text-white shadow-[0_4px_0_#000]"
+                                : "bg-white text-[#5d4037]"
+                            }`}
+                          >
+                            {fps}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <p className="text-[11px] font-semibold leading-snug text-[#8d6e63]">
                     Для главной используйте «Лёгкое»: запись идёт с низким битрейтом и
