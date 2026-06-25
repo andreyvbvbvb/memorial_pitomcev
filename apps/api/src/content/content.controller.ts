@@ -63,7 +63,7 @@ export class ContentController {
   }
 
   @Get("hero-video")
-  @Header("Cache-Control", "no-store, max-age=0")
+  @Header("Cache-Control", "public, max-age=30, stale-while-revalidate=300")
   async getHeroVideo() {
     const setting = await this.prisma.appSetting.findUnique({
       where: { key: HERO_VIDEO_SETTING_KEY },

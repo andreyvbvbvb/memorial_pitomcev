@@ -1267,7 +1267,10 @@ export default function AdminVideoStudioClient() {
                   </div>
                   <p className="text-[11px] font-semibold leading-snug text-[#8d6e63]">
                     Для главной используйте «Лёгкое»: запись идёт с низким битрейтом и
-                    DPR 1, безопасный размер загрузки до {formatFileSize(HERO_VIDEO_SAFE_UPLOAD_BYTES)}.
+                    DPR 1, безопасный размер загрузки до{" "}
+                    <span className="tabular-nums">
+                      {formatFileSize(HERO_VIDEO_SAFE_UPLOAD_BYTES)}
+                    </span>.
                   </p>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#eadfd9]">
@@ -1276,7 +1279,7 @@ export default function AdminVideoStudioClient() {
                     style={{ width: `${Math.min(100, (elapsed / duration) * 100)}%` }}
                   />
                 </div>
-                <div className="text-xs text-[#8d6e63]">
+                <div className="text-xs tabular-nums text-[#8d6e63]">
                   {formatSeconds(elapsed)} / {formatSeconds(duration)}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -1306,7 +1309,7 @@ export default function AdminVideoStudioClient() {
                 </div>
                 {downloadUrl ? (
                   <div className="grid gap-2 rounded-[18px] bg-[#eafaf6] p-3">
-                    <div className="text-xs font-black uppercase tracking-[0.1em] text-[#16866f]">
+                    <div className="text-xs font-black uppercase tabular-nums tracking-[0.1em] text-[#16866f]">
                       Видео готово · {formatFileSize(downloadBlob?.size)}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -1340,7 +1343,9 @@ export default function AdminVideoStudioClient() {
                       {heroVideo.fileName || "hero-video"}
                     </a>
                     {heroVideo.sizeBytes ? (
-                      <span className="ml-1">({formatFileSize(heroVideo.sizeBytes)})</span>
+                      <span className="ml-1 tabular-nums">
+                        ({formatFileSize(heroVideo.sizeBytes)})
+                      </span>
                     ) : null}
                   </div>
                 ) : null}
