@@ -2,6 +2,9 @@ const internalApiUrl = process.env.INTERNAL_API_URL?.trim() || "http://api:3001"
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    middlewareClientMaxBodySize: "25mb"
+  },
   async rewrites() {
     return [
       {

@@ -597,7 +597,7 @@ const defaultPositionForIndex = (index: number) => ({
 });
 
 const formatSeconds = (value: number) => `${value.toFixed(1)} c`;
-const HERO_VIDEO_SAFE_UPLOAD_BYTES = 9.5 * 1024 * 1024;
+const HERO_VIDEO_SAFE_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 const recordingQualityOptions: Array<{
   id: RecordingQuality;
@@ -609,19 +609,19 @@ const recordingQualityOptions: Array<{
     id: "compact",
     label: "Лёгкое",
     description: "минимальный вес, подходит для загрузки на главную",
-    bitrate: 650_000,
+    bitrate: 1_200_000,
   },
   {
     id: "balanced",
     label: "Среднее",
     description: "баланс качества и веса",
-    bitrate: 1_200_000,
+    bitrate: 2_000_000,
   },
   {
     id: "high",
     label: "Высокое",
     description: "крупнее файл, лучше детализация, чаще только для скачивания",
-    bitrate: 2_500_000,
+    bitrate: 4_000_000,
   },
 ];
 
