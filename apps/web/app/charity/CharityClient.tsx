@@ -329,7 +329,7 @@ export default function CharityClient() {
                         </h3>
                       </div>
 	                      <div className="flex flex-wrap items-center gap-2">
-	                        <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-xs font-black uppercase text-[#8d6e63]">
+	                        <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-xs font-black uppercase tabular-nums text-[#8d6e63]">
 	                          {formatNumber(report.amount)} монет
 	                        </div>
 	                        {isAdmin ? (
@@ -356,7 +356,7 @@ export default function CharityClient() {
                             key={photo}
                             type="button"
                             onClick={() => openPhotoViewer(report.photos, index, report.title)}
-                            className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)]"
+                            className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)] active:scale-[0.96]"
                           >
                             <div className="overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
                               <img
@@ -397,7 +397,7 @@ export default function CharityClient() {
                 <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
                   Заголовок
                   <input
-                    className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                    className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Перевод в приют"
@@ -406,7 +406,7 @@ export default function CharityClient() {
                 <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
                   Сумма пожертвований (монеты)
                   <input
-                    className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                    className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold tabular-nums text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
                     placeholder="1000"
@@ -417,7 +417,7 @@ export default function CharityClient() {
               <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
                 Текст отчёта
                 <textarea
-                  className="min-h-[140px] rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                  className="min-h-[140px] rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   placeholder="Расскажите, куда направлены средства..."
@@ -430,7 +430,7 @@ export default function CharityClient() {
                   type="file"
                   accept="image/*"
                   multiple
-                  className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-xs file:font-black file:text-white"
+                  className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-xs file:font-black file:text-white"
                   onChange={(event) =>
                     setPhotos(event.target.files ? Array.from(event.target.files) : [])
                   }
@@ -452,7 +452,7 @@ export default function CharityClient() {
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="inline-flex w-fit items-center justify-center rounded-xl bg-[#111827] px-6 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition-all hover:scale-[1.02] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="inline-flex w-fit items-center justify-center rounded-xl bg-[#111827] px-6 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                 disabled={saving}
               >
                 {saving ? "Сохранение..." : "Добавить отчёт"}

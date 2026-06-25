@@ -1571,7 +1571,7 @@ export default function MapClient() {
   const desktopCarouselInfoClass =
     `pointer-events-auto absolute right-6 top-1/2 z-20 flex h-[70dvh] w-[30%] max-w-[440px] min-w-[340px] -translate-y-1/2 flex-col overflow-visible ${hudInfoPanelChromeClass(false)} [@media(max-height:640px)]:right-4 [@media(max-height:640px)]:h-[calc(100dvh-var(--app-header-height,56px)-1rem)] [@media(max-height:640px)]:min-w-0 [@media(max-height:640px)]:w-[310px] [@media(max-height:640px)]:rounded-[24px] [@media(max-height:640px)]:p-2 [@media(max-width:1120px)]:min-w-0 [@media(max-width:1120px)]:w-[320px]`;
   const simsPanelClass =
-    `${hudFloatingPanelClass(false)} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_46px_-22px_rgba(93,64,55,0.44)]`;
+    `${hudFloatingPanelClass(false)} transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_24px_46px_-22px_rgba(93,64,55,0.44)]`;
   const simsSidebarClass =
     hudSidebarChromeClass(false);
   const simsFieldClass =
@@ -1585,7 +1585,7 @@ export default function MapClient() {
 	    ? "flex items-center justify-between gap-2 px-2.5"
 	    : "flex items-center justify-between gap-3";
 	  const mobilePanelClass = isPortraitLayout
-	    ? "transition-all duration-300"
+	    ? "transition-[transform,opacity] duration-300 ease-out"
 	    : simsPanelClass;
 	  const mobileSidebarClass = isPortraitLayout
 	    ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2.5 overscroll-contain"
@@ -2062,7 +2062,7 @@ export default function MapClient() {
           </p>
         </div>
         <a
-          className={compact ? "group mt-3 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[3px] active:shadow-none" : "group mt-5 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"}
+          className={compact ? "group mt-3 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-5 py-2.5 text-sm font-black text-[#355148] shadow-[0_3px_0_0_#8ca79c] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[3px] active:scale-[0.96] active:shadow-none" : "group mt-5 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-base font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[4px] active:scale-[0.96] active:shadow-none"}
           href={`/pets/${marker.petId}`}
         >
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
@@ -2319,7 +2319,7 @@ export default function MapClient() {
                     className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
                   >
                     <span
-                      className={`pointer-events-none absolute left-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                      className={`pointer-events-none absolute left-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-[transform,opacity] duration-200 ease-out group-hover:translate-x-1 group-hover:opacity-100 ${
                         hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                       }`}
                     >
@@ -2335,7 +2335,7 @@ export default function MapClient() {
                     className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
                   >
                     <span
-                      className={`pointer-events-none absolute right-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                      className={`pointer-events-none absolute right-4 top-1/2 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-[transform,opacity] duration-200 ease-out group-hover:-translate-x-1 group-hover:opacity-100 ${
                         hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                       }`}
                     >
@@ -2541,7 +2541,7 @@ export default function MapClient() {
                   className="pointer-events-auto group absolute left-0 top-0 h-full w-[20%] bg-transparent"
                 >
                   <span
-                    className={`pointer-events-none absolute left-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-all duration-200 group-hover:translate-x-1 group-hover:opacity-100 ${
+                    className={`pointer-events-none absolute left-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-[transform,opacity] duration-200 ease-out group-hover:translate-x-1 group-hover:opacity-100 ${
                       hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                     }`}
                   >
@@ -2557,7 +2557,7 @@ export default function MapClient() {
                   className="pointer-events-auto group absolute right-0 top-0 h-full w-[20%] bg-transparent"
                 >
                   <span
-                    className={`pointer-events-none absolute right-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-all duration-200 group-hover:-translate-x-1 group-hover:opacity-100 ${
+                    className={`pointer-events-none absolute right-6 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-white bg-[#fffcf9] text-[#5d4037] shadow-[0_16px_36px_-18px_rgba(93,64,55,0.45)] backdrop-blur transition-[transform,opacity] duration-200 ease-out group-hover:-translate-x-1 group-hover:opacity-100 ${
                       hasCarouselArrowNavigation ? "opacity-0" : "opacity-100"
                     }`}
                   >

@@ -385,15 +385,15 @@ export default function MenuClient() {
                           : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                       }`}
                     >
-                      <span className="font-black">{option.coins} монет</span>
-                      <span className="font-semibold text-[#8d6e63]">{price}</span>
+                      <span className="font-black tabular-nums">{option.coins} монет</span>
+                      <span className="font-semibold tabular-nums text-[#8d6e63]">{price}</span>
                     </button>
                   );
                 })}
               </div>
               <button
                 type="button"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
                 onClick={() => {
                   if (!topUpPlan) {
                     return;

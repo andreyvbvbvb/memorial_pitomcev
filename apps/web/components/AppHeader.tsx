@@ -255,21 +255,21 @@ export default function AppHeader() {
     "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-base text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const createButtonClass =
     isPortraitLayout
-      ? "inline-flex h-[34px] shrink-0 items-center gap-1 rounded-[10px] bg-[#111827] px-2.5 text-[9px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80"
-      : "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80";
+      ? "inline-flex h-[34px] shrink-0 items-center gap-1 rounded-[10px] bg-[#111827] px-2.5 text-[9px] font-black uppercase tracking-[0.08em] text-white shadow-[0_4px_0_0_#000] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:scale-[0.96] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80"
+      : "inline-flex h-[34px] items-center gap-1 rounded-[10px] bg-[#111827] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_4px_0_0_#000] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:scale-[0.96] active:shadow-none disabled:cursor-wait disabled:bg-[#111827]/80";
   const authButtonClass =
     isPortraitLayout
       ? "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-3 text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
       : "inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const menuPanelClass = isPortraitLayout
-    ? `fixed inset-0 z-[45] h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#f7f1ee] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 ${
+    ? `fixed inset-0 z-[45] h-[100dvh] max-h-[100dvh] overflow-y-auto bg-[#f7f1ee] px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-[transform,opacity] duration-200 ease-out ${
         menuVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       }`
-    : `absolute right-0 mt-3 w-72 rounded-[32px] border-[4px] border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-200 origin-top-right ${
+    : `absolute right-0 mt-3 w-72 origin-top-right rounded-[32px] border-[4px] border-white bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-[transform,opacity] duration-200 ease-out ${
         menuVisible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1 scale-95 opacity-0"
       }`;
   const menuItemClass =
-    "flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-left text-[#5d4037] transition-all hover:bg-[#fdf2e9]";
+    "flex w-full items-center gap-4 rounded-2xl px-5 py-3.5 text-left text-[#5d4037] transition-[background-color,color,transform] duration-150 ease-out hover:bg-[#fdf2e9] active:scale-[0.96]";
 
   const triggerCreateSpin = (reverse: boolean) => {
     setCreateSpin((prev) => ({ key: prev.key + 1, reverse }));
@@ -476,7 +476,7 @@ export default function AppHeader() {
                         </div>
                         <button
                           type="button"
-                          className="group flex w-full items-center justify-between rounded-2xl border-2 border-[#fdf2e9] bg-[#fcf8f5] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#d3a27f]/50 hover:bg-[#fff7f2] hover:shadow-[0_12px_28px_-18px_rgba(93,64,55,0.45)] active:translate-y-[2px]"
+                          className="group flex w-full items-center justify-between rounded-2xl border-2 border-[#fdf2e9] bg-[#fcf8f5] p-4 text-left transition-[transform,box-shadow,background-color,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:border-[#d3a27f]/50 hover:bg-[#fff7f2] hover:shadow-[0_12px_28px_-18px_rgba(93,64,55,0.45)] active:translate-y-[2px] active:scale-[0.96]"
                           onClick={() => {
                             closeMenu();
                             openTopUp();
@@ -494,7 +494,7 @@ export default function AppHeader() {
                             <span className="text-xs font-black uppercase text-[#8d6e63]">Баланс:</span>
                           </div>
                           <span className="flex items-center gap-2">
-                            <span className="text-lg font-black text-[#5d4037]">{user.coinBalance ?? 0}</span>
+                            <span className="text-lg font-black tabular-nums text-[#5d4037]">{user.coinBalance ?? 0}</span>
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111827] text-white shadow-[0_3px_0_0_#000] transition group-active:translate-y-[2px] group-active:shadow-none">
                               <span
                                 key={balanceSpin.key}
@@ -547,7 +547,7 @@ export default function AppHeader() {
                         <div className="mx-4 my-2 h-px bg-[#f8f9fa]" />
                         <button
                           type="button"
-                          className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left text-[#ff4d4d] transition-all hover:bg-red-50"
+                          className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-left text-[#ff4d4d] transition-[background-color,transform] duration-150 ease-out hover:bg-red-50 active:scale-[0.96]"
                           onClick={handleLogout}
                         >
                           {renderMenuIcon("logout")}
@@ -794,15 +794,15 @@ export default function AppHeader() {
                           : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                       }`}
                     >
-                      <span className="font-black">{option.coins} монет</span>
-                      <span className="font-semibold text-[#8d6e63]">{price}</span>
+                      <span className="font-black tabular-nums">{option.coins} монет</span>
+                      <span className="font-semibold tabular-nums text-[#8d6e63]">{price}</span>
                     </button>
                   );
                 })}
               </div>
               <button
                 type="button"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
                 onClick={() => {
                   if (!topUpPlan) {
                     return;

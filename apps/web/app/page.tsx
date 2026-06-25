@@ -147,12 +147,12 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <HomeCreateButton className="inline-flex items-center justify-center rounded-[18px] bg-white px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#111827] shadow-[0_5px_0_0_#d9d9d9] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#d9d9d9] active:translate-y-[4px] active:shadow-none disabled:cursor-wait disabled:bg-white/85">
+            <HomeCreateButton className="inline-flex items-center justify-center rounded-[18px] bg-white px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#111827] shadow-[0_5px_0_0_#d9d9d9] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#d9d9d9] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-wait disabled:bg-white/85">
               Создать мемориал
             </HomeCreateButton>
             <Link
               href="/about"
-              className="inline-flex items-center justify-center rounded-[18px] border-[2px] border-white/35 px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white transition hover:bg-white/10"
+              className="inline-flex items-center justify-center rounded-[18px] border-[2px] border-white/35 px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-white/10 active:scale-[0.96]"
             >
               О проекте
             </Link>

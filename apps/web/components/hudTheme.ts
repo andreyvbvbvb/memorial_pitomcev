@@ -33,7 +33,7 @@ export const hudCardSurfaceClass = (compact: boolean) =>
     : "rounded-[26px] border border-white/80 bg-[#fffcf9] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
 
 export const hudControlButtonClass = (compact: boolean, active: boolean, disabled = false) =>
-  `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-all ${
+  `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.96] ${
     compact ? "h-9 w-9 rounded-[13px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
   } ${
     disabled
@@ -44,7 +44,7 @@ export const hudControlButtonClass = (compact: boolean, active: boolean, disable
   }`;
 
 export const hudRoundButtonClass = (compact: boolean, active: boolean) =>
-  `group relative flex items-center justify-center border-[3px] shadow-md transition-all ${
+  `group relative flex items-center justify-center border-[3px] shadow-md transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] ${
     compact ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   } ${
     active
@@ -65,13 +65,13 @@ export const hudTooltipClass = (placement: "right" | "left" | "top" | "action" =
   }
 
   if (placement === "action") {
-    return "pointer-events-none absolute bottom-[calc(100%+0.65rem)] right-0 z-[300] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200";
+    return "pointer-events-none absolute bottom-[calc(100%+0.65rem)] right-0 z-[300] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-opacity duration-200";
   }
 
   return `${base} left-full top-1/2 ml-3 -translate-y-1/2`;
 };
 
 export const hudPrimaryActionClass =
-  "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:text-white/85 disabled:shadow-none";
+  "rounded-[22px] bg-[#111827] px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#000] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[3px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:text-white/85 disabled:shadow-none";
 
 export const hudEmptyStateTextClass = "text-sm font-semibold text-[#8d6e63]";

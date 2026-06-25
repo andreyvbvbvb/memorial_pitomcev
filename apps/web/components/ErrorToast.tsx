@@ -55,7 +55,7 @@ export default function ErrorToast({
 
   return (
     <div
-      className={`fixed right-6 z-[999] max-w-[320px] transition-all duration-200 ${
+      className={`fixed right-6 z-[999] max-w-[320px] transition-[transform,opacity] duration-200 ease-out ${
         visible ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0"
       }`}
       style={{ bottom: 24 + offset }}
@@ -65,7 +65,7 @@ export default function ErrorToast({
         <button
           type="button"
           onClick={() => setVisible(false)}
-          className={`flex h-6 w-6 items-center justify-center rounded-full ${closeClass}`}
+          className={`relative flex h-6 w-6 items-center justify-center rounded-full transition-[background-color,transform] duration-150 ease-out after:absolute after:inset-[-0.45rem] after:content-[''] active:scale-[0.96] ${closeClass}`}
           aria-label="Закрыть"
         >
           ×

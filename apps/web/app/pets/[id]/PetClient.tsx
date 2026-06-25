@@ -2793,8 +2793,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "pointer-events-auto absolute left-0 right-0 bottom-0 flex h-[44dvh] flex-col bg-[#f7f1ee]"
     : `pointer-events-auto absolute right-3 top-[calc(var(--app-header-height,56px)+10px)] bottom-[5.2rem] flex w-[min(340px,calc(100vw-1.25rem))] max-w-[90vw] flex-col ${hudPanelChromeClass(false)} sm:right-5 sm:top-[calc(var(--app-header-height,56px)+12px)] sm:bottom-[5.5rem] sm:w-[min(358px,calc(100vw-1.75rem))] sm:p-3 xl:w-[378px]`;
   const editFinishButtonClass = isPortraitLayout
-    ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
-    : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+    ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[4px] active:scale-[0.96] active:shadow-none"
+    : "group inline-flex min-w-[11rem] items-center justify-center rounded-xl bg-[#2d3436] px-8 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[4px] active:scale-[0.96] active:shadow-none";
   const editCancelButtonClass = isPortraitLayout
     ? "inline-flex min-w-0 flex-1 items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-4 py-3 text-[0.78rem] font-black uppercase tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9]"
     : "inline-flex min-w-[9rem] items-center justify-center rounded-xl border-[3px] border-white bg-white/92 px-6 py-3 text-[0.95rem] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9]";
@@ -2807,7 +2807,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const giftButtonWrapClass = isPortraitLayout
     ? "pointer-events-auto absolute bottom-[calc(4.65rem+env(safe-area-inset-bottom))] right-1.5"
     : "pointer-events-auto absolute bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4";
-  const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-all ${
+  const giftButtonClass = `flex items-center justify-center border-[3px] shadow-md transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] ${
     isPortraitLayout
       ? "h-10 w-10 rounded-[14px]"
       : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
@@ -3612,7 +3612,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                               key={photo.id}
                               type="button"
                               onClick={() => openLightbox(index)}
-                              className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)]"
+                              className="group overflow-hidden rounded-[26px] border-[4px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_30px_-18px_rgba(93,64,55,0.45)] active:scale-[0.96]"
                             >
                               <div className="overflow-hidden rounded-[20px] border-[3px] border-white bg-[#f8f9fa] shadow-[inset_0_2px_6px_rgba(93,64,55,0.08)]">
                                 <img
@@ -4507,7 +4507,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   <button
                     type="button"
                     onClick={openMobileEditActions}
-                    className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
+                    className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[2px] active:scale-[0.96] active:shadow-none"
                   >
                     Сохранить
                   </button>
@@ -4805,7 +4805,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           <button
                             type="button"
                             onClick={handleSaveAppearance}
-                            className="group inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
+                            className="group inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:scale-[0.96] active:shadow-none"
                             disabled={savingAppearance}
                           >
                             {savingAppearance
@@ -4877,7 +4877,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       }`}
                     >
                       <span className="font-black">{plan.label}</span>
-                      <span className="font-semibold text-[#8d6e63]">
+                      <span className="font-semibold tabular-nums text-[#8d6e63]">
                         {plan.price} монет
                       </span>
                     </button>
@@ -4979,7 +4979,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                   type="button"
                   onClick={handleDeleteMemorial}
                   disabled={!canConfirmDelete}
-                  className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-all hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:shadow-none"
+                  className="rounded-[22px] bg-red-500 px-4 py-3 text-sm font-black uppercase tracking-[0.14em] text-white shadow-[0_5px_0_0_#c0392b] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-red-600 hover:shadow-[0_6px_0_0_#b91c1c] active:translate-y-[3px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:shadow-none"
                 >
                   {deletingMemorial ? "Удаление..." : "Удалить"}
                 </button>
@@ -5064,8 +5064,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                       }`}
                     >
-                      <span className="font-black">{option.coins} монет</span>
-                      <span className="font-semibold text-[#8d6e63]">
+                      <span className="font-black tabular-nums">{option.coins} монет</span>
+                      <span className="font-semibold tabular-nums text-[#8d6e63]">
                         {price}
                       </span>
                     </button>

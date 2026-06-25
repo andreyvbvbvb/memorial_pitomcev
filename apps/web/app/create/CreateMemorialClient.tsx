@@ -3865,7 +3865,7 @@ export default function CreateMemorialClient({
 
   const renderArrowIcon = (className?: string) => (
     <span
-      className={`ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-all duration-300 group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100 ${className ?? ""}`}
+      className={`ml-0 inline-flex max-w-0 items-center overflow-hidden opacity-0 transition-[margin,max-width,opacity] duration-300 ease-out group-hover:ml-2 group-hover:max-w-5 group-hover:opacity-100 ${className ?? ""}`}
     >
       <svg
         viewBox="0 0 20 20"
@@ -4689,11 +4689,11 @@ export default function CreateMemorialClient({
     ? "text-[9px] font-black uppercase tracking-[0.14em] text-[#9f938e]"
     : "text-[10px] font-black uppercase tracking-widest text-[#adb5bd]";
   const overlayInputClass = isPortraitLayout
-    ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
-    : "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    ? "w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-tight text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
+    : "w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]";
   const overlayTextareaClass = isPortraitLayout
-    ? "min-h-[76px] w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-snug text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
-    : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]";
+    ? "min-h-[76px] w-full rounded-xl border-b-[3px] border-transparent bg-[#fffcf9] px-2.5 py-1.5 text-[16px] font-bold leading-snug text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
+    : "min-h-[170px] w-full rounded-2xl border-b-4 border-transparent bg-[#f7f1ee] px-4 py-3.5 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]";
   const overlayShellClass = isPortraitLayout
     ? "flex h-full min-h-0 flex-col gap-1.5 overflow-hidden bg-[#f7f1ee] p-1"
     : "grid min-h-0 gap-4 rounded-[32px] border-[4px] border-white bg-[#fffcf9] p-4 shadow-[0_20px_60px_-15px_rgba(93,64,55,0.22)] sm:p-5 [@media(max-height:640px)]:gap-2 [@media(max-height:640px)]:rounded-[22px] [@media(max-height:640px)]:border-[3px] [@media(max-height:640px)]:p-3";
@@ -5956,8 +5956,8 @@ export default function CreateMemorialClient({
     ? "inline-flex w-[7.8rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-3 py-2.5 text-center text-[0.68rem] font-black uppercase leading-tight tracking-[0.08em] text-[#8d6e63] shadow-[0_8px_20px_-14px_rgba(93,64,55,0.42)] transition hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70"
     : "inline-flex w-[9rem] shrink-0 items-center justify-center rounded-xl border-[3px] border-white bg-[#fffcf9] px-3 py-2.5 text-center text-[0.72rem] font-black uppercase leading-tight tracking-[0.1em] text-[#8d6e63] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.42)] transition hover:-translate-y-[1px] hover:bg-[#fdf2e9] disabled:cursor-wait disabled:opacity-70";
   const builderFinishButtonClass = isPortraitLayout
-    ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
-    : "group inline-flex min-w-[15rem] items-center justify-center rounded-xl bg-[#2d3436] px-10 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none";
+    ? "group inline-flex min-w-0 flex-1 items-center justify-center rounded-xl bg-[#2d3436] px-4 py-3 text-[0.9rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[4px] active:scale-[0.96] active:shadow-none"
+    : "group inline-flex min-w-[15rem] items-center justify-center rounded-xl bg-[#2d3436] px-10 py-3 text-[1.1rem] font-black text-white shadow-[0_4px_0_0_#111827] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[4px] active:scale-[0.96] active:shadow-none";
   const builderActionTooltipClass = hudTooltipClass("action");
   const builderSceneFrameClass = isPortraitLayout
     ? "fixed left-0 right-0 top-0 z-0 h-[51dvh] overflow-hidden"
@@ -6146,7 +6146,7 @@ export default function CreateMemorialClient({
                           </span>
                           {renderNavButtons(
                             "shrink-0",
-                            "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#1f2937] active:scale-[0.98]",
+                            "w-full rounded-[24px] bg-[#111827] px-8 py-4 text-[13px] font-black uppercase tracking-[0.22em] text-white shadow-[0_12px_24px_-8px_rgba(17,24,39,0.5)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-[#1f2937] active:scale-[0.96]",
                           )}
                         </div>
                       </div>
@@ -6668,7 +6668,7 @@ export default function CreateMemorialClient({
                     <button
                       type="button"
                       onClick={openMobileBuilderActions}
-                      className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-all hover:brightness-105 active:translate-y-[2px] active:shadow-none"
+                      className="group inline-flex w-[min(47vw,13rem)] min-w-0 items-center justify-center rounded-xl bg-[#2d3436] px-3 py-1.5 text-center text-[0.68rem] font-black leading-tight text-white shadow-[0_2px_0_0_#111827] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[2px] active:scale-[0.96] active:shadow-none"
                     >
                       {isEditMode ? "Сохранить" : "Сохранить/Продолжить"}
                     </button>
@@ -7064,7 +7064,7 @@ export default function CreateMemorialClient({
                                       {plan.label}
                                     </span>
                                     <span className="text-[#8d6e63]">
-                                      {plan.price} монет
+                                      <span className="tabular-nums">{plan.price} монет</span>
                                     </span>
                                   </button>
                                 );
@@ -7075,7 +7075,7 @@ export default function CreateMemorialClient({
                         <button
                           type="button"
                           onClick={() => void handleSubmit()}
-                          className="group mt-2 inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:shadow-none"
+                          className="group mt-2 inline-flex items-center justify-center rounded-2xl bg-[#111827] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_0_0_#000] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_7px_0_0_#000] active:translate-y-[4px] active:scale-[0.96] active:shadow-none"
                           disabled={loading}
                         >
                           <span className="transition-transform duration-300 group-hover:-translate-x-1">
@@ -7313,7 +7313,7 @@ export default function CreateMemorialClient({
               </div>
               <button
                 type="button"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
                 onClick={() => {
                   if (!topUpPlan) {
                     return;

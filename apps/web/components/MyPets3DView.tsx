@@ -858,7 +858,7 @@ export default function MyPets3DView({
     `group absolute z-10 flex items-center ${
       side === "left" ? "left-0 justify-start" : "right-0 justify-end"
     } ${fullScreen && isPortraitLayout ? "top-0 h-[55dvh] w-14 px-1" : "bottom-0 top-0 w-28 px-4"}`;
-  const sideNavIconClass = `flex items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-all duration-200 group-hover:opacity-100 ${
+  const sideNavIconClass = `flex items-center justify-center rounded-full border-[3px] border-white bg-white/90 text-[#5d4037] shadow-[0_14px_32px_-18px_rgba(93,64,55,0.42)] backdrop-blur transition-opacity duration-200 group-hover:opacity-100 ${
     fullScreen && isPortraitLayout ? "h-10 w-10" : "h-14 w-14"
   }`;
 
@@ -1053,7 +1053,7 @@ export default function MyPets3DView({
             <div className="mt-4 shrink-0 [@media(max-height:640px)]:mt-3">
               <Link
                 href={`/pets/${selectedItem.pet.id}`}
-                className="group inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-[1rem] font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-all hover:brightness-105 active:translate-y-[4px] active:shadow-none"
+                className="group inline-flex w-full items-center justify-center rounded-xl bg-[#c8d8cf] px-7 py-3 text-[1rem] font-black text-[#355148] shadow-[0_4px_0_0_#8ca79c] transition-[transform,box-shadow,filter] duration-150 ease-out hover:brightness-105 active:translate-y-[4px] active:scale-[0.96] active:shadow-none"
               >
                 <span className="transition-transform duration-300 group-hover:-translate-x-1">
                   Открыть мемориал

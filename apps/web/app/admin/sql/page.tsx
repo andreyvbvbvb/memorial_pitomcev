@@ -3391,7 +3391,7 @@ export default function AdminSqlPage() {
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-slate-900 transition-all"
+                    className="h-full rounded-full bg-slate-900 transition-[width] duration-150 ease-out"
                     style={{
                       width: `${Math.min(
                         100,
@@ -3510,7 +3510,7 @@ export default function AdminSqlPage() {
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-slate-900 transition-all"
+                    className="h-full rounded-full bg-slate-900 transition-[width] duration-150 ease-out"
                     style={{
                       width: `${Math.min(
                         100,

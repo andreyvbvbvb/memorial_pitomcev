@@ -214,7 +214,7 @@ export default function NewsClient() {
                 <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Заголовок
                   <input
-                    className="w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                    className="w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Технические работы"
@@ -223,7 +223,7 @@ export default function NewsClient() {
                 <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Текст новости
                   <textarea
-                    className="min-h-[130px] w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-all focus:border-[#3bceac]"
+                    className="min-h-[130px] w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
                     value={body}
                     onChange={(event) => setBody(event.target.value)}
                     placeholder="Что нужно сообщить пользователям..."
@@ -235,7 +235,7 @@ export default function NewsClient() {
                     type="file"
                     accept="image/*"
                     multiple
-                    className="block w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-3 py-3 text-xs font-bold text-[#5d4037] shadow-inner outline-none transition-all file:mr-2 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-[11px] file:font-black file:text-white sm:px-4 sm:text-sm"
+                    className="block w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-white px-3 py-3 text-xs font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out file:mr-2 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-[11px] file:font-black file:text-white sm:px-4 sm:text-sm"
                     onChange={(event) =>
                       setPhotos(event.target.files ? Array.from(event.target.files) : [])
                     }
@@ -257,7 +257,7 @@ export default function NewsClient() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={saving}
-                  className="inline-flex w-fit items-center justify-center rounded-xl bg-[#111827] px-6 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition-all hover:scale-[1.02] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                  className="inline-flex w-fit items-center justify-center rounded-xl bg-[#111827] px-6 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                 >
                   {saving ? "Публикуем..." : "Опубликовать"}
                 </button>
@@ -283,7 +283,7 @@ export default function NewsClient() {
                     <h2 className="text-xl font-black leading-tight text-[#5d4037]">
                       {post.title}
                     </h2>
-                    <time className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                    <time className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tabular-nums tracking-[0.12em] text-[#8d6e63]">
                       {new Date(post.createdAt).toLocaleDateString("ru-RU")}
                     </time>
                   </div>
@@ -297,7 +297,7 @@ export default function NewsClient() {
                           key={photo}
                           type="button"
                           onClick={() => setPhotoViewer({ photos: post.photos ?? [], index, title: post.title })}
-                          className="group overflow-hidden rounded-[20px] border-[3px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-all duration-300 hover:-translate-y-[2px]"
+                          className="group overflow-hidden rounded-[20px] border-[3px] border-white bg-[#fff7f1] p-1 shadow-[0_14px_26px_-20px_rgba(93,64,55,0.5)] transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-[2px] active:scale-[0.96]"
                         >
                           <img
                             src={photo}

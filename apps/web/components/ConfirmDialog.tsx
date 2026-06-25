@@ -50,7 +50,7 @@ export default function ConfirmDialog({
       type="button"
       onClick={action.onClick}
       disabled={action.disabled}
-      className={`rounded-[18px] px-4 py-3 text-[11px] font-black uppercase tracking-[0.12em] transition-all disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:text-white disabled:shadow-none ${actionClass(action.variant)}`}
+      className={`rounded-[18px] px-4 py-3 text-[11px] font-black uppercase tracking-[0.12em] transition-[transform,box-shadow,background-color,color,border-color] duration-150 ease-out active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-[#d8cfc9] disabled:text-white disabled:shadow-none ${actionClass(action.variant)}`}
     >
       {action.label}
     </button>
@@ -75,7 +75,7 @@ export default function ConfirmDialog({
             </div>
             <button
               type="button"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-[#f1e7e0] text-xl font-black leading-none text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border-[3px] border-white bg-[#f1e7e0] text-xl font-black leading-none text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-[background-color,color,transform] duration-150 ease-out hover:bg-white active:scale-[0.96]"
               onClick={onClose ?? cancelAction.onClick}
               aria-label="Закрыть"
             >

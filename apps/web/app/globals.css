@@ -69,6 +69,11 @@ h6 {
   text-wrap: balance;
 }
 
+p,
+li {
+  text-wrap: pretty;
+}
+
 a {
   color: var(--primary);
 }

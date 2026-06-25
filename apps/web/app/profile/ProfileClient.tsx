@@ -75,7 +75,7 @@ function HelpHint({ text, className = "" }: { text: string; className?: string }
       aria-label={text}
     >
       ?
-      <span className="pointer-events-none absolute right-0 top-[calc(100%+0.55rem)] z-[1000] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200 group-hover/hint:opacity-100 group-focus/hint:opacity-100">
+      <span className="pointer-events-none absolute right-0 top-[calc(100%+0.55rem)] z-[1000] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-opacity duration-200 group-hover/hint:opacity-100 group-focus/hint:opacity-100">
         {text}
       </span>
     </span>
@@ -456,7 +456,7 @@ export default function ProfileClient() {
                                 setNotice(null);
                               }
                             }}
-                            className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                            className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:bg-[#34c1a1] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
                             disabled={!profile}
                           >
                             Редактировать профиль
@@ -465,7 +465,7 @@ export default function ProfileClient() {
                             <button
                               type="button"
                               onClick={handleLogout}
-                              className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-all hover:bg-[#fff4f4]"
+                              className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-[#ffe0df] bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#c95454] shadow-[0_10px_24px_-18px_rgba(201,84,84,0.38)] transition-[background-color,transform] duration-150 ease-out hover:bg-[#fff4f4] active:scale-[0.96]"
                             >
                               Выйти
                             </button>
@@ -476,7 +476,7 @@ export default function ProfileClient() {
                           <button
                             type="button"
                             onClick={handleSave}
-                            className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-all hover:bg-[#34c1a1] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
+                            className="inline-flex min-w-[14rem] items-center justify-center rounded-[26px] bg-[#3bceac] px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_6px_0_0_#2a9b81] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:bg-[#34c1a1] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#9ddfce] disabled:text-white/80 disabled:shadow-none"
                             disabled={!profile || saving}
                           >
                             {saving ? "Сохранение..." : "Сохранить изменения"}
@@ -484,7 +484,7 @@ export default function ProfileClient() {
                           <button
                             type="button"
                             onClick={handleCancelEditing}
-                            className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-all hover:bg-[#fff7f1]"
+                            className="inline-flex min-w-[11rem] items-center justify-center rounded-[24px] border-[3px] border-white bg-white px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-[background-color,transform] duration-150 ease-out hover:bg-[#fff7f1] active:scale-[0.96]"
                             disabled={!profile || saving}
                           >
                             Отменить
@@ -508,7 +508,7 @@ export default function ProfileClient() {
                       </h2>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tabular-nums tracking-[0.16em] text-[#8d6e63]">
                         {profile?.coinBalance ?? 0} монет
                       </div>
                       <button
@@ -536,7 +536,7 @@ export default function ProfileClient() {
                           </div>
                           <div className="flex items-center justify-between gap-3 sm:justify-end">
                             <span
-                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                              className={`rounded-full px-3 py-1 text-xs font-black tabular-nums ${
                                 item.amount >= 0
                                   ? "bg-[#e5fbf4] text-[#2a9b81]"
                                   : "bg-[#fff0ed] text-[#b66352]"
@@ -545,7 +545,7 @@ export default function ProfileClient() {
                               {item.amount > 0 ? "+" : ""}
                               {item.amount}
                             </span>
-                            <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8d6e63]">
+                            <span className="text-xs font-black uppercase tabular-nums tracking-[0.12em] text-[#8d6e63]">
                               {item.balanceAfter}
                             </span>
                           </div>
@@ -596,7 +596,7 @@ export default function ProfileClient() {
                           Получал
                         </button>
                       </div>
-                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                      <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-[10px] font-black uppercase tabular-nums tracking-[0.16em] text-[#8d6e63]">
                         {activeGiftHistory.length}
                       </div>
                     </div>
@@ -744,8 +744,8 @@ export default function ProfileClient() {
                           : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                       }`}
                     >
-                      <span className="font-black">{option.coins} монет</span>
-                      <span className="font-semibold text-[#8d6e63]">
+                      <span className="font-black tabular-nums">{option.coins} монет</span>
+                      <span className="font-semibold tabular-nums text-[#8d6e63]">
                         {price}
                       </span>
                     </button>
@@ -754,7 +754,7 @@ export default function ProfileClient() {
               </div>
               <button
                 type="button"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-all hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-[18px] bg-[#111827] px-6 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white shadow-[0_5px_0_0_#000] transition-[transform,box-shadow,background-color,color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#000] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-not-allowed disabled:bg-[#c8d0da] disabled:text-white/85 disabled:shadow-none"
                 onClick={() => {
                   if (!topUpPlan) {
                     return;

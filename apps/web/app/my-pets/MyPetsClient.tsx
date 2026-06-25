@@ -245,8 +245,8 @@ export default function MyPetsClient() {
 	    ? "grid gap-3"
 	    : "rounded-[32px] border-[4px] border-white bg-white/80 p-5 shadow-[0_18px_40px_-24px_rgba(93,64,55,0.45)] backdrop-blur-md sm:p-6";
   const petCardClass = isPortraitLayout
-    ? "group relative rounded-[24px] border-[3px] border-[#fdf2e9] bg-white p-2.5 shadow-[0_6px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_9px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_4px_0_0_#f0e1d1]"
-    : "group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-all hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:shadow-[0_6px_0_0_#f0e1d1]";
+    ? "group relative rounded-[24px] border-[3px] border-[#fdf2e9] bg-white p-2.5 shadow-[0_6px_0_0_#f0e1d1] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-1 hover:shadow-[0_9px_0_0_#f0e1d1] active:translate-y-0 active:scale-[0.96] active:shadow-[0_4px_0_0_#f0e1d1]"
+    : "group relative rounded-[32px] border-[4px] border-[#fdf2e9] bg-white p-3 shadow-[0_8px_0_0_#f0e1d1] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-1 hover:shadow-[0_12px_0_0_#f0e1d1] active:translate-y-0 active:scale-[0.96] active:shadow-[0_6px_0_0_#f0e1d1]";
   const viewToggleWrapClass = "pointer-events-auto fixed bottom-6 left-6 z-20";
   const viewToggleShellClass = isPortraitLayout
     ? "flex items-center gap-1 rounded-[18px] border-[3px] border-[#fdf2e9] bg-white/95 p-1 shadow-[0_12px_28px_-16px_rgba(93,64,55,0.45)] backdrop-blur"
@@ -347,7 +347,7 @@ export default function MyPetsClient() {
                           </div>
                           <div className="group/draft-badge absolute left-3 top-3 rounded-full border border-white bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-[#5d4037] shadow-sm backdrop-blur">
                             Черновик
-                            <span className="pointer-events-none absolute left-0 top-[calc(100%+0.5rem)] z-[1000] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-all duration-200 group-hover/draft-badge:opacity-100">
+                            <span className="pointer-events-none absolute left-0 top-[calc(100%+0.5rem)] z-[1000] w-64 rounded-[18px] border-[3px] border-white bg-white/[0.96] px-4 py-3 text-left text-[11px] font-bold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-[0_18px_38px_-22px_rgba(93,64,55,0.55)] backdrop-blur transition-opacity duration-200 group-hover/draft-badge:opacity-100">
                               Фотографии не хранятся в черновике и появятся только после публикации.
                             </span>
                           </div>
@@ -435,7 +435,7 @@ export default function MyPetsClient() {
                           {pet.isPublic ? "Публичный" : "Приватный"}
                         </span>
                       </div>
-                      <div className="pointer-events-none absolute -right-1 -top-1 opacity-0 transition-all duration-300 group-hover:translate-x-2 group-hover:translate-y-[-8px] group-hover:scale-100 group-hover:opacity-100">
+                      <div className="pointer-events-none absolute -right-1 -top-1 opacity-0 transition-[transform,opacity] duration-300 ease-out group-hover:translate-x-2 group-hover:translate-y-[-8px] group-hover:scale-100 group-hover:opacity-100">
                         <div className="h-10 w-6 border border-white bg-gradient-to-t from-[#2da689] to-[#3bceac] shadow-lg [clip-path:polygon(50%_0%,100%_50%,50%_100%,0%_50%)]" />
                       </div>
                       </div>
@@ -470,7 +470,7 @@ export default function MyPetsClient() {
                             {formatLifeRange(pet)}
                           </span>
                         </div>
-                        <span className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-1 group-hover:shadow-[0_5px_0_0_#1e7a63]">
+                        <span className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#3bceac] text-white shadow-[0_3px_0_0_#1e7a63] transition-[transform,box-shadow] duration-300 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-1 group-hover:shadow-[0_5px_0_0_#1e7a63]">
                           <svg
                             viewBox="0 0 24 24"
                             className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

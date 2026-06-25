@@ -71,7 +71,7 @@ export default function PhotoLightbox({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#fdf2e9] text-[#c78d68] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white hover:text-[#5d4037]"
+          className="absolute right-5 top-5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#fdf2e9] text-[#c78d68] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition-[background-color,color,transform] duration-150 ease-out hover:bg-white hover:text-[#5d4037] active:scale-[0.96]"
           aria-label="Закрыть просмотр"
         >
           <CloseIcon />
@@ -99,7 +99,7 @@ export default function PhotoLightbox({
                   {title}
                 </p>
               ) : null}
-              <p className="mt-1 text-xs font-black uppercase tracking-[0.22em] text-[#c78d68]">
+              <p className="mt-1 text-xs font-black uppercase tabular-nums tracking-[0.22em] text-[#c78d68]">
                 {Math.min(index + 1, Math.max(total, 1))} / {Math.max(total, 1)}
               </p>
             </div>
@@ -109,7 +109,7 @@ export default function PhotoLightbox({
                 type="button"
                 onClick={onPrev}
                 disabled={!canNavigate}
-                className={`inline-flex items-center gap-2 rounded-[18px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-all sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-[11px] sm:tracking-[0.18em] ${
+                className={`inline-flex items-center gap-2 rounded-[18px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-[11px] sm:tracking-[0.18em] ${
                   canNavigate
                     ? "border-[3px] border-white bg-white text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] hover:bg-[#fff7f1]"
                     : "cursor-not-allowed border-[3px] border-white bg-white/70 text-[#d2b7aa] shadow-none"
@@ -122,7 +122,7 @@ export default function PhotoLightbox({
                 type="button"
                 onClick={onNext}
                 disabled={!canNavigate}
-                className={`inline-flex items-center gap-2 rounded-[18px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-all sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-[11px] sm:tracking-[0.18em] ${
+                className={`inline-flex items-center gap-2 rounded-[18px] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition-[background-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] sm:rounded-[22px] sm:px-4 sm:py-3 sm:text-[11px] sm:tracking-[0.18em] ${
                   canNavigate
                     ? "bg-[#548ca8] text-white shadow-[0_6px_0_0_#3d667a] hover:bg-[#4b7f99] active:translate-y-[3px] active:shadow-none"
                     : "cursor-not-allowed bg-[#b9ced9] text-white/80 shadow-none"
