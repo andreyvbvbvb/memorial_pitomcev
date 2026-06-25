@@ -40,8 +40,10 @@ import {
   resolveMatModel,
   resolveBowlFoodModel,
   resolveBowlWaterModel,
+  resolvePartModel,
 } from "../../../lib/memorial-models";
 import {
+  getHouseSlotEntries,
   getHouseSlots,
   getTerrainGiftSlots,
 } from "../../../lib/memorial-config";
@@ -72,6 +74,7 @@ import {
   roofOptions as allRoofOptions,
   signOptions as allSignOptions,
   wallOptions as allWallOptions,
+  getPartOptions,
   type OptionItem,
 } from "../../../lib/memorial-options";
 
@@ -231,7 +234,7 @@ const colorPalette = [
   "#422913",
 ] as const;
 
-const APPEARANCE_TAB_DESCRIPTIONS: Record<AppearanceTabId, string> = {
+const APPEARANCE_TAB_DESCRIPTIONS: Record<string, string> = {
   house: "Выбор формы домика и его текстуры.",
   roof: "Крыша домика и её цвет.",
   wall: "Стены домика и материалы.",
@@ -243,6 +246,24 @@ const APPEARANCE_TAB_DESCRIPTIONS: Record<AppearanceTabId, string> = {
   bowlWater: "Миска с водой.",
 };
 
+const LEGACY_SCENE_PART_KEYS = new Set([
+  "roof",
+  "wall",
+  "sign",
+  "frameLeft",
+  "frameRight",
+  "mat",
+  "bowlFood",
+  "bowlWater",
+]);
+
+const readDynamicPartSelections = (parts: Record<string, unknown>) =>
+  Object.fromEntries(
+    Object.entries(parts)
+      .filter(([key, value]) => !LEGACY_SCENE_PART_KEYS.has(key) && typeof value === "string")
+      .map(([key, value]) => [key, String(value)])
+  );
+
 type AppearanceTabId =
   | "house"
   | "roof"
@@ -252,7 +273,8 @@ type AppearanceTabId =
   | "frameRight"
   | "mat"
   | "bowlFood"
-  | "bowlWater";
+  | "bowlWater"
+  | `slot:${string}`;
 
 type AppearanceDraft = {
   houseId: string;
@@ -264,6 +286,7 @@ type AppearanceDraft = {
   matId: string;
   bowlFoodId: string;
   bowlWaterId: string;
+  partSelections: Record<string, string>;
   roofColor: string;
   wallColor: string;
   signColor: string;
@@ -983,6 +1006,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       matId: partId("mat", matOptions),
       bowlFoodId: partId("bowlFood", bowlFoodOptions),
       bowlWaterId: partId("bowlWater", bowlWaterOptions),
+      partSelections: readDynamicPartSelections(parts),
       roofColor: colorValue("roof_paint", colorPalette[0]),
       wallColor: colorValue("wall_paint", colorPalette[1]),
       signColor: colorValue("sign_paint", colorPalette[16]),
@@ -1038,6 +1062,50 @@ export default function PetClient({ id, mode = "view" }: Props) {
       : null) ??
     effectiveHouseId;
   const previewHouseSlots = getHouseSlots(editPreviewHouseId);
+  const houseSlotEntries = useMemo(
+    () => getHouseSlotEntries(houseSlots),
+    [houseSlots],
+  );
+  const previewHouseSlotEntries = useMemo(
+    () => getHouseSlotEntries(previewHouseSlots),
+    [previewHouseSlots],
+  );
+  const dynamicHouseSlotEntries = useMemo(
+    () =>
+      houseSlotEntries.filter(
+        (entry) => !entry.legacy && getPartOptions(entry.category).length > 0,
+      ),
+    [houseSlotEntries],
+  );
+  const previewDynamicHouseSlotEntries = useMemo(
+    () =>
+      previewHouseSlotEntries.filter(
+        (entry) => !entry.legacy && getPartOptions(entry.category).length > 0,
+      ),
+    [previewHouseSlotEntries],
+  );
+  const dynamicSlotByTabId = useMemo(
+    () =>
+      new Map(
+        dynamicHouseSlotEntries.map((entry) => [`slot:${entry.slot}`, entry]),
+      ),
+    [dynamicHouseSlotEntries],
+  );
+  const previewDynamicSlotBySlotName = useMemo(
+    () =>
+      new Map(
+        previewDynamicHouseSlotEntries.map((entry) => [entry.slot, entry]),
+      ),
+    [previewDynamicHouseSlotEntries],
+  );
+  const dynamicPartCategory = (slot: string) => `part:${slot}`;
+  const getDynamicPartPreviewId = useCallback(
+    (slot: string) =>
+      hoveredAppearanceId(dynamicPartCategory(slot)) ??
+      draftAppearance.partSelections[slot] ??
+      "none",
+    [draftAppearance.partSelections, hoveredAppearanceId],
+  );
   const previewRoofId = hoveredAppearanceId("roof") ?? draftAppearance.roofId;
   const previewWallId = hoveredAppearanceId("wall") ?? draftAppearance.wallId;
   const previewSignId = hoveredAppearanceId("sign") ?? draftAppearance.signId;
@@ -1054,6 +1122,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
     (category: string, optionId: string) => {
       if (!optionId || optionId === "none") {
         return null;
+      }
+      if (category.startsWith("part:")) {
+        const slot = category.slice("part:".length);
+        return resolvePartModel(
+          previewDynamicSlotBySlotName.get(slot)?.category,
+          optionId,
+        );
       }
       switch (category) {
         case "house-base": {
@@ -1083,10 +1158,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
           return null;
       }
     },
-    [houseVariantGroup.defaultVariantByBase],
+    [houseVariantGroup.defaultVariantByBase, previewDynamicSlotBySlotName],
   );
   const selectedAppearanceIdForCategory = useCallback(
     (category: string) => {
+      if (category.startsWith("part:")) {
+        const slot = category.slice("part:".length);
+        return draftAppearance.partSelections[slot] ?? "none";
+      }
       switch (category) {
         case "house-base":
           return selectedHouseBaseId;
@@ -1119,6 +1198,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       draftAppearance.frameRightId,
       draftAppearance.houseId,
       draftAppearance.matId,
+      draftAppearance.partSelections,
       draftAppearance.roofId,
       draftAppearance.signId,
       draftAppearance.wallId,
@@ -1629,6 +1709,20 @@ export default function PetClient({ id, mode = "view" }: Props) {
         ? {
             ...prev,
             [field]: value,
+          }
+        : prev,
+    );
+  };
+
+  const updateAppearancePartSelection = (slot: string, value: string) => {
+    setAppearanceDraft((prev) =>
+      prev
+        ? {
+            ...prev,
+            partSelections: {
+              ...prev.partSelections,
+              [slot]: value,
+            },
           }
         : prev,
     );
@@ -2207,8 +2301,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
         imageCategory: "bowl-water",
         focusSlot: houseSlots.bowlWater,
       });
+    dynamicHouseSlotEntries.forEach((entry) => {
+      tabs.push({
+        id: `slot:${entry.slot}`,
+        label: entry.label,
+        imageCategory: entry.category,
+        focusSlot: entry.slot,
+      });
+    });
     return tabs;
-  }, [houseSlots]);
+  }, [dynamicHouseSlotEntries, houseSlots]);
 
   const appearanceTabBySlot = useMemo(() => {
     const mapping = new Map<string, AppearanceTabId>();
@@ -2220,8 +2322,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
     if (houseSlots.mat) mapping.set(houseSlots.mat, "mat");
     if (houseSlots.bowlFood) mapping.set(houseSlots.bowlFood, "bowlFood");
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
+    dynamicHouseSlotEntries.forEach((entry) => {
+      mapping.set(entry.slot, `slot:${entry.slot}`);
+    });
     return mapping;
-  }, [houseSlots]);
+  }, [dynamicHouseSlotEntries, houseSlots]);
 
   const activeAppearanceFocusSlot = useMemo(
     () =>
@@ -2282,6 +2387,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
     setAppearanceError(null);
     setSavingAppearance(true);
+    const dynamicParts = Object.fromEntries(
+      Object.entries(appearanceDraft.partSelections).filter(
+        ([, value]) => value && value !== "none",
+      ),
+    );
     const nextSceneJson = {
       parts: {
         roof: appearanceDraft.roofId,
@@ -2292,6 +2402,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         mat: appearanceDraft.matId,
         bowlFood: appearanceDraft.bowlFoodId,
         bowlWater: appearanceDraft.bowlWaterId,
+        ...dynamicParts,
       },
       colors: {
         roof_paint: appearanceDraft.roofColor,
@@ -2496,6 +2607,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
         value: optionById(bowlWaterOptions, draftAppearance.bowlWaterId).name,
       });
     }
+    dynamicHouseSlotEntries.forEach((entry) => {
+      const options = getPartOptions(entry.category);
+      items.push({
+        label: entry.label,
+        value: optionById(
+          options,
+          draftAppearance.partSelections[entry.slot] ?? "none",
+        ).name,
+      });
+    });
     return items;
   }, [
     bowlFoodOptions,
@@ -2506,11 +2627,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
     draftAppearance.frameRightId,
     draftAppearance.houseId,
     draftAppearance.matId,
+    draftAppearance.partSelections,
     draftAppearance.roofId,
     draftAppearance.signId,
     draftAppearance.wallId,
     frameLeftOptions,
     frameRightOptions,
+    dynamicHouseSlotEntries,
     houseOptions,
     houseSlots.bowlFood,
     houseSlots.bowlWater,
@@ -2659,6 +2782,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
           url: resolveBowlWaterModel(appearanceParts.bowlWater),
         }
       : null,
+    ...previewDynamicHouseSlotEntries.map((entry) => {
+      const url = resolvePartModel(
+        entry.category,
+        getDynamicPartPreviewId(entry.slot),
+      );
+      return url ? { slot: entry.slot, url } : null;
+    }),
   ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
   const fullPartList = partList;
   const colorOverrides = {
@@ -3005,7 +3135,21 @@ export default function PetClient({ id, mode = "view" }: Props) {
           </svg>
         );
       default:
-        return null;
+        return (
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+            <circle cx="12" cy="12" r="7" />
+          </svg>
+        );
     }
   };
   const renderAppearanceOptionGrid = (
@@ -4460,6 +4604,25 @@ export default function PetClient({ id, mode = "view" }: Props) {
                             );
                           },
                         )
+                      ) : appearanceTab.startsWith("slot:") &&
+                        dynamicSlotByTabId.get(appearanceTab) ? (
+                        (() => {
+                          const entry = dynamicSlotByTabId.get(appearanceTab)!;
+                          return renderAppearanceOptionGrid(
+                            dynamicPartCategory(entry.slot),
+                            getPartOptions(entry.category),
+                            appearanceDraft.partSelections[entry.slot] ??
+                              "none",
+                            (optionId) => {
+                              updateAppearancePartSelection(
+                                entry.slot,
+                                optionId,
+                              );
+                              requestAppearanceFocus(entry.slot);
+                            },
+                            entry.category,
+                          );
+                        })()
                       ) : null}
 
                       {appearanceColorField ? (

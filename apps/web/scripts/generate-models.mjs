@@ -381,6 +381,90 @@ const optionMetadataByCategory = {
   }
 };
 
+const knownPartCategoryConfig = {
+  roof: {
+    key: "roof",
+    label: "Крыша"
+  },
+  wall: {
+    key: "wall",
+    label: "Стены"
+  },
+  sign: {
+    key: "sign",
+    label: "Украшение"
+  },
+  frame_left: {
+    key: "frameLeft",
+    label: "Рамка слева"
+  },
+  frame_right: {
+    key: "frameRight",
+    label: "Рамка справа"
+  },
+  mat: {
+    key: "mat",
+    label: "Коврик"
+  },
+  bowl_food: {
+    key: "bowlFood",
+    label: "Миска еды"
+  },
+  bowl_water: {
+    key: "bowlWater",
+    label: "Миска воды"
+  }
+};
+
+const toCamelKey = (value) =>
+  value.replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+
+const humanize = (value) =>
+  value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+
+const makePartCategories = () => {
+  const partsRoot = path.join(ROOT, "parts");
+  if (!fs.existsSync(partsRoot)) {
+    return Object.entries(knownPartCategoryConfig).map(([dirName, config]) => ({
+      key: config.key,
+      dir: `parts/${dirName}`,
+      filePrefix: "",
+      urlPrefix: `/models/parts/${dirName}/`,
+      label: config.label,
+      naming: "numbered",
+      partCategory: dirName
+    }));
+  }
+  return fs
+    .readdirSync(partsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const config = knownPartCategoryConfig[entry.name];
+      return {
+        key: config?.key ?? toCamelKey(entry.name),
+        dir: `parts/${entry.name}`,
+        filePrefix: "",
+        urlPrefix: `/models/parts/${entry.name}/`,
+        label: config?.label ?? humanize(entry.name),
+        naming: "numbered",
+        partCategory: entry.name
+      };
+    })
+    .sort((a, b) => {
+      const knownOrder = Object.keys(knownPartCategoryConfig);
+      const aKnown = knownOrder.indexOf(a.partCategory);
+      const bKnown = knownOrder.indexOf(b.partCategory);
+      if (aKnown !== -1 || bKnown !== -1) {
+        return (aKnown === -1 ? 1000 : aKnown) - (bKnown === -1 ? 1000 : bKnown);
+      }
+      return a.partCategory.localeCompare(b.partCategory);
+    });
+};
+
 const categories = [
   {
     key: "environment",
@@ -397,72 +481,11 @@ const categories = [
     urlPrefix: "/models/houses/",
     label: "Будка",
     naming: "numbered"
-  },
-  {
-    key: "roof",
-    dir: "parts/roof",
-    filePrefix: "",
-    urlPrefix: "/models/parts/roof/",
-    label: "Крыша",
-    naming: "numbered"
-  },
-  {
-    key: "wall",
-    dir: "parts/wall",
-    filePrefix: "",
-    urlPrefix: "/models/parts/wall/",
-    label: "Стены",
-    naming: "numbered"
-  },
-  {
-    key: "sign",
-    dir: "parts/sign",
-    filePrefix: "",
-    urlPrefix: "/models/parts/sign/",
-    label: "Украшение",
-    naming: "numbered"
-  },
-  {
-    key: "frameLeft",
-    dir: "parts/frame_left",
-    filePrefix: "",
-    urlPrefix: "/models/parts/frame_left/",
-    label: "Рамка слева",
-    naming: "numbered"
-  },
-  {
-    key: "frameRight",
-    dir: "parts/frame_right",
-    filePrefix: "",
-    urlPrefix: "/models/parts/frame_right/",
-    label: "Рамка справа",
-    naming: "numbered"
-  },
-  {
-    key: "mat",
-    dir: "parts/mat",
-    filePrefix: "",
-    urlPrefix: "/models/parts/mat/",
-    label: "Коврик",
-    naming: "numbered"
-  },
-  {
-    key: "bowlFood",
-    dir: "parts/bowl_food",
-    filePrefix: "",
-    urlPrefix: "/models/parts/bowl_food/",
-    label: "Миска еды",
-    naming: "numbered"
-  },
-  {
-    key: "bowlWater",
-    dir: "parts/bowl_water",
-    filePrefix: "",
-    urlPrefix: "/models/parts/bowl_water/",
-    label: "Миска воды",
-    naming: "numbered"
   }
 ];
+
+const partCategories = makePartCategories();
+categories.push(...partCategories);
 
 const toId = (fileName, prefix) => {
   const base = path.basename(fileName, ".glb");
@@ -476,13 +499,6 @@ const extractNumber = (id) => {
   const match = id.match(/_(\d+)$/);
   return match ? Number(match[1]) : null;
 };
-
-const humanize = (value) =>
-  value
-    .replace(/_/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (char) => char.toUpperCase());
 
 const toPosixPath = (value) => value.split(path.sep).join("/");
 
@@ -562,6 +578,23 @@ const houseSlotMarkers = {
   mat: "mat_slot",
   bowlFood: "bowl_food_slot",
   bowlWater: "bowl_water_slot"
+};
+
+const getSlotCategory = (slotName) => slotName.replace(/_slot(?:_\d+)?$/i, "");
+
+const isHouseDetailSlotName = (slotName) => {
+  const normalized = slotName.trim().toLowerCase();
+  if (!normalized || normalized === "dom_slot") {
+    return false;
+  }
+  if (
+    /^dirt_slot(?:_\d+)?$/i.test(normalized) ||
+    /^gift_/.test(normalized) ||
+    /^fire_slot(?:_\d+)?$/i.test(normalized)
+  ) {
+    return false;
+  }
+  return /_slot(?:_\d+)?$/i.test(normalized);
 };
 
 const readGlbJson = (filePath) => {
@@ -825,6 +858,13 @@ categories
     options[category.key] = optionList;
   });
 
+const partModelGroups = {};
+const partOptionGroups = {};
+partCategories.forEach((category) => {
+  partModelGroups[category.partCategory] = mappings[category.key] ?? {};
+  partOptionGroups[category.partCategory] = options[category.key] ?? [];
+});
+
 const houseCategory = categories.find((category) => category.key === "house");
 if (houseCategory) {
   const items = readCategory(houseCategory);
@@ -845,6 +885,19 @@ if (houseCategory) {
       if (nodeNames.has(slotName)) {
         slots[slotKey] = slotName;
       }
+    });
+    nodeNames.forEach((slotName) => {
+      if (!isHouseDetailSlotName(slotName)) {
+        return;
+      }
+      const category = getSlotCategory(slotName);
+      if (!partModelGroups[category]) {
+        return;
+      }
+      if (Object.values(houseSlotMarkers).includes(slotName)) {
+        return;
+      }
+      slots[slotName] = slotName;
     });
     if (Object.keys(slots).length > 0) {
       slotsMap[item.id] = slots;
@@ -876,6 +929,7 @@ ${formatExport("frameRightModelByIdGenerated", mappings.frameRight)}
 ${formatExport("matModelByIdGenerated", mappings.mat)}
 ${formatExport("bowlFoodModelByIdGenerated", mappings.bowlFood)}
 ${formatExport("bowlWaterModelByIdGenerated", mappings.bowlWater)}
+${formatExport("partModelGroupsGenerated", partModelGroups)}
 `;
 
 const optionsFile = `// This file is auto-generated by scripts/generate-models.mjs. Do not edit manually.
@@ -897,6 +951,7 @@ ${formatExport("frameRightOptionsGenerated", options.frameRight)}
 ${formatExport("matOptionsGenerated", options.mat)}
 ${formatExport("bowlFoodOptionsGenerated", options.bowlFood)}
 ${formatExport("bowlWaterOptionsGenerated", options.bowlWater)}
+${formatExport("partOptionGroupsGenerated", partOptionGroups)}
 `;
 
 fs.writeFileSync(generatedModelsPath, modelsFile, "utf8");

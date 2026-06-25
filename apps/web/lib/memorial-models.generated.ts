@@ -126,3 +126,110 @@ export const bowlWaterModelByIdGenerated = {
   "bowl_water_8": "/models/parts/bowl_water/bowl_water_8.glb",
   "bowl_water_9": "/models/parts/bowl_water/extra/andreyvbvbvb/bowl_water_9.glb"
 } as const;
+export const partModelGroupsGenerated = {
+  "roof": {
+    "roof_1": "/models/parts/roof/roof_1.glb",
+    "roof_2": "/models/parts/roof/roof_2.glb"
+  },
+  "wall": {
+    "wall_1": "/models/parts/wall/wall_1.glb",
+    "wall_2": "/models/parts/wall/wall_2.glb"
+  },
+  "sign": {
+    "sign_1": "/models/parts/sign/sign_1.glb",
+    "sign_2": "/models/parts/sign/sign_2.glb",
+    "sign_3": "/models/parts/sign/sign_3.glb",
+    "sign_4": "/models/parts/sign/sign_4.glb",
+    "sign_5": "/models/parts/sign/sign_5.glb",
+    "sign_6": "/models/parts/sign/sign_6.glb",
+    "sign_7": "/models/parts/sign/sign_7.glb",
+    "sign_8": "/models/parts/sign/sign_8.glb",
+    "sign_9": "/models/parts/sign/sign_9.glb",
+    "sign_10": "/models/parts/sign/sign_10.glb",
+    "sign_11": "/models/parts/sign/sign_11.glb",
+    "sign_12": "/models/parts/sign/sign_12.glb"
+  },
+  "frame_left": {
+    "frame_left_1": "/models/parts/frame_left/frame_left_1.glb",
+    "frame_left_2": "/models/parts/frame_left/frame_left_2.glb"
+  },
+  "frame_right": {
+    "frame_right_1": "/models/parts/frame_right/frame_right_1.glb",
+    "frame_right_2": "/models/parts/frame_right/frame_right_2.glb"
+  },
+  "mat": {
+    "mat_1": "/models/parts/mat/mat_1.glb",
+    "mat_2": "/models/parts/mat/mat_2.glb",
+    "mat_3": "/models/parts/mat/mat_3.glb",
+    "mat_4": "/models/parts/mat/mat_4.glb",
+    "mat_5": "/models/parts/mat/mat_5.glb",
+    "mat_6": "/models/parts/mat/mat_6.glb",
+    "mat_7": "/models/parts/mat/mat_7.glb",
+    "mat_8": "/models/parts/mat/mat_8.glb",
+    "mat_9": "/models/parts/mat/mat_9.glb",
+    "mat_10": "/models/parts/mat/mat_10.glb",
+    "mat_11": "/models/parts/mat/mat_11.glb",
+    "mat_12": "/models/parts/mat/mat_12.glb",
+    "mat_13": "/models/parts/mat/mat_13.glb",
+    "mat_14": "/models/parts/mat/mat_14.glb",
+    "mat_15": "/models/parts/mat/mat_15.glb"
+  },
+  "bowl_food": {
+    "bowl_food_1": "/models/parts/bowl_food/bowl_food_1.glb",
+    "bowl_food_2": "/models/parts/bowl_food/bowl_food_2.glb",
+    "bowl_food_3": "/models/parts/bowl_food/bowl_food_3.glb",
+    "bowl_food_4": "/models/parts/bowl_food/bowl_food_4.glb",
+    "bowl_food_5": "/models/parts/bowl_food/bowl_food_5.glb",
+    "bowl_food_6": "/models/parts/bowl_food/bowl_food_6.glb",
+    "bowl_food_7": "/models/parts/bowl_food/bowl_food_7.glb"
+  },
+  "bowl_water": {
+    "bowl_water_1": "/models/parts/bowl_water/bowl_water_1.glb",
+    "bowl_water_2": "/models/parts/bowl_water/bowl_water_2.glb",
+    "bowl_water_3": "/models/parts/bowl_water/bowl_water_3.glb",
+    "bowl_water_4": "/models/parts/bowl_water/bowl_water_4.glb",
+    "bowl_water_5": "/models/parts/bowl_water/bowl_water_5.glb",
+    "bowl_water_6": "/models/parts/bowl_water/bowl_water_6.glb",
+    "bowl_water_7": "/models/parts/bowl_water/bowl_water_7.glb",
+    "bowl_water_8": "/models/parts/bowl_water/bowl_water_8.glb",
+    "bowl_water_9": "/models/parts/bowl_water/extra/andreyvbvbvb/bowl_water_9.glb"
+  },
+  "candle": {
+    "candle_1": "/models/parts/candle/candle_1.glb",
+    "candle_2": "/models/parts/candle/candle_2.glb",
+    "candle_3": "/models/parts/candle/candle_3.glb",
+    "candle_4": "/models/parts/candle/candle_4.glb",
+    "candle_5": "/models/parts/candle/candle_5.glb",
+    "candle_6": "/models/parts/candle/candle_6.glb",
+    "candle_7": "/models/parts/candle/candle_7.glb",
+    "candle_8": "/models/parts/candle/candle_8.glb",
+    "candle_9": "/models/parts/candle/candle_9.glb",
+    "candle_10": "/models/parts/candle/candle_10.glb",
+    "candle_11": "/models/parts/candle/candle_11.glb",
+    "candle_12": "/models/parts/candle/candle_12.glb"
+  },
+  "flower": {
+    "flower_1": "/models/parts/flower/flower_1.glb",
+    "flower_2": "/models/parts/flower/flower_2.glb",
+    "flower_3": "/models/parts/flower/flower_3.glb",
+    "flower_4": "/models/parts/flower/flower_4.glb",
+    "flower_5": "/models/parts/flower/flower_5.glb",
+    "flower_6": "/models/parts/flower/flower_6.glb",
+    "flower_7": "/models/parts/flower/flower_7.glb",
+    "flower_8": "/models/parts/flower/flower_8.glb",
+    "flower_9": "/models/parts/flower/flower_9.glb",
+    "flower_10": "/models/parts/flower/flower_10.glb",
+    "flower_11": "/models/parts/flower/flower_11.glb",
+    "flower_12": "/models/parts/flower/flower_12.glb"
+  },
+  "ktochka": {
+    "ktochka_1": "/models/parts/ktochka/ktochka_1.glb",
+    "ktochka_2": "/models/parts/ktochka/ktochka_2.glb",
+    "ktochka_3": "/models/parts/ktochka/ktochka_3.glb",
+    "ktochka_4": "/models/parts/ktochka/ktochka_4.glb",
+    "ktochka_5": "/models/parts/ktochka/ktochka_5.glb",
+    "ktochka_6": "/models/parts/ktochka/ktochka_6.glb",
+    "ktochka_7": "/models/parts/ktochka/ktochka_7.glb",
+    "ktochka_8": "/models/parts/ktochka/ktochka_8.glb"
+  }
+} as const;

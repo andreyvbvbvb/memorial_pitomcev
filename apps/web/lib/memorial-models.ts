@@ -21,7 +21,8 @@ import {
   frameRightModelByIdGenerated,
   matModelByIdGenerated,
   bowlFoodModelByIdGenerated,
-  bowlWaterModelByIdGenerated
+  bowlWaterModelByIdGenerated,
+  partModelGroupsGenerated
 } from "./memorial-models.generated";
 
 const environmentModelById: Record<string, string> = environmentModelByIdGenerated;
@@ -36,6 +37,8 @@ const frameRightModelById: Record<string, string> = frameRightModelByIdGenerated
 const matModelById: Record<string, string> = matModelByIdGenerated;
 const bowlFoodModelById: Record<string, string> = bowlFoodModelByIdGenerated;
 const bowlWaterModelById: Record<string, string> = bowlWaterModelByIdGenerated;
+const partModelGroupsByCategory: Record<string, Record<string, string>> =
+  partModelGroupsGenerated as Record<string, Record<string, string>>;
 
 export const getAllMemorialModelUrls = () => {
   const urls = new Set<string>();
@@ -57,6 +60,9 @@ export const getAllMemorialModelUrls = () => {
   Object.values(matModelById).forEach(add);
   Object.values(bowlFoodModelById).forEach(add);
   Object.values(bowlWaterModelById).forEach(add);
+  Object.values(partModelGroupsByCategory).forEach((models) => {
+    Object.values(models).forEach(add);
+  });
   return Array.from(urls.values());
 };
 
@@ -157,3 +163,10 @@ export const resolveBowlFoodModel = (id?: string | null) =>
 
 export const resolveBowlWaterModel = (id?: string | null) =>
   resolveOptionalModel(bowlWaterModelById, id) ?? null;
+
+export const resolvePartModel = (category?: string | null, id?: string | null) => {
+  if (!category || !id || id === "none") {
+    return null;
+  }
+  return partModelGroupsByCategory[category]?.[id] ?? null;
+};

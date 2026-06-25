@@ -8,7 +8,8 @@ import {
   frameRightOptionsGenerated,
   matOptionsGenerated,
   bowlFoodOptionsGenerated,
-  bowlWaterOptionsGenerated
+  bowlWaterOptionsGenerated,
+  partOptionGroupsGenerated
 } from "./memorial-options.generated";
 
 export type OptionItem = {
@@ -61,6 +62,31 @@ export const bowlWaterOptions: OptionItem[] = [
   { id: "none", name: "Без миски (вода)", description: "Не добавлять элемент" },
   ...bowlWaterOptionsGenerated
 ];
+
+const withNoneOption = (options: readonly OptionItem[], label: string) => [
+  { id: "none", name: `Без ${label.toLowerCase()}`, description: "Не добавлять элемент" },
+  ...options
+];
+
+export const partOptionsByCategory: Record<string, OptionItem[]> = {
+  ...Object.fromEntries(
+    Object.entries(partOptionGroupsGenerated).map(([category, options]) => [
+      category,
+      withNoneOption(options as readonly OptionItem[], category)
+    ])
+  ),
+  roof: roofOptions,
+  wall: wallOptions,
+  sign: signOptions,
+  frame_left: frameLeftOptions,
+  frame_right: frameRightOptions,
+  mat: matOptions,
+  bowl_food: bowlFoodOptions,
+  bowl_water: bowlWaterOptions
+};
+
+export const getPartOptions = (category?: string | null): OptionItem[] =>
+  category ? (partOptionsByCategory[category] ?? []) : [];
 
 export const frameOptions: OptionItem[] = [
   { id: "wood", name: "Дерево", description: "Естественный тёплый тон" },

@@ -42,6 +42,7 @@ import {
   resolveMatModel,
   resolveBowlFoodModel,
   resolveBowlWaterModel,
+  resolvePartModel,
 } from "../../lib/memorial-models";
 import type { SeasonKey } from "../../lib/memorial-models";
 import {
@@ -90,6 +91,7 @@ import {
 } from "../../components/PetSoul";
 import {
   getConfiguredHouseSlots,
+  getHouseSlotEntries,
   getTerrainGiftSlots,
 } from "../../lib/memorial-config";
 import type { HouseSlots } from "../../lib/memorial-config";
@@ -111,6 +113,7 @@ import {
   roofOptions as allRoofOptions,
   signOptions as allSignOptions,
   wallOptions as allWallOptions,
+  getPartOptions,
   type OptionItem,
 } from "../../lib/memorial-options";
 
@@ -150,6 +153,7 @@ type FormState = {
   matId: string;
   bowlFoodId: string;
   bowlWaterId: string;
+  partSelections: Record<string, string>;
   roofColor: string;
   wallColor: string;
   signColor: string;
@@ -284,7 +288,8 @@ type Step3TabId =
   | "frameRight"
   | "mat"
   | "bowlFood"
-  | "bowlWater";
+  | "bowlWater"
+  | `slot:${string}`;
 
 type Step3Tab = {
   id: Step3TabId;
@@ -508,7 +513,21 @@ const Step3TabIcon = ({ id }: { id: Step3TabId }) => {
         </svg>
       );
     default:
-      return null;
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+          <circle cx="12" cy="12" r="7" />
+        </svg>
+      );
   }
 };
 
@@ -611,7 +630,7 @@ const BuilderOverlayIcon = ({ id }: { id: BuilderOverlayId }) => {
   }
 };
 
-const STEP3_TAB_DESCRIPTIONS: Record<Step3TabId, string> = {
+const STEP3_TAB_DESCRIPTIONS: Record<string, string> = {
   environment: "Выбор покрытия и цвета площадки вокруг домика.",
   house: "Выбор формы домика и его текстуры.",
   roof: "Крыша домика и её цвет.",
@@ -720,6 +739,7 @@ const initialState: FormState = {
   matId: allMatOptions[1]?.id ?? "mat_1",
   bowlFoodId: allBowlFoodOptions[1]?.id ?? "bowl_food_1",
   bowlWaterId: allBowlWaterOptions[1]?.id ?? "bowl_water_1",
+  partSelections: {},
   roofColor: colorPalette[0] ?? "#F36C6C",
   wallColor: colorPalette[1] ?? "#F2B476",
   signColor: colorPalette[16] ?? "#E9D1B3",
@@ -731,6 +751,24 @@ const initialState: FormState = {
   soulColor: DEFAULT_SOUL_COLOR,
   soulPath: createDefaultSoulPathState(),
 };
+
+const LEGACY_SCENE_PART_KEYS = new Set([
+  "roof",
+  "wall",
+  "sign",
+  "frameLeft",
+  "frameRight",
+  "mat",
+  "bowlFood",
+  "bowlWater",
+]);
+
+const readDynamicPartSelections = (parts: Record<string, unknown>) =>
+  Object.fromEntries(
+    Object.entries(parts)
+      .filter(([key, value]) => !LEGACY_SCENE_PART_KEYS.has(key) && typeof value === "string")
+      .map(([key, value]) => [key, String(value)])
+  );
 
 const SEASON_SUFFIXES: SeasonKey[] = ["spring", "summer", "autumn", "winter"];
 
@@ -858,6 +896,7 @@ const buildEditFormState = (
     matId: pickId("mat", initialState.matId),
     bowlFoodId: pickId("bowlFood", initialState.bowlFoodId),
     bowlWaterId: pickId("bowlWater", initialState.bowlWaterId),
+    partSelections: readDynamicPartSelections(parts),
     roofColor: pickColor("roof_paint", initialState.roofColor),
     wallColor: pickColor("wall_paint", initialState.wallColor),
     signColor: pickColor("sign_paint", initialState.signColor),
@@ -949,6 +988,7 @@ const buildDraftFormState = (
     matId: pickId("mat", initialState.matId),
     bowlFoodId: pickId("bowlFood", initialState.bowlFoodId),
     bowlWaterId: pickId("bowlWater", initialState.bowlWaterId),
+    partSelections: readDynamicPartSelections(parts),
     roofColor: pickColor("roof_paint", initialState.roofColor),
     wallColor: pickColor("wall_paint", initialState.wallColor),
     signColor: pickColor("sign_paint", initialState.signColor),
@@ -1723,6 +1763,20 @@ export default function CreateMemorialClient({
   };
   const previewHouseScale =
     houseScaleOverrides[previewHouseLayoutKey] ?? previewHouseTransform.scale;
+  const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
+  const houseSlots: Partial<HouseSlots> =
+    detectedHouseSlots ?? configuredHouseSlots ?? {};
+  const houseSlotEntries = useMemo(
+    () => getHouseSlotEntries(houseSlots),
+    [houseSlots],
+  );
+  const dynamicHouseSlotEntries = useMemo(
+    () =>
+      houseSlotEntries.filter(
+        (entry) => !entry.legacy && getPartOptions(entry.category).length > 0,
+      ),
+    [houseSlotEntries],
+  );
   const roofPreviewId = hoveredId("roof") ?? form.roofId;
   const wallPreviewId = hoveredId("wall") ?? form.wallId;
   const signPreviewId = hoveredId("sign") ?? form.signId;
@@ -1731,10 +1785,33 @@ export default function CreateMemorialClient({
   const matPreviewId = hoveredId("mat") ?? form.matId;
   const bowlFoodPreviewId = hoveredId("bowl-food") ?? form.bowlFoodId;
   const bowlWaterPreviewId = hoveredId("bowl-water") ?? form.bowlWaterId;
+  const dynamicSlotByTabId = useMemo(
+    () =>
+      new Map(
+        dynamicHouseSlotEntries.map((entry) => [`slot:${entry.slot}`, entry]),
+      ),
+    [dynamicHouseSlotEntries],
+  );
+  const dynamicSlotBySlotName = useMemo(
+    () => new Map(dynamicHouseSlotEntries.map((entry) => [entry.slot, entry])),
+    [dynamicHouseSlotEntries],
+  );
+  const dynamicPartCategory = (slot: string) => `part:${slot}`;
+  const getDynamicPartPreviewId = useCallback(
+    (slot: string) =>
+      hoveredId(dynamicPartCategory(slot)) ??
+      form.partSelections[slot] ??
+      "none",
+    [form.partSelections, hoveredOption],
+  );
   const resolveHoverModelUrl = useCallback(
     (category: string, id: string) => {
       if (!id || id === "none") {
         return null;
+      }
+      if (category.startsWith("part:")) {
+        const slot = category.slice("part:".length);
+        return resolvePartModel(dynamicSlotBySlotName.get(slot)?.category, id);
       }
       switch (category) {
         case "environment":
@@ -1765,10 +1842,18 @@ export default function CreateMemorialClient({
           return null;
       }
     },
-    [environmentPreviewSeason, houseVariantGroup.defaultVariantByBase],
+    [
+      dynamicSlotBySlotName,
+      environmentPreviewSeason,
+      houseVariantGroup.defaultVariantByBase,
+    ],
   );
   const selectedIdForCategory = useCallback(
     (category: string) => {
+      if (category.startsWith("part:")) {
+        const slot = category.slice("part:".length);
+        return form.partSelections[slot] ?? "none";
+      }
       switch (category) {
         case "environment":
           return form.environmentId;
@@ -1804,6 +1889,7 @@ export default function CreateMemorialClient({
       form.frameRightId,
       form.houseId,
       form.matId,
+      form.partSelections,
       form.roofId,
       form.signId,
       form.wallId,
@@ -1815,9 +1901,6 @@ export default function CreateMemorialClient({
     environmentPreviewSeason,
   );
   const houseUrl = resolveHouseModel(housePreviewId);
-  const configuredHouseSlots = getConfiguredHouseSlots(housePreviewId);
-  const houseSlots: Partial<HouseSlots> =
-    detectedHouseSlots ?? configuredHouseSlots ?? {};
   const terrainGiftSlots = useMemo(
     () => detectedGiftSlots ?? getTerrainGiftSlots(environmentPreviewId),
     [detectedGiftSlots, environmentPreviewId],
@@ -1919,8 +2002,14 @@ export default function CreateMemorialClient({
       tabs.push({ id: "bowlFood", label: "Миска (еда)" });
     if (houseSlots.bowlWater)
       tabs.push({ id: "bowlWater", label: "Миска (вода)" });
+    dynamicHouseSlotEntries.forEach((entry) => {
+      tabs.push({
+        id: `slot:${entry.slot}`,
+        label: entry.label,
+      });
+    });
     return tabs;
-  }, [houseSlots]);
+  }, [dynamicHouseSlotEntries, houseSlots]);
   const randomizeMemorialModels = useCallback(() => {
     const nextEnvironmentId = randomOptionId(
       environmentOptions,
@@ -1941,6 +2030,17 @@ export default function CreateMemorialClient({
       randomArrayItem(nextHouseTextureOptions)?.id ??
       nextDefaultHouseVariantId ??
       randomOptionId(houseOptions, initialState.houseId);
+    const nextDynamicPartSelections = Object.fromEntries(
+      getHouseSlotEntries(getConfiguredHouseSlots(nextHouseId))
+        .filter((entry) => !entry.legacy)
+        .map((entry) => {
+          const options = getPartOptions(entry.category);
+          return [
+            entry.slot,
+            randomOptionalOptionId(options, "none"),
+          ];
+        }),
+    );
 
     const nextFormPatch: Pick<
       FormState,
@@ -1956,6 +2056,7 @@ export default function CreateMemorialClient({
       | "matId"
       | "bowlFoodId"
       | "bowlWaterId"
+      | "partSelections"
     > = {
       environmentId: nextEnvironmentId,
       environmentSeason: nextEnvironmentSeason,
@@ -1981,6 +2082,7 @@ export default function CreateMemorialClient({
         bowlWaterOptions,
         initialState.bowlWaterId,
       ),
+      partSelections: nextDynamicPartSelections,
     };
 
     hoverIntentRef.current = null;
@@ -2023,9 +2125,16 @@ export default function CreateMemorialClient({
     if (houseSlots.mat) mapping.set(houseSlots.mat, "mat");
     if (houseSlots.bowlFood) mapping.set(houseSlots.bowlFood, "bowlFood");
     if (houseSlots.bowlWater) mapping.set(houseSlots.bowlWater, "bowlWater");
+    dynamicHouseSlotEntries.forEach((entry) => {
+      mapping.set(entry.slot, `slot:${entry.slot}`);
+    });
     return mapping;
-  }, [houseSlots]);
+  }, [dynamicHouseSlotEntries, houseSlots]);
   const activeDetailSlot = useMemo(() => {
+    const dynamicEntry = dynamicSlotByTabId.get(activeStep3Tab);
+    if (dynamicEntry) {
+      return dynamicEntry.slot;
+    }
     switch (activeStep3Tab) {
       case "roof":
         return houseSlots.roof ?? null;
@@ -2046,7 +2155,7 @@ export default function CreateMemorialClient({
       default:
         return null;
     }
-  }, [activeStep3Tab, houseSlots]);
+  }, [activeStep3Tab, dynamicSlotByTabId, houseSlots]);
   const getCameraFocusKey = (
     slot: string | null,
     tabId: Step3TabId = activeStep3Tab,
@@ -2088,6 +2197,13 @@ export default function CreateMemorialClient({
     houseSlots.bowlWater
       ? { slot: houseSlots.bowlWater, url: bowlWaterUrl }
       : null,
+    ...dynamicHouseSlotEntries.map((entry) => {
+      const url = resolvePartModel(
+        entry.category,
+        getDynamicPartPreviewId(entry.slot),
+      );
+      return url ? { slot: entry.slot, url } : null;
+    }),
   ].filter((part): part is { slot: string; url: string } =>
     Boolean(part && part.url),
   );
@@ -2252,30 +2368,38 @@ export default function CreateMemorialClient({
     ? form.environmentId
     : `${form.environmentId}_${form.environmentSeason}`;
   const buildCurrentSceneJson = useCallback(
-    () => ({
-      parts: {
-        roof: form.roofId,
-        wall: form.wallId,
-        sign: form.signId,
-        frameLeft: form.frameLeftId,
-        frameRight: form.frameRightId,
-        mat: form.matId,
-        bowlFood: form.bowlFoodId,
-        bowlWater: form.bowlWaterId,
-      },
-      colors: {
-        roof_paint: form.roofColor,
-        wall_paint: form.wallColor,
-        sign_paint: form.signColor,
-        frame_left_paint: form.frameLeftColor,
-        frame_right_paint: form.frameRightColor,
-        mat_paint: form.matColor,
-        bowl_food_paint: form.bowlFoodColor,
-        bowl_water_paint: form.bowlWaterColor,
-      },
-      soul: buildSoulSettings(form.soulColor, activeSoulPath),
-      version: 3,
-    }),
+    () => {
+      const dynamicParts = Object.fromEntries(
+        Object.entries(form.partSelections).filter(
+          ([, value]) => value && value !== "none",
+        ),
+      );
+      return {
+        parts: {
+          roof: form.roofId,
+          wall: form.wallId,
+          sign: form.signId,
+          frameLeft: form.frameLeftId,
+          frameRight: form.frameRightId,
+          mat: form.matId,
+          bowlFood: form.bowlFoodId,
+          bowlWater: form.bowlWaterId,
+          ...dynamicParts,
+        },
+        colors: {
+          roof_paint: form.roofColor,
+          wall_paint: form.wallColor,
+          sign_paint: form.signColor,
+          frame_left_paint: form.frameLeftColor,
+          frame_right_paint: form.frameRightColor,
+          mat_paint: form.matColor,
+          bowl_food_paint: form.bowlFoodColor,
+          bowl_water_paint: form.bowlWaterColor,
+        },
+        soul: buildSoulSettings(form.soulColor, activeSoulPath),
+        version: 3,
+      };
+    },
     [
       activeSoulPath,
       form.bowlFoodColor,
@@ -2288,6 +2412,7 @@ export default function CreateMemorialClient({
       form.frameRightId,
       form.matColor,
       form.matId,
+      form.partSelections,
       form.roofColor,
       form.roofId,
       form.signColor,
@@ -3110,6 +3235,16 @@ export default function CreateMemorialClient({
 
   const handleChange = (field: keyof FormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePartSelectionChange = (slot: string, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      partSelections: {
+        ...prev.partSelections,
+        [slot]: value,
+      },
+    }));
   };
 
   const openDatePicker = useCallback((input: HTMLInputElement | null) => {
@@ -4678,6 +4813,24 @@ export default function CreateMemorialClient({
           ),
         );
       default:
+        if (activeStep3Tab.startsWith("slot:")) {
+          const entry = dynamicSlotByTabId.get(activeStep3Tab);
+          if (!entry) {
+            return null;
+          }
+          const options = getPartOptions(entry.category);
+          return renderPartEditorPanel(
+            renderOptionGrid(
+              dynamicPartCategory(entry.slot),
+              options,
+              form.partSelections[entry.slot] ?? "none",
+              (id) => {
+                handlePartSelectionChange(entry.slot, id);
+              },
+              entry.category,
+            ),
+          );
+        }
         return null;
     }
   };

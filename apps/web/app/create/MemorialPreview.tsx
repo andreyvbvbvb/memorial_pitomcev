@@ -16,7 +16,10 @@ import {
   resolveGiftSizeMultiplier,
   resolveGiftTargetWidth
 } from "../../lib/gifts";
-import type { HouseSlots } from "../../lib/memorial-config";
+import {
+  isHouseDetailSlotName,
+  type HouseSlots
+} from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
 import {
   applyHousePartAdjustment,
@@ -279,7 +282,7 @@ const getBaseFocusOffset = ({
   return offset;
 };
 const isSelectableSlotName = (name: string) =>
-  (/^dirt_slot_[1-4]$/i.test(name) || name.endsWith("_slot")) &&
+  (/^dirt_slot_[1-4]$/i.test(name) || isHouseDetailSlotName(name)) &&
   name !== "dom_slot" &&
   !isGiftSlotName(name);
 
@@ -1563,6 +1566,16 @@ function TerrainWithHouse({
     if (house.getObjectByName("bowl_water_slot")) {
       detected.bowlWater = "bowl_water_slot";
     }
+    house.traverse((object) => {
+      const slotName = object.name;
+      if (!isHouseDetailSlotName(slotName)) {
+        return;
+      }
+      if (Object.values(detected).includes(slotName)) {
+        return;
+      }
+      detected[slotName] = slotName;
+    });
     onHouseSlotsDetected(detected);
   }, [house, onHouseSlotsDetected]);
 

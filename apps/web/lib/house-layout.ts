@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { splitHouseVariantId } from "./house-variants";
+import { normalizeRepeatedHouseSlotName } from "./memorial-config";
 
 export type HouseTransform = {
   offsetX: number;
@@ -227,14 +228,15 @@ export const getHousePartScaleMultiplier = (
   slot?: string | null
 ) => {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
-  if (slot === MAT_PART_SLOT) {
+  const normalizedSlot = normalizeRepeatedHouseSlotName(slot);
+  if (normalizedSlot === MAT_PART_SLOT) {
     const legacyMultiplier = baseId === "budka_2" ? 1.15 : 1;
     return legacyMultiplier * (RESCALED_BUDKA_BASE_IDS.has(baseId) ? 0.4 : 1);
   }
-  if (slot && BOWL_PART_SLOTS.has(slot) && baseId.startsWith("mat_")) {
+  if (normalizedSlot && BOWL_PART_SLOTS.has(normalizedSlot) && baseId.startsWith("mat_")) {
     return 0.5;
   }
-  if (slot && BOWL_PART_SLOTS.has(slot) && RESCALED_BUDKA_BASE_IDS.has(baseId)) {
+  if (normalizedSlot && BOWL_PART_SLOTS.has(normalizedSlot) && RESCALED_BUDKA_BASE_IDS.has(baseId)) {
     return 0.25;
   }
   return 1;
@@ -245,10 +247,11 @@ export const getHousePartFitBounds = (
   slot?: string | null
 ): HousePartFitBounds | null => {
   const baseId = splitHouseVariantId(houseId ?? "").baseId || houseId || "";
-  if (baseId === "budka_1" && slot === MAT_PART_SLOT) {
+  const normalizedSlot = normalizeRepeatedHouseSlotName(slot);
+  if (baseId === "budka_1" && normalizedSlot === MAT_PART_SLOT) {
     return { maxWidth: 0.3465, maxLength: 0.3465 };
   }
-  if (baseId === "budka_1" && slot && BOWL_PART_SLOTS.has(slot)) {
+  if (baseId === "budka_1" && normalizedSlot && BOWL_PART_SLOTS.has(normalizedSlot)) {
     return { maxWidth: 0.18, maxLength: 0.18 };
   }
   return null;
@@ -265,12 +268,24 @@ export const getHousePartAdjustment = (
   const baseId = splitHouseVariantId(variantId).baseId || variantId;
   const baseVariantFallback =
     baseId === "budka_7" || baseId === "budka_8" ? `${baseId}__base` : null;
+  const normalizedSlot = normalizeRepeatedHouseSlotName(slot);
+  const candidateSlots =
+    normalizedSlot && normalizedSlot !== slot ? [slot, normalizedSlot] : [slot];
+  for (const candidateSlot of candidateSlots) {
+    if (!candidateSlot) {
+      continue;
+    }
+    const adjustment =
+      HOUSE_PART_ADJUSTMENTS[variantId]?.[candidateSlot] ??
+      HOUSE_PART_ADJUSTMENTS[baseId]?.[candidateSlot] ??
+      (baseVariantFallback
+        ? (HOUSE_PART_ADJUSTMENTS[baseVariantFallback]?.[candidateSlot] ?? null)
+        : null);
+    if (adjustment) {
+      return adjustment;
+    }
+  }
   return (
-    HOUSE_PART_ADJUSTMENTS[variantId]?.[slot] ??
-    HOUSE_PART_ADJUSTMENTS[baseId]?.[slot] ??
-    (baseVariantFallback
-      ? (HOUSE_PART_ADJUSTMENTS[baseVariantFallback]?.[slot] ?? null)
-      : null) ??
     null
   );
 };
