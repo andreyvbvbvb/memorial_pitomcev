@@ -597,6 +597,7 @@ const defaultPositionForIndex = (index: number) => ({
 });
 
 const formatSeconds = (value: number) => `${value.toFixed(1)} c`;
+const HERO_VIDEO_SAFE_UPLOAD_BYTES = 9.5 * 1024 * 1024;
 
 const recordingQualityOptions: Array<{
   id: RecordingQuality;
@@ -607,20 +608,20 @@ const recordingQualityOptions: Array<{
   {
     id: "compact",
     label: "Лёгкое",
-    description: "меньше вес, подходит для главной",
-    bitrate: 2_500_000,
+    description: "минимальный вес, подходит для загрузки на главную",
+    bitrate: 650_000,
   },
   {
     id: "balanced",
     label: "Среднее",
     description: "баланс качества и веса",
-    bitrate: 4_500_000,
+    bitrate: 1_200_000,
   },
   {
     id: "high",
     label: "Высокое",
-    description: "крупнее файл, лучше детализация",
-    bitrate: 8_000_000,
+    description: "крупнее файл, лучше детализация, чаще только для скачивания",
+    bitrate: 2_500_000,
   },
 ];
 
@@ -1012,6 +1013,12 @@ export default function AdminVideoStudioClient() {
       setError("Сначала запишите видео");
       return;
     }
+    if (downloadBlob.size > HERO_VIDEO_SAFE_UPLOAD_BYTES) {
+      setError(
+        `Видео ${formatFileSize(downloadBlob.size)} слишком большое для загрузки через сайт. Запишите ролик в режиме «Лёгкое» заново: безопасный размер до ${formatFileSize(HERO_VIDEO_SAFE_UPLOAD_BYTES)}.`,
+      );
+      return;
+    }
     setUploadingHeroVideo(true);
     setNotice(null);
     try {
@@ -1225,8 +1232,8 @@ export default function AdminVideoStudioClient() {
                     })}
                   </div>
                   <p className="text-[11px] font-semibold leading-snug text-[#8d6e63]">
-                    Для главной лучше «Лёгкое»: запись идёт с меньшим битрейтом и DPR 1,
-                    поэтому файл получается заметно легче.
+                    Для главной используйте «Лёгкое»: запись идёт с низким битрейтом и
+                    DPR 1, безопасный размер загрузки до {formatFileSize(HERO_VIDEO_SAFE_UPLOAD_BYTES)}.
                   </p>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[#eadfd9]">
