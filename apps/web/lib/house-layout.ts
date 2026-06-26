@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { splitHouseVariantId } from "./house-variants";
-import { normalizeRepeatedHouseSlotName } from "./memorial-config";
+import {
+  getHouseSlotCategory,
+  normalizeRepeatedHouseSlotName
+} from "./memorial-config";
 
 export type HouseTransform = {
   offsetX: number;
@@ -147,6 +150,10 @@ const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>
   }
 };
 
+const DEFAULT_PART_ADJUSTMENTS_BY_CATEGORY: Record<string, HousePartAdjustment> = {
+  flower: { scale: 0.25, position: { x: 0, y: 0, z: 0 } }
+};
+
 const DEFAULT_HOUSE_TRANSFORM: HouseTransform = {
   offsetX: 0,
   offsetZ: 0,
@@ -284,6 +291,10 @@ export const getHousePartAdjustment = (
     if (adjustment) {
       return adjustment;
     }
+  }
+  const category = getHouseSlotCategory(slot);
+  if (category && DEFAULT_PART_ADJUSTMENTS_BY_CATEGORY[category]) {
+    return DEFAULT_PART_ADJUSTMENTS_BY_CATEGORY[category];
   }
   return (
     null
