@@ -4419,7 +4419,11 @@ export default function CreateMemorialClient({
             className={`flex w-full aspect-square items-center justify-center rounded-xl border-[0.33px] p-0 transition ${
               isSelected
                 ? "border-[#3bceac] bg-[#f0fffb]"
-                : "border-[#eadfd9] bg-[#fffcf9] hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+                : `border-[#eadfd9] bg-[#fffcf9] ${
+                    isPortraitLayout
+                      ? ""
+                      : "hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+                  }`
             }`}
           >
             {imageUrl ? (
@@ -4483,7 +4487,9 @@ export default function CreateMemorialClient({
             className={`h-8 w-8 rounded-lg border transition ${
               isSelected
                 ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
-                : "border-[#eadfd9] hover:border-[#d3a27f]"
+                : `border-[#eadfd9] ${
+                    isPortraitLayout ? "" : "hover:border-[#d3a27f]"
+                  }`
             }`}
             style={{
               background: getHouseTextureSwatchBackground(option.id, index),
@@ -4545,7 +4551,11 @@ export default function CreateMemorialClient({
                           className={`h-8 w-8 rounded-lg border transition ${
                             isActive
                               ? "border-[#5d4037] ring-2 ring-[#3bceac]/35"
-                              : "border-[#eadfd9] hover:border-[#d3a27f]"
+                              : `border-[#eadfd9] ${
+                                  isPortraitLayout
+                                    ? ""
+                                    : "hover:border-[#d3a27f]"
+                                }`
                           }`}
                           style={{ backgroundColor: swatch.color }}
                         />
@@ -5296,7 +5306,11 @@ export default function CreateMemorialClient({
                         } ${
                           isActive
                             ? "border-[#5d4037] bg-[#5d4037] text-white"
-                            : "border-[#eadfd9] bg-white text-[#8d6e63] hover:border-[#d3a27f]"
+                            : `border-[#eadfd9] bg-white text-[#8d6e63] ${
+                                isPortraitLayout
+                                  ? ""
+                                  : "hover:border-[#d3a27f]"
+                              }`
                         }`}
                         aria-label={style.name}
                       >
@@ -6097,7 +6111,7 @@ export default function CreateMemorialClient({
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
   const builderTabRailClass = isPortraitLayout
     ? "flex w-10 shrink-0 flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto rounded-[15px] bg-[#fffcf9] p-0.5"
-    : "flex w-[58px] flex-col items-center gap-1.5 overflow-visible rounded-[22px] border-2 border-white bg-[#fffcf9] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:w-[62px]";
+    : "flex min-h-0 w-[58px] flex-col items-center gap-1.5 overflow-x-hidden overflow-y-auto overscroll-contain rounded-[22px] border-2 border-white bg-[#fffcf9] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:w-[62px]";
   const builderTabButtonClass = (isActive: boolean, isDisabled: boolean) =>
     `${hudControlButtonClass(isPortraitLayout, isActive, isDisabled)} ${
       isPortraitLayout ? "" : "!h-11 !w-11 sm:!h-12 sm:!w-12"
@@ -6613,9 +6627,7 @@ export default function CreateMemorialClient({
                     <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
                       <div
                         key={
-                          isPortraitLayout &&
-                          activeOverlay &&
-                          activeOverlay !== "details"
+                          isPortraitLayout && activeOverlay
                             ? `overlay-${activeOverlay}`
                             : `detail-${activeStep3Tab}`
                         }

@@ -125,7 +125,7 @@ export const getHouseSlotEntries = (slots?: Partial<HouseSlots> | null) => {
     if (aLegacyIndex !== -1 || bLegacyIndex !== -1) {
       return (aLegacyIndex === -1 ? 1000 : aLegacyIndex) - (bLegacyIndex === -1 ? 1000 : bLegacyIndex);
     }
-    return a.slot.localeCompare(b.slot, "ru");
+    return a.slot.localeCompare(b.slot, "ru", { numeric: true });
   });
 };
 

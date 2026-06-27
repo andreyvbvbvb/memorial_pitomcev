@@ -33,23 +33,27 @@ export const hudCardSurfaceClass = (compact: boolean) =>
     : "rounded-[26px] border border-white/80 bg-[#fffcf9] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]";
 
 export const hudControlButtonClass = (compact: boolean, active: boolean, disabled = false) =>
-  `flex shrink-0 items-center justify-center border-2 text-sm shadow-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.96] ${
+  `flex shrink-0 touch-manipulation items-center justify-center border-2 text-sm shadow-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 ease-out active:scale-[0.96] [-webkit-tap-highlight-color:transparent] ${
     compact ? "h-9 w-9 rounded-[13px]" : "h-12 w-12 rounded-[18px] sm:h-14 sm:w-14"
   } ${
     disabled
       ? "pointer-events-none cursor-not-allowed border-[#eadfd9] bg-[#f3efec] text-[#c8beb8] opacity-55"
       : active
         ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-        : "border-[#fdf2e9] bg-[#fffcf9] text-[#c8beb8] hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
+        : compact
+          ? "border-[#fdf2e9] bg-[#fffcf9] text-[#c8beb8]"
+          : "border-[#fdf2e9] bg-[#fffcf9] text-[#c8beb8] hover:border-[#d3a27f] hover:bg-[#fff7f2] hover:text-[#d3a27f]"
   }`;
 
 export const hudRoundButtonClass = (compact: boolean, active: boolean) =>
-  `group relative flex items-center justify-center border-[3px] shadow-md transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] ${
+  `group relative flex touch-manipulation items-center justify-center border-[3px] shadow-md transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out active:scale-[0.96] [-webkit-tap-highlight-color:transparent] ${
     compact ? "h-10 w-10 rounded-[14px]" : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   } ${
     active
       ? "border-[#3bceac] bg-[#f0fffb] text-[#3bceac]"
-      : "border-white bg-[#fffcf9] text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
+      : compact
+        ? "border-white bg-[#fffcf9] text-[#d3a27f]"
+        : "border-white bg-[#fffcf9] text-[#d3a27f] hover:border-[#d3a27f] hover:bg-[#d3a27f] hover:text-white"
   }`;
 
 export const hudTooltipClass = (placement: "right" | "left" | "top" | "action" = "right") => {
