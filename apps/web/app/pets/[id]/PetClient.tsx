@@ -2980,8 +2980,8 @@ export default function PetClient({ id, mode = "view" }: Props) {
       : "h-14 w-14 rounded-[24px] sm:h-16 sm:w-16"
   }`;
   const giftPanelClass = isPortraitLayout
-    ? `fixed left-[3%] right-[3%] top-[calc(26dvh+0.25rem)] bottom-[calc(8.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 flex-col overflow-hidden ${hudPanelChromeClass(true)}`
-    : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
+    ? `fixed left-[3%] right-[3%] top-[calc(26dvh+0.25rem)] bottom-[calc(8.15rem+env(safe-area-inset-bottom))] z-40 flex min-h-0 min-w-0 max-w-[94vw] flex-col overflow-hidden ${hudPanelChromeClass(true)}`
+    : `fixed right-4 top-[calc(var(--app-header-height,0px)+0.75rem)] bottom-[calc(1rem+env(safe-area-inset-bottom)+4.75rem)] z-40 ${panelBaseClass} flex w-[310px] min-w-0 max-w-[90vw] flex-col overflow-hidden sm:w-[368px]`;
   const editEditorBodyClass = isPortraitLayout
     ? "flex min-h-0 flex-1 gap-1 overflow-hidden px-1 py-1"
     : "flex min-h-0 flex-1 gap-2.5 overflow-hidden px-3 py-3";
@@ -2996,17 +2996,17 @@ export default function PetClient({ id, mode = "view" }: Props) {
     ? "fixed inset-0 z-0 overflow-hidden"
     : "fixed inset-0 z-0";
   const giftPanelInnerClass = isPortraitLayout
-    ? `flex min-h-0 flex-1 flex-col overflow-hidden p-1 ${hudInnerSurfaceClass(true)}`
-    : `flex min-h-0 flex-1 flex-col ${panelSectionClass}`;
+    ? `flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-1 ${hudInnerSurfaceClass(true)}`
+    : `flex min-h-0 min-w-0 flex-1 flex-col ${panelSectionClass}`;
   const giftFlowClass = isPortraitLayout
-    ? "mt-0.5 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden"
-    : "mt-4 flex min-h-0 flex-1 flex-col gap-3";
+    ? "mt-0.5 flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden"
+    : "mt-4 flex min-h-0 min-w-0 flex-1 flex-col gap-3";
   const giftCatalogSectionClass = isPortraitLayout
-    ? "flex min-h-0 flex-1 flex-col gap-0.5 text-[11px] font-semibold text-[#6f6360]"
-    : "flex min-h-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
+    ? "flex min-h-0 min-w-0 flex-1 flex-col gap-0.5 text-[11px] font-semibold text-[#6f6360]"
+    : "flex min-h-0 min-w-0 flex-col gap-1.5 text-sm font-semibold text-[#6f6360]";
   const giftCatalogGridClass = isPortraitLayout
-    ? "grid min-h-0 flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
-    : "grid min-h-0 flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
+    ? "grid min-h-0 min-w-0 w-full flex-1 grid-cols-4 content-start gap-1.5 overflow-y-auto overscroll-contain pb-3 pr-1"
+    : "grid min-h-0 min-w-0 w-full flex-1 grid-cols-3 content-start gap-3 overflow-y-auto pb-4 pr-1";
   const giftCardClass = (selected: boolean) =>
     `group/gift-card relative flex w-full items-center justify-center overflow-visible border transition ${
       isPortraitLayout
@@ -4122,33 +4122,45 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         <div className={giftCatalogSectionClass}>
                           <div className="flex shrink-0 items-center justify-between gap-2">
                             <span>Подарок</span>
-                            <span className="text-[9px] font-bold tabular-nums text-[#adb5bd]">
-                              {visibleGiftsWithSlots.length}
-                            </span>
-                          </div>
-                          <div className="flex shrink-0 gap-1 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                            {availableGiftTypeFilters.map((option) => {
-                              const isActive = giftTypeFilter === option.id;
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  aria-pressed={isActive}
-                                  onClick={() => setGiftTypeFilter(option.id)}
-                                  className={`min-h-10 shrink-0 touch-manipulation whitespace-nowrap rounded-xl px-2.5 text-[9px] font-black uppercase tracking-[0.06em] transition-[background-color,color,transform] active:scale-[0.96] [-webkit-tap-highlight-color:transparent] ${
-                                    isActive
-                                      ? "bg-[#5d4037] text-white"
-                                      : `bg-white text-[#8d6e63] ${
-                                          isPortraitLayout
-                                            ? ""
-                                            : "hover:bg-[#fdf2e9] hover:text-[#5d4037]"
-                                        }`
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              <label className="relative min-w-0">
+                                <span className="sr-only">Тип подарка</span>
+                                <select
+                                  value={giftTypeFilter}
+                                  onChange={(event) =>
+                                    setGiftTypeFilter(
+                                      event.target.value as GiftTypeFilter,
+                                    )
+                                  }
+                                  className={`h-9 max-w-[min(11rem,58vw)] touch-manipulation appearance-none truncate rounded-xl border-2 border-white bg-white py-1.5 pl-3 pr-8 text-[10px] font-black uppercase tracking-[0.06em] text-[#5d4037] shadow-sm outline-none transition-[border-color,background-color] focus-visible:border-[#3bceac] [-webkit-tap-highlight-color:transparent] ${
+                                    isPortraitLayout
+                                      ? ""
+                                      : "hover:border-[#d3a27f] hover:bg-[#fff7f2]"
                                   }`}
                                 >
-                                  {option.label}
-                                </button>
-                              );
-                            })}
+                                  {availableGiftTypeFilters.map((option) => (
+                                    <option key={option.id} value={option.id}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <svg
+                                  aria-hidden="true"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8d6e63]"
+                                >
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </label>
+                              <span className="shrink-0 text-[9px] font-bold tabular-nums text-[#adb5bd]">
+                                {visibleGiftsWithSlots.length}
+                              </span>
+                            </div>
                           </div>
                           <div className={giftCatalogGridClass}>
                             {giftCatalogLoading ? (
