@@ -76,17 +76,47 @@ const QUICK_QUERIES = [
   },
 ] as const;
 
-const LOAD_TEST_PRESETS = [
+type LoadTestPreset = {
+  label: string;
+  totalRequests: number;
+  concurrency: number;
+  multiplier?: number;
+};
+
+type SyntheticUserPreset = {
+  label: string;
+  virtualUsers: number;
+  durationMs: number;
+  multiplier?: number;
+};
+
+const EXTREME_TEST_MULTIPLIERS = [5, 10, 50, 100] as const;
+const HEAVIEST_LOAD_TEST = { totalRequests: 250, concurrency: 20 };
+const HEAVIEST_SYNTHETIC_TEST = { virtualUsers: 100, durationMs: 45_000 };
+
+const LOAD_TEST_PRESETS: LoadTestPreset[] = [
   { label: "Лёгкий", totalRequests: 30, concurrency: 5 },
   { label: "Средний", totalRequests: 100, concurrency: 10 },
-  { label: "Тяжёлый", totalRequests: 250, concurrency: 20 },
-] as const;
+  { label: "Тяжёлый", ...HEAVIEST_LOAD_TEST },
+  ...EXTREME_TEST_MULTIPLIERS.map((multiplier) => ({
+    label: `Экстремальный ×${multiplier}`,
+    totalRequests: HEAVIEST_LOAD_TEST.totalRequests * multiplier,
+    concurrency: HEAVIEST_LOAD_TEST.concurrency * multiplier,
+    multiplier,
+  })),
+];
 
-const SYNTHETIC_USER_PRESETS = [
+const SYNTHETIC_USER_PRESETS: SyntheticUserPreset[] = [
   { label: "20 VU", virtualUsers: 20, durationMs: 25_000 },
   { label: "50 VU", virtualUsers: 50, durationMs: 35_000 },
-  { label: "100 VU", virtualUsers: 100, durationMs: 45_000 },
-] as const;
+  { label: "100 VU", ...HEAVIEST_SYNTHETIC_TEST },
+  ...EXTREME_TEST_MULTIPLIERS.map((multiplier) => ({
+    label: `${HEAVIEST_SYNTHETIC_TEST.virtualUsers * multiplier} VU · ×${multiplier}`,
+    virtualUsers: HEAVIEST_SYNTHETIC_TEST.virtualUsers * multiplier,
+    durationMs: HEAVIEST_SYNTHETIC_TEST.durationMs,
+    multiplier,
+  })),
+];
 
 const SYNTHETIC_SCENARIOS = [
   { id: "map", label: "Карта", weight: 40 },
@@ -1866,7 +1896,7 @@ export default function AdminSqlPage() {
     loadTestAbortRef.current?.abort();
   };
 
-  const runLoadTest = async (preset: (typeof LOAD_TEST_PRESETS)[number]) => {
+  const runLoadTest = async (preset: LoadTestPreset) => {
     if (loadTestRunning) {
       return;
     }
@@ -1891,8 +1921,14 @@ export default function AdminSqlPage() {
     let okCount = 0;
     let failCount = 0;
     const startedAt = performance.now();
+    let lastProgressCommit = 0;
 
-    const updateProgress = () => {
+    const updateProgress = (force = false) => {
+      const now = performance.now();
+      if (!force && now - lastProgressCommit < 120) {
+        return;
+      }
+      lastProgressCommit = now;
       setLoadTestProgress({
         label: preset.label,
         totalRequests: preset.totalRequests,
@@ -1976,7 +2012,7 @@ export default function AdminSqlPage() {
         wasAborted,
       };
       setLoadTestSummary(summary);
-      updateProgress();
+      updateProgress(true);
       if (wasAborted) {
         setLoadTestError("Прогон остановлен вручную");
       }
@@ -1990,7 +2026,7 @@ export default function AdminSqlPage() {
   };
 
   const runSyntheticUsers = async (
-    preset: (typeof SYNTHETIC_USER_PRESETS)[number],
+    preset: SyntheticUserPreset,
   ) => {
     if (syntheticRunning) {
       return;
@@ -3357,16 +3393,24 @@ export default function AdminSqlPage() {
                   type="button"
                   onClick={() => runLoadTest(preset)}
                   disabled={loadTestRunning}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                  className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold disabled:opacity-60 ${
+                    preset.multiplier
+                      ? "border-amber-300 bg-amber-50 text-amber-900 hover:border-amber-400"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}
                 >
                   <div>{preset.label}</div>
                   <div className="mt-1 text-[10px] font-normal text-slate-500">
-                    {preset.totalRequests} запросов, concurrency{" "}
-                    {preset.concurrency}
+                    {preset.totalRequests.toLocaleString("ru-RU")} запросов,
+                    concurrency {preset.concurrency.toLocaleString("ru-RU")}
                   </div>
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-[10px] font-semibold text-amber-700">
+              Экстремальные пресеты создают реальную нагрузку. Запускайте их
+              только в согласованное окно и будьте готовы остановить прогон.
+            </p>
             {loadTestRunning ? (
               <button
                 type="button"
@@ -3475,16 +3519,24 @@ export default function AdminSqlPage() {
                   type="button"
                   onClick={() => runSyntheticUsers(preset)}
                   disabled={syntheticRunning}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-60"
+                  className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold disabled:opacity-60 ${
+                    preset.multiplier
+                      ? "border-amber-300 bg-amber-50 text-amber-900 hover:border-amber-400"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                  }`}
                 >
                   <div>{preset.label}</div>
                   <div className="mt-1 text-[10px] font-normal text-slate-500">
                     {Math.round(preset.durationMs / 1000)} сек, до{" "}
-                    {preset.virtualUsers} VU
+                    {preset.virtualUsers.toLocaleString("ru-RU")} VU
                   </div>
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-[10px] font-semibold text-amber-700">
+              Пресеты ×50 и ×100 могут заметно нагрузить браузер вместе с
+              сервером. Кнопка остановки остаётся доступной во время теста.
+            </p>
             {syntheticRunning ? (
               <button
                 type="button"
