@@ -5,6 +5,8 @@ import { Pool } from "pg";
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  private readonly pool: Pool;
+
   constructor() {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
@@ -13,6 +15,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     const pool = new Pool({ connectionString });
     const adapter = new PrismaPg(pool);
     super({ adapter });
+    this.pool = pool;
+  }
+
+  getPoolMetrics() {
+    return {
+      total: this.pool.totalCount,
+      idle: this.pool.idleCount,
+      waiting: this.pool.waitingCount,
+      max: this.pool.options.max
+    };
   }
 
   async onModuleInit() {

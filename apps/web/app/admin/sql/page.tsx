@@ -482,7 +482,89 @@ type SyntheticRunSummary = Omit<
   p95FlowMs: number;
   flowsPerMinute: number;
   requestsPerSecond: number;
+  webRequestCount: number;
+  avgWebRequestMs: number;
+  p95WebRequestMs: number;
+  apiRequestCount: number;
+  avgApiRequestMs: number;
+  p95ApiRequestMs: number;
   wasAborted: boolean;
+};
+
+type PerformanceSnapshot = {
+  at: string;
+  runtime: {
+    cpuPercent: number | null;
+    usedCores: number | null;
+    rssBytes: number;
+    heapUsedBytes: number;
+    heapTotalBytes: number;
+    externalBytes: number;
+    uptimeSeconds: number;
+  };
+  container: {
+    cpuPercent: number | null;
+    usedCores: number | null;
+    cpuLimitCores: number;
+    memoryCurrentBytes: number | null;
+    memoryLimitBytes: number | null;
+    memoryPercent: number | null;
+  };
+  system: {
+    cpuCount: number;
+    load1: number;
+    load5: number;
+    load15: number;
+    totalMemoryBytes: number;
+    freeMemoryBytes: number;
+    usedMemoryPercent: number;
+    uptimeSeconds: number;
+  };
+  queryMs: number;
+  pool: {
+    total: number;
+    idle: number;
+    waiting: number;
+    max: number;
+  };
+  database: {
+    name: string;
+    maxConnections: number;
+    connections: number;
+    activeConnections: number;
+    idleConnections: number;
+    waitingConnections: number;
+    blockedLocks: number;
+    longestQueryMs: number | null;
+    xactCommit: number;
+    xactRollback: number;
+    blocksRead: number;
+    blocksHit: number;
+    tempFiles: number;
+    tempBytes: number;
+    deadlocks: number;
+  } | null;
+};
+
+type PerformanceSummary = {
+  samples: number;
+  maxApiCpuPercent: number | null;
+  maxApiMemoryPercent: number | null;
+  maxSystemMemoryPercent: number;
+  maxPoolWaiting: number;
+  maxPoolBusy: number;
+  poolMax: number;
+  maxDbConnections: number;
+  dbMaxConnections: number;
+  maxDbWaitingConnections: number;
+  maxBlockedLocks: number;
+  maxLongestQueryMs: number | null;
+  p95DbSnapshotMs: number;
+  dbCacheHitPercent: number | null;
+  dbBlocksRead: number;
+  dbTempBytes: number;
+  dbDeadlocks: number;
+  findings: string[];
 };
 
 const buildSelectQuery = (tableName: string, limit = 50) =>
@@ -513,6 +595,134 @@ const getPercentile = (values: number[], percentile: number) => {
 
 const formatMs = (value: number | null) =>
   value === null ? "—" : `${value.toFixed(value >= 100 ? 0 : 1)} мс`;
+
+const formatBytes = (value: number | null) => {
+  if (value === null || !Number.isFinite(value)) {
+    return "—";
+  }
+  if (value < 1024 * 1024) {
+    return `${(value / 1024).toFixed(1)} КБ`;
+  }
+  if (value < 1024 * 1024 * 1024) {
+    return `${(value / (1024 * 1024)).toFixed(1)} МБ`;
+  }
+  return `${(value / (1024 * 1024 * 1024)).toFixed(2)} ГБ`;
+};
+
+const getMaxNullable = (values: Array<number | null | undefined>) => {
+  const available = values.filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value),
+  );
+  return available.length > 0 ? Math.max(...available) : null;
+};
+
+const summarizePerformance = (
+  samples: PerformanceSnapshot[],
+): PerformanceSummary | null => {
+  if (samples.length === 0) {
+    return null;
+  }
+  const firstDb = samples.find((sample) => sample.database)?.database ?? null;
+  const lastDb =
+    [...samples].reverse().find((sample) => sample.database)?.database ?? null;
+  const delta = (last: number | undefined, first: number | undefined) =>
+    Math.max(0, (last ?? 0) - (first ?? 0));
+  const blocksRead = delta(lastDb?.blocksRead, firstDb?.blocksRead);
+  const blocksHit = delta(lastDb?.blocksHit, firstDb?.blocksHit);
+  const totalBlocks = blocksRead + blocksHit;
+  const cacheHitPercent =
+    totalBlocks > 0 ? (blocksHit / totalBlocks) * 100 : null;
+  const maxApiCpuPercent = getMaxNullable(
+    samples.map(
+      (sample) => sample.container.cpuPercent ?? sample.runtime.cpuPercent,
+    ),
+  );
+  const maxApiMemoryPercent = getMaxNullable(
+    samples.map((sample) => sample.container.memoryPercent),
+  );
+  const maxPoolWaiting = Math.max(...samples.map((sample) => sample.pool.waiting));
+  const maxPoolBusy = Math.max(
+    ...samples.map((sample) => sample.pool.total - sample.pool.idle),
+  );
+  const maxDbWaitingConnections = Math.max(
+    ...samples.map((sample) => sample.database?.waitingConnections ?? 0),
+  );
+  const maxBlockedLocks = Math.max(
+    ...samples.map((sample) => sample.database?.blockedLocks ?? 0),
+  );
+  const p95DbSnapshotMs = getPercentile(
+    samples.map((sample) => sample.queryMs),
+    95,
+  );
+  const findings: string[] = [];
+
+  if (maxApiCpuPercent !== null && maxApiCpuPercent >= 85) {
+    findings.push(
+      `API упирается в CPU: пик ${maxApiCpuPercent.toFixed(0)}% доступного лимита.`,
+    );
+  }
+  if (maxApiMemoryPercent !== null && maxApiMemoryPercent >= 85) {
+    findings.push(
+      `API близок к лимиту RAM: пик ${maxApiMemoryPercent.toFixed(0)}%.`,
+    );
+  }
+  if (maxPoolWaiting > 0) {
+    findings.push(
+      `Есть очередь pg.Pool: одновременно ожидали до ${maxPoolWaiting} запросов.`,
+    );
+  }
+  if (maxDbWaitingConnections > 0 || maxBlockedLocks > 0) {
+    findings.push(
+      `PostgreSQL фиксировал ожидания: соединений ${maxDbWaitingConnections}, непринятых блокировок ${maxBlockedLocks}.`,
+    );
+  }
+  if (p95DbSnapshotMs >= 300) {
+    findings.push(
+      `Диагностический запрос к PostgreSQL отвечал медленно: P95 ${formatMs(p95DbSnapshotMs)}.`,
+    );
+  }
+  if (cacheHitPercent !== null && cacheHitPercent < 95 && blocksRead >= 100) {
+    findings.push(
+      `Низкий cache hit PostgreSQL (${cacheHitPercent.toFixed(1)}%): вероятна нагрузка на диск или нехватка памяти под кэш.`,
+    );
+  }
+  const deadlocks = delta(lastDb?.deadlocks, firstDb?.deadlocks);
+  if (deadlocks > 0) {
+    findings.push(`Во время теста PostgreSQL зарегистрировал deadlock: ${deadlocks}.`);
+  }
+  if (findings.length === 0) {
+    findings.push(
+      "API и PostgreSQL не достигли явных лимитов. Если задержка высокая, следующий кандидат — SSR web-контейнера, сеть или генератор нагрузки.",
+    );
+  }
+
+  return {
+    samples: samples.length,
+    maxApiCpuPercent,
+    maxApiMemoryPercent,
+    maxSystemMemoryPercent: Math.max(
+      ...samples.map((sample) => sample.system.usedMemoryPercent),
+    ),
+    maxPoolWaiting,
+    maxPoolBusy,
+    poolMax: samples[samples.length - 1]?.pool.max ?? 0,
+    maxDbConnections: Math.max(
+      ...samples.map((sample) => sample.database?.connections ?? 0),
+    ),
+    dbMaxConnections: lastDb?.maxConnections ?? 0,
+    maxDbWaitingConnections,
+    maxBlockedLocks,
+    maxLongestQueryMs: getMaxNullable(
+      samples.map((sample) => sample.database?.longestQueryMs),
+    ),
+    p95DbSnapshotMs,
+    dbCacheHitPercent: cacheHitPercent,
+    dbBlocksRead: blocksRead,
+    dbTempBytes: delta(lastDb?.tempBytes, firstDb?.tempBytes),
+    dbDeadlocks: deadlocks,
+    findings,
+  };
+};
 
 const formatPlanYears = (years: number) => {
   if (years === 0) {
@@ -653,11 +863,139 @@ const describeSyntheticSummary = (summary: SyntheticRunSummary) => {
   return "Сценарий проходит тяжело: пользователи ещё не отваливаются массово, но задержка уже высокая. Имеет смысл профилировать web, API и базу.";
 };
 
+function PerformanceDiagnosticsPanel({
+  summary,
+  runLabel,
+  collecting,
+  error,
+}: {
+  summary: PerformanceSummary | null;
+  runLabel: string | null;
+  collecting: boolean;
+  error: string | null;
+}) {
+  if (!summary && !error && !collecting) {
+    return null;
+  }
+
+  const metrics = summary
+    ? [
+        {
+          label: "CPU API",
+          value:
+            summary.maxApiCpuPercent === null
+              ? "—"
+              : `${summary.maxApiCpuPercent.toFixed(0)}%`,
+          detail: "пик лимита контейнера",
+        },
+        {
+          label: "RAM API",
+          value:
+            summary.maxApiMemoryPercent === null
+              ? "—"
+              : `${summary.maxApiMemoryPercent.toFixed(0)}%`,
+          detail: `система до ${summary.maxSystemMemoryPercent.toFixed(0)}%`,
+        },
+        {
+          label: "Пул БД",
+          value: `${summary.maxPoolBusy}/${summary.poolMax || "—"}`,
+          detail: `очередь до ${summary.maxPoolWaiting}`,
+        },
+        {
+          label: "PostgreSQL",
+          value: `${summary.maxDbConnections}/${summary.dbMaxConnections || "—"}`,
+          detail: `wait ${summary.maxDbWaitingConnections} · locks ${summary.maxBlockedLocks}`,
+        },
+        {
+          label: "P95 DB probe",
+          value: formatMs(summary.p95DbSnapshotMs),
+          detail:
+            summary.maxLongestQueryMs === null
+              ? "долгих запросов не видно"
+              : `longest ${formatMs(summary.maxLongestQueryMs)}`,
+        },
+        {
+          label: "Cache hit БД",
+          value:
+            summary.dbCacheHitPercent === null
+              ? "—"
+              : `${summary.dbCacheHitPercent.toFixed(1)}%`,
+          detail: `disk blocks ${summary.dbBlocksRead} · temp ${formatBytes(summary.dbTempBytes)}`,
+        },
+      ]
+    : [];
+
+  return (
+    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 shadow-[0_10px_28px_-24px_rgba(6,95,70,0.45)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-xs font-semibold uppercase text-emerald-800">
+            Диагностика ресурсов
+          </div>
+          {runLabel ? (
+            <div className="mt-0.5 text-[10px] text-emerald-700">{runLabel}</div>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2 text-[10px] font-semibold text-emerald-700">
+          {collecting ? (
+            <>
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              Сбор метрик
+            </>
+          ) : summary ? (
+            `${summary.samples} снимков`
+          ) : null}
+        </div>
+      </div>
+
+      {summary ? (
+        <>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {metrics.map((metric) => (
+              <div
+                key={metric.label}
+                className="rounded-lg bg-white px-3 py-2 shadow-[0_5px_18px_-16px_rgba(15,23,42,0.5)]"
+              >
+                <div className="text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  {metric.label}
+                </div>
+                <div className="mt-1 text-base font-bold tabular-nums text-slate-900">
+                  {metric.value}
+                </div>
+                <div className="mt-0.5 text-[9px] text-slate-500">
+                  {metric.detail}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid gap-1.5">
+            {summary.findings.map((finding) => (
+              <div
+                key={finding}
+                className="rounded-lg bg-white/85 px-3 py-2 text-[11px] font-medium leading-relaxed text-slate-700"
+              >
+                {finding}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {error ? (
+        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] text-amber-800">
+          Часть снимков не получена: {error}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminSqlPage() {
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
   const loadTestAbortRef = useRef<AbortController | null>(null);
   const syntheticAbortRef = useRef<AbortController | null>(null);
+  const performanceMonitorStopRef = useRef<(() => Promise<void>) | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
@@ -768,8 +1106,87 @@ export default function AdminSqlPage() {
     useState<SyntheticRunProgress | null>(null);
   const [syntheticSummary, setSyntheticSummary] =
     useState<SyntheticRunSummary | null>(null);
+  const [performanceSamples, setPerformanceSamples] = useState<
+    PerformanceSnapshot[]
+  >([]);
+  const [performanceRunLabel, setPerformanceRunLabel] = useState<string | null>(
+    null,
+  );
+  const [performanceCollecting, setPerformanceCollecting] = useState(false);
+  const [performanceMonitoringError, setPerformanceMonitoringError] = useState<
+    string | null
+  >(null);
   const [fontPreviewId, setFontPreviewId] =
     useState<FontPreviewId>("noto-sans");
+  const performanceSummary = useMemo(
+    () => summarizePerformance(performanceSamples),
+    [performanceSamples],
+  );
+
+  const startPerformanceMonitoring = (runLabel: string) => {
+    void performanceMonitorStopRef.current?.();
+    setPerformanceSamples([]);
+    setPerformanceRunLabel(runLabel);
+    setPerformanceMonitoringError(null);
+    setPerformanceCollecting(true);
+
+    let active = true;
+    let inFlight = false;
+    let stopped = false;
+
+    const collect = async (force = false) => {
+      if ((!active && !force) || inFlight) {
+        return;
+      }
+      inFlight = true;
+      try {
+        const response = await fetch(`${apiUrl}/admin/performance-snapshot`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || "Не удалось получить метрики сервера");
+        }
+        const snapshot = (await response.json()) as PerformanceSnapshot;
+        setPerformanceSamples((prev) => [...prev, snapshot].slice(-1800));
+      } catch (err) {
+        setPerformanceMonitoringError(
+          err instanceof Error ? err.message : "Ошибка сбора метрик сервера",
+        );
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void collect();
+    const interval = window.setInterval(() => {
+      void collect();
+    }, 1000);
+
+    const stop = async () => {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      active = false;
+      window.clearInterval(interval);
+      await collect(true);
+      setPerformanceCollecting(false);
+      if (performanceMonitorStopRef.current === stop) {
+        performanceMonitorStopRef.current = null;
+      }
+    };
+    performanceMonitorStopRef.current = stop;
+    return stop;
+  };
+
+  useEffect(
+    () => () => {
+      void performanceMonitorStopRef.current?.();
+    },
+    [],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -1897,7 +2314,7 @@ export default function AdminSqlPage() {
   };
 
   const runLoadTest = async (preset: LoadTestPreset) => {
-    if (loadTestRunning) {
+    if (loadTestRunning || syntheticRunning) {
       return;
     }
     const controller = new AbortController();
@@ -1913,6 +2330,9 @@ export default function AdminSqlPage() {
       okCount: 0,
       failCount: 0,
     });
+    const stopPerformanceMonitoring = startPerformanceMonitoring(
+      `Нагрузочный прогон · ${preset.label}`,
+    );
 
     const latencies: number[] = [];
     const serverLatencies: number[] = [];
@@ -2017,6 +2437,7 @@ export default function AdminSqlPage() {
         setLoadTestError("Прогон остановлен вручную");
       }
       loadTestAbortRef.current = null;
+      await stopPerformanceMonitoring();
       setLoadTestRunning(false);
     }
   };
@@ -2028,7 +2449,7 @@ export default function AdminSqlPage() {
   const runSyntheticUsers = async (
     preset: SyntheticUserPreset,
   ) => {
-    if (syntheticRunning) {
+    if (syntheticRunning || loadTestRunning) {
       return;
     }
     const controller = new AbortController();
@@ -2039,6 +2460,8 @@ export default function AdminSqlPage() {
 
     const scenarioCounts = createEmptySyntheticScenarioCounts();
     const requestLatencies: number[] = [];
+    const webRequestLatencies: number[] = [];
+    const apiRequestLatencies: number[] = [];
     const flowLatencies: number[] = [];
     let totalRequests = 0;
     let okCount = 0;
@@ -2070,6 +2493,16 @@ export default function AdminSqlPage() {
     };
 
     const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const apiPath = new URL(apiUrl, origin || "http://localhost").pathname.replace(
+      /\/+$/,
+      "",
+    );
+    const recordRequestLatency = (url: string, duration: number) => {
+      const path = new URL(url, origin || "http://localhost").pathname;
+      const isApiRequest =
+        path === apiPath || path.startsWith(`${apiPath}/`);
+      (isApiRequest ? apiRequestLatencies : webRequestLatencies).push(duration);
+    };
     const uniqueSuffix = () =>
       `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const withSyntheticQuery = (path: string) =>
@@ -2086,6 +2519,7 @@ export default function AdminSqlPage() {
         });
         const duration = performance.now() - requestStartedAt;
         requestLatencies.push(duration);
+        recordRequestLatency(url, duration);
         totalRequests += 1;
         if (!response.ok) {
           failCount += 1;
@@ -2099,7 +2533,9 @@ export default function AdminSqlPage() {
         if (isAbortError(err) || controller.signal.aborted) {
           throw err;
         }
-        requestLatencies.push(performance.now() - requestStartedAt);
+        const duration = performance.now() - requestStartedAt;
+        requestLatencies.push(duration);
+        recordRequestLatency(url, duration);
         totalRequests += 1;
         failCount += 1;
         commitProgress();
@@ -2265,6 +2701,9 @@ export default function AdminSqlPage() {
       failCount,
       scenarioCounts: { ...scenarioCounts },
     });
+    const stopPerformanceMonitoring = startPerformanceMonitoring(
+      `Синтетические пользователи · ${preset.label}`,
+    );
 
     try {
       await Promise.all(
@@ -2301,6 +2740,12 @@ export default function AdminSqlPage() {
             : 0,
         requestsPerSecond:
           actualDurationMs > 0 ? totalRequests / (actualDurationMs / 1000) : 0,
+        webRequestCount: webRequestLatencies.length,
+        avgWebRequestMs: getAverage(webRequestLatencies),
+        p95WebRequestMs: getPercentile(webRequestLatencies, 95),
+        apiRequestCount: apiRequestLatencies.length,
+        avgApiRequestMs: getAverage(apiRequestLatencies),
+        p95ApiRequestMs: getPercentile(apiRequestLatencies, 95),
         wasAborted,
       };
       setSyntheticSummary(summary);
@@ -2320,6 +2765,7 @@ export default function AdminSqlPage() {
         setSyntheticError("Синтетический прогон остановлен вручную");
       }
       syntheticAbortRef.current = null;
+      await stopPerformanceMonitoring();
       setSyntheticRunning(false);
     }
   };
@@ -3392,7 +3838,7 @@ export default function AdminSqlPage() {
                   key={preset.label}
                   type="button"
                   onClick={() => runLoadTest(preset)}
-                  disabled={loadTestRunning}
+                  disabled={loadTestRunning || syntheticRunning}
                   className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold disabled:opacity-60 ${
                     preset.multiplier
                       ? "border-amber-300 bg-amber-50 text-amber-900 hover:border-amber-400"
@@ -3500,6 +3946,14 @@ export default function AdminSqlPage() {
                 {loadTestError}
               </div>
             ) : null}
+            {performanceRunLabel?.startsWith("Нагрузочный прогон") ? (
+              <PerformanceDiagnosticsPanel
+                summary={performanceSummary}
+                runLabel={performanceRunLabel}
+                collecting={performanceCollecting}
+                error={performanceMonitoringError}
+              />
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -3518,7 +3972,7 @@ export default function AdminSqlPage() {
                   key={preset.label}
                   type="button"
                   onClick={() => runSyntheticUsers(preset)}
-                  disabled={syntheticRunning}
+                  disabled={syntheticRunning || loadTestRunning}
                   className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold disabled:opacity-60 ${
                     preset.multiplier
                       ? "border-amber-300 bg-amber-50 text-amber-900 hover:border-amber-400"
@@ -3620,6 +4074,24 @@ export default function AdminSqlPage() {
                     </span>
                   </div>
                   <div>
+                    P95 web:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.p95WebRequestMs)}
+                    </span>{" "}
+                    <span className="text-slate-400">
+                      ({syntheticSummary.webRequestCount})
+                    </span>
+                  </div>
+                  <div>
+                    P95 API:{" "}
+                    <span className="font-semibold text-slate-800">
+                      {formatMs(syntheticSummary.p95ApiRequestMs)}
+                    </span>{" "}
+                    <span className="text-slate-400">
+                      ({syntheticSummary.apiRequestCount})
+                    </span>
+                  </div>
+                  <div>
                     Средний flow:{" "}
                     <span className="font-semibold text-slate-800">
                       {formatMs(syntheticSummary.avgFlowMs)}
@@ -3653,6 +4125,14 @@ export default function AdminSqlPage() {
               <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
                 {syntheticError}
               </div>
+            ) : null}
+            {performanceRunLabel?.startsWith("Синтетические пользователи") ? (
+              <PerformanceDiagnosticsPanel
+                summary={performanceSummary}
+                runLabel={performanceRunLabel}
+                collecting={performanceCollecting}
+                error={performanceMonitoringError}
+              />
             ) : null}
           </div>
 

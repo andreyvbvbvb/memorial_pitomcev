@@ -60,6 +60,7 @@ import {
   HERO_VIDEO_SETTING_KEY,
   normalizeHeroVideoSetting,
 } from "../content/hero-video-setting";
+import { AdminPerformanceService } from "./admin-performance.service";
 
 const MODERATION_REVIEW_REVISION = "REVISION";
 
@@ -102,6 +103,8 @@ export class AdminController {
     @Inject(PricingService) private readonly pricingService: PricingService,
     @Inject(S3Service) private readonly s3: S3Service,
     @Inject(MailService) private readonly mailService: MailService,
+    @Inject(AdminPerformanceService)
+    private readonly performanceService: AdminPerformanceService,
   ) {}
 
   private async ensureAdmin(req: Request) {
@@ -308,6 +311,12 @@ export class AdminController {
       serverMs,
       at: new Date().toISOString(),
     };
+  }
+
+  @Get("performance-snapshot")
+  async performanceSnapshot(@Req() req: Request) {
+    await this.ensureAdmin(req);
+    return this.performanceService.snapshot();
   }
 
   @Get("moderation")

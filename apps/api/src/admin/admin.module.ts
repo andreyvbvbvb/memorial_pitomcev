@@ -6,6 +6,7 @@ import { PricingModule } from "../pricing/pricing.module";
 import { PrismaModule } from "../prisma/prisma.module";
 import { StorageModule } from "../storage/storage.module";
 import { AdminController } from "./admin.controller";
+import { AdminPerformanceService } from "./admin-performance.service";
 
 @Module({
   imports: [
@@ -17,5 +18,6 @@ import { AdminController } from "./admin.controller";
     MailModule,
   ],
   controllers: [AdminController],
+  providers: [AdminPerformanceService],
 })
 export class AdminModule {}
