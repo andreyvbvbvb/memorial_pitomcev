@@ -87,6 +87,16 @@ const DIRT_SLOTS = [
   "dirt_slot_4",
 ] as const;
 const DURATION_OPTIONS = [1, 3, 6, 12] as const;
+const GIFT_TYPE_FILTER_OPTIONS = [
+  { id: "all", label: "Все" },
+  { id: "flower", label: "Цветы" },
+  { id: "candle", label: "Свечи" },
+  { id: "meal", label: "Угощения" },
+  { id: "toy", label: "Игрушки" },
+  { id: "star", label: "Звёзды" },
+] as const;
+type GiftTypeFilter = (typeof GIFT_TYPE_FILTER_OPTIONS)[number]["id"];
+
 const GIFT_DURATION_PRICE_MULTIPLIERS: Record<
   (typeof DURATION_OPTIONS)[number],
   number
@@ -451,6 +461,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [cleanSuccess, setCleanSuccess] = useState<string | null>(null);
   const [giftLoading, setGiftLoading] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
+  const [giftTypeFilter, setGiftTypeFilter] = useState<GiftTypeFilter>("all");
   const [selectedGiftSize, setSelectedGiftSize] = useState<GiftSize>("m");
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
@@ -1430,7 +1441,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     });
   }, [availableSlots, giftCatalog]);
 
-  const visibleGiftsWithSlots = useMemo(() => {
+  const slotFilteredGifts = useMemo(() => {
     if (selectedGiftId) {
       return giftsWithSlots;
     }
@@ -1446,6 +1457,24 @@ export default function PetClient({ id, mode = "view" }: Props) {
       return types.includes("default") || types.includes(slotType);
     });
   }, [giftsWithSlots, selectedGiftId, selectedSlot]);
+
+  const availableGiftTypeFilters = useMemo(() => {
+    const availableTypes = new Set(
+      slotFilteredGifts.flatMap((gift) => getGiftAvailableTypes(gift)),
+    );
+    return GIFT_TYPE_FILTER_OPTIONS.filter(
+      (option) => option.id === "all" || availableTypes.has(option.id),
+    );
+  }, [slotFilteredGifts]);
+
+  const visibleGiftsWithSlots = useMemo(() => {
+    if (giftTypeFilter === "all") {
+      return slotFilteredGifts;
+    }
+    return slotFilteredGifts.filter((gift) =>
+      getGiftAvailableTypes(gift).includes(giftTypeFilter),
+    );
+  }, [giftTypeFilter, slotFilteredGifts]);
 
   const selectedGift =
     giftsWithSlots.find((gift) => gift.id === selectedGiftId) ?? null;
@@ -1467,6 +1496,14 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const highlightSlots = availableSlots;
   const shouldShowGiftSlots =
     giftPanelOpen && highlightSlots.length > 0 && giftSlotsVisible;
+
+  useEffect(() => {
+    if (
+      !availableGiftTypeFilters.some((option) => option.id === giftTypeFilter)
+    ) {
+      setGiftTypeFilter("all");
+    }
+  }, [availableGiftTypeFilters, giftTypeFilter]);
 
   useEffect(() => {
     if (visibleGiftsWithSlots.length === 0) {
@@ -4083,7 +4120,36 @@ export default function PetClient({ id, mode = "view" }: Props) {
                         ) : null}
 
                         <div className={giftCatalogSectionClass}>
-                          <span>Подарок</span>
+                          <div className="flex shrink-0 items-center justify-between gap-2">
+                            <span>Подарок</span>
+                            <span className="text-[9px] font-bold tabular-nums text-[#adb5bd]">
+                              {visibleGiftsWithSlots.length}
+                            </span>
+                          </div>
+                          <div className="flex shrink-0 gap-1 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {availableGiftTypeFilters.map((option) => {
+                              const isActive = giftTypeFilter === option.id;
+                              return (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  aria-pressed={isActive}
+                                  onClick={() => setGiftTypeFilter(option.id)}
+                                  className={`min-h-10 shrink-0 touch-manipulation whitespace-nowrap rounded-xl px-2.5 text-[9px] font-black uppercase tracking-[0.06em] transition-[background-color,color,transform] active:scale-[0.96] [-webkit-tap-highlight-color:transparent] ${
+                                    isActive
+                                      ? "bg-[#5d4037] text-white"
+                                      : `bg-white text-[#8d6e63] ${
+                                          isPortraitLayout
+                                            ? ""
+                                            : "hover:bg-[#fdf2e9] hover:text-[#5d4037]"
+                                        }`
+                                  }`}
+                                >
+                                  {option.label}
+                                </button>
+                              );
+                            })}
+                          </div>
                           <div className={giftCatalogGridClass}>
                             {giftCatalogLoading ? (
                               Array.from({ length: 8 }).map((_, index) => (
