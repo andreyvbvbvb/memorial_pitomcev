@@ -90,6 +90,11 @@ type SyntheticUserPreset = {
   multiplier?: number;
 };
 
+type K6DispatchResponse = {
+  ok: boolean;
+  runUrl: string;
+};
+
 const EXTREME_TEST_MULTIPLIERS = [5, 10, 50, 100] as const;
 const HEAVIEST_LOAD_TEST = { totalRequests: 250, concurrency: 20 };
 const HEAVIEST_SYNTHETIC_TEST = { virtualUsers: 100, durationMs: 45_000 };
@@ -1106,6 +1111,9 @@ export default function AdminSqlPage() {
     useState<SyntheticRunProgress | null>(null);
   const [syntheticSummary, setSyntheticSummary] =
     useState<SyntheticRunSummary | null>(null);
+  const [k6Dispatching, setK6Dispatching] = useState(false);
+  const [k6Notice, setK6Notice] = useState<string | null>(null);
+  const [k6RunUrl, setK6RunUrl] = useState<string | null>(null);
   const [performanceSamples, setPerformanceSamples] = useState<
     PerformanceSnapshot[]
   >([]);
@@ -2444,6 +2452,41 @@ export default function AdminSqlPage() {
 
   const stopSyntheticRun = () => {
     syntheticAbortRef.current?.abort();
+  };
+
+  const runExternalK6 = async () => {
+    if (k6Dispatching) {
+      return;
+    }
+    setK6Dispatching(true);
+    setK6Notice(null);
+    setK6RunUrl(null);
+    try {
+      const response = await fetch(`${apiUrl}/admin/performance/k6`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const responseText = await response.text();
+      if (!response.ok) {
+        let message = responseText || "Не удалось запустить внешний k6";
+        try {
+          const data = JSON.parse(responseText) as { message?: string };
+          message = data.message || message;
+        } catch {
+          // Keep the plain response body.
+        }
+        throw new Error(message);
+      }
+      const data = JSON.parse(responseText) as K6DispatchResponse;
+      setK6RunUrl(data.runUrl);
+      setK6Notice("Прогон отправлен на внешний GitHub runner");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Не удалось запустить внешний k6",
+      );
+    } finally {
+      setK6Dispatching(false);
+    }
   };
 
   const runSyntheticUsers = async (
@@ -4135,6 +4178,44 @@ export default function AdminSqlPage() {
               />
             ) : null}
           </div>
+
+          {canManageAdmins(accessLevel) ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+              <div className="text-xs font-semibold uppercase text-emerald-800">
+                Внешний k6
+              </div>
+              <p className="mt-2 text-[11px] text-emerald-900/70">
+                Запускает 500 виртуальных пользователей на 45 секунд с
+                отдельного GitHub runner. Браузер и сервер приложения не
+                создают нагрузку сами на себя.
+              </p>
+              <button
+                type="button"
+                onClick={runExternalK6}
+                disabled={k6Dispatching}
+                className="mt-3 min-h-10 w-full rounded-lg bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-transform active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
+              >
+                {k6Dispatching
+                  ? "Запускаю..."
+                  : "Запустить k6 · 500 VU / 45 сек"}
+              </button>
+              {k6Notice ? (
+                <div className="mt-3 rounded-lg bg-white px-3 py-2 text-[11px] text-emerald-900 shadow-sm">
+                  {k6Notice}
+                  {k6RunUrl ? (
+                    <a
+                      href={k6RunUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-2 inline-flex min-h-10 items-center font-semibold underline underline-offset-2"
+                    >
+                      Открыть результаты
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex items-center justify-between">

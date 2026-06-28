@@ -63,6 +63,8 @@ import {
 import { AdminPerformanceService } from "./admin-performance.service";
 
 const MODERATION_REVIEW_REVISION = "REVISION";
+const K6_WORKFLOW_URL =
+  "https://github.com/andreyvbvbvb/memorial_pitomcev/actions/workflows/k6-production.yml";
 
 const toSafeJson = (value: unknown): unknown => {
   if (typeof value === "bigint") {
@@ -317,6 +319,67 @@ export class AdminController {
   async performanceSnapshot(@Req() req: Request) {
     await this.ensureAdmin(req);
     return this.performanceService.snapshot();
+  }
+
+  @Post("performance/k6")
+  async runExternalK6(@Req() req: Request) {
+    await this.ensureOwner(req);
+    const token = process.env.GITHUB_WORKFLOW_TOKEN?.trim();
+    if (!token) {
+      throw new BadRequestException(
+        "Добавьте GITHUB_WORKFLOW_TOKEN в переменные окружения API",
+      );
+    }
+
+    const response = await fetch(
+      "https://api.github.com/repos/andreyvbvbvb/memorial_pitomcev/actions/workflows/k6-production.yml/dispatches",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-GitHub-Api-Version": "2026-03-10",
+        },
+        body: JSON.stringify({
+          ref: "main",
+          inputs: {
+            vus: "500",
+            duration: "45s",
+            p95_ms: "5000",
+          },
+        }),
+      },
+    );
+
+    const responseText = await response.text();
+    if (!response.ok) {
+      throw new BadRequestException(
+        response.status === 401 || response.status === 403
+          ? "GitHub отклонил токен. Нужен fine-grained token с Actions: write"
+          : `Не удалось запустить k6 через GitHub (${response.status})`,
+      );
+    }
+
+    let runUrl = K6_WORKFLOW_URL;
+    if (responseText) {
+      try {
+        const data = JSON.parse(responseText) as { html_url?: string };
+        runUrl = data.html_url || runUrl;
+      } catch {
+        // Older GitHub API versions return an empty successful response.
+      }
+    }
+
+    return {
+      ok: true,
+      runUrl,
+      profile: {
+        virtualUsers: 500,
+        durationSeconds: 45,
+        p95ThresholdMs: 5000,
+      },
+    };
   }
 
   @Get("moderation")

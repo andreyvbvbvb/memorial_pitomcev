@@ -3,6 +3,24 @@
 These scripts are external load tests for the memorial service. They are not run
 inside the web app or the admin panel.
 
+## One-click production run
+
+The owner can start the `500 VU / 45s` public test from the **External k6**
+card in the admin panel. The test runs on a separate GitHub-hosted runner.
+
+One-time setup:
+
+1. Create a fine-grained GitHub personal access token scoped to the
+   `andreyvbvbvb/memorial_pitomcev` repository.
+2. Grant the token the repository permission **Actions: Read and write**.
+3. Add it to the API deployment environment as `GITHUB_WORKFLOW_TOKEN` and
+   redeploy.
+
+The admin button dispatches `.github/workflows/k6-production.yml`. Results are
+available in GitHub Actions, and the JSON summary is retained as a workflow
+artifact for 14 days. The workflow can also be started manually from its
+GitHub Actions page without configuring the API token.
+
 ## Install
 
 ```bash
