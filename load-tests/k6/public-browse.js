@@ -11,12 +11,28 @@ import {
   randomItem
 } from "./common.js";
 
+const targetVus = getNumberEnv("VUS", 20);
+
 export const options = {
   scenarios: {
     public_browse: {
-      executor: "constant-vus",
-      vus: getNumberEnv("VUS", 20),
-      duration: getStringEnv("DURATION", "2m")
+      executor: "ramping-vus",
+      startVUs: 0,
+      stages: [
+        {
+          duration: getStringEnv("RAMP_UP", "30s"),
+          target: targetVus
+        },
+        {
+          duration: getStringEnv("DURATION", "2m"),
+          target: targetVus
+        },
+        {
+          duration: getStringEnv("RAMP_DOWN", "15s"),
+          target: 0
+        }
+      ],
+      gracefulRampDown: "30s"
     }
   },
   thresholds: DEFAULT_THRESHOLDS

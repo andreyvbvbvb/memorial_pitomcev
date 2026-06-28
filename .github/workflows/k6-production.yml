@@ -8,7 +8,7 @@ on:
         required: true
         default: "500"
       duration:
-        description: Test duration
+        description: Hold duration at target VUs
         required: true
         default: "45s"
       p95_ms:
@@ -42,6 +42,8 @@ jobs:
           WEB_BASE_URL: https://xn--80aeb9a9a9d.com
           VUS: ${{ inputs.vus }}
           DURATION: ${{ inputs.duration }}
+          RAMP_UP: 30s
+          RAMP_DOWN: 15s
           P95_MS: ${{ inputs.p95_ms }}
         with:
           path: load-tests/k6/public-browse.js

@@ -376,7 +376,9 @@ export class AdminController {
       runUrl,
       profile: {
         virtualUsers: 500,
-        durationSeconds: 45,
+        rampUpSeconds: 30,
+        holdSeconds: 45,
+        rampDownSeconds: 15,
         p95ThresholdMs: 5000,
       },
     };

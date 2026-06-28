@@ -5,8 +5,10 @@ inside the web app or the admin panel.
 
 ## One-click production run
 
-The owner can start the `500 VU / 45s` public test from the **External k6**
-card in the admin panel. The test runs on a separate GitHub-hosted runner.
+The owner can start the public test from the **External k6** card in the admin
+panel. It ramps up to 500 VUs over 30 seconds, holds that load for 45 seconds,
+and ramps down over 15 seconds. The test runs on a separate GitHub-hosted
+runner while the open admin tab collects server resource diagnostics.
 
 One-time setup:
 
@@ -40,8 +42,10 @@ docker run --rm -i \
 
 - `API_BASE_URL`: API origin. Default: `http://localhost:4000`
 - `WEB_BASE_URL`: web origin. Default: `http://localhost:3000`
-- `VUS`: virtual users for constant-VU scripts.
-- `DURATION`: test duration, for example `2m`.
+- `VUS`: virtual users, or the target VUs for the public ramping test.
+- `DURATION`: test duration, or hold duration for the public test.
+- `RAMP_UP`: public-test ramp-up duration. Default: `30s`.
+- `RAMP_DOWN`: public-test ramp-down duration. Default: `15s`.
 - `P95_MS`: default p95 threshold in milliseconds. Default: `1200`.
 - `K6_EMAIL`: user email for authenticated/admin scripts.
 - `K6_PASSWORD`: user password for authenticated/admin scripts.

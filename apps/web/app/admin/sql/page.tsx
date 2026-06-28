@@ -1001,6 +1001,7 @@ export default function AdminSqlPage() {
   const loadTestAbortRef = useRef<AbortController | null>(null);
   const syntheticAbortRef = useRef<AbortController | null>(null);
   const performanceMonitorStopRef = useRef<(() => Promise<void>) | null>(null);
+  const k6MonitorTimeoutRef = useRef<number | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>("USER");
@@ -1130,6 +1131,9 @@ export default function AdminSqlPage() {
     () => summarizePerformance(performanceSamples),
     [performanceSamples],
   );
+  const externalK6Monitoring =
+    performanceCollecting &&
+    performanceRunLabel?.startsWith("Внешний k6") === true;
 
   const startPerformanceMonitoring = (runLabel: string) => {
     void performanceMonitorStopRef.current?.();
@@ -1189,12 +1193,14 @@ export default function AdminSqlPage() {
     return stop;
   };
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    return () => {
+      if (k6MonitorTimeoutRef.current !== null) {
+        window.clearTimeout(k6MonitorTimeoutRef.current);
+      }
       void performanceMonitorStopRef.current?.();
-    },
-    [],
-  );
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -2455,7 +2461,7 @@ export default function AdminSqlPage() {
   };
 
   const runExternalK6 = async () => {
-    if (k6Dispatching) {
+    if (k6Dispatching || externalK6Monitoring) {
       return;
     }
     setK6Dispatching(true);
@@ -2479,7 +2485,19 @@ export default function AdminSqlPage() {
       }
       const data = JSON.parse(responseText) as K6DispatchResponse;
       setK6RunUrl(data.runUrl);
-      setK6Notice("Прогон отправлен на внешний GitHub runner");
+      setK6Notice(
+        "Прогон отправлен на внешний runner. Оставьте эту вкладку открытой до завершения диагностики.",
+      );
+      const stopPerformanceMonitoring = startPerformanceMonitoring(
+        "Внешний k6 · до 500 VU",
+      );
+      if (k6MonitorTimeoutRef.current !== null) {
+        window.clearTimeout(k6MonitorTimeoutRef.current);
+      }
+      k6MonitorTimeoutRef.current = window.setTimeout(() => {
+        k6MonitorTimeoutRef.current = null;
+        void stopPerformanceMonitoring();
+      }, 150_000);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Не удалось запустить внешний k6",
@@ -4185,19 +4203,21 @@ export default function AdminSqlPage() {
                 Внешний k6
               </div>
               <p className="mt-2 text-[11px] text-emerald-900/70">
-                Запускает 500 виртуальных пользователей на 45 секунд с
-                отдельного GitHub runner. Браузер и сервер приложения не
-                создают нагрузку сами на себя.
+                Плавно поднимает нагрузку до 500 пользователей за 30 секунд,
+                удерживает 45 секунд и снижает за 15 секунд. Внешний runner
+                создаёт трафик, а эта вкладка собирает метрики сервера.
               </p>
               <button
                 type="button"
                 onClick={runExternalK6}
-                disabled={k6Dispatching}
+                disabled={k6Dispatching || externalK6Monitoring}
                 className="mt-3 min-h-10 w-full rounded-lg bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-transform active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
               >
                 {k6Dispatching
                   ? "Запускаю..."
-                  : "Запустить k6 · 500 VU / 45 сек"}
+                  : externalK6Monitoring
+                    ? "Идёт диагностика..."
+                    : "Запустить k6 · до 500 VU"}
               </button>
               {k6Notice ? (
                 <div className="mt-3 rounded-lg bg-white px-3 py-2 text-[11px] text-emerald-900 shadow-sm">
@@ -4213,6 +4233,14 @@ export default function AdminSqlPage() {
                     </a>
                   ) : null}
                 </div>
+              ) : null}
+              {performanceRunLabel?.startsWith("Внешний k6") ? (
+                <PerformanceDiagnosticsPanel
+                  summary={performanceSummary}
+                  runLabel={performanceRunLabel}
+                  collecting={performanceCollecting}
+                  error={performanceMonitoringError}
+                />
               ) : null}
             </div>
           ) : null}
