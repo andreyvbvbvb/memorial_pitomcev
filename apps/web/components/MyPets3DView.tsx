@@ -39,6 +39,7 @@ import {
 import DirtSlotAttachments from "./DirtSlotAttachments";
 import GiftFlames from "./GiftFlames";
 import TunedSkyDome from "./TunedSkyDome";
+import { resolveObjectTransformInParent } from "../lib/three-transforms";
 
 ensureDracoLoader();
 import { getHouseSlots } from "../lib/memorial-config";
@@ -360,23 +361,21 @@ function GiftInstance({
     });
     return cloned;
   }, [scene, size, url]);
+  const baseQuaternion = useMemo(() => gift.quaternion.clone(), [gift]);
 
   useEffect(() => {
     const anchor = terrain.getObjectByName(slot);
     if (!anchor) {
       return;
     }
-    terrain.updateMatrixWorld(true);
-    anchor.updateMatrixWorld(true);
-    const worldPosition = new THREE.Vector3();
-    anchor.getWorldPosition(worldPosition);
-    terrain.worldToLocal(worldPosition);
-    gift.position.copy(worldPosition);
+    const { position, quaternion } = resolveObjectTransformInParent(anchor, terrain);
+    gift.position.copy(position);
+    gift.quaternion.copy(quaternion).multiply(baseQuaternion);
     terrain.add(gift);
     return () => {
       terrain.remove(gift);
     };
-  }, [gift, slot, terrain]);
+  }, [baseQuaternion, gift, slot, terrain]);
 
   return enableFlames ? <GiftFlames root={gift} /> : null;
 }

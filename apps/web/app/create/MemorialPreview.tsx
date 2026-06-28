@@ -29,6 +29,7 @@ import {
   getHouseScaleFitSizeOverride,
   getHouseTransform
 } from "../../lib/house-layout";
+import { resolveObjectTransformInParent } from "../../lib/three-transforms";
 import {
   PetSoul,
   normalizeSoulColor,
@@ -748,7 +749,10 @@ function GiftPlacementAttachment({
     }
     return cloned;
   }, [scene, url, size, scaleMultiplier]);
-  const [position, setPosition] = useState<[number, number, number] | null>(null);
+  const [transform, setTransform] = useState<{
+    position: [number, number, number];
+    quaternion: [number, number, number, number];
+  } | null>(null);
   const giftGroupRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
@@ -757,18 +761,26 @@ function GiftPlacementAttachment({
       console.warn(`[MemorialPreview] gift slot '${slot}' не найден`);
       return;
     }
-    const pos = resolveObjectPositionInRenderParent(anchor, terrain);
-    setPosition([pos.x, pos.y, pos.z]);
+    const renderParent = terrain.parent;
+    if (!renderParent) {
+      return;
+    }
+    const { position, quaternion } = resolveObjectTransformInParent(anchor, renderParent);
+    setTransform({
+      position: [position.x, position.y, position.z],
+      quaternion: [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+    });
   }, [terrain, slot]);
 
-  if (!position) {
+  if (!transform) {
     return null;
   }
 
   return (
     <Group
       ref={giftGroupRef}
-      position={position}
+      position={transform.position}
+      quaternion={transform.quaternion}
       onPointerOver={(event: any) => {
         event.stopPropagation();
         const hoverPosition = new THREE.Vector3();

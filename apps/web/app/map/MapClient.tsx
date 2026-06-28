@@ -54,6 +54,7 @@ import {
 import DirtSlotAttachments from "../../components/DirtSlotAttachments";
 import GiftFlames from "../../components/GiftFlames";
 import TunedSkyDome from "../../components/TunedSkyDome";
+import { resolveObjectTransformInParent } from "../../lib/three-transforms";
 
 ensureDracoLoader();
 import {
@@ -527,21 +528,21 @@ function GiftInstance({
     }
     return cloned;
   }, [scene, url, size]);
+  const baseQuaternion = useMemo(() => gift.quaternion.clone(), [gift]);
 
   useEffect(() => {
     const anchor = terrain.getObjectByName(slot);
     if (!anchor) {
       return;
     }
-    const position = new THREE.Vector3();
-    anchor.getWorldPosition(position);
-    terrain.worldToLocal(position);
+    const { position, quaternion } = resolveObjectTransformInParent(anchor, terrain);
     gift.position.copy(position);
+    gift.quaternion.copy(quaternion).multiply(baseQuaternion);
     terrain.add(gift);
     return () => {
       terrain.remove(gift);
     };
-  }, [terrain, slot, gift]);
+  }, [baseQuaternion, terrain, slot, gift]);
 
   return enableFlames ? <GiftFlames root={gift} /> : null;
 }
