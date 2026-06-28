@@ -22,6 +22,8 @@ const GIFT_DURATION_PRICE_MULTIPLIERS: Record<number, number> = {
 
 @Injectable()
 export class GiftsService {
+  private catalogSeedPromise: Promise<void> | null = null;
+
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   private async ensureOwner(ownerId: string) {
@@ -43,7 +45,17 @@ export class GiftsService {
     });
   }
 
-  private async ensureCatalogSeeded() {
+  private ensureCatalogSeeded() {
+    if (!this.catalogSeedPromise) {
+      this.catalogSeedPromise = this.seedCatalog().catch((error) => {
+        this.catalogSeedPromise = null;
+        throw error;
+      });
+    }
+    return this.catalogSeedPromise;
+  }
+
+  private async seedCatalog() {
     for (const gift of DEFAULT_GIFTS) {
       const metadata = getGiftMetadata(gift.code, gift.name);
       await this.prisma.giftCatalog.upsert({
