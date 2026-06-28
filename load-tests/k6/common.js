@@ -30,6 +30,29 @@ export const getStringEnv = (name, fallback) => {
   return value === undefined || value === "" ? fallback : String(value);
 };
 
+export const buildRampingScenario = () => {
+  const targetVus = getNumberEnv("VUS", 20);
+  return {
+    executor: "ramping-vus",
+    startVUs: 0,
+    stages: [
+      {
+        duration: getStringEnv("RAMP_UP", "30s"),
+        target: targetVus
+      },
+      {
+        duration: getStringEnv("DURATION", "2m"),
+        target: targetVus
+      },
+      {
+        duration: getStringEnv("RAMP_DOWN", "15s"),
+        target: 0
+      }
+    ],
+    gracefulRampDown: "30s"
+  };
+};
+
 export const randomItem = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
     return null;

@@ -5,10 +5,15 @@ inside the web app or the admin panel.
 
 ## One-click production run
 
-The owner can start the public test from the **External k6** card in the admin
-panel. It ramps up to 500 VUs over 30 seconds, holds that load for 45 seconds,
-and ramps down over 15 seconds. The test runs on a separate GitHub-hosted
-runner while the open admin tab collects server resource diagnostics.
+The owner can start two profiles from the **External k6** card:
+
+- **Mixed 500 VU** ramps up over 30 seconds, holds for 45 seconds, and ramps
+  down over 15 seconds.
+- **API + web 1000 VU** runs two isolated tests sequentially. Each ramps up over
+  60 seconds, holds for 45 seconds, and ramps down over 30 seconds.
+
+The tests run on a separate GitHub-hosted runner while the open admin tab
+collects server resource diagnostics.
 
 One-time setup:
 
@@ -61,6 +66,28 @@ WEB_BASE_URL=https://example.com \
 VUS=50 \
 DURATION=5m \
 pnpm k6:public
+```
+
+## Isolated API and web runs
+
+Use these scripts to distinguish API/database saturation from Next.js or
+ingress saturation:
+
+```bash
+API_BASE_URL=https://api.example.com \
+VUS=1000 \
+RAMP_UP=60s \
+DURATION=45s \
+RAMP_DOWN=30s \
+pnpm k6:api
+
+API_BASE_URL=https://api.example.com \
+WEB_BASE_URL=https://example.com \
+VUS=1000 \
+RAMP_UP=60s \
+DURATION=45s \
+RAMP_DOWN=30s \
+pnpm k6:web
 ```
 
 ## Authenticated user

@@ -3,6 +3,14 @@ name: k6 Production Load Test
 on:
   workflow_dispatch:
     inputs:
+      suite:
+        description: Test suite
+        required: true
+        type: choice
+        default: mixed
+        options:
+          - mixed
+          - split
       vus:
         description: Virtual users
         required: true
@@ -11,6 +19,14 @@ on:
         description: Hold duration at target VUs
         required: true
         default: "45s"
+      ramp_up:
+        description: Ramp-up duration
+        required: true
+        default: "30s"
+      ramp_down:
+        description: Ramp-down duration
+        required: true
+        default: "15s"
       p95_ms:
         description: P95 threshold in milliseconds
         required: true
@@ -35,26 +51,77 @@ jobs:
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
-      - name: Run production test
+      - name: Run mixed production test
+        id: mixed
+        if: inputs.suite == 'mixed'
+        continue-on-error: true
         uses: grafana/run-k6-action@v1
         env:
           API_BASE_URL: https://xn--80aeb9a9a9d.com/api
           WEB_BASE_URL: https://xn--80aeb9a9a9d.com
           VUS: ${{ inputs.vus }}
           DURATION: ${{ inputs.duration }}
-          RAMP_UP: 30s
-          RAMP_DOWN: 15s
+          RAMP_UP: ${{ inputs.ramp_up }}
+          RAMP_DOWN: ${{ inputs.ramp_down }}
           P95_MS: ${{ inputs.p95_ms }}
         with:
           path: load-tests/k6/public-browse.js
-          flags: --summary-export=k6-summary.json
+          flags: --summary-export=k6-summary-mixed.json
           disable-analytics: true
 
-      - name: Save k6 summary
+      - name: Run API-only production test
+        id: api
+        if: inputs.suite == 'split'
+        continue-on-error: true
+        uses: grafana/run-k6-action@v1
+        env:
+          API_BASE_URL: https://xn--80aeb9a9a9d.com/api
+          WEB_BASE_URL: https://xn--80aeb9a9a9d.com
+          VUS: ${{ inputs.vus }}
+          DURATION: ${{ inputs.duration }}
+          RAMP_UP: ${{ inputs.ramp_up }}
+          RAMP_DOWN: ${{ inputs.ramp_down }}
+          P95_MS: ${{ inputs.p95_ms }}
+        with:
+          path: load-tests/k6/api-only.js
+          flags: --summary-export=k6-summary-api.json
+          disable-analytics: true
+
+      - name: Run web-only production test
+        id: web
+        if: inputs.suite == 'split'
+        continue-on-error: true
+        uses: grafana/run-k6-action@v1
+        env:
+          API_BASE_URL: https://xn--80aeb9a9a9d.com/api
+          WEB_BASE_URL: https://xn--80aeb9a9a9d.com
+          VUS: ${{ inputs.vus }}
+          DURATION: ${{ inputs.duration }}
+          RAMP_UP: ${{ inputs.ramp_up }}
+          RAMP_DOWN: ${{ inputs.ramp_down }}
+          P95_MS: ${{ inputs.p95_ms }}
+        with:
+          path: load-tests/k6/web-only.js
+          flags: --summary-export=k6-summary-web.json
+          disable-analytics: true
+
+      - name: Save k6 summaries
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: k6-summary-${{ github.run_number }}
-          path: k6-summary.json
+          path: k6-summary-*.json
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Evaluate thresholds
+        if: always()
+        env:
+          MIXED_OUTCOME: ${{ steps.mixed.outcome }}
+          API_OUTCOME: ${{ steps.api.outcome }}
+          WEB_OUTCOME: ${{ steps.web.outcome }}
+        run: |
+          if [[ "$MIXED_OUTCOME" == "failure" || "$API_OUTCOME" == "failure" || "$WEB_OUTCOME" == "failure" ]]; then
+            echo "One or more k6 suites exceeded their thresholds."
+            exit 1
+          fi

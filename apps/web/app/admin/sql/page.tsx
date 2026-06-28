@@ -90,9 +90,16 @@ type SyntheticUserPreset = {
   multiplier?: number;
 };
 
+type ExternalK6ProfileId = "mixed-500" | "split-1000";
+
 type K6DispatchResponse = {
   ok: boolean;
   runUrl: string;
+  profile: {
+    id: ExternalK6ProfileId;
+    label: string;
+    monitorSeconds: number;
+  };
 };
 
 const EXTREME_TEST_MULTIPLIERS = [5, 10, 50, 100] as const;
@@ -2460,7 +2467,7 @@ export default function AdminSqlPage() {
     syntheticAbortRef.current?.abort();
   };
 
-  const runExternalK6 = async () => {
+  const runExternalK6 = async (profile: ExternalK6ProfileId) => {
     if (k6Dispatching || externalK6Monitoring) {
       return;
     }
@@ -2471,6 +2478,10 @@ export default function AdminSqlPage() {
       const response = await fetch(`${apiUrl}/admin/performance/k6`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ profile }),
       });
       const responseText = await response.text();
       if (!response.ok) {
@@ -2489,7 +2500,7 @@ export default function AdminSqlPage() {
         "Прогон отправлен на внешний runner. Оставьте эту вкладку открытой до завершения диагностики.",
       );
       const stopPerformanceMonitoring = startPerformanceMonitoring(
-        "Внешний k6 · до 500 VU",
+        data.profile.label,
       );
       if (k6MonitorTimeoutRef.current !== null) {
         window.clearTimeout(k6MonitorTimeoutRef.current);
@@ -2497,7 +2508,7 @@ export default function AdminSqlPage() {
       k6MonitorTimeoutRef.current = window.setTimeout(() => {
         k6MonitorTimeoutRef.current = null;
         void stopPerformanceMonitoring();
-      }, 150_000);
+      }, data.profile.monitorSeconds * 1000);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Не удалось запустить внешний k6",
@@ -4203,22 +4214,46 @@ export default function AdminSqlPage() {
                 Внешний k6
               </div>
               <p className="mt-2 text-[11px] text-emerald-900/70">
-                Плавно поднимает нагрузку до 500 пользователей за 30 секунд,
-                удерживает 45 секунд и снижает за 15 секунд. Внешний runner
-                создаёт трафик, а эта вкладка собирает метрики сервера.
+                Внешний runner создаёт трафик, а эта вкладка собирает метрики
+                сервера. Раздельный тест последовательно проверяет API и web,
+                чтобы их задержки не смешивались.
               </p>
-              <button
-                type="button"
-                onClick={runExternalK6}
-                disabled={k6Dispatching || externalK6Monitoring}
-                className="mt-3 min-h-10 w-full rounded-lg bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-transform active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
-              >
-                {k6Dispatching
-                  ? "Запускаю..."
-                  : externalK6Monitoring
-                    ? "Идёт диагностика..."
-                    : "Запустить k6 · до 500 VU"}
-              </button>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => runExternalK6("mixed-500")}
+                  disabled={k6Dispatching || externalK6Monitoring}
+                  className="min-h-10 rounded-lg bg-slate-950 px-4 py-2 text-left text-xs font-semibold text-white shadow-sm transition-transform active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <span className="block">
+                    {k6Dispatching
+                      ? "Запускаю..."
+                      : externalK6Monitoring
+                        ? "Идёт диагностика..."
+                        : "Смешанный · до 500 VU"}
+                  </span>
+                  <span className="mt-1 block text-[10px] font-normal text-white/65">
+                    30 сек разгон · 45 сек нагрузка
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runExternalK6("split-1000")}
+                  disabled={k6Dispatching || externalK6Monitoring}
+                  className="min-h-10 rounded-lg bg-amber-100 px-4 py-2 text-left text-xs font-semibold text-amber-950 shadow-sm transition-transform active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <span className="block">
+                    {k6Dispatching
+                      ? "Запускаю..."
+                      : externalK6Monitoring
+                        ? "Идёт диагностика..."
+                        : "API + web · до 1000 VU"}
+                  </span>
+                  <span className="mt-1 block text-[10px] font-normal text-amber-900/65">
+                    Два последовательных прогона
+                  </span>
+                </button>
+              </div>
               {k6Notice ? (
                 <div className="mt-3 rounded-lg bg-white px-3 py-2 text-[11px] text-emerald-900 shadow-sm">
                   {k6Notice}

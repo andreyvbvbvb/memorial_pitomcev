@@ -8,6 +8,8 @@
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "k6:public": "k6 run load-tests/k6/public-browse.js",
+    "k6:api": "k6 run load-tests/k6/api-only.js",
+    "k6:web": "k6 run load-tests/k6/web-only.js",
     "k6:auth": "k6 run load-tests/k6/authenticated-user.js",
     "k6:admin": "k6 run load-tests/k6/admin-probe.js"
   },

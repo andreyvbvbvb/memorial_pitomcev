@@ -65,6 +65,28 @@ import { AdminPerformanceService } from "./admin-performance.service";
 const MODERATION_REVIEW_REVISION = "REVISION";
 const K6_WORKFLOW_URL =
   "https://github.com/andreyvbvbvb/memorial_pitomcev/actions/workflows/k6-production.yml";
+const EXTERNAL_K6_PROFILES = {
+  "mixed-500": {
+    id: "mixed-500",
+    label: "Смешанный k6 · до 500 VU",
+    suite: "mixed",
+    virtualUsers: 500,
+    rampUpSeconds: 30,
+    holdSeconds: 45,
+    rampDownSeconds: 15,
+    monitorSeconds: 150,
+  },
+  "split-1000": {
+    id: "split-1000",
+    label: "Раздельный k6 · до 1000 VU",
+    suite: "split",
+    virtualUsers: 1000,
+    rampUpSeconds: 60,
+    holdSeconds: 45,
+    rampDownSeconds: 30,
+    monitorSeconds: 420,
+  },
+} as const;
 
 const toSafeJson = (value: unknown): unknown => {
   if (typeof value === "bigint") {
@@ -322,8 +344,19 @@ export class AdminController {
   }
 
   @Post("performance/k6")
-  async runExternalK6(@Req() req: Request) {
+  async runExternalK6(
+    @Req() req: Request,
+    @Body() body?: { profile?: string },
+  ) {
     await this.ensureOwner(req);
+    const profileId = body?.profile ?? "mixed-500";
+    if (!(profileId in EXTERNAL_K6_PROFILES)) {
+      throw new BadRequestException("Неизвестный профиль k6");
+    }
+    const profile =
+      EXTERNAL_K6_PROFILES[
+        profileId as keyof typeof EXTERNAL_K6_PROFILES
+      ];
     const token = process.env.GITHUB_WORKFLOW_TOKEN?.trim();
     if (!token) {
       throw new BadRequestException(
@@ -344,8 +377,11 @@ export class AdminController {
         body: JSON.stringify({
           ref: "main",
           inputs: {
-            vus: "500",
-            duration: "45s",
+            suite: profile.suite,
+            vus: String(profile.virtualUsers),
+            duration: `${profile.holdSeconds}s`,
+            ramp_up: `${profile.rampUpSeconds}s`,
+            ramp_down: `${profile.rampDownSeconds}s`,
             p95_ms: "5000",
           },
         }),
@@ -375,10 +411,7 @@ export class AdminController {
       ok: true,
       runUrl,
       profile: {
-        virtualUsers: 500,
-        rampUpSeconds: 30,
-        holdSeconds: 45,
-        rampDownSeconds: 15,
+        ...profile,
         p95ThresholdMs: 5000,
       },
     };
