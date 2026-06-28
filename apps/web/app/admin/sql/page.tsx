@@ -1138,9 +1138,10 @@ export default function AdminSqlPage() {
     () => summarizePerformance(performanceSamples),
     [performanceSamples],
   );
+  const isExternalK6Run =
+    performanceRunLabel?.toLocaleLowerCase("ru-RU").includes("k6") === true;
   const externalK6Monitoring =
-    performanceCollecting &&
-    performanceRunLabel?.startsWith("Внешний k6") === true;
+    performanceCollecting && isExternalK6Run;
 
   const startPerformanceMonitoring = (runLabel: string) => {
     void performanceMonitorStopRef.current?.();
@@ -4269,7 +4270,7 @@ export default function AdminSqlPage() {
                   ) : null}
                 </div>
               ) : null}
-              {performanceRunLabel?.startsWith("Внешний k6") ? (
+              {isExternalK6Run ? (
                 <PerformanceDiagnosticsPanel
                   summary={performanceSummary}
                   runLabel={performanceRunLabel}

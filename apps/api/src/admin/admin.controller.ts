@@ -68,7 +68,7 @@ const K6_WORKFLOW_URL =
 const EXTERNAL_K6_PROFILES = {
   "mixed-500": {
     id: "mixed-500",
-    label: "Смешанный k6 · до 500 VU",
+    label: "Внешний k6 · смешанный · до 500 VU",
     suite: "mixed",
     virtualUsers: 500,
     rampUpSeconds: 30,
@@ -78,7 +78,7 @@ const EXTERNAL_K6_PROFILES = {
   },
   "split-1000": {
     id: "split-1000",
-    label: "Раздельный k6 · до 1000 VU",
+    label: "Внешний k6 · API + web · до 1000 VU",
     suite: "split",
     virtualUsers: 1000,
     rampUpSeconds: 60,
