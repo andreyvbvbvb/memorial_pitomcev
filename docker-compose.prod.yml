@@ -17,6 +17,9 @@ services:
     environment:
       PORT: 3001
       DATABASE_URL: postgresql://memorial:memorial_password@postgres:5432/memorial_prod?schema=public
+      PG_POOL_MAX: ${PG_POOL_MAX:-20}
+      PG_POOL_CONNECTION_TIMEOUT_MS: ${PG_POOL_CONNECTION_TIMEOUT_MS:-5000}
+      PG_POOL_IDLE_TIMEOUT_MS: ${PG_POOL_IDLE_TIMEOUT_MS:-30000}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES: ${JWT_EXPIRES}
       FRONTEND_URL: ${FRONTEND_URL:-https://xn--80aeb9a9a9d.com}
