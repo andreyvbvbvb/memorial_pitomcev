@@ -6529,8 +6529,8 @@ export default function CreateMemorialClient({
                           onClick={randomizeMemorialModels}
                           className={
                             isPortraitLayout
-                              ? "group relative z-[120] flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fffcf9] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d4037]"
-                              : "group relative z-[120] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fffcf9] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d4037]"
+                              ? "group relative z-[120] flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#fffcf9] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-white active:scale-[0.96] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d4037]"
+                              : "group relative z-[120] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fffcf9] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-white active:scale-[0.96] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5d4037]"
                           }
                           title="Собрать случайный мемориал"
                           aria-label="Собрать случайный мемориал"
@@ -6553,7 +6553,7 @@ export default function CreateMemorialClient({
                           <span
                             className={
                               isPortraitLayout
-                                ? "pointer-events-none fixed right-3 top-20 z-[9999] w-56 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                                ? "pointer-events-none fixed left-2 top-[calc(51dvh+2.75rem)] z-[9999] w-[min(14rem,calc(100vw-4.5rem))] rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-left text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                                 : "pointer-events-none fixed right-8 top-24 z-[9999] w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-normal normal-case tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                             }
                           >
