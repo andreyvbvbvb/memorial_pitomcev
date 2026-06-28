@@ -90,7 +90,12 @@ type SyntheticUserPreset = {
   multiplier?: number;
 };
 
-type ExternalK6ProfileId = "mixed-500" | "split-1000";
+const ASSET_LOAD_VUS = [1, 5, 10, 50, 100] as const;
+type AssetLoadVus = (typeof ASSET_LOAD_VUS)[number];
+type ExternalK6ProfileId =
+  | "mixed-500"
+  | "split-1000"
+  | `assets-${AssetLoadVus}`;
 
 type K6DispatchResponse = {
   ok: boolean;
@@ -1122,6 +1127,7 @@ export default function AdminSqlPage() {
   const [k6Dispatching, setK6Dispatching] = useState(false);
   const [k6Notice, setK6Notice] = useState<string | null>(null);
   const [k6RunUrl, setK6RunUrl] = useState<string | null>(null);
+  const [assetLoadVus, setAssetLoadVus] = useState<AssetLoadVus>(10);
   const [performanceSamples, setPerformanceSamples] = useState<
     PerformanceSnapshot[]
   >([]);
@@ -4254,6 +4260,44 @@ export default function AdminSqlPage() {
                     Два последовательных прогона
                   </span>
                 </button>
+              </div>
+              <div className="mt-2 grid gap-2 rounded-lg border border-emerald-200 bg-white/70 p-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <label className="grid gap-1 text-[10px] font-semibold text-emerald-950">
+                  Одновременная загрузка редактора
+                  <select
+                    value={assetLoadVus}
+                    onChange={(event) =>
+                      setAssetLoadVus(
+                        Number(event.target.value) as AssetLoadVus,
+                      )
+                    }
+                    disabled={k6Dispatching || externalK6Monitoring}
+                    className="min-h-10 rounded-lg border border-emerald-200 bg-white px-3 text-xs text-slate-950 outline-none"
+                  >
+                    {ASSET_LOAD_VUS.map((vus) => (
+                      <option key={vus} value={vus}>
+                        {vus} {vus === 1 ? "пользователь" : "пользователей"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => runExternalK6(`assets-${assetLoadVus}`)}
+                  disabled={k6Dispatching || externalK6Monitoring}
+                  className="min-h-10 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-transform active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
+                >
+                  {k6Dispatching
+                    ? "Запускаю..."
+                    : externalK6Monitoring
+                      ? "Идёт диагностика..."
+                      : "Проверить ассеты"}
+                </button>
+                <p className="text-[10px] leading-relaxed text-emerald-900/65 sm:col-span-2">
+                  Каждый пользователь один раз открывает страницу создания и
+                  загружает выбранную 3D-сцену, превью деталей и маркеры. Начните
+                  с 1–10 пользователей: 50 и 100 создают заметный трафик.
+                </p>
               </div>
               {k6Notice ? (
                 <div className="mt-3 rounded-lg bg-white px-3 py-2 text-[11px] text-emerald-900 shadow-sm">

@@ -5,12 +5,16 @@ inside the web app or the admin panel.
 
 ## One-click production run
 
-The owner can start two profiles from the **External k6** card:
+The owner can start three test types from the **External k6** card:
 
 - **Mixed 500 VU** ramps up over 30 seconds, holds for 45 seconds, and ramps
   down over 15 seconds.
 - **API + web 1000 VU** runs two isolated tests sequentially. Each ramps up over
   60 seconds, holds for 45 seconds, and ramps down over 30 seconds.
+- **Editor assets 1/5/10/50/100 VU** makes every virtual user open `/create`
+  once, then downloads one selected 3D scene, the option previews and one marker
+  category. This measures the web/CDN path for models and images without
+  repeatedly looping the same user flow.
 
 The tests run on a separate GitHub-hosted runner while the open admin tab
 collects server resource diagnostics.
@@ -52,6 +56,9 @@ docker run --rm -i \
 - `RAMP_UP`: public-test ramp-up duration. Default: `30s`.
 - `RAMP_DOWN`: public-test ramp-down duration. Default: `15s`.
 - `P95_MS`: default p95 threshold in milliseconds. Default: `1200`.
+- `ASSET_BATCH_SIZE`: parallel asset requests per virtual user. Default: `2`.
+- `MODEL_P95_MS`: model-download p95 threshold. Default: `30000`.
+- `IMAGE_P95_MS`: image-download p95 threshold. Default: `15000`.
 - `K6_EMAIL`: user email for authenticated/admin scripts.
 - `K6_PASSWORD`: user password for authenticated/admin scripts.
 
@@ -104,6 +111,21 @@ VUS=20 \
 DURATION=5m \
 pnpm k6:auth
 ```
+
+## Editor models and images
+
+Simulates simultaneous first-time editor loads. Each virtual user performs one
+iteration, so `VUS` is the exact number of users opening the editor:
+
+```bash
+WEB_BASE_URL=https://example.com \
+VUS=10 \
+pnpm k6:assets
+```
+
+Use `VUS=1`, `5`, `10`, `50`, then `100`. This test downloads real GLB and PNG
+files and can generate significant traffic. It measures HTTP delivery, not GLB
+parsing, WebGL rendering, device CPU, RAM or GPU.
 
 ## Admin DB probe
 

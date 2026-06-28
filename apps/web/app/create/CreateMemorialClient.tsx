@@ -29,7 +29,6 @@ import {
 } from "../../lib/access";
 import AuthModal from "../../components/AuthModal";
 import {
-  getAllMemorialModelUrls,
   getEnvironmentSeasons,
   getSeasonForDate,
   resolveEnvironmentModel,
@@ -116,6 +115,73 @@ import {
   getPartOptions,
   type OptionItem,
 } from "../../lib/memorial-options";
+
+const markerImageUrlWithRetry = (
+  url: string,
+  reloadKey: number,
+  attempt: number,
+) => {
+  if (url.startsWith("data:") || attempt === 0) {
+    return url;
+  }
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}marker_reload=${reloadKey}-${attempt}`;
+};
+
+function ResilientMarkerImage({
+  src,
+  fallbackSrc,
+  reloadKey,
+  alt,
+  className,
+}: {
+  src: string;
+  fallbackSrc?: string;
+  reloadKey: number;
+  alt: string;
+  className: string;
+}) {
+  const [attempt, setAttempt] = useState(0);
+  const [usingFallback, setUsingFallback] = useState(false);
+  const retryTimerRef = useRef<number | null>(null);
+  const activeSrc = usingFallback && fallbackSrc ? fallbackSrc : src;
+  const displaySrc = markerImageUrlWithRetry(activeSrc, reloadKey, attempt);
+
+  useEffect(() => {
+    setAttempt(0);
+    setUsingFallback(false);
+    return () => {
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+  }, [fallbackSrc, reloadKey, src]);
+
+  return (
+    <img
+      src={displaySrc}
+      alt={alt}
+      className={className}
+      onError={() => {
+        if (retryTimerRef.current !== null) {
+          return;
+        }
+        if (attempt < 2) {
+          retryTimerRef.current = window.setTimeout(() => {
+            retryTimerRef.current = null;
+            setAttempt((current) => current + 1);
+          }, 250 * (attempt + 1));
+          return;
+        }
+        if (!usingFallback && fallbackSrc && fallbackSrc !== src) {
+          setUsingFallback(true);
+          setAttempt(0);
+        }
+      }}
+    />
+  );
+}
 
 ensureDracoLoader();
 
@@ -1088,6 +1154,7 @@ export default function CreateMemorialClient({
   );
   const [markerPanelTab, setMarkerPanelTab] =
     useState<MarkerPanelTab>("marker");
+  const [markerImageReloadKey, setMarkerImageReloadKey] = useState(0);
   const [visitedOverlays, setVisitedOverlays] = useState({
     details: true,
     marker: false,
@@ -1096,6 +1163,12 @@ export default function CreateMemorialClient({
     base: false,
     soul: false,
   });
+
+  useEffect(() => {
+    if (activeOverlay === "marker") {
+      setMarkerImageReloadKey((current) => current + 1);
+    }
+  }, [activeOverlay]);
 
   useEffect(() => {
     if (step !== 0 || soulPreviewReady) {
@@ -1795,6 +1868,18 @@ export default function CreateMemorialClient({
   const dynamicSlotBySlotName = useMemo(
     () => new Map(dynamicHouseSlotEntries.map((entry) => [entry.slot, entry])),
     [dynamicHouseSlotEntries],
+  );
+  const selectedDynamicPartUrls = useMemo(
+    () =>
+      dynamicHouseSlotEntries
+        .map((entry) =>
+          resolvePartModel(
+            entry.category,
+            form.partSelections[entry.slot] ?? "none",
+          ),
+        )
+        .filter((url): url is string => Boolean(url)),
+    [dynamicHouseSlotEntries, form.partSelections],
   );
   const dynamicPartCategory = (slot: string) => `part:${slot}`;
   const getDynamicPartPreviewId = useCallback(
@@ -4039,8 +4124,6 @@ export default function CreateMemorialClient({
   const optionImage = (category: string, id: string) =>
     `/memorial/options/${category}/${id}.png`;
 
-  const allModelUrls = useMemo(() => getAllMemorialModelUrls(), []);
-
   const preloadImageUrls = useMemo(() => {
     const urls = new Set<string>();
     const preloadCategories = new Set([
@@ -4217,7 +4300,7 @@ export default function CreateMemorialClient({
       return;
     }
     assetsLoadStartedRef.current = true;
-    const modelUrls = new Set<string>(allModelUrls);
+    const modelUrls = new Set<string>();
     const activeSeason = form.environmentSeasonAuto
       ? getSeasonForDate()
       : form.environmentSeason;
@@ -4237,6 +4320,7 @@ export default function CreateMemorialClient({
         modelUrls.add(url);
       }
     });
+    selectedDynamicPartUrls.forEach((url) => modelUrls.add(url));
 
     try {
       await Promise.all([
@@ -4247,7 +4331,6 @@ export default function CreateMemorialClient({
       setAssetsReady(true);
     }
   }, [
-    allModelUrls,
     form.bowlFoodId,
     form.bowlWaterId,
     form.environmentId,
@@ -4263,6 +4346,7 @@ export default function CreateMemorialClient({
     loadGltfsWithLimit,
     preloadConcurrency,
     preloadImageUrls,
+    selectedDynamicPartUrls,
     warmAssetsWithLimit,
   ]);
 
@@ -5314,8 +5398,10 @@ export default function CreateMemorialClient({
                         }`}
                         aria-label={style.name}
                       >
-                        <img
+                        <ResilientMarkerImage
                           src={categoryIconUrl}
+                          fallbackSrc={markerIconUrl(style.id)}
+                          reloadKey={markerImageReloadKey}
                           alt={style.name}
                           className="h-full w-full scale-[1.12] object-contain p-0.5"
                         />
@@ -5364,8 +5450,10 @@ export default function CreateMemorialClient({
                               : "h-14 w-14 overflow-hidden rounded-lg bg-[#f7f1ee] [@media(max-height:640px)]:h-10 [@media(max-height:640px)]:w-10"
                           }
                         >
-                          <img
+                          <ResilientMarkerImage
                             src={marker.iconUrl}
+                            fallbackSrc={marker.url}
+                            reloadKey={markerImageReloadKey}
                             alt={markerName}
                             className="h-full w-full object-contain"
                           />

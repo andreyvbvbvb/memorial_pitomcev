@@ -11,6 +11,7 @@ on:
         options:
           - mixed
           - split
+          - assets
       vus:
         description: Virtual users
         required: true
@@ -105,6 +106,22 @@ jobs:
           flags: --summary-export=k6-summary-web.json
           disable-analytics: true
 
+      - name: Run editor asset production test
+        id: assets
+        if: inputs.suite == 'assets'
+        continue-on-error: true
+        uses: grafana/run-k6-action@v1
+        env:
+          WEB_BASE_URL: https://xn--80aeb9a9a9d.com
+          VUS: ${{ inputs.vus }}
+          MODEL_P95_MS: "30000"
+          IMAGE_P95_MS: "15000"
+          ASSET_BATCH_SIZE: "2"
+        with:
+          path: load-tests/k6/editor-assets.js
+          flags: --summary-export=k6-summary-assets.json
+          disable-analytics: true
+
       - name: Save k6 summaries
         if: always()
         uses: actions/upload-artifact@v4
@@ -120,8 +137,9 @@ jobs:
           MIXED_OUTCOME: ${{ steps.mixed.outcome }}
           API_OUTCOME: ${{ steps.api.outcome }}
           WEB_OUTCOME: ${{ steps.web.outcome }}
+          ASSETS_OUTCOME: ${{ steps.assets.outcome }}
         run: |
-          if [[ "$MIXED_OUTCOME" == "failure" || "$API_OUTCOME" == "failure" || "$WEB_OUTCOME" == "failure" ]]; then
+          if [[ "$MIXED_OUTCOME" == "failure" || "$API_OUTCOME" == "failure" || "$WEB_OUTCOME" == "failure" || "$ASSETS_OUTCOME" == "failure" ]]; then
             echo "One or more k6 suites exceeded their thresholds."
             exit 1
           fi
