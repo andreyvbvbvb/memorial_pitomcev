@@ -2,6 +2,7 @@ export const HERO_VIDEO_SETTING_KEY = "homeHeroVideo";
 
 export type HeroVideoSetting = {
   url: string | null;
+  posterUrl?: string | null;
   fileName?: string | null;
   contentType?: string | null;
   sizeBytes?: number | null;
@@ -16,6 +17,10 @@ export const normalizeHeroVideoSetting = (value: unknown): HeroVideoSetting => {
   const url = typeof record.url === "string" ? record.url.trim() : "";
   return {
     url: url || null,
+    posterUrl:
+      typeof record.posterUrl === "string" && record.posterUrl.trim()
+        ? record.posterUrl.trim()
+        : null,
     fileName: typeof record.fileName === "string" ? record.fileName : null,
     contentType: typeof record.contentType === "string" ? record.contentType : null,
     sizeBytes:

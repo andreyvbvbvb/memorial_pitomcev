@@ -15,7 +15,11 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+  FilesInterceptor,
+} from "@nestjs/platform-express";
 import { Prisma } from "@prisma/client";
 import { Request } from "express";
 import { extname } from "path";
@@ -1156,26 +1160,53 @@ export class AdminController {
 
   @Post("hero-video")
   @UseInterceptors(
-    FileInterceptor("file", {
-      limits: { fileSize: 80 * 1024 * 1024 },
-    }),
+    FileFieldsInterceptor(
+      [
+        { name: "file", maxCount: 1 },
+        { name: "poster", maxCount: 1 },
+      ],
+      {
+        limits: { fileSize: 80 * 1024 * 1024 },
+      },
+    ),
   )
   async uploadHeroVideo(
     @Req() req: Request,
-    @UploadedFile()
-    file?: {
-      originalname: string;
-      mimetype?: string;
-      buffer: Buffer;
-      size?: number;
+    @UploadedFiles()
+    files?: {
+      file?: Array<{
+        originalname: string;
+        mimetype?: string;
+        buffer: Buffer;
+        size?: number;
+      }>;
+      poster?: Array<{
+        originalname: string;
+        mimetype?: string;
+        buffer: Buffer;
+        size?: number;
+      }>;
     },
   ) {
     await this.ensureAdmin(req);
+    const file = files?.file?.[0];
+    const poster = files?.poster?.[0];
     if (!file) {
       throw new BadRequestException("Файл не найден");
     }
     const contentType = this.assertVideoFile(file);
     const ext = contentType === "video/mp4" ? ".mp4" : ".webm";
+    let posterType: "image/jpeg" | "image/png" | null = null;
+    if (poster) {
+      if (
+        poster.mimetype &&
+        poster.mimetype !== "image/jpeg" &&
+        poster.mimetype !== "image/png"
+      ) {
+        throw new BadRequestException("Постер должен быть JPEG или PNG");
+      }
+      posterType = poster.mimetype === "image/png" ? "image/png" : "image/jpeg";
+    }
     const safeName = file.originalname.replace(/[^\wа-яА-ЯёЁ.\-]+/g, "_");
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
     const url = await this.s3.uploadPublic(
@@ -1183,8 +1214,18 @@ export class AdminController {
       file.buffer,
       contentType,
     );
+    let posterUrl: string | null = null;
+    if (poster && posterType) {
+      const posterExt = posterType === "image/png" ? ".png" : ".jpg";
+      posterUrl = await this.s3.uploadPublic(
+        `site/hero-video/${fileName.replace(ext, `-poster${posterExt}`)}`,
+        poster.buffer,
+        posterType,
+      );
+    }
     const value = {
       url,
+      posterUrl,
       fileName: safeName || fileName,
       contentType,
       sizeBytes: file.size ?? file.buffer.length,

@@ -6,16 +6,19 @@ import { API_BASE } from "../lib/config";
 type HeroVideoResponse = {
   heroVideo?: {
     url?: string | null;
+    posterUrl?: string | null;
     updatedAt?: string | null;
   } | null;
 };
 
 type HeroVideoState = {
   url: string;
+  posterUrl?: string | null;
   version: string;
 };
 
 const HERO_VIDEO_CACHE_KEY = "meowgav.homeHeroVideo";
+const HERO_VIDEO_POSTER_URL = "/hero-video-poster.jpg";
 
 const warmVideoOrigin = (url: string) => {
   if (typeof document === "undefined") {
@@ -71,6 +74,7 @@ export default function HomeHeroVideoLayer() {
         if (isMounted && nextUrl) {
           const nextVideo = {
             url: nextUrl,
+            posterUrl: data.heroVideo?.posterUrl?.trim() || null,
             version: data.heroVideo?.updatedAt || String(Date.now()),
           };
           warmVideoOrigin(nextVideo.url);
@@ -97,6 +101,7 @@ export default function HomeHeroVideoLayer() {
     }
     return `${video.url}${video.url.includes("?") ? "&" : "?"}v=${encodeURIComponent(video.version)}`;
   }, [video]);
+  const posterUrl = video?.posterUrl || HERO_VIDEO_POSTER_URL;
 
   useEffect(() => {
     setVideoReady(false);
@@ -107,7 +112,7 @@ export default function HomeHeroVideoLayer() {
       <div className="absolute inset-0 bg-[#fcf8f5]" />
       <div
         className="absolute inset-0 scale-[1.03] bg-cover bg-top opacity-[0.92]"
-        style={{ backgroundImage: "url('/nebo_5.png')" }}
+        style={{ backgroundImage: `url('${posterUrl}')` }}
       />
       {sourceUrl ? (
         <video
@@ -121,7 +126,7 @@ export default function HomeHeroVideoLayer() {
           loop
           playsInline
           preload="auto"
-          poster="/nebo_5.png"
+          poster={posterUrl}
           onLoadedData={() => setVideoReady(true)}
           onPlaying={() => setVideoReady(true)}
           onError={() => setVideoReady(false)}

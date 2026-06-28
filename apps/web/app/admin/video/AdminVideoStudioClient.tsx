@@ -123,6 +123,7 @@ type RecordingFps = 24 | 30 | 60;
 
 type HeroVideoSetting = {
   url: string | null;
+  posterUrl?: string | null;
   fileName?: string | null;
   contentType?: string | null;
   sizeBytes?: number | null;
@@ -601,6 +602,74 @@ const defaultPositionForIndex = (index: number) => ({
 
 const formatSeconds = (value: number) => `${value.toFixed(1)} c`;
 const HERO_VIDEO_SAFE_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+const createVideoPosterBlob = (videoBlob: Blob) =>
+  new Promise<Blob>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(videoBlob);
+    const video = document.createElement("video");
+    const timeoutId = window.setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Не удалось получить первый кадр видео"));
+    }, 15_000);
+
+    const cleanup = () => {
+      window.clearTimeout(timeoutId);
+      URL.revokeObjectURL(objectUrl);
+      video.removeAttribute("src");
+      video.load();
+    };
+
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.addEventListener(
+      "error",
+      () => {
+        cleanup();
+        reject(new Error("Не удалось прочитать записанное видео"));
+      },
+      { once: true },
+    );
+    video.addEventListener(
+      "loadeddata",
+      () => {
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+        if (!width || !height) {
+          cleanup();
+          reject(new Error("У видео отсутствует первый кадр"));
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          cleanup();
+          reject(new Error("Браузер не смог создать постер видео"));
+          return;
+        }
+        context.fillStyle = "#fcf8f5";
+        context.fillRect(0, 0, width, height);
+        context.drawImage(video, 0, 0, width, height);
+        canvas.toBlob(
+          (posterBlob) => {
+            cleanup();
+            if (posterBlob) {
+              resolve(posterBlob);
+            } else {
+              reject(new Error("Браузер не смог сохранить постер видео"));
+            }
+          },
+          "image/jpeg",
+          0.88,
+        );
+      },
+      { once: true },
+    );
+    video.src = objectUrl;
+    video.load();
+  });
 
 const recordingQualityOptions: Array<{
   id: RecordingQuality;
@@ -1086,8 +1155,14 @@ export default function AdminVideoStudioClient() {
     setUploadingHeroVideo(true);
     setNotice(null);
     try {
+      const posterBlob = await createVideoPosterBlob(downloadBlob);
       const formData = new FormData();
       formData.append("file", downloadBlob, downloadName);
+      formData.append(
+        "poster",
+        posterBlob,
+        downloadName.replace(/\.[^.]+$/, "-poster.jpg"),
+      );
       const response = await fetch(`${apiUrl}/admin/hero-video`, {
         method: "POST",
         credentials: "include",
