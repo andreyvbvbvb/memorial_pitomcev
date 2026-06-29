@@ -42,7 +42,7 @@ import TunedSkyDome from "./TunedSkyDome";
 import { resolveObjectTransformInParent } from "../lib/three-transforms";
 
 ensureDracoLoader();
-import { getHouseSlots } from "../lib/memorial-config";
+import { getHouseSlotCategory, getHouseSlots } from "../lib/memorial-config";
 import { splitHouseVariantId } from "../lib/house-variants";
 import {
   applyHousePartAdjustment,
@@ -282,13 +282,15 @@ function PartAttachment({
   slot,
   url,
   colors,
-  houseId
+  houseId,
+  enableFlames
 }: {
   house: THREE.Object3D;
   slot: string;
   url: string;
   colors?: Record<string, string>;
   houseId?: string | null;
+  enableFlames?: boolean;
 }) {
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
@@ -328,7 +330,9 @@ function PartAttachment({
     applyMaterialColors(part, colors);
   }, [part, colors]);
 
-  return null;
+  return enableFlames && getHouseSlotCategory(slot) === "candle" ? (
+    <GiftFlames root={part} />
+  ) : null;
 }
 
 function GiftInstance({
@@ -654,6 +658,7 @@ function MemorialInstance({
           url={part.url}
           colors={sceneJson.colors}
           houseId={memorial?.houseId}
+          enableFlames={isActive}
         />
       ))}
       <Suspense fallback={null}>

@@ -64,7 +64,7 @@ import {
   resolveGiftSizeMultiplier,
   resolveGiftTargetWidth
 } from "../../lib/gifts";
-import { getHouseSlots } from "../../lib/memorial-config";
+import { getHouseSlotCategory, getHouseSlots } from "../../lib/memorial-config";
 import { splitHouseVariantId } from "../../lib/house-variants";
 import {
   applyHousePartAdjustment,
@@ -476,13 +476,15 @@ function PartInstance({
   slot,
   url,
   colors,
-  houseId
+  houseId,
+  enableFlames
 }: {
   house: THREE.Object3D;
   slot: string;
   url: string;
   colors?: Record<string, string>;
   houseId?: string | null;
+  enableFlames?: boolean;
 }) {
   const { scene } = useGLTF(url);
   const part = useMemo(() => {
@@ -524,7 +526,9 @@ function PartInstance({
     applyMaterialColors(part, colors);
   }, [part, colors]);
 
-  return null;
+  return enableFlames && getHouseSlotCategory(slot) === "candle" ? (
+    <GiftFlames root={part} />
+  ) : null;
 }
 
 function GiftInstance({
@@ -735,6 +739,7 @@ function TerrainWithHouseScene({
           url={part.url}
           colors={data.colors}
           houseId={data.houseId}
+          enableFlames={active === true}
         />
       ))}
       {active ? (

@@ -17,6 +17,7 @@ import {
   resolveGiftTargetWidth
 } from "../../lib/gifts";
 import {
+  getHouseSlotCategory,
   isHouseDetailSlotName,
   type HouseSlots
 } from "../../lib/memorial-config";
@@ -909,7 +910,7 @@ function PartAttachment({
     applyMaterialColors(part, colors);
   }, [part, colors]);
 
-  return null;
+  return getHouseSlotCategory(slot) === "candle" ? <GiftFlames root={part} /> : null;
 }
 
 function DirtAttachment({

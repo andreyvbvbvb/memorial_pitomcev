@@ -21,7 +21,7 @@ import {
   resolveSignModel,
   resolveWallModel,
 } from "../../../lib/memorial-models";
-import { getHouseSlots } from "../../../lib/memorial-config";
+import { getHouseSlotCategory, getHouseSlots } from "../../../lib/memorial-config";
 import {
   applyHousePartAdjustment,
   applyHousePlacement,
@@ -307,7 +307,7 @@ function PartAttachment({
     applyMaterialColors(part, colors);
   }, [colors, part]);
 
-  return null;
+  return getHouseSlotCategory(slot) === "candle" ? <GiftFlames root={part} /> : null;
 }
 
 function GiftInstance({

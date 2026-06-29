@@ -151,6 +151,7 @@ const HOUSE_PART_ADJUSTMENTS: Record<string, Record<string, HousePartAdjustment>
 };
 
 const DEFAULT_PART_ADJUSTMENTS_BY_CATEGORY: Record<string, HousePartAdjustment> = {
+  candle: { scale: 0.25, position: { x: 0, y: 0, z: 0 } },
   flower: { scale: 0.25, position: { x: 0, y: 0, z: 0 } }
 };
 
