@@ -8,6 +8,7 @@ import type { DirtSlotPlacement } from "../lib/dirt-models";
 const MAX_TERRAIN_DIRT_SIZE = 1.4;
 const MAX_HOUSE_DIRT_SIZE = 0.5;
 const DIRT_MATERIAL_COLOR = "#a88766";
+const OWNED_MATERIAL_FLAG = "__dirtOwnedMaterial";
 
 type Props = {
   terrain: THREE.Object3D;
@@ -103,6 +104,7 @@ function DirtSlotAttachment({
         window.cancelAnimationFrame(secondFrameId);
       }
       anchor.remove(dirt);
+      disposeDirtMaterials(dirt);
       if (usedFallback) {
         rootForFallback.remove(fallbackAnchor);
       }
@@ -128,6 +130,10 @@ function applyDirtMaterial(root: THREE.Object3D) {
         emissiveIntensity?: number;
       };
       next.color?.set(DIRT_MATERIAL_COLOR);
+      next.userData = {
+        ...next.userData,
+        [OWNED_MATERIAL_FLAG]: true
+      };
       if ("map" in next) {
         next.map = null;
       }
@@ -148,6 +154,23 @@ function applyDirtMaterial(root: THREE.Object3D) {
     child.material = Array.isArray(child.material)
       ? child.material.map(replaceMaterial)
       : replaceMaterial(child.material);
+  });
+}
+
+function disposeDirtMaterials(root: THREE.Object3D) {
+  const disposed = new Set<THREE.Material>();
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || !child.material) {
+      return;
+    }
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((material) => {
+      if (!material || disposed.has(material) || !material.userData?.[OWNED_MATERIAL_FLAG]) {
+        return;
+      }
+      disposed.add(material);
+      material.dispose();
+    });
   });
 }
 

@@ -253,24 +253,24 @@ export default function CharityClient() {
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#fcf8f5] px-4 pb-16 pt-[calc(var(--app-header-height,56px)+28px)] sm:px-6">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#fcf8f5] px-3 pb-16 pt-[calc(var(--app-header-height,56px)+22px)] sm:px-6 sm:pt-[calc(var(--app-header-height,56px)+28px)]">
       <div className="pointer-events-none fixed right-0 top-0 h-80 w-80 rounded-full bg-[#3bceac]/8 blur-[120px]" />
       <div className="pointer-events-none fixed bottom-0 left-0 h-80 w-80 rounded-full bg-[#d3a27f]/12 blur-[120px]" />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-8">
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-end">
-          <div className="grid gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-[24px] border-[4px] border-white bg-[#3bceac] text-white shadow-[0_16px_34px_rgba(59,206,172,0.22)] transition-transform duration-300 hover:scale-[1.04]">
-                <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor" aria-hidden="true">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl min-w-0 gap-6 sm:gap-8">
+        <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-end">
+          <div className="grid min-w-0 gap-4">
+            <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border-[3px] border-white bg-[#3bceac] text-white shadow-[0_16px_34px_rgba(59,206,172,0.22)] transition-transform duration-300 hover:scale-[1.04] sm:h-16 sm:w-16 sm:rounded-[24px] sm:border-[4px]">
+                <svg viewBox="0 0 24 24" className="h-6 w-6 sm:h-8 sm:w-8" fill="currentColor" aria-hidden="true">
                   <path d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5A4.5 4.5 0 0 1 6.5 4c1.74 0 3.41.81 4.5 2.09A6.03 6.03 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
                 </svg>
               </div>
-              <div className="grid gap-1">
-                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#d3a27f]">
+              <div className="grid min-w-0 gap-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d3a27f] sm:text-[11px] sm:tracking-[0.28em]">
                   Благотворительность
                 </p>
-                <h1 className="max-w-3xl text-3xl font-black leading-tight text-[#5d4037] sm:text-4xl">
+                <h1 className="max-w-3xl text-balance text-[clamp(1.45rem,7vw,2rem)] font-black leading-tight text-[#5d4037] sm:text-4xl">
                   20% от оплат мы направляем в помощь животным
                 </h1>
               </div>
@@ -281,13 +281,13 @@ export default function CharityClient() {
             </p>
           </div>
 
-          <div className="rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_24px_60px_-26px_rgba(93,64,55,0.45)] transition-transform duration-300 hover:scale-[1.02]">
-            <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)]">
+          <div className="min-w-0 rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_24px_60px_-26px_rgba(93,64,55,0.45)] transition-transform duration-300 hover:scale-[1.02] sm:rounded-[32px] sm:border-[4px] sm:p-3">
+            <div className="min-w-0 rounded-[20px] border border-white/70 bg-white/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] sm:rounded-[26px] sm:p-5">
               <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#adb5bd]">
                 Уже отдали
               </span>
               <div className="mt-2 flex items-end gap-2">
-                <strong className="text-4xl font-black leading-none text-[#5d4037]">
+                <strong className="text-3xl font-black leading-none text-[#5d4037] sm:text-4xl">
                   {formatNumber(summary?.totals.totalPaid ?? 0)}
                 </strong>
                 <span className="pb-1 text-sm font-black uppercase text-[#8d6e63]">
@@ -316,41 +316,41 @@ export default function CharityClient() {
               {summary.reports.map((report) => (
                 <article
                   key={report.id}
-                  className="rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.42)] transition-transform duration-300 hover:scale-[1.01]"
+                  className="min-w-0 rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.42)] transition-transform duration-300 hover:scale-[1.01] sm:rounded-[32px] sm:border-[4px] sm:p-3"
                 >
-                  <div className="grid gap-4 rounded-[26px] border border-white/70 bg-white/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] sm:p-5">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
+                  <div className="grid min-w-0 gap-4 rounded-[20px] border border-white/70 bg-white/90 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] sm:rounded-[26px] sm:p-5">
+                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#adb5bd]">
                           {formatDateLabel(report.createdAt)}
                         </p>
-                        <h3 className="mt-1 text-xl font-black text-[#5d4037]">
+                        <h3 className="mt-1 break-words text-lg font-black text-[#5d4037] sm:text-xl">
                           {report.title}
                         </h3>
                       </div>
-	                      <div className="flex flex-wrap items-center gap-2">
-	                        <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-xs font-black uppercase tabular-nums text-[#8d6e63]">
-	                          {formatNumber(report.amount)} монет
-	                        </div>
-	                        {isAdmin ? (
-	                          <button
-	                            type="button"
-	                            onClick={() => handleDeleteReport(report)}
-	                            disabled={deletingReportId === report.id}
-	                            className="rounded-full border-2 border-white bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] shadow-[0_2px_0_0_#eadfd9] transition hover:-translate-y-0.5 hover:text-[#5d4037] disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
-	                          >
-	                            {deletingReportId === report.id ? "Удаляем..." : "Удалить"}
-	                          </button>
-	                        ) : null}
-	                      </div>
-	                    </div>
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <div className="rounded-full bg-[#fdf2e9] px-4 py-2 text-xs font-black uppercase tabular-nums text-[#8d6e63]">
+                          {formatNumber(report.amount)} монет
+                        </div>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReport(report)}
+                            disabled={deletingReportId === report.id}
+                            className="rounded-full border-2 border-white bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63] shadow-[0_2px_0_0_#eadfd9] transition-[transform,color,opacity] duration-150 ease-out hover:-translate-y-0.5 hover:text-[#5d4037] disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
+                          >
+                            {deletingReportId === report.id ? "Удаляем..." : "Удалить"}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
 
-                    <p className="whitespace-pre-wrap text-sm font-semibold leading-relaxed text-[#6f6360]">
+                    <p className="whitespace-pre-wrap break-words text-sm font-semibold leading-relaxed text-[#6f6360]">
                       {report.body}
                     </p>
 
                     {report.photos?.length ? (
-                      <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
                         {report.photos.map((photo, index) => (
                           <button
                             key={photo}
@@ -362,7 +362,7 @@ export default function CharityClient() {
                               <img
                                 src={photo}
                                 alt={report.title}
-                                className="h-40 w-full object-cover transition duration-300 group-hover:scale-[1.04]"
+                                className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-[1.04] sm:h-40"
                                 loading="lazy"
                               />
                             </div>
@@ -382,8 +382,8 @@ export default function CharityClient() {
         </section>
 
         {authChecked && isAdmin ? (
-          <section className="rounded-[32px] border-[4px] border-white bg-[#efe6e2]/95 p-3 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.42)]">
-            <div className="grid gap-4 rounded-[26px] border border-white/70 bg-white/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] sm:p-5">
+          <section className="min-w-0 rounded-[24px] border-[3px] border-white bg-[#efe6e2]/95 p-2 shadow-[0_18px_42px_-24px_rgba(93,64,55,0.42)] sm:rounded-[32px] sm:border-[4px] sm:p-3">
+            <div className="grid min-w-0 gap-4 rounded-[20px] border border-white/70 bg-white/90 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(126,102,93,0.08)] sm:rounded-[26px] sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-black text-[#5d4037]">Добавить отчёт</h2>
                 {notice ? (
@@ -393,20 +393,20 @@ export default function CharityClient() {
                 ) : null}
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+              <div className="grid min-w-0 gap-3 md:grid-cols-2">
+                <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Заголовок
                   <input
-                    className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
+                    className="w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-base font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac] sm:text-sm"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                     placeholder="Перевод в приют"
                   />
                 </label>
-                <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+                <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                   Сумма пожертвований (монеты)
                   <input
-                    className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold tabular-nums text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
+                    className="w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-base font-bold tabular-nums text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac] sm:text-sm"
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
                     placeholder="1000"
@@ -414,23 +414,23 @@ export default function CharityClient() {
                 </label>
               </div>
 
-              <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+              <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                 Текст отчёта
                 <textarea
-                  className="min-h-[140px] rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac]"
+                  className="min-h-[120px] w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-base font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#3bceac] sm:min-h-[140px] sm:text-sm"
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   placeholder="Расскажите, куда направлены средства..."
                 />
               </label>
 
-              <label className="grid gap-2 text-sm font-bold text-[#8d6e63]">
+              <label className="grid min-w-0 gap-2 text-sm font-bold text-[#8d6e63]">
                 Фотографии (можно несколько)
                 <input
                   type="file"
                   accept="image/*"
                   multiple
-                  className="rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-4 py-3 text-sm font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out file:mr-3 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-xs file:font-black file:text-white"
+                  className="w-full min-w-0 rounded-2xl border-b-4 border-transparent bg-[#f8f9fa] px-3 py-3 text-xs font-bold text-[#5d4037] shadow-inner outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out file:mr-2 file:rounded-xl file:border-0 file:bg-[#111827] file:px-3 file:py-2 file:text-xs file:font-black file:text-white sm:px-4 sm:text-sm"
                   onChange={(event) =>
                     setPhotos(event.target.files ? Array.from(event.target.files) : [])
                   }

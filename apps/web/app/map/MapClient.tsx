@@ -212,17 +212,46 @@ const applyMaterialColors = (root: THREE.Object3D, colors?: Record<string, strin
   });
 };
 
+const OWNED_MATERIAL_FLAG = "__memorialOwnedMaterial";
+
 const cloneMeshMaterials = (root: THREE.Object3D) => {
+  const cloneMaterial = (material: THREE.Material) => {
+    const cloned = material.clone();
+    cloned.userData = {
+      ...cloned.userData,
+      [OWNED_MATERIAL_FLAG]: true
+    };
+    return cloned;
+  };
+
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh || !mesh.material) {
       return;
     }
     if (Array.isArray(mesh.material)) {
-      mesh.material = mesh.material.map((material) => material?.clone?.() ?? material);
-    } else if (mesh.material.clone) {
-      mesh.material = mesh.material.clone();
+      mesh.material = mesh.material.map((material) => cloneMaterial(material));
+    } else {
+      mesh.material = cloneMaterial(mesh.material);
     }
+  });
+};
+
+const disposeOwnedMaterials = (root: THREE.Object3D) => {
+  const disposed = new Set<THREE.Material>();
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.material) {
+      return;
+    }
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((material) => {
+      if (!material || disposed.has(material) || !material.userData?.[OWNED_MATERIAL_FLAG]) {
+        return;
+      }
+      disposed.add(material);
+      material.dispose();
+    });
   });
 };
 
@@ -487,6 +516,7 @@ function PartInstance({
     anchor.add(part);
     return () => {
       anchor.remove(part);
+      disposeOwnedMaterials(part);
     };
   }, [house, slot, part]);
 
@@ -541,6 +571,7 @@ function GiftInstance({
     terrain.add(gift);
     return () => {
       terrain.remove(gift);
+      disposeOwnedMaterials(gift);
     };
   }, [baseQuaternion, terrain, slot, gift]);
 
@@ -660,6 +691,13 @@ function TerrainWithHouseScene({
     applyHousePlacement(cloned, data.houseId, data.terrainId);
     return cloned;
   }, [houseScene, data.houseId, data.terrainId]);
+
+  useEffect(() => {
+    return () => {
+      disposeOwnedMaterials(terrain);
+      disposeOwnedMaterials(house);
+    };
+  }, [terrain, house]);
 
   useEffect(() => {
     const domSlot = terrain.getObjectByName("dom_slot");
@@ -886,6 +924,8 @@ const CAROUSEL_DESIRED_SPACING = 20;
 const CAROUSEL_MIN_RADIUS = 30;
 const CAROUSEL_POP_DISTANCE = 3.6;
 const CAROUSEL_SCALE_BOOST = 0.1;
+const CAROUSEL_RENDER_RADIUS = 2;
+const CAROUSEL_DATA_FETCH_RADIUS = 4;
 
 const getCarouselRadius = (count: number) =>
   Math.max(CAROUSEL_MIN_RADIUS, (CAROUSEL_DESIRED_SPACING * Math.max(1, count)) / (Math.PI * 2));
@@ -1318,21 +1358,23 @@ function CarouselScene({
   enableHoverHighlight?: boolean;
 }) {
   const [sceneReady, setSceneReady] = useState(false);
-  const itemsSignature = useMemo(
-    () => items.map((item) => `${item.id}:${item.data ? "ready" : "empty"}`).join("|"),
-    [items]
-  );
   const giftUrls = useMemo(() => {
     const urls = new Set<string>();
-    items.forEach((item) => {
-      item.data?.gifts?.forEach((gift) => {
+    const collect = (index: number | null) => {
+      if (index === null || items.length === 0) {
+        return;
+      }
+      const item = items[wrapCarouselIndex(index, items.length)];
+      item?.data?.gifts?.forEach((gift) => {
         if (gift.url) {
           urls.add(gift.url);
         }
       });
-    });
+    };
+    collect(activeIndex);
+    collect(targetIndex);
     return Array.from(urls);
-  }, [items]);
+  }, [activeIndex, items, targetIndex]);
   const giftUrlsSignature = giftUrls.join("|");
   const handleSceneReady = useCallback(() => setSceneReady(true), []);
   const initialCameraPosition = useMemo(() => {
@@ -1350,7 +1392,7 @@ function CarouselScene({
 
   useEffect(() => {
     setSceneReady(false);
-  }, [itemsSignature]);
+  }, [items.length]);
 
   useEffect(() => {
     giftUrls.forEach((url) => {
@@ -1362,7 +1404,7 @@ function CarouselScene({
     <div className="relative h-full w-full">
       <Canvas
         className="h-full w-full"
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         camera={{ position: initialCameraPosition, fov: 45 }}
         onCreated={({ camera }) => {
           applyCarouselCamera(camera, items.length, activeIndex, cameraSettings);
@@ -1576,9 +1618,9 @@ export default function MapClient() {
   const simsSidebarClass =
     hudSidebarChromeClass(false);
   const simsFieldClass =
-    "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-sm font-extrabold text-[#5d4037] outline-none transition focus:ring-2 focus:ring-[#d3a27f]/35";
+    "w-full rounded-full border-0 bg-[#efedeb] px-4 py-2.5 text-sm font-extrabold text-[#5d4037] outline-none transition-[box-shadow] duration-150 ease-out focus:ring-2 focus:ring-[#d3a27f]/35";
   const simsResetButtonClass =
-    "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
+    "self-start rounded-full border-2 border-[#fdf2e9] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#d3a27f] transition-[background-color,opacity] duration-150 ease-out hover:bg-[#fdf2e9] disabled:cursor-not-allowed disabled:opacity-60";
 	  const mobileContentClass = isPortraitLayout
 	    ? "relative z-10 flex h-full min-h-0 w-full flex-col gap-2 overflow-hidden px-0 pb-[calc(5.6rem+env(safe-area-inset-bottom))]"
 	    : "relative z-10 flex h-full min-h-0 flex-col gap-3 overflow-hidden px-4 pb-4";
@@ -1600,7 +1642,7 @@ export default function MapClient() {
   const modeToggleShellClass =
     "flex rounded-[20px] border-[3px] border-white bg-[#fffcf9] p-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-sm";
   const modeToggleButtonClass = (active: boolean) =>
-    `rounded-[14px] px-3 py-1.5 transition ${
+    `rounded-[14px] px-3 py-1.5 transition-[background-color,color,box-shadow] duration-150 ease-out ${
       active
         ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
         : "hover:bg-[#fdf2e9]"
@@ -1750,9 +1792,8 @@ export default function MapClient() {
     if (carouselOrder.length === 0) {
       return;
     }
-    const range = 3;
     const ids = new Set<string>();
-    for (let offset = -range; offset <= range; offset += 1) {
+    for (let offset = -CAROUSEL_DATA_FETCH_RADIUS; offset <= CAROUSEL_DATA_FETCH_RADIUS; offset += 1) {
       const idx = (carouselIndex + offset + carouselOrder.length) % carouselOrder.length;
       const marker = carouselOrder[idx];
       if (marker?.petId) {
@@ -1763,21 +1804,6 @@ export default function MapClient() {
       void loadPetDetail(id);
     });
   }, [mapMode, isMobile, carouselIndex, carouselOrder]);
-
-  useEffect(() => {
-    if (mapMode !== "map" && !isMobile) {
-      return;
-    }
-    const ids = new Set<string>();
-    listMarkers.forEach((marker) => {
-      if (marker.petId) {
-        ids.add(marker.petId);
-      }
-    });
-    ids.forEach((id) => {
-      void loadPetDetail(id);
-    });
-  }, [mapMode, isMobile, listMarkers]);
 
   useEffect(() => {
     if (!active?.petId) {
@@ -1873,11 +1899,20 @@ export default function MapClient() {
 
   const carouselItems = useMemo(
     () =>
-      carouselOrder.map((marker) => ({
-        id: marker.id,
-        data: buildMemorialSceneData(marker)
-      })),
-    [carouselOrder, buildMemorialSceneData]
+      carouselOrder.map((marker, index) => {
+        const count = carouselOrder.length;
+        const isNearActive =
+          count <= CAROUSEL_RENDER_RADIUS * 2 + 1 ||
+          carouselDistanceBetween(index, carouselIndex, count) <= CAROUSEL_RENDER_RADIUS;
+        const isNearTarget =
+          carouselTargetIndex !== null &&
+          carouselDistanceBetween(index, carouselTargetIndex, count) <= CAROUSEL_RENDER_RADIUS;
+        return {
+          id: marker.id,
+          data: isNearActive || isNearTarget ? buildMemorialSceneData(marker) : null
+        };
+      }),
+    [carouselOrder, carouselIndex, carouselTargetIndex, buildMemorialSceneData]
   );
 
   const handleCarouselArrive = (index: number) => {
@@ -1982,7 +2017,7 @@ export default function MapClient() {
           <button
             type="button"
             onClick={options.onClose}
-            className={compact ? "absolute right-2 top-2 z-20 h-8 w-8 rounded-full border-2 border-[#fdf2e9] bg-white text-lg font-black text-[#8d6e63] shadow-sm transition hover:text-[#5d4037]" : "absolute right-3 top-3 z-20 h-9 w-9 rounded-full border-2 border-[#fdf2e9] bg-white text-xl font-black text-[#8d6e63] shadow-sm transition hover:text-[#5d4037]"}
+            className={compact ? "absolute right-2 top-2 z-20 h-8 w-8 rounded-full border-2 border-[#fdf2e9] bg-white text-lg font-black text-[#8d6e63] shadow-sm transition-colors duration-150 ease-out hover:text-[#5d4037]" : "absolute right-3 top-3 z-20 h-9 w-9 rounded-full border-2 border-[#fdf2e9] bg-white text-xl font-black text-[#8d6e63] shadow-sm transition-colors duration-150 ease-out hover:text-[#5d4037]"}
             aria-label="Вернуться к списку"
           >
             ×
@@ -2127,7 +2162,7 @@ export default function MapClient() {
             onMouseLeave={() => setHoveredMarkerId(null)}
             onFocus={() => setHoveredMarkerId(marker.id)}
             onBlur={() => setHoveredMarkerId(null)}
-            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#eadfd9] bg-[#fffcf9] transition hover:border-[#d3a27f]"
+            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#eadfd9] bg-[#fffcf9] transition-[border-color] duration-150 ease-out hover:border-[#d3a27f]"
           >
             <div className="overflow-hidden rounded-2xl bg-[#fffcf9]">
               <MemorialCardPreview previewSrc={previewSrc} className="rounded-t-2xl" />
@@ -2204,7 +2239,7 @@ export default function MapClient() {
             <button
               type="button"
               onClick={() => setFilterSheetOpen(true)}
-              className="rounded-full border border-[#eadfd9] bg-[#fffcf9] px-4 py-2 text-sm font-semibold text-[#6f6360] shadow-sm transition hover:border-[#d3a27f] hover:bg-[#fff7f2]"
+              className="rounded-full border border-[#eadfd9] bg-[#fffcf9] px-4 py-2 text-sm font-semibold text-[#6f6360] shadow-sm transition-[background-color,border-color] duration-150 ease-out hover:border-[#d3a27f] hover:bg-[#fff7f2]"
             >
               Фильтры
             </button>
@@ -2402,7 +2437,7 @@ export default function MapClient() {
                 <button
                   type="button"
                   onClick={applyFilters}
-                  className="flex-1 rounded-2xl bg-[#111827] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-white shadow-[0_4px_0_0_#000] transition hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none"
+                  className="flex-1 rounded-2xl bg-[#111827] px-4 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-white shadow-[0_4px_0_0_#000] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_5px_0_0_#000] active:translate-y-[3px] active:shadow-none"
                 >
                   Применить
                 </button>

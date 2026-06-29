@@ -15,6 +15,7 @@ type FlameLayer = {
 
 const FIRE_SLOT_PATTERN = /^fire_slot(?:_\d+)?$/i;
 const LITE_FRAME_INTERVAL = 1 / 20;
+let sharedFlameTexture: THREE.Texture | null = null;
 
 function createFlameTexture() {
   if (typeof document === "undefined") {
@@ -53,6 +54,13 @@ function createFlameTexture() {
   return texture;
 }
 
+function getSharedFlameTexture() {
+  if (!sharedFlameTexture) {
+    sharedFlameTexture = createFlameTexture();
+  }
+  return sharedFlameTexture;
+}
+
 function createSprite(texture: THREE.Texture, color: string, opacity: number) {
   const material = new THREE.SpriteMaterial({
     map: texture,
@@ -75,7 +83,7 @@ export default function GiftFlames({
   mode?: GiftFlameMode;
 }) {
   const texture = useMemo(
-    () => (mode === "off" ? null : createFlameTexture()),
+    () => (mode === "off" ? null : getSharedFlameTexture()),
     [mode]
   );
   const flamesRef = useRef<FlameLayer[]>([]);
@@ -124,12 +132,6 @@ export default function GiftFlames({
       flamesRef.current = [];
     };
   }, [mode, root, texture]);
-
-  useEffect(() => {
-    return () => {
-      texture?.dispose();
-    };
-  }, [texture]);
 
   useFrame(({ clock }) => {
     if (mode === "off") {
