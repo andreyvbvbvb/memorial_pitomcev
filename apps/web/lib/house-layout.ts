@@ -7,6 +7,7 @@ import {
 
 export type HouseTransform = {
   offsetX: number;
+  offsetY: number;
   offsetZ: number;
   rotationY: number;
   scale: number;
@@ -157,6 +158,7 @@ const DEFAULT_PART_ADJUSTMENTS_BY_CATEGORY: Record<string, HousePartAdjustment> 
 
 const DEFAULT_HOUSE_TRANSFORM: HouseTransform = {
   offsetX: 0,
+  offsetY: 0,
   offsetZ: 0,
   rotationY: 0,
   scale: 1
@@ -183,9 +185,9 @@ const DEFAULT_HOUSE_TRANSFORMS: Record<string, Partial<HouseTransform>> = {
   andreyvbvbvb_3: { offsetX: -1.6, offsetZ: 0.35, rotationY: -39, scale: 0.78 },
   andreyvbvbvb_4: { offsetX: -1.35, offsetZ: -0.35, rotationY: -54, scale: 0.34 },
   andreyvbvbvb_5: { offsetX: -1.65, offsetZ: 0.1, rotationY: -40, scale: 0.62 },
-  andreyvbvbvb_6: { offsetX: -1.4, offsetZ: 0.4, rotationY: -26, scale: 1.52 },
+  andreyvbvbvb_6: { offsetX: -2, offsetZ: -0.2, rotationY: -26, scale: 1.52 },
   andreyvbvbvb_7: { offsetX: -1.75, offsetZ: -0.25, rotationY: -132, scale: 1.32 },
-  andreyvbvbvb_8: { offsetX: -1.5, offsetZ: 0.25, rotationY: -40, scale: 1.37 }
+  andreyvbvbvb_8: { offsetX: -1.7, offsetY: 0, offsetZ: 0.25, rotationY: -40, scale: 1.37 }
 };
 
 const TERRAIN_HOUSE_TRANSFORMS: Record<string, Record<string, Partial<HouseTransform>>> = {
@@ -332,6 +334,7 @@ export const applyHousePlacement = (
     ...overrides
   };
   target.position.x = transform.offsetX;
+  target.position.y = transform.offsetY;
   target.position.z = transform.offsetZ;
   target.rotation.y = THREE.MathUtils.degToRad(transform.rotationY);
   return transform;

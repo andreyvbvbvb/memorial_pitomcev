@@ -2454,11 +2454,6 @@ export default function CreateMemorialClient({
     : `${form.environmentId}_${form.environmentSeason}`;
   const buildCurrentSceneJson = useCallback(
     () => {
-      const dynamicParts = Object.fromEntries(
-        Object.entries(form.partSelections).filter(
-          ([, value]) => value && value !== "none",
-        ),
-      );
       return {
         parts: {
           roof: form.roofId,
@@ -2469,7 +2464,7 @@ export default function CreateMemorialClient({
           mat: form.matId,
           bowlFood: form.bowlFoodId,
           bowlWater: form.bowlWaterId,
-          ...dynamicParts,
+          ...form.partSelections,
         },
         colors: {
           roof_paint: form.roofColor,

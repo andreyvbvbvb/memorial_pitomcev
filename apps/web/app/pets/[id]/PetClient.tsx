@@ -2424,11 +2424,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
     }
     setAppearanceError(null);
     setSavingAppearance(true);
-    const dynamicParts = Object.fromEntries(
-      Object.entries(appearanceDraft.partSelections).filter(
-        ([, value]) => value && value !== "none",
-      ),
-    );
     const nextSceneJson = {
       parts: {
         roof: appearanceDraft.roofId,
@@ -2439,7 +2434,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
         mat: appearanceDraft.matId,
         bowlFood: appearanceDraft.bowlFoodId,
         bowlWater: appearanceDraft.bowlWaterId,
-        ...dynamicParts,
+        ...appearanceDraft.partSelections,
       },
       colors: {
         roof_paint: appearanceDraft.roofColor,
