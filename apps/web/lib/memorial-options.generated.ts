@@ -522,6 +522,11 @@ export const bowlWaterOptionsGenerated = [
     "allowedUsers": [
       "andreyvbvbvb"
     ]
+  },
+  {
+    "id": "bowl_water_10",
+    "name": "Жёлтая миска-котик с водой",
+    "description": "Яркая жёлтая миска в форме котика с ушками, лапками и голубой водой."
   }
 ] as const;
 export const partOptionGroupsGenerated = {
@@ -802,6 +807,11 @@ export const partOptionGroupsGenerated = {
       "allowedUsers": [
         "andreyvbvbvb"
       ]
+    },
+    {
+      "id": "bowl_water_10",
+      "name": "Жёлтая миска-котик с водой",
+      "description": "Яркая жёлтая миска в форме котика с ушками, лапками и голубой водой."
     }
   ],
   "candle": [

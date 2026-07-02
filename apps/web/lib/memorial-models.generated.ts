@@ -120,7 +120,8 @@ export const bowlWaterModelByIdGenerated = {
   "bowl_water_6": "/models/parts/bowl_water/bowl_water_6.glb",
   "bowl_water_7": "/models/parts/bowl_water/bowl_water_7.glb",
   "bowl_water_8": "/models/parts/bowl_water/bowl_water_8.glb",
-  "bowl_water_9": "/models/parts/bowl_water/extra/andreyvbvbvb/bowl_water_9.glb"
+  "bowl_water_9": "/models/parts/bowl_water/extra/andreyvbvbvb/bowl_water_9.glb",
+  "bowl_water_10": "/models/parts/bowl_water/bowl_water_10.glb"
 } as const;
 export const partModelGroupsGenerated = {
   "roof": {
@@ -189,7 +190,8 @@ export const partModelGroupsGenerated = {
     "bowl_water_6": "/models/parts/bowl_water/bowl_water_6.glb",
     "bowl_water_7": "/models/parts/bowl_water/bowl_water_7.glb",
     "bowl_water_8": "/models/parts/bowl_water/bowl_water_8.glb",
-    "bowl_water_9": "/models/parts/bowl_water/extra/andreyvbvbvb/bowl_water_9.glb"
+    "bowl_water_9": "/models/parts/bowl_water/extra/andreyvbvbvb/bowl_water_9.glb",
+    "bowl_water_10": "/models/parts/bowl_water/bowl_water_10.glb"
   },
   "candle": {
     "candle_1": "/models/parts/candle/candle_1.glb",
