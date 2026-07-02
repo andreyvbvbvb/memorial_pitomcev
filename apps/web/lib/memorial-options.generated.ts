@@ -170,14 +170,6 @@ export const houseOptionsGenerated = [
     "description": "Белый домик с чёрной крышей, светлой лестницей и аккуратной подставкой."
   },
   {
-    "id": "hatiko",
-    "name": "Будка",
-    "description": "Автодобавлено",
-    "allowedUsers": [
-      "andreyvbvbvb"
-    ]
-  },
-  {
     "id": "kotik_1__base",
     "name": "Когтеточка с домиком",
     "description": "Компактный кошачий комплекс с когтеточками, лежанкой и маленьким домиком."
@@ -251,38 +243,6 @@ export const houseOptionsGenerated = [
     "id": "mat_1__third",
     "name": "Клетчатая лежанка",
     "description": "Круглая розовая лежанка с клетчатым бортиком и мягким светлым центром."
-  },
-  {
-    "id": "musya",
-    "name": "Будка",
-    "description": "Автодобавлено",
-    "allowedUsers": [
-      "andreyvbvbvb"
-    ]
-  },
-  {
-    "id": "semen",
-    "name": "Будка",
-    "description": "Автодобавлено",
-    "allowedUsers": [
-      "andreyvbvbvb"
-    ]
-  },
-  {
-    "id": "stubby",
-    "name": "Будка",
-    "description": "Автодобавлено",
-    "allowedUsers": [
-      "andreyvbvbvb"
-    ]
-  },
-  {
-    "id": "towser",
-    "name": "Будка",
-    "description": "Автодобавлено",
-    "allowedUsers": [
-      "andreyvbvbvb"
-    ]
   }
 ] as const;
 export const roofOptionsGenerated = [
@@ -507,6 +467,11 @@ export const bowlFoodOptionsGenerated = [
     "id": "bowl_food_7",
     "name": "Белая миска на сиреневой ножке",
     "description": "Светлая миска с кормом на мягкой сиреневой подставке."
+  },
+  {
+    "id": "bowl_food_8",
+    "name": "Миска-котик с фигурным кормом",
+    "description": "Яркая жёлтая миска с ушками и следом лапы, наполненная разноцветным фигурным кормом."
   }
 ] as const;
 export const bowlWaterOptionsGenerated = [
@@ -782,6 +747,11 @@ export const partOptionGroupsGenerated = {
       "id": "bowl_food_7",
       "name": "Белая миска на сиреневой ножке",
       "description": "Светлая миска с кормом на мягкой сиреневой подставке."
+    },
+    {
+      "id": "bowl_food_8",
+      "name": "Миска-котик с фигурным кормом",
+      "description": "Яркая жёлтая миска с ушками и следом лапы, наполненная разноцветным фигурным кормом."
     }
   ],
   "bowl_water": [

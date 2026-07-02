@@ -38,7 +38,6 @@ export const houseModelByIdGenerated = {
   "budka_8__stone": "/models/houses/DOM_budka_8__stone.glb",
   "budka_8__toy": "/models/houses/DOM_budka_8__toy.glb",
   "budka_8__white": "/models/houses/DOM_budka_8__white.glb",
-  "hatiko": "/models/houses/extra/andreyvbvbvb/hatiko.glb",
   "kotik_1__base": "/models/houses/DOM_kotik_1__base.glb",
   "kotik_1__second": "/models/houses/DOM_kotik_1__second.glb",
   "kotik_2__base": "/models/houses/DOM_kotik_2__base.glb",
@@ -53,11 +52,7 @@ export const houseModelByIdGenerated = {
   "mat_1__base": "/models/houses/DOM_mat_1__base.glb",
   "mat_1__fourth": "/models/houses/DOM_mat_1__fourth.glb",
   "mat_1__second": "/models/houses/DOM_mat_1__second.glb",
-  "mat_1__third": "/models/houses/DOM_mat_1__third.glb",
-  "musya": "/models/houses/extra/andreyvbvbvb/musya.glb",
-  "semen": "/models/houses/extra/andreyvbvbvb/semen.glb",
-  "stubby": "/models/houses/extra/andreyvbvbvb/stubby.glb",
-  "towser": "/models/houses/extra/andreyvbvbvb/towser.glb"
+  "mat_1__third": "/models/houses/DOM_mat_1__third.glb"
 } as const;
 export const roofModelByIdGenerated = {
   "roof_1": "/models/parts/roof/roof_1.glb",
@@ -113,7 +108,8 @@ export const bowlFoodModelByIdGenerated = {
   "bowl_food_4": "/models/parts/bowl_food/bowl_food_4.glb",
   "bowl_food_5": "/models/parts/bowl_food/bowl_food_5.glb",
   "bowl_food_6": "/models/parts/bowl_food/bowl_food_6.glb",
-  "bowl_food_7": "/models/parts/bowl_food/bowl_food_7.glb"
+  "bowl_food_7": "/models/parts/bowl_food/bowl_food_7.glb",
+  "bowl_food_8": "/models/parts/bowl_food/bowl_food_8.glb"
 } as const;
 export const bowlWaterModelByIdGenerated = {
   "bowl_water_1": "/models/parts/bowl_water/bowl_water_1.glb",
@@ -181,7 +177,8 @@ export const partModelGroupsGenerated = {
     "bowl_food_4": "/models/parts/bowl_food/bowl_food_4.glb",
     "bowl_food_5": "/models/parts/bowl_food/bowl_food_5.glb",
     "bowl_food_6": "/models/parts/bowl_food/bowl_food_6.glb",
-    "bowl_food_7": "/models/parts/bowl_food/bowl_food_7.glb"
+    "bowl_food_7": "/models/parts/bowl_food/bowl_food_7.glb",
+    "bowl_food_8": "/models/parts/bowl_food/bowl_food_8.glb"
   },
   "bowl_water": {
     "bowl_water_1": "/models/parts/bowl_water/bowl_water_1.glb",
