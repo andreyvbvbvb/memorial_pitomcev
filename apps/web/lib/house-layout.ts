@@ -186,7 +186,7 @@ const DEFAULT_HOUSE_TRANSFORMS: Record<string, Partial<HouseTransform>> = {
   andreyvbvbvb_4: { offsetX: -1.35, offsetZ: -0.35, rotationY: -54, scale: 0.34 },
   andreyvbvbvb_5: { offsetX: -1.65, offsetZ: 0.1, rotationY: -40, scale: 0.62 },
   andreyvbvbvb_6: { offsetX: -2, offsetZ: -0.2, rotationY: -26, scale: 1.52 },
-  andreyvbvbvb_7: { offsetX: -1.75, offsetZ: -0.25, rotationY: -132, scale: 1.32 },
+  andreyvbvbvb_7: { offsetX: -1.75, offsetZ: -0.25, rotationY: -132, scale: 0.81 },
   andreyvbvbvb_8: { offsetX: -1.7, offsetY: 0, offsetZ: 0.25, rotationY: -40, scale: 1.37 }
 };
 
