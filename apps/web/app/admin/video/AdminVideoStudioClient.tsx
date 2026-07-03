@@ -17,11 +17,15 @@ import {
   resolveFrameRightModel,
   resolveHouseModel,
   resolveMatModel,
+  resolvePartModel,
   resolveRoofModel,
   resolveSignModel,
   resolveWallModel,
 } from "../../../lib/memorial-models";
-import { getHouseSlotCategory, getHouseSlots } from "../../../lib/memorial-config";
+import {
+  getHouseSlotCategory,
+  getHouseSlots,
+} from "../../../lib/memorial-config";
 import {
   applyHousePartAdjustment,
   applyHousePlacement,
@@ -67,6 +71,7 @@ type SceneParts = {
   mat?: string;
   bowlFood?: string;
   bowlWater?: string;
+  [slot: string]: string | undefined;
 };
 
 type MemorialDto = {
@@ -135,6 +140,17 @@ type DirectionVector = {
   y: number;
   z: number;
 };
+
+const LEGACY_SCENE_PART_KEYS = new Set([
+  "roof",
+  "wall",
+  "sign",
+  "frameLeft",
+  "frameRight",
+  "mat",
+  "bowlFood",
+  "bowlWater",
+]);
 
 const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
@@ -368,6 +384,20 @@ function MemorialModel({ item }: { item: StudioItem }) {
   const terrainUrl = resolveEnvironmentModel(item.memorial.environmentId) ?? FALLBACK_TERRAIN_URL;
   const houseUrl = resolveHouseModel(item.memorial.houseId) ?? FALLBACK_HOUSE_URL;
   const houseSlots = getHouseSlots(item.memorial.houseId);
+  const dynamicParts = useMemo(
+    () =>
+      Object.entries(sceneJson.parts ?? {})
+        .filter(
+          ([slot, partId]) =>
+            !LEGACY_SCENE_PART_KEYS.has(slot) &&
+            typeof partId === "string",
+        )
+        .map(([slot, partId]) => ({
+          slot,
+          url: resolvePartModel(getHouseSlotCategory(slot), partId),
+        })),
+    [sceneJson.parts],
+  );
   const dirtSlots = useMemo<DirtSlotPlacement[]>(
     () =>
       buildDirtSlotPlacements({
@@ -466,8 +496,9 @@ function MemorialModel({ item }: { item: StudioItem }) {
               url: resolveBowlWaterModel(sceneJson.parts?.bowlWater),
             }
           : null,
+        ...dynamicParts,
       ].filter((part): part is { slot: string; url: string } => Boolean(part?.url)),
-    [houseSlots, sceneJson.parts],
+    [dynamicParts, houseSlots, sceneJson.parts],
   );
 
   useEffect(() => {
