@@ -1118,6 +1118,8 @@ export default function CreateMemorialClient({
   const hoverIntentRef = useRef<{ category: string; id: string } | null>(null);
   const [tooltipTabId, setTooltipTabId] = useState<Step3TabId | null>(null);
   const tooltipTimerRef = useRef<number | null>(null);
+  const [seasonAutoHelpOpen, setSeasonAutoHelpOpen] = useState(false);
+  const seasonAutoHelpRef = useRef<HTMLDivElement | null>(null);
   const [, setAssetsReady] = useState(false);
   const assetsLoadStartedRef = useRef(false);
   const gltfLoaderRef = useRef<GLTFLoader | null>(null);
@@ -1169,6 +1171,31 @@ export default function CreateMemorialClient({
       setMarkerImageReloadKey((current) => current + 1);
     }
   }, [activeOverlay]);
+
+  useEffect(() => {
+    if (!seasonAutoHelpOpen) {
+      return;
+    }
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        seasonAutoHelpRef.current &&
+        !seasonAutoHelpRef.current.contains(event.target as Node)
+      ) {
+        setSeasonAutoHelpOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSeasonAutoHelpOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [seasonAutoHelpOpen]);
 
   useEffect(() => {
     if (step !== 0 || soulPreviewReady) {
@@ -4599,7 +4626,10 @@ export default function CreateMemorialClient({
                 }
               >
                 {!isPortraitLayout && environmentSeasons.length > 0 ? (
-                  <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#f7f1ee] px-3 text-xs font-semibold text-[#6f6360]">
+                  <div
+                    ref={seasonAutoHelpRef}
+                    className="relative flex min-h-10 items-center gap-2 rounded-xl bg-[#f7f1ee] px-3 text-xs font-semibold text-[#6f6360]"
+                  >
                     <input
                       type="checkbox"
                       className="h-4 w-4 accent-[#3bceac]"
@@ -4610,9 +4640,29 @@ export default function CreateMemorialClient({
                           event.target.checked,
                         )
                       }
+                      aria-label="Включить автоматическую смену сезонов"
+                      aria-describedby="environment-season-auto-help"
                     />
-                    <span>Автосмена сезонов</span>
-                  </label>
+                    <button
+                      type="button"
+                      className="min-h-10 flex-1 text-left transition-colors duration-150 ease-out hover:text-[#5d4037] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3bceac]/45"
+                      onClick={() => setSeasonAutoHelpOpen((current) => !current)}
+                      aria-expanded={seasonAutoHelpOpen}
+                      aria-controls="environment-season-auto-help"
+                    >
+                      Автосмена сезонов
+                    </button>
+                    {seasonAutoHelpOpen ? (
+                      <div
+                        id="environment-season-auto-help"
+                        role="tooltip"
+                        className="absolute left-0 top-full z-[1200] mt-2 w-64 rounded-xl bg-white px-3 py-2 text-[11px] font-medium leading-relaxed text-[#6f6360] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_8px_24px_rgba(93,64,55,0.16)]"
+                      >
+                        Если включить автосмену, поверхность мемориала будет
+                        автоматически выбирать сезон по текущей дате.
+                      </div>
+                    ) : null}
+                  </div>
                 ) : null}
                 <div
                   className={
