@@ -4591,19 +4591,55 @@ export default function CreateMemorialClient({
                   : "min-h-0"
               }
             >
-              <div className="min-h-0 overflow-y-auto overscroll-contain">
-                {renderOptionGrid(
-                  "environment",
-                  environmentOptions,
-                  form.environmentId,
-                  (id) => {
-                    handleChange("environmentId", id);
-                    requestFocus("dom_slot");
-                  },
-                )}
+              <div
+                className={
+                  !isPortraitLayout && environmentSeasons.length > 0
+                    ? "grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2"
+                    : "min-h-0 overflow-y-auto overscroll-contain"
+                }
+              >
+                {!isPortraitLayout && environmentSeasons.length > 0 ? (
+                  <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#f7f1ee] px-3 text-xs font-semibold text-[#6f6360]">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-[#3bceac]"
+                      checked={form.environmentSeasonAuto}
+                      onChange={(event) =>
+                        handleChange(
+                          "environmentSeasonAuto",
+                          event.target.checked,
+                        )
+                      }
+                    />
+                    <span>Автосмена сезонов</span>
+                  </label>
+                ) : null}
+                <div
+                  className={
+                    !isPortraitLayout && environmentSeasons.length > 0
+                      ? "min-h-0 overflow-y-auto overscroll-contain"
+                      : ""
+                  }
+                >
+                  {renderOptionGrid(
+                    "environment",
+                    environmentOptions,
+                    form.environmentId,
+                    (id) => {
+                      handleChange("environmentId", id);
+                      requestFocus("dom_slot");
+                    },
+                  )}
+                </div>
               </div>
               {environmentSeasons.length > 0 ? (
-                <div className="grid w-11 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] content-start justify-items-center gap-2 p-1.5">
+                <div
+                  className={`grid w-11 min-h-0 content-start justify-items-center gap-2 p-1.5 ${
+                    isPortraitLayout
+                      ? "grid-rows-[auto_minmax(0,1fr)_auto]"
+                      : "grid-rows-[auto_minmax(0,1fr)]"
+                  }`}
+                >
                   <div className="group relative">
                     <span className="grid h-7 w-7 place-items-center rounded-full border border-white bg-[#fffcf9] text-[12px] font-black text-[#8d6e63] shadow-sm">
                       ?
@@ -4641,24 +4677,27 @@ export default function CreateMemorialClient({
                       );
                     })}
                   </div>
-                  <label className="group relative flex items-center justify-center text-xs text-[#6f6360]">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={form.environmentSeasonAuto}
-                      onChange={(event) =>
-                        handleChange(
-                          "environmentSeasonAuto",
-                          event.target.checked,
-                        )
-                      }
-                      aria-label="Автосмена сезонов"
-                      title="Автосмена сезонов"
-                    />
-                    <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-56 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                      Если включить, поверхность будет меняться по текущей дате.
-                    </span>
-                  </label>
+                  {isPortraitLayout ? (
+                    <label className="group relative flex items-center justify-center text-xs text-[#6f6360]">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={form.environmentSeasonAuto}
+                        onChange={(event) =>
+                          handleChange(
+                            "environmentSeasonAuto",
+                            event.target.checked,
+                          )
+                        }
+                        aria-label="Автосмена сезонов"
+                        title="Автосмена сезонов"
+                      />
+                      <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-56 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                        Если включить, поверхность будет меняться по текущей
+                        дате.
+                      </span>
+                    </label>
+                  ) : null}
                 </div>
               ) : null}
             </div>

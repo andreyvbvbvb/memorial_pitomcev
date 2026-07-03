@@ -22,7 +22,8 @@ import {
   resolveFrameRightModel,
   resolveMatModel,
   resolveBowlFoodModel,
-  resolveBowlWaterModel
+  resolveBowlWaterModel,
+  resolvePartModel
 } from "../lib/memorial-models";
 import {
   getGiftSlotType,
@@ -73,6 +74,7 @@ type SceneParts = {
   mat?: string;
   bowlFood?: string;
   bowlWater?: string;
+  [slot: string]: string | undefined;
 };
 
 type MemorialScene = {
@@ -128,6 +130,16 @@ const DirectionalLight = "directionalLight" as unknown as React.ComponentType<an
 const DEFAULT_CAMERA = new THREE.Vector3(0, 9, 18);
 const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
 const CLICK_DRAG_THRESHOLD = 6;
+const LEGACY_SCENE_PART_KEYS = new Set([
+  "roof",
+  "wall",
+  "sign",
+  "frameLeft",
+  "frameRight",
+  "mat",
+  "bowlFood",
+  "bowlWater"
+]);
 const HOUSE_MAX_WIDTH = 2.5;
 const HOUSE_MAX_HEIGHT = 4;
 const KOTIK_MAX_HEIGHT = 2.5;
@@ -489,6 +501,20 @@ function MemorialInstance({
     parts?: SceneParts;
     colors?: Record<string, string>;
   };
+  const dynamicParts = useMemo(
+    () =>
+      Object.entries(sceneJson.parts ?? {})
+        .filter(
+          ([slot, partId]) =>
+            !LEGACY_SCENE_PART_KEYS.has(slot) &&
+            typeof partId === "string"
+        )
+        .map(([slot, partId]) => ({
+          slot,
+          url: resolvePartModel(getHouseSlotCategory(slot), partId)
+        })),
+    [sceneJson.parts]
+  );
   const dirtSlots = useMemo<DirtSlotPlacement[]>(
     () =>
       buildDirtSlotPlacements({
@@ -550,9 +576,10 @@ function MemorialInstance({
           : null,
         houseSlots.bowlWater
           ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(sceneJson.parts?.bowlWater) }
-          : null
+          : null,
+        ...dynamicParts
       ].filter((part): part is { slot: string; url: string } => Boolean(part?.url)),
-    [houseSlots, sceneJson.parts]
+    [dynamicParts, houseSlots, sceneJson.parts]
   );
 
   if (!environmentUrl || !houseUrl) {
