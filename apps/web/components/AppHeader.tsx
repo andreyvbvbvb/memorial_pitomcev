@@ -542,6 +542,12 @@ export default function AppHeader() {
                                 Видео
                               </span>
                             </Link>
+                            <Link className={menuItemClass} href="/admin/gift-slots">
+                              <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
+                              <span className="text-xs font-black uppercase tracking-tight">
+                                Слоты подарков
+                              </span>
+                            </Link>
                           </>
                         ) : null}
                         <div className="mx-4 my-2 h-px bg-[#f8f9fa]" />

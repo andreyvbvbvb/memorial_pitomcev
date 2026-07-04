@@ -213,12 +213,20 @@ export default function AdminModerationClient() {
             </p>
             <h1 className="mt-1 text-3xl font-black">Модерация мемориалов</h1>
           </div>
-          <Link
-            href="/admin/sql"
-            className="rounded-[18px] bg-[#fffcf9] px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_12px_28px_rgba(93,64,55,0.12)] transition hover:-translate-y-0.5"
-          >
-            SQL панель
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/sql"
+              className="rounded-[18px] bg-[#fffcf9] px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_12px_28px_rgba(93,64,55,0.12)] transition-transform duration-150 active:scale-[0.96]"
+            >
+              SQL панель
+            </Link>
+            <Link
+              href="/admin/gift-slots"
+              className="rounded-[18px] bg-[#fffcf9] px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_12px_28px_rgba(93,64,55,0.12)] transition-transform duration-150 active:scale-[0.96]"
+            >
+              Слоты подарков
+            </Link>
+          </div>
         </div>
 
         <div className="mt-6 rounded-[30px] border-[5px] border-white bg-[#efe6e2] p-3 shadow-[0_26px_70px_rgba(93,64,55,0.16)]">

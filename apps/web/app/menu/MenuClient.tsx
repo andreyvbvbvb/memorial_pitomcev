@@ -286,6 +286,11 @@ export default function MenuClient() {
               <>
                 <MenuItem href="/admin/sql" icon="admin" label="Админ-панель" />
                 <MenuItem href="/admin/video" icon="admin" label="Видеостудия" />
+                <MenuItem
+                  href="/admin/gift-slots"
+                  icon="admin"
+                  label="Проверка подарков"
+                />
               </>
             ) : null}
             {user ? (
