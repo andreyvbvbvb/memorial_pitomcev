@@ -45,6 +45,10 @@ import {
 import { AdminNewsDto } from "./dto/admin-news.dto";
 import { AdminResetPasswordDto } from "./dto/admin-reset-password.dto";
 import { AdminAddCoinsDto } from "./dto/admin-add-coins.dto";
+import {
+  AdminDeactivateAllGiftsDto,
+  AdminMoveGiftPlacementDto,
+} from "./dto/admin-gift-placement.dto";
 import { AdminModelMetadataDto } from "./dto/admin-model-metadata.dto";
 import {
   AdminLoadingTipCreateDto,
@@ -170,6 +174,42 @@ const isSingleStatement = (query: string) => {
     return false;
   }
   return trimmed.slice(0, -1).indexOf(";") === -1;
+};
+
+const getGiftSlotType = (slotName: string) => {
+  const normalized = slotName.trim().toLowerCase();
+  if (normalized.startsWith("gift_slot_")) {
+    return "default";
+  }
+  const parts = normalized
+    .replace(/^gift_/, "")
+    .split("_")
+    .filter(Boolean);
+  if (parts.length <= 1) {
+    return parts[0] || "default";
+  }
+  return /^\d+$/.test(parts[parts.length - 1] ?? "")
+    ? parts.slice(0, -1).join("_")
+    : parts.join("_");
+};
+
+const isGiftCompatibleWithSlot = (
+  gift: { code?: string | null; modelUrl?: string | null },
+  slotName: string,
+) => {
+  const slotType = getGiftSlotType(slotName);
+  if (slotType === "default" || slotType === "slot") {
+    return true;
+  }
+  const modelCode =
+    gift.code ??
+    gift.modelUrl
+      ?.split("/")
+      .pop()
+      ?.replace(/\.glb$/i, "") ??
+    "";
+  const giftType = modelCode.toLowerCase().split("_")[0] ?? "";
+  return giftType === slotType;
 };
 
 @Controller("admin")
@@ -503,6 +543,184 @@ export class AdminController {
       },
     });
     return { pets };
+  }
+
+  @Get("gift-placements")
+  async listGiftPlacements(@Req() req: Request, @Query("q") query?: string) {
+    await this.ensureAdmin(req);
+    const normalizedQuery = String(query ?? "").trim();
+    const now = new Date();
+    const pets = await this.prisma.pet.findMany({
+      where: {
+        isActive: true,
+        memorial: { isNot: null },
+        ...(normalizedQuery
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: normalizedQuery,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+                {
+                  owner: {
+                    email: {
+                      contains: normalizedQuery,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+                {
+                  owner: {
+                    login: {
+                      contains: normalizedQuery,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 240,
+      include: {
+        owner: { select: { id: true, email: true, login: true } },
+        memorial: true,
+        gifts: {
+          where: {
+            isActive: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          },
+          orderBy: { placedAt: "desc" },
+          include: {
+            gift: true,
+            owner: { select: { id: true, email: true, login: true } },
+          },
+        },
+      },
+    });
+    return { pets };
+  }
+
+  @Patch("gift-placements/deactivate-all")
+  async deactivateAllGiftPlacements(
+    @Req() req: Request,
+    @Body() dto: AdminDeactivateAllGiftsDto,
+  ) {
+    await this.ensureAdmin(req);
+    const pet = await this.prisma.pet.findUnique({
+      where: { id: dto.petId },
+      select: { id: true, memorial: { select: { id: true } } },
+    });
+    if (!pet?.memorial) {
+      throw new BadRequestException("Мемориал не найден");
+    }
+    const now = new Date();
+    const [result] = await this.prisma.$transaction([
+      this.prisma.giftPlacement.updateMany({
+        where: { petId: pet.id, isActive: true },
+        data: {
+          isActive: false,
+          deactivatedAt: now,
+          deactivationReason: "admin_cleanup",
+        },
+      }),
+      this.prisma.memorial.update({
+        where: { id: pet.memorial.id },
+        data: { needsPreviewRefresh: true },
+      }),
+    ]);
+    return { deactivated: result.count };
+  }
+
+  @Patch("gift-placements/:id/deactivate")
+  async deactivateGiftPlacement(@Req() req: Request, @Param("id") id: string) {
+    await this.ensureAdmin(req);
+    const placement = await this.prisma.giftPlacement.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        petId: true,
+        isActive: true,
+        pet: { select: { memorial: { select: { id: true } } } },
+      },
+    });
+    if (!placement?.isActive || !placement.pet.memorial) {
+      throw new BadRequestException("Активный подарок не найден");
+    }
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.giftPlacement.update({
+        where: { id },
+        data: {
+          isActive: false,
+          deactivatedAt: now,
+          deactivationReason: "admin_cleanup",
+        },
+      }),
+      this.prisma.memorial.update({
+        where: { id: placement.pet.memorial.id },
+        data: { needsPreviewRefresh: true },
+      }),
+    ]);
+    return { deactivated: 1 };
+  }
+
+  @Patch("gift-placements/:id/move")
+  async moveGiftPlacement(
+    @Req() req: Request,
+    @Param("id") id: string,
+    @Body() dto: AdminMoveGiftPlacementDto,
+  ) {
+    await this.ensureAdmin(req);
+    const targetSlot = dto.slotName.trim().toLowerCase();
+    const placement = await this.prisma.giftPlacement.findUnique({
+      where: { id },
+      include: {
+        gift: true,
+        pet: { select: { memorial: { select: { id: true } } } },
+      },
+    });
+    if (!placement?.isActive || !placement.pet.memorial) {
+      throw new BadRequestException("Активный подарок не найден");
+    }
+    if (placement.slotName === targetSlot) {
+      throw new BadRequestException("Подарок уже находится в этом слоте");
+    }
+    if (!isGiftCompatibleWithSlot(placement.gift, targetSlot)) {
+      throw new BadRequestException("Подарок не подходит для выбранного слота");
+    }
+    const now = new Date();
+    const occupied = await this.prisma.giftPlacement.findFirst({
+      where: {
+        id: { not: placement.id },
+        petId: placement.petId,
+        slotName: targetSlot,
+        isActive: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: { id: true },
+    });
+    if (occupied) {
+      throw new BadRequestException("Выбранный слот уже занят");
+    }
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.giftPlacement.update({
+        where: { id },
+        data: { slotName: targetSlot },
+        include: {
+          gift: true,
+          owner: { select: { id: true, email: true, login: true } },
+        },
+      }),
+      this.prisma.memorial.update({
+        where: { id: placement.pet.memorial.id },
+        data: { needsPreviewRefresh: true },
+      }),
+    ]);
+    return { placement: updated };
   }
 
   @Patch("moderation/:id")

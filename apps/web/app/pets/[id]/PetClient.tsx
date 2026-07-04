@@ -164,7 +164,8 @@ type MemorialPanel =
   | "gifts"
   | "memorials"
   | "manage"
-  | "giftScale";
+  | "giftScale"
+  | "export";
 
 const MEMORIAL_EXTENSION_PLANS = [
   { id: "1y", years: 1, label: "1 год", price: 100 },
@@ -535,7 +536,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
     useState(false);
   const [previewContextReady, setPreviewContextReady] = useState(false);
   const [previewSceneReady, setPreviewSceneReady] = useState(false);
+  const [exportingGlb, setExportingGlb] = useState(false);
   const previewControlsRef = useRef<any>(null);
+  const memorialObjectRef = useRef<THREE.Object3D | null>(null);
   const previewRenderRef = useRef<{
     gl: THREE.WebGLRenderer;
     scene: THREE.Scene;
@@ -2147,6 +2150,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
   ];
 
   const isOwner = Boolean(currentUser?.id && pet?.ownerId === currentUser.id);
+  const canExportMemorial =
+    currentUser?.accessLevel === "ADMIN" ||
+    currentUser?.accessLevel === "OWNER";
   const canSeeModerationStatus = Boolean(
     pet &&
     (isOwner ||
@@ -2167,6 +2173,85 @@ export default function PetClient({ id, mode = "view" }: Props) {
         ? pet?.moderationComment ||
           "Модератор попросил уточнить данные. Отредактируйте мемориал и сохраните изменения, чтобы отправить его на повторную проверку."
         : null;
+
+  const handleDownloadGlb = async () => {
+    if (!pet || !memorialObjectRef.current || !previewSceneReady) {
+      setError("3D-модель ещё загружается. Попробуйте через несколько секунд.");
+      return;
+    }
+    setExportingGlb(true);
+    setError(null);
+    try {
+      const expectedGiftCount = activeGifts.length;
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        let loadedGiftCount = 0;
+        memorialObjectRef.current.traverse((object) => {
+          if (object.name.startsWith("__gift_placement_")) {
+            loadedGiftCount += 1;
+          }
+        });
+        if (loadedGiftCount >= expectedGiftCount) {
+          break;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 100));
+      }
+
+      memorialObjectRef.current.updateMatrixWorld(true);
+      const exportRoot = memorialObjectRef.current.clone(true);
+      exportRoot.name = `memorial_${pet.id}`;
+      exportRoot.position.set(0, 0, 0);
+      exportRoot.quaternion.identity();
+      exportRoot.scale.set(1, 1, 1);
+
+      const transientObjects: THREE.Object3D[] = [];
+      exportRoot.traverse((object) => {
+        if (
+          object.name === "__gift_placeholder" ||
+          object.name.startsWith("__animated_flame_") ||
+          (object as THREE.Sprite).isSprite
+        ) {
+          transientObjects.push(object);
+        }
+      });
+      transientObjects.forEach((object) => object.parent?.remove(object));
+      exportRoot.updateMatrixWorld(true);
+
+      const { GLTFExporter } =
+        await import("three/examples/jsm/exporters/GLTFExporter.js");
+      const exporter = new GLTFExporter();
+      const result = await exporter.parseAsync(exportRoot, {
+        binary: true,
+        onlyVisible: true,
+        maxTextureSize: 2048,
+      });
+      if (!(result instanceof ArrayBuffer)) {
+        throw new Error("Экспорт не вернул бинарную GLB-модель");
+      }
+
+      const safeName =
+        pet.name
+          .trim()
+          .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+          .replace(/\s+/g, "_") || "memorial";
+      const blobUrl = URL.createObjectURL(
+        new Blob([result], { type: "model/gltf-binary" }),
+      );
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${safeName}_${pet.id}.glb`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      setLifecycleSuccess("GLB-модель мемориала подготовлена.");
+    } catch (exportError) {
+      console.error("Failed to export memorial GLB", exportError);
+      setError("Не удалось подготовить GLB-модель мемориала.");
+    } finally {
+      setExportingGlb(false);
+    }
+  };
+
   const handleExtendMemorial = async (years: 0 | 1 | 2 | 5) => {
     if (!currentUser?.id) {
       setLifecycleError("Войдите, чтобы продлить мемориал");
@@ -3420,6 +3505,9 @@ export default function PetClient({ id, mode = "view" }: Props) {
             previewRenderRef.current = context;
             setPreviewContextReady(true);
           }}
+          onMemorialObjectReady={(object) => {
+            memorialObjectRef.current = object;
+          }}
           onSceneReadyChange={setPreviewSceneReady}
         />
       </div>
@@ -3620,6 +3708,34 @@ export default function PetClient({ id, mode = "view" }: Props) {
                       </button>
                       <span className={memorialControlTooltipClass}>
                         Масштаб подарков
+                      </span>
+                    </div>
+                  ) : null}
+                  {canExportMemorial ? (
+                    <div className="group/control relative">
+                      <button
+                        type="button"
+                        onClick={() => togglePanel("export")}
+                        aria-label="Скачать GLB-модель"
+                        title="Скачать GLB-модель"
+                        className={panelButtonClass(activePanel === "export")}
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-6 w-6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.6}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 3v12" />
+                          <path d="m7 10 5 5 5-5" />
+                          <path d="M5 20h14" />
+                        </svg>
+                      </button>
+                      <span className={memorialControlTooltipClass}>
+                        Скачать GLB
                       </span>
                     </div>
                   ) : null}
@@ -4027,6 +4143,30 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           {deletingMemorial ? "Удаление..." : "Удалить"}
                         </button>
                       </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {canExportMemorial && activePanel === "export" ? (
+                  <div className={`${sidePanelAnchorClass} ${panelBaseClass}`}>
+                    <div className={panelSectionClass}>
+                      <p className={panelLabelClass}>Экспорт 3D-модели</p>
+                      <p className="text-pretty text-sm font-semibold leading-relaxed text-[#6f6360]">
+                        В GLB войдут поверхность, домик, установленные детали,
+                        грязь, подарки и текущее статическое состояние души.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void handleDownloadGlb()}
+                        disabled={exportingGlb || !previewSceneReady}
+                        className={`${primaryActionClass} min-h-11 transition-transform duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-55`}
+                      >
+                        {exportingGlb
+                          ? "Подготавливаем..."
+                          : previewSceneReady
+                            ? "Скачать .glb"
+                            : "Модель загружается"}
+                      </button>
                     </div>
                   </div>
                 ) : null}

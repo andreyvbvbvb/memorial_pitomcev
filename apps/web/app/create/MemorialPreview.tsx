@@ -111,6 +111,7 @@ type Props = {
     scene: THREE.Scene;
     camera: THREE.Camera;
   }) => void;
+  onMemorialObjectReady?: (object: THREE.Object3D | null) => void;
   onSceneReadyChange?: (ready: boolean) => void;
   preserveDrawingBuffer?: boolean;
   cameraPosition?: [number, number, number];
@@ -780,6 +781,7 @@ function GiftPlacementAttachment({
   return (
     <Group
       ref={giftGroupRef}
+      name={`__gift_placement_${slot}`}
       position={transform.position}
       quaternion={transform.quaternion}
       onPointerOver={(event: any) => {
@@ -1275,6 +1277,7 @@ function TerrainWithHouse({
   soulQuality,
   soulAnchorMode,
   onReady,
+  onMemorialObjectReady,
   visible = true
 }: {
   terrainUrl: string;
@@ -1331,6 +1334,7 @@ function TerrainWithHouse({
   soulQuality?: PetSoulQuality;
   soulAnchorMode?: "scene" | "screen-left";
   onReady?: () => void;
+  onMemorialObjectReady?: (object: THREE.Object3D | null) => void;
   visible?: boolean;
 }) {
   const { scene: terrainScene } = useGLTF(terrainUrl);
@@ -1486,6 +1490,13 @@ function TerrainWithHouse({
   useEffect(() => {
     onReady?.();
   }, [onReady, terrain, house]);
+
+  useEffect(() => {
+    onMemorialObjectReady?.(floatGroupRef.current);
+    return () => {
+      onMemorialObjectReady?.(null);
+    };
+  }, [onMemorialObjectReady, terrain, house]);
 
   useEffect(() => {
     applyMaterialColors(terrain, colors);
@@ -1912,6 +1923,7 @@ export default function MemorialPreview({
   onCanvasReady,
   onControlsReady,
   onRenderContextReady,
+  onMemorialObjectReady,
   onSceneReadyChange,
   preserveDrawingBuffer = false,
   cameraPosition = [4, 3, 4],
@@ -2352,6 +2364,7 @@ export default function MemorialPreview({
               showMeterGrid={showMeterGrid}
               soulQuality={soulQuality}
               soulAnchorMode={soulAnchorMode}
+              onMemorialObjectReady={onMemorialObjectReady}
               onReady={() => setSceneReady(true)}
             />
           ) : null}

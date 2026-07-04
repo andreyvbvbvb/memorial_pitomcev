@@ -38,6 +38,7 @@ import { resolveObjectTransformInParent } from "../../../lib/three-transforms";
 import ErrorToast from "../../../components/ErrorToast";
 import GiftFlames from "../../../components/GiftFlames";
 import TunedSkyDome from "../../../components/TunedSkyDome";
+import AdminGiftPlacementManager from "./AdminGiftPlacementManager";
 
 ensureDracoLoader();
 
@@ -663,6 +664,7 @@ export default function AdminGiftSlotInspectorClient() {
             ) : null}
           </aside>
         </div>
+        <AdminGiftPlacementManager apiUrl={apiUrl} />
       </div>
       {error ? (
         <ErrorToast message={error} onClose={() => setError(null)} />
