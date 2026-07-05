@@ -43,7 +43,7 @@ const features = [
 export default function HomePage() {
   return (
     <main className="relative overflow-hidden bg-[#fcf8f5] text-[#5d4037]">
-      <SiteBanner />
+      <SiteBanner variant="overlay" />
       <HomeHero />
 
       <section className="relative border-y border-white/80 bg-[#fcf8f5] px-4 py-10 sm:px-6 lg:py-14">
