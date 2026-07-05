@@ -9,6 +9,14 @@ export type GeneratedOptionItem = {
 
 export const environmentOptionsGenerated = [
   {
+    "id": "2",
+    "name": "Лужайка с деревьями",
+    "description": "Парящая зелёная поверхность с небольшими деревьями и открытым местом для домика.",
+    "allowedUsers": [
+      "andreyvbvbvb"
+    ]
+  },
+  {
     "id": "3",
     "name": "Большая лужайка",
     "description": "Просторная травяная поверхность с деревьями, мягким рельефом и большим местом для деталей."
