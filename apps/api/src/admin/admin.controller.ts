@@ -1343,25 +1343,38 @@ export class AdminController {
   }
 
   @Patch("site-banner")
-  async updateSiteBanner(
-    @Req() req: Request,
-    @Body() dto: AdminSiteBannerDto,
-  ) {
+  async updateSiteBanner(@Req() req: Request, @Body() dto: AdminSiteBannerDto) {
     await this.ensureAdmin(req);
-    const text = dto.text?.trim() ?? "";
-    if (dto.isActive && !text) {
+    const currentBanner = await this.prisma.siteBanner.findUnique({
+      where: { id: "global" },
+    });
+    const text =
+      dto.text !== undefined ? dto.text.trim() : (currentBanner?.text ?? "");
+    const isActive =
+      dto.isActive !== undefined
+        ? dto.isActive
+        : (currentBanner?.isActive ?? false);
+    if (isActive && !text) {
       throw new BadRequestException("Введите текст плашки");
     }
-    const banner = await this.prisma.siteBanner.upsert({
+    if (!currentBanner) {
+      const banner = await this.prisma.siteBanner.create({
+        data: {
+          id: "global",
+          text,
+          isActive,
+        },
+      });
+      return { banner };
+    }
+    if (currentBanner.text === text && currentBanner.isActive === isActive) {
+      return { banner: currentBanner };
+    }
+    const banner = await this.prisma.siteBanner.update({
       where: { id: "global" },
-      create: {
-        id: "global",
+      data: {
         text,
-        isActive: dto.isActive ?? false,
-      },
-      update: {
-        text,
-        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        isActive,
       },
     });
     return { banner };
