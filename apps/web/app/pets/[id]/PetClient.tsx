@@ -463,6 +463,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const [giftLoading, setGiftLoading] = useState(false);
   const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
   const [giftTypeFilter, setGiftTypeFilter] = useState<GiftTypeFilter>("all");
+  const [giftSlotFilter, setGiftSlotFilter] = useState<string | null>(null);
   const [selectedGiftSize, setSelectedGiftSize] = useState<GiftSize>("m");
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
@@ -1445,13 +1446,10 @@ export default function PetClient({ id, mode = "view" }: Props) {
   }, [availableSlots, giftCatalog]);
 
   const slotFilteredGifts = useMemo(() => {
-    if (selectedGiftId) {
+    if (!giftSlotFilter) {
       return giftsWithSlots;
     }
-    if (!selectedSlot) {
-      return giftsWithSlots;
-    }
-    const slotType = getGiftSlotType(selectedSlot);
+    const slotType = getGiftSlotType(giftSlotFilter);
     if (!slotType || slotType === "default") {
       return giftsWithSlots;
     }
@@ -1459,16 +1457,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
       const types = getGiftAvailableTypes(gift);
       return types.includes("default") || types.includes(slotType);
     });
-  }, [giftsWithSlots, selectedGiftId, selectedSlot]);
+  }, [giftSlotFilter, giftsWithSlots]);
 
   const availableGiftTypeFilters = useMemo(() => {
     const availableTypes = new Set(
-      slotFilteredGifts.flatMap((gift) => getGiftAvailableTypes(gift)),
+      giftsWithSlots.flatMap((gift) => getGiftAvailableTypes(gift)),
     );
     return GIFT_TYPE_FILTER_OPTIONS.filter(
       (option) => option.id === "all" || availableTypes.has(option.id),
     );
-  }, [slotFilteredGifts]);
+  }, [giftsWithSlots]);
 
   const visibleGiftsWithSlots = useMemo(() => {
     if (giftTypeFilter === "all") {
@@ -1499,6 +1497,12 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const highlightSlots = availableSlots;
   const shouldShowGiftSlots =
     giftPanelOpen && highlightSlots.length > 0 && giftSlotsVisible;
+
+  useEffect(() => {
+    if (giftSlotFilter && !availableSlots.includes(giftSlotFilter)) {
+      setGiftSlotFilter(null);
+    }
+  }, [availableSlots, giftSlotFilter]);
 
   useEffect(() => {
     if (
@@ -1580,6 +1584,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const handleSelectSlot = (slot: string) => {
     if (selectedSlot === slot) {
       setSelectedSlot(null);
+      setGiftSlotFilter(null);
       setGiftPreviewEnabled(false);
       setSlotManuallyCleared(true);
       return;
@@ -1590,9 +1595,11 @@ export default function PetClient({ id, mode = "view" }: Props) {
       setSelectedDuration(null);
       setGiftPreviewEnabled(false);
       setSlotManuallyCleared(false);
+      setGiftSlotFilter(slot);
       return;
     }
     setSelectedSlot(slot);
+    setGiftSlotFilter(slot);
     setGiftPreviewEnabled(true);
     setSlotManuallyCleared(false);
   };
@@ -1650,6 +1657,15 @@ export default function PetClient({ id, mode = "view" }: Props) {
   const toggleGiftPanel = () =>
     setGiftPanelOpen((prev) => {
       const next = !prev;
+      if (next) {
+        setSelectedGiftId(null);
+        setSelectedSlot(null);
+        setSelectedDuration(null);
+        setGiftPreviewEnabled(false);
+        setSlotManuallyCleared(false);
+        setGiftSlotFilter(null);
+        setGiftTypeFilter("all");
+      }
       setActivePanel(next && canCalibrateGiftScales ? "giftScale" : null);
       return next;
     });
@@ -2050,6 +2066,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
       setSelectedGiftId(null);
       setSelectedSlot(null);
       setSelectedDuration(null);
+      setGiftSlotFilter(null);
       setGiftPreviewEnabled(false);
       setSlotManuallyCleared(false);
       if (typeof data.coinBalance === "number") {
@@ -4252,11 +4269,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 <span className="sr-only">Тип подарка</span>
                                 <select
                                   value={giftTypeFilter}
-                                  onChange={(event) =>
+                                  onPointerDown={() => setGiftSlotFilter(null)}
+                                  onChange={(event) => {
+                                    setGiftSlotFilter(null);
                                     setGiftTypeFilter(
                                       event.target.value as GiftTypeFilter,
-                                    )
-                                  }
+                                    );
+                                  }}
                                   className={`h-9 max-w-[min(11rem,58vw)] touch-manipulation appearance-none truncate rounded-xl border-2 border-white bg-white py-1.5 pl-3 pr-8 text-[10px] font-black uppercase tracking-[0.06em] text-[#5d4037] shadow-sm outline-none transition-[border-color,background-color] focus-visible:border-[#3bceac] [-webkit-tap-highlight-color:transparent] ${
                                     isPortraitLayout
                                       ? ""
