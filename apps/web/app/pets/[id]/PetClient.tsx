@@ -2919,11 +2919,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
     bowl_water_paint: draftAppearance.bowlWaterColor,
   };
   const giftInstances = activeGifts.map((gift) => {
-    const ownerPets = (gift.owner?.pets ?? []).slice(0, 3);
-    const ownerLabel =
-      ownerPets.length > 0
-        ? ownerPets.map((petItem) => petItem.name).join(", ")
-        : (gift.owner?.login ?? gift.owner?.email ?? "—");
+    const ownerLabel = gift.owner?.login ?? gift.owner?.email ?? "—";
     const slotType = getGiftSlotType(gift.slotName);
     const resolvedUrl =
       resolveGiftModelUrl({
@@ -3950,12 +3946,6 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                 gift.owner?.email ??
                                 gift.owner?.id ??
                                 "—";
-                              const ownerLabel =
-                                ownerPets.length > 0
-                                  ? ownerPets
-                                      .map((petItem) => petItem.name)
-                                      .join(", ")
-                                  : ownerName;
                               const expiresLabel = gift.expiresAt
                                 ? new Date(gift.expiresAt).toLocaleDateString()
                                 : null;
@@ -4023,7 +4013,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
                                     <p className="font-black text-[#5d4037]">
                                       {gift.gift.name}
                                     </p>
-                                    <p className="mt-1">От: {ownerLabel}</p>
+                                    <p className="mt-1">От кого: {ownerName}</p>
                                     {expiresLabel ? (
                                       <p className="mt-1">До: {expiresLabel}</p>
                                     ) : null}

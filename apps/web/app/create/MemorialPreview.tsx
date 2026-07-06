@@ -2379,7 +2379,7 @@ export default function MemorialPreview({
               <div className="inline-block min-w-[220px] max-w-[360px] break-words rounded-2xl border border-[#eadfd9] bg-white/95 px-4 py-3 text-[12px] leading-snug text-[#6f6360] shadow-lg">
                 <p className="font-semibold text-slate-900">{hoveredGift.name ?? "Подарок"}</p>
                 <p className="text-slate-500">
-                  От: {hoveredGift.owner ? hoveredGift.owner : "владельца"}
+                  От кого: {hoveredGift.owner ? hoveredGift.owner : "владельца"}
                 </p>
                 {hoveredGift.expiresAt ? (
                   <p className="text-slate-500">
