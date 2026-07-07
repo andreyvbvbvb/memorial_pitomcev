@@ -44,7 +44,8 @@ import {
   resolveFrameRightModel,
   resolveMatModel,
   resolveBowlFoodModel,
-  resolveBowlWaterModel
+  resolveBowlWaterModel,
+  resolvePartModel
 } from "../../lib/memorial-models";
 import {
   buildDirtSlotPlacements,
@@ -115,6 +116,18 @@ type PetDetail = {
   }[];
 };
 
+type SceneParts = {
+  roof?: string;
+  wall?: string;
+  sign?: string;
+  frameLeft?: string;
+  frameRight?: string;
+  mat?: string;
+  bowlFood?: string;
+  bowlWater?: string;
+  [slot: string]: string | undefined;
+};
+
 type MemorialSceneData = {
   terrainUrl: string;
   terrainId?: string | null;
@@ -143,6 +156,16 @@ const PointLight = "pointLight" as unknown as React.ComponentType<any>;
 const Color = "color" as unknown as React.ComponentType<any>;
 const MAP_PREVIEW_ROTATION_Y = THREE.MathUtils.degToRad(-35);
 const CARD_PREVIEW_ASPECT = "15 / 9";
+const LEGACY_SCENE_PART_KEYS = new Set([
+  "roof",
+  "wall",
+  "sign",
+  "frameLeft",
+  "frameRight",
+  "mat",
+  "bowlFood",
+  "bowlWater"
+]);
 
 const defaultCenter = { lat: 55.751244, lng: 37.618423 };
 const containerStyle = { width: "100%", height: "100%" };
@@ -1830,19 +1853,21 @@ export default function MapClient() {
     }
     const houseSlots = getHouseSlots(memorial?.houseId);
     const sceneJson = (memorial?.sceneJson ?? {}) as {
-      parts?: {
-        roof?: string;
-        wall?: string;
-        sign?: string;
-        frameLeft?: string;
-        frameRight?: string;
-        mat?: string;
-        bowlFood?: string;
-        bowlWater?: string;
-      };
+      parts?: SceneParts;
       colors?: Record<string, string>;
     };
     const soulSettings = readSoulSettings(memorial?.sceneJson as Record<string, unknown> | null);
+    const dynamicParts = Object.entries(sceneJson.parts ?? {})
+      .filter(
+        ([slot, partId]) =>
+          !LEGACY_SCENE_PART_KEYS.has(slot) &&
+          typeof partId === "string" &&
+          partId !== "none"
+      )
+      .map(([slot, partId]) => ({
+        slot,
+        url: resolvePartModel(getHouseSlotCategory(slot), partId)
+      }));
     const parts = [
       houseSlots.roof ? { slot: houseSlots.roof, url: resolveRoofModel(sceneJson.parts?.roof) } : null,
       houseSlots.wall ? { slot: houseSlots.wall, url: resolveWallModel(sceneJson.parts?.wall) } : null,
@@ -1859,7 +1884,8 @@ export default function MapClient() {
         : null,
       houseSlots.bowlWater
         ? { slot: houseSlots.bowlWater, url: resolveBowlWaterModel(sceneJson.parts?.bowlWater) }
-        : null
+        : null,
+      ...dynamicParts
     ].filter((part): part is { slot: string; url: string } => Boolean(part?.url));
 
     const now = new Date();
