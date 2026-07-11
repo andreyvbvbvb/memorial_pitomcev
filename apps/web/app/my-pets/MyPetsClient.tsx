@@ -448,7 +448,7 @@ export default function MyPetsClient() {
                       </div>
 
                       <p className="mb-3 line-clamp-1 text-xs font-bold italic text-[#8d6e63]/70">
-                        {pet.epitaph ?? "Без эпитафии"}
+                        {pet.epitaph ?? "Теплые слова пока не указаны"}
                       </p>
 
                       <div className="flex flex-wrap items-center gap-2">

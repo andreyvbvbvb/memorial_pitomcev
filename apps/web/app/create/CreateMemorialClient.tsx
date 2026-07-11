@@ -5636,10 +5636,12 @@ export default function CreateMemorialClient({
     <div className={overlayShellClass}>
       <h3 className={overlaySectionTitleClass}>
         <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
-        История и эпитафия
+        История и теплые слова
       </h3>
       <label className={isPortraitLayout ? "grid gap-1" : "grid gap-2"}>
-        <span className={overlayLabelClass}>Эпитафия (до 200 символов)</span>
+        <span className={overlayLabelClass}>
+          Теплые слова о питомце (до 200 символов)
+        </span>
         <input
           className={overlayInputClass}
           value={form.epitaph}
@@ -7309,7 +7311,7 @@ export default function CreateMemorialClient({
                       <p>Дата рождения: {form.birthDate || "—"}</p>
                       <p>Дата ухода: {form.deathDate || "—"}</p>
                       <p className="break-words">
-                        Эпитафия:{" "}
+                        Теплые слова о питомце:{" "}
                         <span className="break-all">{form.epitaph || "—"}</span>
                       </p>
                       <p className="break-words">

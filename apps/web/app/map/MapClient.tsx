@@ -2120,7 +2120,7 @@ export default function MapClient() {
         )}
         <div className={compact ? "mt-3 h-16 shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee] px-3 py-2" : "mt-3 h-[clamp(4rem,15dvh,7rem)] shrink-0 overflow-y-auto rounded-[20px] bg-[#f7f1ee] px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>
           <p className={compact ? "text-sm italic leading-snug text-[#6f6360]" : "text-[15px] italic leading-relaxed text-[#6f6360]"}>
-            &ldquo;{marker.epitaph ?? "Без эпитафии"}&rdquo;
+            &ldquo;{marker.epitaph ?? "Теплые слова пока не указаны"}&rdquo;
           </p>
         </div>
         <div className={stacked && compact ? "mt-2 min-h-[9rem] max-h-[18rem] shrink-0 overflow-y-auto rounded-[16px] bg-[#f7f1ee] px-3 py-2" : compact ? "mt-2 min-h-0 flex-1 overflow-y-auto rounded-[16px] bg-[#f7f1ee] px-3 py-2" : "mt-3 min-h-[3.5rem] flex-1 overflow-y-auto rounded-[20px] bg-[#f7f1ee] px-4 py-3 [@media(max-height:640px)]:mt-2 [@media(max-height:640px)]:min-h-[2.75rem] [@media(max-height:640px)]:rounded-[16px] [@media(max-height:640px)]:px-3 [@media(max-height:640px)]:py-2"}>

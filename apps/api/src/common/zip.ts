@@ -1,10 +1,8 @@
 type ZipFileInput = {
   path: string;
-  data: Uint8Array;
+  data: Uint8Array | Buffer;
   modifiedAt?: Date;
 };
-
-const textEncoder = new TextEncoder();
 
 const crcTable = (() => {
   const table = new Uint32Array(256);
@@ -27,34 +25,15 @@ const crc32 = (data: Uint8Array) => {
 };
 
 const uint16 = (value: number) => {
-  const bytes = new Uint8Array(2);
-  const view = new DataView(bytes.buffer);
-  view.setUint16(0, value, true);
+  const bytes = Buffer.alloc(2);
+  bytes.writeUInt16LE(value, 0);
   return bytes;
 };
 
 const uint32 = (value: number) => {
-  const bytes = new Uint8Array(4);
-  const view = new DataView(bytes.buffer);
-  view.setUint32(0, value >>> 0, true);
+  const bytes = Buffer.alloc(4);
+  bytes.writeUInt32LE(value >>> 0, 0);
   return bytes;
-};
-
-const concatBytes = (parts: Uint8Array[]) => {
-  const length = parts.reduce((sum, part) => sum + part.byteLength, 0);
-  const result = new Uint8Array(length);
-  let offset = 0;
-  for (const part of parts) {
-    result.set(part, offset);
-    offset += part.byteLength;
-  }
-  return result;
-};
-
-const toArrayBuffer = (part: Uint8Array) => {
-  const buffer = new ArrayBuffer(part.byteLength);
-  new Uint8Array(buffer).set(part);
-  return buffer;
 };
 
 const getDosDateTime = (date: Date) => {
@@ -70,19 +49,22 @@ const getDosDateTime = (date: Date) => {
   };
 };
 
-export const encodeUtf8 = (value: string) => textEncoder.encode(value);
+const toBuffer = (data: Uint8Array | Buffer) =>
+  Buffer.isBuffer(data)
+    ? data
+    : Buffer.from(data.buffer, data.byteOffset, data.byteLength);
 
-export const createZipBlob = (files: ZipFileInput[]) => {
-  const localParts: Uint8Array[] = [];
-  const centralParts: Uint8Array[] = [];
+export const createZipBuffer = (files: ZipFileInput[]) => {
+  const localParts: Buffer[] = [];
+  const centralParts: Buffer[] = [];
   let offset = 0;
 
   files.forEach((file) => {
-    const name = encodeUtf8(file.path.replace(/^\/+/, ""));
-    const data = file.data;
+    const name = Buffer.from(file.path.replace(/^\/+/, ""), "utf8");
+    const data = toBuffer(file.data);
     const checksum = crc32(data);
     const modified = getDosDateTime(file.modifiedAt ?? new Date());
-    const localHeader = concatBytes([
+    const localHeader = Buffer.concat([
       uint32(0x04034b50),
       uint16(20),
       uint16(0),
@@ -96,7 +78,7 @@ export const createZipBlob = (files: ZipFileInput[]) => {
       uint16(0),
       name,
     ]);
-    const centralHeader = concatBytes([
+    const centralHeader = Buffer.concat([
       uint32(0x02014b50),
       uint16(20),
       uint16(20),
@@ -122,8 +104,8 @@ export const createZipBlob = (files: ZipFileInput[]) => {
     offset += localHeader.byteLength + data.byteLength;
   });
 
-  const centralDirectory = concatBytes(centralParts);
-  const endOfCentralDirectory = concatBytes([
+  const centralDirectory = Buffer.concat(centralParts);
+  const endOfCentralDirectory = Buffer.concat([
     uint32(0x06054b50),
     uint16(0),
     uint16(0),
@@ -134,10 +116,5 @@ export const createZipBlob = (files: ZipFileInput[]) => {
     uint16(0),
   ]);
 
-  return new Blob(
-    [...localParts, centralDirectory, endOfCentralDirectory].map(toArrayBuffer),
-    {
-    type: "application/zip",
-    },
-  );
+  return Buffer.concat([...localParts, centralDirectory, endOfCentralDirectory]);
 };

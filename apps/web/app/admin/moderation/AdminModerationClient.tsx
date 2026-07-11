@@ -343,7 +343,7 @@ export default function AdminModerationClient() {
                         <div className="mt-3 grid gap-2 text-sm text-[#6f6360]">
                           <p>
                             <span className="font-black text-[#5d4037]">
-                              Эпитафия:
+                              Теплые слова о питомце:
                             </span>{" "}
                             {pet.epitaph || "Не указана"}
                           </p>

@@ -7,9 +7,11 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { extname } from "path";
+import { readFile } from "fs/promises";
+import { extname, join } from "path";
 import { canAccessAdmin, isOwnerUser } from "../auth/access-level";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
+import { createZipBuffer } from "../common/zip";
 import { MaintenanceService } from "../maintenance/maintenance.service";
 import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -702,6 +704,206 @@ export class PetsService {
       }
     }
     return pet;
+  }
+
+  private getPhotoExtension(url: string, contentType?: string | null) {
+    const normalized = contentType?.split(";")[0]?.trim().toLowerCase();
+    if (normalized === "image/jpeg" || normalized === "image/jpg") {
+      return "jpg";
+    }
+    if (normalized === "image/png") {
+      return "png";
+    }
+    if (normalized === "image/webp") {
+      return "webp";
+    }
+    if (normalized === "image/gif") {
+      return "gif";
+    }
+    const cleanPath = url.split("?")[0]?.split("#")[0] ?? "";
+    const match = cleanPath.match(/\.([a-z0-9]{2,5})$/i);
+    return match?.[1]?.toLowerCase() ?? "jpg";
+  }
+
+  private async readPhotoBuffer(url: string) {
+    if (url.startsWith("/uploads/")) {
+      const cleanPath = url.split("?")[0]?.split("#")[0] ?? "";
+      const key = decodeURIComponent(cleanPath.replace(/^\/uploads\//, ""));
+      if (!key || key.includes("..")) {
+        throw new BadRequestException("Некорректный путь к фото");
+      }
+      try {
+        return {
+          buffer: await readFile(join(process.cwd(), "uploads", key)),
+          contentType: null,
+        };
+      } catch {
+        throw new BadRequestException("Не удалось прочитать фото мемориала");
+      }
+    }
+
+    if (!/^https?:\/\//i.test(url)) {
+      throw new BadRequestException("Не удалось прочитать фото мемориала");
+    }
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new BadRequestException("Не удалось скачать фото мемориала");
+      }
+      return {
+        buffer: Buffer.from(await response.arrayBuffer()),
+        contentType: response.headers.get("content-type"),
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException("Не удалось скачать фото мемориала");
+    }
+  }
+
+  async exportMemorialArchive(id: string, viewer: AuthenticatedUser) {
+    const pet = await this.findOne(id, viewer);
+    if (pet.ownerId !== viewer.id) {
+      throw new ForbiddenException(
+        "Скачать данные может только владелец мемориала",
+      );
+    }
+
+    const photoFiles = await Promise.all(
+      pet.photos.map(
+        async (
+          photo: {
+            id: string;
+            url: string;
+            sortOrder: number;
+            createdAt: Date;
+          },
+          index: number,
+        ) => {
+          const { buffer, contentType } = await this.readPhotoBuffer(photo.url);
+          const extension = this.getPhotoExtension(photo.url, contentType);
+          return {
+            id: photo.id,
+            sortOrder: photo.sortOrder,
+            createdAt: photo.createdAt,
+            path: `photos/${String(index + 1).padStart(2, "0")}_${photo.id}.${extension}`,
+            buffer,
+          };
+        },
+      ),
+    );
+
+    const exportPayload = {
+      exportVersion: 1,
+      exportedAt: new Date().toISOString(),
+      owner: {
+        id: pet.owner?.id ?? pet.ownerId,
+        login: pet.owner?.login ?? null,
+        email: pet.owner?.email ?? null,
+      },
+      pet: {
+        id: pet.id,
+        name: pet.name,
+        species: pet.species ?? null,
+        birthDate: pet.birthDate ?? null,
+        deathDate: pet.deathDate ?? null,
+        epitaph: pet.epitaph ?? null,
+        story: pet.story ?? null,
+        isPublic: pet.isPublic,
+        createdAt: pet.createdAt,
+        updatedAt: pet.updatedAt ?? null,
+      },
+      moderation: {
+        status: pet.moderationStatus ?? null,
+        comment: pet.moderationComment ?? null,
+        reviewType: pet.moderationReviewType ?? null,
+        changedBlocks: pet.moderationChangedBlocks ?? [],
+        moderatedAt: pet.moderatedAt ?? null,
+      },
+      marker: pet.marker
+        ? {
+            id: pet.marker.id,
+            lat: pet.marker.lat,
+            lng: pet.marker.lng,
+            markerStyle: pet.marker.markerStyle ?? null,
+            previewPhotoId: pet.marker.previewPhotoId ?? null,
+            createdAt: pet.marker.createdAt ?? null,
+            updatedAt: pet.marker.updatedAt ?? null,
+          }
+        : null,
+      photos: photoFiles.map((photo) => ({
+        id: photo.id,
+        sortOrder: photo.sortOrder,
+        createdAt: photo.createdAt,
+      })),
+      memorial: pet.memorial
+        ? {
+            environmentId: pet.memorial.environmentId ?? null,
+            houseId: pet.memorial.houseId ?? null,
+            sceneJson: pet.memorial.sceneJson ?? null,
+            dustStage: pet.memorial.dustStage ?? null,
+            dustUpdatedAt: pet.memorial.dustUpdatedAt ?? null,
+            activeUntil: pet.memorial.activeUntil ?? null,
+            createdAt: pet.memorial.createdAt ?? null,
+          }
+        : null,
+      activeGifts: pet.gifts.map(
+        (gift: {
+          id: string;
+          slotName: string;
+          placedAt: Date;
+          expiresAt: Date | null;
+          size: string | null;
+          gift: {
+            id: string;
+            code: string | null;
+            name: string;
+            price: number;
+            modelUrl: string;
+          };
+          owner?: { id: string; login: string | null } | null;
+        }) => ({
+          id: gift.id,
+          slotName: gift.slotName,
+          placedAt: gift.placedAt,
+          expiresAt: gift.expiresAt,
+          size: gift.size ?? null,
+          gift: {
+            id: gift.gift.id,
+            code: gift.gift.code ?? null,
+            name: gift.gift.name,
+            price: gift.gift.price,
+            modelUrl: gift.gift.modelUrl,
+          },
+          owner: {
+            id: gift.owner?.id ?? null,
+            login: gift.owner?.login ?? null,
+          },
+        }),
+      ),
+    };
+    const safeName =
+      pet.name
+        .trim()
+        .replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-")
+        .replace(/\s+/g, "_")
+        .slice(0, 80) || "memorial";
+    return {
+      fileName: `${safeName}_${pet.id}_archive.zip`,
+      buffer: createZipBuffer([
+        {
+          path: "memorial.json",
+          data: Buffer.from(JSON.stringify(exportPayload, null, 2), "utf8"),
+        },
+        ...photoFiles.map((photo) => ({
+          path: photo.path,
+          data: photo.buffer,
+          modifiedAt: photo.createdAt,
+        })),
+      ]),
+    };
   }
 
   async cleanMemorial(

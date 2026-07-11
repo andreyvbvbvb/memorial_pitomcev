@@ -11,12 +11,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import { canAccessAdmin } from "../auth/access-level";
 import { AuthGuard } from "../auth/auth.guard";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
@@ -100,6 +101,24 @@ export class PetsController {
   async findOne(@Param("id") id: string, @Req() req: Request) {
     const user = await this.getOptionalUser(req);
     return this.petsService.findOne(id, user);
+  }
+
+  @Get(":id/export")
+  @UseGuards(AuthGuard)
+  async exportMemorial(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() response: Response
+  ) {
+    const archive = await this.petsService.exportMemorialArchive(id, user);
+    response.setHeader("Content-Type", "application/zip");
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="memorial_${id}_archive.zip"; filename*=UTF-8''${encodeURIComponent(
+        archive.fileName
+      )}`
+    );
+    response.send(archive.buffer);
   }
 
   @Post(":id/photos")
