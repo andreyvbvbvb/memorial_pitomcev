@@ -317,6 +317,9 @@ type Pet = {
   birthDate: string | null;
   deathDate: string | null;
   epitaph: string | null;
+  favoriteTreats?: string | null;
+  favoriteToys?: string | null;
+  favoriteSleepPlaces?: string | null;
   story: string | null;
   isPublic: boolean;
   moderationStatus?: "PENDING" | "APPROVED" | "NEEDS_CHANGES" | string;
@@ -324,6 +327,16 @@ type Pet = {
   moderatedAt?: string | null;
   moderatorId?: string | null;
   createdAt: string;
+  updatedAt?: string | null;
+  marker?: {
+    id: string;
+    lat: number;
+    lng: number;
+    markerStyle?: string | null;
+    previewPhotoId?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
   memorial?: {
     environmentId: string | null;
     houseId: string | null;
@@ -2190,6 +2203,115 @@ export default function PetClient({ id, mode = "view" }: Props) {
         ? pet?.moderationComment ||
           "Модератор попросил уточнить данные. Отредактируйте мемориал и сохраните изменения, чтобы отправить его на повторную проверку."
         : null;
+
+  const handleDownloadMemorialInfo = () => {
+    if (!pet || !isOwner) {
+      setError("Скачать данные может только владелец мемориала.");
+      return;
+    }
+    const toAbsoluteUrl = (url?: string | null) => {
+      if (!url) {
+        return null;
+      }
+      return url.startsWith("http") ? url : `${apiUrl}${url}`;
+    };
+    const exportPayload = {
+      exportVersion: 1,
+      exportedAt: new Date().toISOString(),
+      memorialPageUrl:
+        typeof window !== "undefined" ? window.location.href : `/pets/${pet.id}`,
+      owner: {
+        id: pet.owner?.id ?? pet.ownerId,
+        login: pet.owner?.login ?? null,
+        email: pet.owner?.email ?? null,
+      },
+      pet: {
+        id: pet.id,
+        name: pet.name,
+        species: pet.species ?? null,
+        birthDate: pet.birthDate ?? null,
+        deathDate: pet.deathDate ?? null,
+        epitaph: pet.epitaph ?? null,
+        story: pet.story ?? null,
+        favoriteTreats: pet.favoriteTreats ?? null,
+        favoriteToys: pet.favoriteToys ?? null,
+        favoriteSleepPlaces: pet.favoriteSleepPlaces ?? null,
+        isPublic: pet.isPublic,
+        createdAt: pet.createdAt,
+        updatedAt: pet.updatedAt ?? null,
+      },
+      moderation: {
+        status: pet.moderationStatus ?? null,
+        comment: pet.moderationComment ?? null,
+        moderatedAt: pet.moderatedAt ?? null,
+      },
+      marker: pet.marker
+        ? {
+            id: pet.marker.id,
+            lat: pet.marker.lat,
+            lng: pet.marker.lng,
+            markerStyle: pet.marker.markerStyle ?? null,
+            previewPhotoId: pet.marker.previewPhotoId ?? null,
+            createdAt: pet.marker.createdAt ?? null,
+            updatedAt: pet.marker.updatedAt ?? null,
+          }
+        : null,
+      photos: (pet.photos ?? []).map((photo, index) => ({
+        id: photo.id,
+        url: photo.url,
+        absoluteUrl: toAbsoluteUrl(photo.url),
+        sortOrder: index,
+      })),
+      memorial: pet.memorial
+        ? {
+            environmentId: pet.memorial.environmentId ?? null,
+            houseId: pet.memorial.houseId ?? null,
+            sceneJson: pet.memorial.sceneJson ?? null,
+            dustStage: pet.memorial.dustStage ?? null,
+            dustUpdatedAt: pet.memorial.dustUpdatedAt ?? null,
+            activeUntil: pet.memorial.activeUntil ?? null,
+            createdAt: pet.memorial.createdAt ?? null,
+          }
+        : null,
+      activeGifts: activeGifts.map((gift) => ({
+        id: gift.id,
+        slotName: gift.slotName,
+        placedAt: gift.placedAt,
+        expiresAt: gift.expiresAt,
+        size: gift.size ?? null,
+        gift: {
+          id: gift.gift.id,
+          code: gift.gift.code ?? null,
+          name: gift.gift.name,
+          price: gift.gift.price,
+          modelUrl: gift.gift.modelUrl,
+        },
+        owner: {
+          id: gift.owner?.id ?? null,
+          login: gift.owner?.login ?? null,
+        },
+      })),
+    };
+
+    const safeName =
+      pet.name
+        .trim()
+        .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+        .replace(/\s+/g, "_") || "memorial";
+    const blobUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(exportPayload, null, 2)], {
+        type: "application/json;charset=utf-8",
+      }),
+    );
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `${safeName}_${pet.id}_data.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    setLifecycleSuccess("Данные мемориала скачаны.");
+  };
 
   const handleDownloadGlb = async () => {
     if (!pet || !memorialObjectRef.current || !previewSceneReady) {
@@ -4131,6 +4253,13 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           className={secondaryActionClass}
                         >
                           Редактировать домик
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDownloadMemorialInfo}
+                          className={`${secondaryActionClass} transition-transform duration-150 active:scale-[0.96]`}
+                        >
+                          Скачать данные
                         </button>
                         {canExtendMemorial ? (
                           <button
