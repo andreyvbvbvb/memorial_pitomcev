@@ -57,6 +57,7 @@ import {
   resolveGiftIconUrl,
   resolveGiftScaleMultiplier,
 } from "../../../lib/gifts";
+import { createZipBlob, encodeUtf8 } from "../../../lib/download-zip";
 import {
   buildHouseVariantGroup,
   splitHouseVariantId,
@@ -317,9 +318,6 @@ type Pet = {
   birthDate: string | null;
   deathDate: string | null;
   epitaph: string | null;
-  favoriteTreats?: string | null;
-  favoriteToys?: string | null;
-  favoriteSleepPlaces?: string | null;
   story: string | null;
   isPublic: boolean;
   moderationStatus?: "PENDING" | "APPROVED" | "NEEDS_CHANGES" | string;
@@ -2204,7 +2202,7 @@ export default function PetClient({ id, mode = "view" }: Props) {
           "Модератор попросил уточнить данные. Отредактируйте мемориал и сохраните изменения, чтобы отправить его на повторную проверку."
         : null;
 
-  const handleDownloadMemorialInfo = () => {
+  const handleDownloadMemorialInfo = async () => {
     if (!pet || !isOwner) {
       setError("Скачать данные может только владелец мемориала.");
       return;
@@ -2215,102 +2213,179 @@ export default function PetClient({ id, mode = "view" }: Props) {
       }
       return url.startsWith("http") ? url : `${apiUrl}${url}`;
     };
-    const exportPayload = {
-      exportVersion: 1,
-      exportedAt: new Date().toISOString(),
-      memorialPageUrl:
-        typeof window !== "undefined" ? window.location.href : `/pets/${pet.id}`,
-      owner: {
-        id: pet.owner?.id ?? pet.ownerId,
-        login: pet.owner?.login ?? null,
-        email: pet.owner?.email ?? null,
-      },
-      pet: {
-        id: pet.id,
-        name: pet.name,
-        species: pet.species ?? null,
-        birthDate: pet.birthDate ?? null,
-        deathDate: pet.deathDate ?? null,
-        epitaph: pet.epitaph ?? null,
-        story: pet.story ?? null,
-        favoriteTreats: pet.favoriteTreats ?? null,
-        favoriteToys: pet.favoriteToys ?? null,
-        favoriteSleepPlaces: pet.favoriteSleepPlaces ?? null,
-        isPublic: pet.isPublic,
-        createdAt: pet.createdAt,
-        updatedAt: pet.updatedAt ?? null,
-      },
-      moderation: {
-        status: pet.moderationStatus ?? null,
-        comment: pet.moderationComment ?? null,
-        moderatedAt: pet.moderatedAt ?? null,
-      },
-      marker: pet.marker
-        ? {
-            id: pet.marker.id,
-            lat: pet.marker.lat,
-            lng: pet.marker.lng,
-            markerStyle: pet.marker.markerStyle ?? null,
-            previewPhotoId: pet.marker.previewPhotoId ?? null,
-            createdAt: pet.marker.createdAt ?? null,
-            updatedAt: pet.marker.updatedAt ?? null,
-          }
-        : null,
-      photos: (pet.photos ?? []).map((photo, index) => ({
-        id: photo.id,
-        url: photo.url,
-        absoluteUrl: toAbsoluteUrl(photo.url),
-        sortOrder: index,
-      })),
-      memorial: pet.memorial
-        ? {
-            environmentId: pet.memorial.environmentId ?? null,
-            houseId: pet.memorial.houseId ?? null,
-            sceneJson: pet.memorial.sceneJson ?? null,
-            dustStage: pet.memorial.dustStage ?? null,
-            dustUpdatedAt: pet.memorial.dustUpdatedAt ?? null,
-            activeUntil: pet.memorial.activeUntil ?? null,
-            createdAt: pet.memorial.createdAt ?? null,
-          }
-        : null,
-      activeGifts: activeGifts.map((gift) => ({
-        id: gift.id,
-        slotName: gift.slotName,
-        placedAt: gift.placedAt,
-        expiresAt: gift.expiresAt,
-        size: gift.size ?? null,
-        gift: {
-          id: gift.gift.id,
-          code: gift.gift.code ?? null,
-          name: gift.gift.name,
-          price: gift.gift.price,
-          modelUrl: gift.gift.modelUrl,
-        },
-        owner: {
-          id: gift.owner?.id ?? null,
-          login: gift.owner?.login ?? null,
-        },
-      })),
+    const extensionFromType = (contentType?: string | null) => {
+      const normalized = contentType?.split(";")[0]?.trim().toLowerCase();
+      if (normalized === "image/jpeg" || normalized === "image/jpg") {
+        return "jpg";
+      }
+      if (normalized === "image/png") {
+        return "png";
+      }
+      if (normalized === "image/webp") {
+        return "webp";
+      }
+      if (normalized === "image/gif") {
+        return "gif";
+      }
+      return null;
     };
-
-    const safeName =
-      pet.name
+    const extensionFromUrl = (url?: string | null) => {
+      if (!url) {
+        return null;
+      }
+      const cleanPath = url.split("?")[0]?.split("#")[0] ?? "";
+      const match = cleanPath.match(/\.([a-z0-9]{2,5})$/i);
+      return match?.[1]?.toLowerCase() ?? null;
+    };
+    const sanitizeFilePart = (value: string) =>
+      value
         .trim()
-        .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
-        .replace(/\s+/g, "_") || "memorial";
-    const blobUrl = URL.createObjectURL(
-      new Blob([JSON.stringify(exportPayload, null, 2)], {
-        type: "application/json;charset=utf-8",
-      }),
-    );
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = `${safeName}_${pet.id}_data.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-    setLifecycleSuccess("Данные мемориала скачаны.");
+        .replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-")
+        .replace(/\s+/g, "_")
+        .slice(0, 80);
+
+    setError(null);
+    try {
+      const photoFiles: {
+        id: string;
+        fileName: string;
+        sortOrder: number;
+        data: Uint8Array;
+      }[] = [];
+
+      for (const [index, photo] of (pet.photos ?? []).entries()) {
+        const absoluteUrl = toAbsoluteUrl(photo.url);
+        if (!absoluteUrl) {
+          continue;
+        }
+        const shouldIncludeCredentials =
+          !photo.url.startsWith("http") ||
+          Boolean(apiUrl && absoluteUrl.startsWith(apiUrl));
+        const response = await fetch(absoluteUrl, {
+          credentials: shouldIncludeCredentials ? "include" : "omit",
+        });
+        if (!response.ok) {
+          throw new Error(`Не удалось скачать фото ${index + 1}`);
+        }
+        const contentType = response.headers.get("content-type");
+        const extension =
+          extensionFromType(contentType) ?? extensionFromUrl(photo.url) ?? "jpg";
+        const fileName = `${String(index + 1).padStart(2, "0")}_${sanitizeFilePart(photo.id)}.${extension}`;
+        photoFiles.push({
+          id: photo.id,
+          fileName,
+          sortOrder: index,
+          data: new Uint8Array(await response.arrayBuffer()),
+        });
+      }
+
+      const exportPayload = {
+        exportVersion: 1,
+        exportedAt: new Date().toISOString(),
+        memorialPageUrl:
+          typeof window !== "undefined"
+            ? window.location.href
+            : `/pets/${pet.id}`,
+        owner: {
+          id: pet.owner?.id ?? pet.ownerId,
+          login: pet.owner?.login ?? null,
+          email: pet.owner?.email ?? null,
+        },
+        pet: {
+          id: pet.id,
+          name: pet.name,
+          species: pet.species ?? null,
+          birthDate: pet.birthDate ?? null,
+          deathDate: pet.deathDate ?? null,
+          epitaph: pet.epitaph ?? null,
+          story: pet.story ?? null,
+          isPublic: pet.isPublic,
+          createdAt: pet.createdAt,
+          updatedAt: pet.updatedAt ?? null,
+        },
+        moderation: {
+          status: pet.moderationStatus ?? null,
+          comment: pet.moderationComment ?? null,
+          moderatedAt: pet.moderatedAt ?? null,
+        },
+        marker: pet.marker
+          ? {
+              id: pet.marker.id,
+              lat: pet.marker.lat,
+              lng: pet.marker.lng,
+              markerStyle: pet.marker.markerStyle ?? null,
+              previewPhotoId: pet.marker.previewPhotoId ?? null,
+              createdAt: pet.marker.createdAt ?? null,
+              updatedAt: pet.marker.updatedAt ?? null,
+            }
+          : null,
+        photos: photoFiles.map((photo) => ({
+          id: photo.id,
+          fileName: `photos/${photo.fileName}`,
+          sortOrder: photo.sortOrder,
+        })),
+        memorial: pet.memorial
+          ? {
+              environmentId: pet.memorial.environmentId ?? null,
+              houseId: pet.memorial.houseId ?? null,
+              sceneJson: pet.memorial.sceneJson ?? null,
+              dustStage: pet.memorial.dustStage ?? null,
+              dustUpdatedAt: pet.memorial.dustUpdatedAt ?? null,
+              activeUntil: pet.memorial.activeUntil ?? null,
+              createdAt: pet.memorial.createdAt ?? null,
+            }
+          : null,
+        activeGifts: activeGifts.map((gift) => ({
+          id: gift.id,
+          slotName: gift.slotName,
+          placedAt: gift.placedAt,
+          expiresAt: gift.expiresAt,
+          size: gift.size ?? null,
+          gift: {
+            id: gift.gift.id,
+            code: gift.gift.code ?? null,
+            name: gift.gift.name,
+            price: gift.gift.price,
+            modelUrl: gift.gift.modelUrl,
+          },
+          owner: {
+            id: gift.owner?.id ?? null,
+            login: gift.owner?.login ?? null,
+          },
+        })),
+      };
+
+      const safeName =
+        pet.name
+          .trim()
+          .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+          .replace(/\s+/g, "_") || "memorial";
+      const archive = createZipBlob([
+        {
+          path: "memorial.json",
+          data: encodeUtf8(JSON.stringify(exportPayload, null, 2)),
+        },
+        ...photoFiles.map((photo) => ({
+          path: `photos/${photo.fileName}`,
+          data: photo.data,
+        })),
+      ]);
+      const blobUrl = URL.createObjectURL(archive);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${safeName}_${pet.id}_archive.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      setLifecycleSuccess("Архив с данными мемориала скачан.");
+    } catch (downloadError) {
+      setError(
+        downloadError instanceof Error
+          ? downloadError.message
+          : "Не удалось подготовить архив мемориала.",
+      );
+    }
   };
 
   const handleDownloadGlb = async () => {

@@ -38,21 +38,6 @@ export class UpdatePetDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(200)
-  favoriteTreats?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  favoriteToys?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  favoriteSleepPlaces?: string;
-
-  @IsOptional()
-  @IsString()
   @MaxLength(2000)
   story?: string;
 

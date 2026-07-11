@@ -1,0 +1,3 @@
+ALTER TABLE "Pet" DROP COLUMN IF EXISTS "favoriteTreats";
+ALTER TABLE "Pet" DROP COLUMN IF EXISTS "favoriteToys";
+ALTER TABLE "Pet" DROP COLUMN IF EXISTS "favoriteSleepPlaces";

@@ -121,13 +121,9 @@ export class PetsService {
       changedBlocks.add("basic");
     }
     if (
-      [
-        "epitaph",
-        "favoriteTreats",
-        "favoriteToys",
-        "favoriteSleepPlaces",
-        "story",
-      ].some((key) => typeof dto[key as keyof UpdatePetDto] !== "undefined")
+      ["epitaph", "story"].some(
+        (key) => typeof dto[key as keyof UpdatePetDto] !== "undefined",
+      )
     ) {
       changedBlocks.add("story");
     }
@@ -446,9 +442,6 @@ export class PetsService {
             birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
             deathDate: dto.deathDate ? new Date(dto.deathDate) : null,
             epitaph: dto.epitaph ?? null,
-            favoriteTreats: dto.favoriteTreats ?? null,
-            favoriteToys: dto.favoriteToys ?? null,
-            favoriteSleepPlaces: dto.favoriteSleepPlaces ?? null,
             story: dto.story ?? null,
             isPublic: dto.isPublic ?? false,
             moderationStatus: MODERATION_PENDING,
@@ -898,9 +891,6 @@ export class PetsService {
         birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
         deathDate: dto.deathDate ? new Date(dto.deathDate) : undefined,
         epitaph: dto.epitaph,
-        favoriteTreats: dto.favoriteTreats,
-        favoriteToys: dto.favoriteToys,
-        favoriteSleepPlaces: dto.favoriteSleepPlaces,
         story: dto.story,
         isPublic: dto.isPublic,
         ...(shouldResetModeration

@@ -31,21 +31,6 @@ export class CreatePetDto {
 
   @IsOptional()
   @IsString()
-  @Length(1, 200)
-  favoriteTreats?: string;
-
-  @IsOptional()
-  @IsString()
-  @Length(1, 200)
-  favoriteToys?: string;
-
-  @IsOptional()
-  @IsString()
-  @Length(1, 200)
-  favoriteSleepPlaces?: string;
-
-  @IsOptional()
-  @IsString()
   @Length(1, 2000)
   story?: string;
 
