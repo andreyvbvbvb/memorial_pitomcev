@@ -7,6 +7,7 @@ import { API_BASE } from "../../lib/config";
 import { canAccessAdmin, type AuthUser } from "../../lib/access";
 import AuthModal from "../../components/AuthModal";
 import ErrorToast from "../../components/ErrorToast";
+import { LanguageSwitcher, useLanguage } from "../../components/LanguageProvider";
 import {
   WALLET_TOP_UP_CURRENCIES,
   isWalletCurrencyDisabled,
@@ -137,6 +138,7 @@ function MenuItem({
 }
 
 export default function MenuClient() {
+  const { t } = useLanguage();
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -248,18 +250,23 @@ export default function MenuClient() {
     <main className="min-h-[100dvh] bg-[#f7f1ee] px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4 text-[#5d4037] sm:px-6 sm:pt-8">
       <section className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <div className="rounded-[28px] border-[3px] border-white bg-[#fffcf9] px-4 py-4 shadow-[0_20px_44px_-32px_rgba(93,64,55,0.55)] sm:px-6">
-          <Link
-            href="/"
-            className="inline-flex text-3xl font-black uppercase leading-none tracking-[0.02em] text-[#5d4037] transition hover:text-[#8d6e63]"
-          >
-            МЯУГАВ
-          </Link>
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              href="/"
+              className="inline-flex text-3xl font-black uppercase leading-none tracking-[0.02em] text-[#5d4037] transition hover:text-[#8d6e63]"
+            >
+              {t("brand")}
+            </Link>
+            <LanguageSwitcher compact />
+          </div>
         </div>
 
         {authChecked && user ? (
           <div className="rounded-[28px] border-[3px] border-white bg-[#fffcf9] p-3 shadow-[0_20px_44px_-32px_rgba(93,64,55,0.55)]">
             <div className="rounded-[22px] bg-[#f7f1ee] px-4 py-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">Аккаунт</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
+                {t("nav.account")}
+              </p>
               <p className="mt-1 truncate text-lg font-black text-[#5d4037]">{user.login ?? user.email}</p>
             </div>
             <button
@@ -267,41 +274,45 @@ export default function MenuClient() {
               className="mt-3 flex w-full items-center justify-between rounded-[22px] border-2 border-white bg-[#fcf8f5] px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] transition hover:bg-white"
               onClick={openTopUp}
             >
-              <span className="text-xs font-black uppercase tracking-[0.08em] text-[#8d6e63]">Баланс</span>
-              <span className="text-lg font-black text-[#5d4037]">{user.coinBalance ?? 0} монет</span>
+              <span className="text-xs font-black uppercase tracking-[0.08em] text-[#8d6e63]">
+                {t("nav.balance")}
+              </span>
+              <span className="text-lg font-black text-[#5d4037]">
+                {user.coinBalance ?? 0} {t("nav.coins")}
+              </span>
             </button>
           </div>
         ) : null}
 
         {!authChecked ? (
           <div className="rounded-[28px] border-[3px] border-white bg-[#fffcf9] p-5 text-sm font-bold text-[#8d6e63]">
-            Проверяем аккаунт...
+            {t("menu.loadingAccount")}
           </div>
         ) : (
           <div className="grid gap-2">
             {user ? (
               <>
-                <MenuItem href="/my-pets" icon="pets" label="Мои питомцы" />
-                <MenuItem href="/profile" icon="profile" label="Профиль" />
-                <MenuItem href="/map" icon="map" label="Карта" />
+                <MenuItem href="/my-pets" icon="pets" label={t("nav.myPets")} />
+                <MenuItem href="/profile" icon="profile" label={t("nav.profile")} />
+                <MenuItem href="/map" icon="map" label={t("nav.map")} />
               </>
             ) : (
               <>
-                <MenuItem icon="login" label="Войти" onClick={openAuth} />
-                <MenuItem href="/map" icon="map" label="Карта" />
+                <MenuItem icon="login" label={t("nav.login")} onClick={openAuth} />
+                <MenuItem href="/map" icon="map" label={t("nav.map")} />
               </>
             )}
-            <MenuItem href="/about" icon="about" label="О проекте" />
-            <MenuItem href="/charity" icon="charity" label="Благотворительность" />
-            <MenuItem href="/news" icon="news" label="Новости" badge={newsUnreadCount} />
+            <MenuItem href="/about" icon="about" label={t("nav.about")} />
+            <MenuItem href="/charity" icon="charity" label={t("nav.charity")} />
+            <MenuItem href="/news" icon="news" label={t("nav.news")} badge={newsUnreadCount} />
             {user && canAccessAdmin(user.accessLevel) ? (
               <>
-                <MenuItem href="/admin/sql" icon="admin" label="Админ-панель" />
-                <MenuItem href="/admin/video" icon="admin" label="Видеостудия" />
+                <MenuItem href="/admin/sql" icon="admin" label={t("menu.adminPanel")} />
+                <MenuItem href="/admin/video" icon="admin" label={t("menu.videoStudio")} />
                 <MenuItem
                   href="/admin/gift-slots"
                   icon="admin"
-                  label="Проверка подарков"
+                  label={t("menu.giftCheck")}
                 />
               </>
             ) : null}
@@ -314,7 +325,9 @@ export default function MenuClient() {
                 <span className="grid h-11 w-11 place-items-center rounded-[16px] bg-white">
                   <MenuIcon kind="logout" />
                 </span>
-                <span className="text-xs font-black uppercase tracking-[0.08em]">Выйти</span>
+                <span className="text-xs font-black uppercase tracking-[0.08em]">
+                  {t("nav.logout")}
+                </span>
               </button>
             ) : null}
           </div>
@@ -340,7 +353,7 @@ export default function MenuClient() {
         >
           <button
             type="button"
-            aria-label="Закрыть"
+            aria-label={t("nav.close")}
             className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
             onClick={closeTopUp}
           />
@@ -353,10 +366,10 @@ export default function MenuClient() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
-                    Баланс
+                    {t("payment.balanceTitle")}
                   </p>
                   <h3 className="mt-1 text-lg font-black text-[#5d4037]">
-                    Пополнение баланса
+                    {t("payment.balanceHeading")}
                   </h3>
                 </div>
                 <button
@@ -364,11 +377,11 @@ export default function MenuClient() {
                   className="rounded-[16px] border-[3px] border-white bg-[#f1e7e0] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white"
                   onClick={closeTopUp}
                 >
-                  Закрыть
+                  {t("nav.close")}
                 </button>
               </div>
               <p className="mt-3 rounded-[18px] bg-[#f7f1ee] px-4 py-3 text-sm font-semibold text-[#8d6e63]">
-                Баланс: {user?.coinBalance ?? 0} монет
+                {t("payment.balanceCurrent", { count: user?.coinBalance ?? 0 })}
               </p>
               <div className="mt-4 flex gap-2 rounded-[20px] bg-[#f1e7e0] p-1.5">
                 {WALLET_TOP_UP_CURRENCIES.map((currency) => {
@@ -398,7 +411,7 @@ export default function MenuClient() {
                       <span>{currency}</span>
                       {isDisabled ? (
                         <span className="mt-0.5 text-[8px] font-black normal-case tracking-normal">
-                          В разработке
+                          {t("nav.usdInProgress")}
                         </span>
                       ) : null}
                     </button>
@@ -420,7 +433,9 @@ export default function MenuClient() {
                           : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                       }`}
                     >
-                      <span className="font-black tabular-nums">{option.coins} монет</span>
+                      <span className="font-black tabular-nums">
+                        {option.coins} {t("nav.coins")}
+                      </span>
                       <span className="font-semibold tabular-nums text-[#8d6e63]">{price}</span>
                     </button>
                   );
@@ -444,7 +459,7 @@ export default function MenuClient() {
                   isWalletCurrencyDisabled(topUpCurrency, walletPaymentMode)
                 }
               >
-                Продолжить
+                {t("nav.continue")}
               </button>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { API_BASE } from "../lib/config";
 import { canAccessAdmin, type AuthUser } from "../lib/access";
 import AuthModal from "./AuthModal";
+import { LanguageSwitcher, useLanguage } from "./LanguageProvider";
 import usePortraitLayout from "./usePortraitLayout";
 import {
   WALLET_TOP_UP_CURRENCIES,
@@ -14,6 +15,7 @@ import {
 } from "./useWalletPaymentMode";
 
 export default function AppHeader() {
+  const { t } = useLanguage();
   const isPortraitLayout = usePortraitLayout();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -214,7 +216,7 @@ export default function AppHeader() {
               ? 10000
               : user.maxMemorials ?? 5;
         openCreateLimit(
-          `На данный момент можно создать только ${maxMemorials} мемориалов. Для увеличения лимита напишите запрос на primer@gmail.com.`
+          t("home.limitMessage", { count: maxMemorials })
         );
         return;
       }
@@ -382,15 +384,17 @@ export default function AppHeader() {
     <div className="mb-4 flex items-center justify-between rounded-[24px] border-[3px] border-white bg-[#fffcf9] px-4 py-3 shadow-[0_18px_38px_-26px_rgba(93,64,55,0.55)]">
       <div>
         <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
-          МяуГав
+          {t("brand")}
         </p>
-        <h2 className="mt-0.5 text-2xl font-black leading-none text-[#5d4037]">Меню</h2>
+        <h2 className="mt-0.5 text-2xl font-black leading-none text-[#5d4037]">
+          {t("nav.menu")}
+        </h2>
       </div>
       <button
         type="button"
         className="grid h-11 w-11 place-items-center rounded-[16px] border-[3px] border-white bg-[#f1e7e0] text-2xl font-black leading-none text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white"
         onClick={closeMenu}
-        aria-label="Закрыть меню"
+        aria-label={t("nav.closeMenu")}
       >
         ×
       </button>
@@ -409,9 +413,10 @@ export default function AppHeader() {
             href="/"
             className={brandClass}
           >
-            МЯУГАВ
+            {t("brand")}
           </Link>
           <div className={navWrapClass}>
+            <LanguageSwitcher compact />
             {user ? (
               <>
                 {!isPortraitLayout ? (
@@ -419,7 +424,7 @@ export default function AppHeader() {
                     <button
                       type="button"
                       className={createButtonClass}
-                      aria-label="Создать мемориал"
+                      aria-label={t("home.createMemorial")}
                       onClick={handleCreateClick}
                       disabled={createChecking}
                       onMouseEnter={() => triggerCreateSpin(false)}
@@ -435,23 +440,23 @@ export default function AppHeader() {
                       >
                         +
                       </span>
-                      <span>{createChecking ? "проверка" : "создать"}</span>
+                      <span>{createChecking ? t("nav.checking") : t("nav.create")}</span>
                     </button>
                     <Link
                       className={pillClass}
                       href="/my-pets"
-                      aria-label="Мои питомцы"
-                      title="Мои питомцы"
+                      aria-label={t("nav.myPets")}
+                      title={t("nav.myPets")}
                     >
-                      Мои питомцы
+                      {t("nav.myPets")}
                     </Link>
                     <Link
                       className={pillClass}
                       href="/map"
-                      aria-label="Карта"
-                      title="Карта"
+                      aria-label={t("nav.map")}
+                      title={t("nav.map")}
                     >
-                      Карта
+                      {t("nav.map")}
                     </Link>
                   </>
                 ) : null}
@@ -459,8 +464,8 @@ export default function AppHeader() {
                   <button
                     type="button"
                     className={`${iconPillClass}`}
-                    aria-label="Открыть меню"
-                    title="Раскрыть меню"
+                    aria-label={t("nav.openMenu")}
+                    title={t("nav.openMenu")}
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
@@ -472,7 +477,7 @@ export default function AppHeader() {
                       />
                     </svg>
                     <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-                      Раскрыть меню
+                      {t("nav.openMenu")}
                     </span>
                     {renderNewsBadge()}
                   </button>
@@ -482,7 +487,9 @@ export default function AppHeader() {
                       <div className="p-6 pb-4">
                         <div className="mb-4 flex justify-between items-start">
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#adb5bd]">Аккаунт</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#adb5bd]">
+                              {t("nav.account")}
+                            </span>
                             <span className="text-sm font-black text-[#5d4037]">{user.login ?? user.email}</span>
                           </div>
                         </div>
@@ -495,7 +502,7 @@ export default function AppHeader() {
                           }}
                           onMouseEnter={() => triggerBalanceSpin(false)}
                           onMouseLeave={() => triggerBalanceSpin(true)}
-                          aria-label="Пополнить баланс"
+                          aria-label={t("nav.topUp")}
                         >
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm text-[#d3a27f]">
@@ -503,7 +510,9 @@ export default function AppHeader() {
                                 <path d="M6 7h12M6 12h12M6 17h12" />
                               </svg>
                             </div>
-                            <span className="text-xs font-black uppercase text-[#8d6e63]">Баланс:</span>
+                            <span className="text-xs font-black uppercase text-[#8d6e63]">
+                              {t("nav.balance")}:
+                            </span>
                           </div>
                           <span className="flex items-center gap-2">
                             <span className="text-lg font-black tabular-nums text-[#5d4037]">{user.coinBalance ?? 0}</span>
@@ -525,39 +534,49 @@ export default function AppHeader() {
                       <div className="px-2 pb-2 text-sm text-slate-700">
                         <Link className={menuItemClass} href="/profile">
                           <span className="text-[#d3a27f]">{renderMenuIcon("profile")}</span>
-                          <span className="text-xs font-black uppercase tracking-tight">Профиль</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.profile")}
+                          </span>
                         </Link>
                         <Link className={menuItemClass} href="/about">
                           <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
-                          <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.about")}
+                          </span>
                         </Link>
                         <Link className={menuItemClass} href="/charity">
                           <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
-                          <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.charity")}
+                          </span>
                         </Link>
                         <Link className={menuItemClass} href="/news">
                           <span className="relative inline-flex text-[#d3a27f]">
                             {renderMenuIcon("news")}
                             {renderNewsBadge()}
                           </span>
-                          <span className="text-xs font-black uppercase tracking-tight">Новости</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.news")}
+                          </span>
                         </Link>
                         {canAccessAdmin(user.accessLevel) ? (
                           <>
                             <Link className={menuItemClass} href="/admin/sql">
                               <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
-                              <span className="text-xs font-black uppercase tracking-tight">Админ</span>
+                              <span className="text-xs font-black uppercase tracking-tight">
+                                {t("nav.admin")}
+                              </span>
                             </Link>
                             <Link className={menuItemClass} href="/admin/video">
                               <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
                               <span className="text-xs font-black uppercase tracking-tight">
-                                Видео
+                                {t("nav.video")}
                               </span>
                             </Link>
                             <Link className={menuItemClass} href="/admin/gift-slots">
                               <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
                               <span className="text-xs font-black uppercase tracking-tight">
-                                Слоты подарков
+                                {t("nav.giftSlots")}
                               </span>
                             </Link>
                           </>
@@ -569,7 +588,9 @@ export default function AppHeader() {
                           onClick={handleLogout}
                         >
                           {renderMenuIcon("logout")}
-                          <span className="text-xs font-black uppercase tracking-tight">Выйти</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.logout")}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -584,15 +605,15 @@ export default function AppHeader() {
                     className={authButtonClass}
                     onClick={openAuth}
                   >
-                    Войти
+                    {t("nav.login")}
                   </button>
                 )}
                 <div className="relative" ref={menuRef}>
                   <button
                     type="button"
                     className={iconPillClass}
-                    aria-label="Открыть меню"
-                    title="Раскрыть меню"
+                    aria-label={t("nav.openMenu")}
+                    title={t("nav.openMenu")}
                     onClick={() => (menuOpen ? closeMenu() : openMenu())}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none">
@@ -604,7 +625,7 @@ export default function AppHeader() {
                       />
                     </svg>
                     <span className="pointer-events-none absolute left-1/2 top-[calc(100%+0.55rem)] z-[140] w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-white bg-[#fffcf9] px-3 py-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-[#5d4037] opacity-0 shadow-[0_14px_30px_-18px_rgba(93,64,55,0.5)] backdrop-blur transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-                      Раскрыть меню
+                      {t("nav.openMenu")}
                     </span>
                     {renderNewsBadge()}
                   </button>
@@ -622,27 +643,37 @@ export default function AppHeader() {
                             }}
                           >
                             <span className="text-[#d3a27f]">{renderMenuIcon("login")}</span>
-                            <span className="text-xs font-black uppercase tracking-tight">Войти</span>
+                            <span className="text-xs font-black uppercase tracking-tight">
+                              {t("nav.login")}
+                            </span>
                           </button>
                         )}
                         <Link className={menuItemClass} href="/map">
                           <span className="text-[#d3a27f]">{renderMenuIcon("map")}</span>
-                          <span className="text-xs font-black uppercase tracking-tight">Карта</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.map")}
+                          </span>
                         </Link>
                         <Link className={menuItemClass} href="/about">
                           <span className="text-[#d3a27f]">{renderMenuIcon("about")}</span>
-                          <span className="text-xs font-black uppercase tracking-tight">О проекте</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.about")}
+                          </span>
                         </Link>
                         <Link className={menuItemClass} href="/charity">
                           <span className="text-[#d3a27f]">{renderMenuIcon("charity")}</span>
-                          <span className="text-xs font-black uppercase tracking-tight">Благотворительность</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.charity")}
+                          </span>
                         </Link>
                         <Link className={menuItemClass} href="/news">
                           <span className="relative inline-flex text-[#d3a27f]">
                             {renderMenuIcon("news")}
                             {renderNewsBadge()}
                           </span>
-                          <span className="text-xs font-black uppercase tracking-tight">Новости</span>
+                          <span className="text-xs font-black uppercase tracking-tight">
+                            {t("nav.news")}
+                          </span>
                         </Link>
                       </div>
                     </div>
@@ -659,7 +690,7 @@ export default function AppHeader() {
         <div ref={menuRef}>
           <nav
             className="mobile-bottom-nav fixed inset-x-2 bottom-[calc(0.45rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-[31rem] items-end gap-1 rounded-[24px] border-2 border-white bg-[#fffcf9]/95 p-1 shadow-[0_18px_44px_-22px_rgba(93,64,55,0.55)] backdrop-blur-xl"
-            aria-label="Основная мобильная навигация"
+            aria-label={t("nav.mainMobileNav")}
           >
             {user ? (
               <>
@@ -670,29 +701,29 @@ export default function AppHeader() {
                   <span className={mobileBottomIconClass(pathname === "/my-pets")}>
                     {renderMenuIcon("pets")}
                   </span>
-                  <span>Питомцы</span>
+                  <span>{t("nav.pets")}</span>
                 </Link>
                 <Link href="/map" className={mobileBottomItemClass(pathname === "/map")}>
                   <span className={mobileBottomIconClass(pathname === "/map")}>
                     {renderMenuIcon("map")}
                   </span>
-                  <span>Карта</span>
+                  <span>{t("nav.map")}</span>
                 </Link>
                 <button
                   type="button"
                   className={mobileBottomCreateClass}
                   onClick={handleCreateClick}
                   disabled={createChecking}
-                  aria-label="Создать мемориал"
+                  aria-label={t("home.createMemorial")}
                 >
                   <span className="text-xl leading-none">+</span>
-                  <span>{createChecking ? "..." : "создать"}</span>
+                  <span>{createChecking ? "..." : t("nav.create")}</span>
                 </button>
                 <Link href="/profile" className={mobileBottomItemClass(pathname === "/profile")}>
                   <span className={mobileBottomIconClass(pathname === "/profile")}>
                     {renderMenuIcon("profile")}
                   </span>
-                  <span>Профиль</span>
+                  <span>{t("nav.profile")}</span>
                 </Link>
               </>
             ) : (
@@ -701,31 +732,31 @@ export default function AppHeader() {
                   <span className={mobileBottomIconClass(pathname === "/map")}>
                     {renderMenuIcon("map")}
                   </span>
-                  <span>Карта</span>
+                  <span>{t("nav.map")}</span>
                 </Link>
                 <button
                   type="button"
                   className={mobileBottomItemClass(authOpen || pathname === "/auth")}
                   onClick={openAuth}
-                  aria-label="Войти"
+                  aria-label={t("nav.login")}
                 >
                   <span className={mobileBottomIconClass(authOpen || pathname === "/auth")}>
                     {renderMenuIcon("login")}
                   </span>
-                  <span>Войти</span>
+                  <span>{t("nav.login")}</span>
                 </button>
               </>
             )}
             <Link
               href="/menu"
               className={mobileBottomItemClass(pathname === "/menu")}
-              aria-label="Открыть меню"
+              aria-label={t("nav.openMenu")}
             >
               <span className={`relative inline-flex ${mobileBottomIconClass(pathname === "/menu")}`}>
                 {menuButtonIcon}
                 {renderNewsBadge()}
               </span>
-              <span>Меню</span>
+              <span>{t("nav.menu")}</span>
             </Link>
           </nav>
         </div>
@@ -750,7 +781,7 @@ export default function AppHeader() {
         >
           <button
             type="button"
-            aria-label="Закрыть"
+            aria-label={t("nav.close")}
             className="absolute inset-0 bg-[#111827]/30 backdrop-blur-md"
             onClick={closeTopUp}
           />
@@ -763,10 +794,10 @@ export default function AppHeader() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
-                    Баланс
+                    {t("payment.balanceTitle")}
                   </p>
                   <h3 className="mt-1 text-lg font-black text-[#5d4037]">
-                    Пополнение баланса
+                    {t("payment.balanceHeading")}
                   </h3>
                 </div>
                 <button
@@ -774,11 +805,11 @@ export default function AppHeader() {
                   className="rounded-[16px] border-[3px] border-white bg-[#f1e7e0] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63] shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55)] transition hover:bg-white"
                   onClick={closeTopUp}
                 >
-                  Закрыть
+                  {t("nav.close")}
                 </button>
               </div>
               <p className="mt-3 rounded-[18px] bg-[#f7f1ee] px-4 py-3 text-sm font-semibold text-[#8d6e63]">
-                Баланс: {user?.coinBalance ?? 0} монет
+                {t("payment.balanceCurrent", { count: user?.coinBalance ?? 0 })}
               </p>
               <div className="mt-4 flex gap-2 rounded-[20px] bg-[#f1e7e0] p-1.5">
                 {WALLET_TOP_UP_CURRENCIES.map((currency) => {
@@ -808,7 +839,7 @@ export default function AppHeader() {
                       <span>{currency}</span>
                       {isDisabled ? (
                         <span className="mt-0.5 text-[8px] font-black normal-case tracking-normal">
-                          В разработке
+                          {t("nav.usdInProgress")}
                         </span>
                       ) : null}
                     </button>
@@ -830,7 +861,9 @@ export default function AppHeader() {
                           : "border-white bg-white text-[#6f6360] hover:border-[#d3a27f]/40"
                       }`}
                     >
-                      <span className="font-black tabular-nums">{option.coins} монет</span>
+                      <span className="font-black tabular-nums">
+                        {option.coins} {t("nav.coins")}
+                      </span>
                       <span className="font-semibold tabular-nums text-[#8d6e63]">{price}</span>
                     </button>
                   );
@@ -854,7 +887,7 @@ export default function AppHeader() {
                   isWalletCurrencyDisabled(topUpCurrency, walletPaymentMode)
                 }
               >
-                Продолжить
+                {t("nav.continue")}
               </button>
             </div>
           </div>
@@ -868,7 +901,7 @@ export default function AppHeader() {
         >
           <button
             type="button"
-            aria-label="Закрыть"
+            aria-label={t("nav.close")}
             className="absolute inset-0 bg-black/35 backdrop-blur-sm"
             onClick={closeCreateLimit}
           />
@@ -877,7 +910,9 @@ export default function AppHeader() {
               createLimitVisible ? "translate-y-0 scale-100" : "translate-y-4 scale-95"
             }`}
           >
-            <h3 className="text-lg font-black text-[#5d4037]">Лимит мемориалов</h3>
+            <h3 className="text-lg font-black text-[#5d4037]">
+              {t("nav.memorialLimit")}
+            </h3>
             <p className="mt-3 text-sm font-semibold leading-relaxed text-[#7c6b63]">
               {createLimitMessage}
             </p>
@@ -886,7 +921,7 @@ export default function AppHeader() {
               className="mt-5 w-full rounded-xl bg-[#111827] px-5 py-3 text-sm font-black text-white shadow-[0_4px_0_0_#000] transition active:translate-y-[3px] active:shadow-none"
               onClick={closeCreateLimit}
             >
-              Понятно
+              {t("nav.ok")}
             </button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { API_BASE } from "../lib/config";
 import type { AuthUser } from "../lib/access";
 import AuthModal from "./AuthModal";
 import ErrorToast from "./ErrorToast";
+import { useLanguage } from "./LanguageProvider";
 
 type HomeCreateButtonProps = {
   children: ReactNode;
@@ -13,6 +14,7 @@ type HomeCreateButtonProps = {
 };
 
 export default function HomeCreateButton({ children, className }: HomeCreateButtonProps) {
+  const { t } = useLanguage();
   const [authOpen, setAuthOpen] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -55,9 +57,7 @@ export default function HomeCreateButton({ children, className }: HomeCreateButt
         if (limit.canCreate === false) {
           const maxMemorials =
             typeof limit.maxMemorials === "number" ? limit.maxMemorials : user.maxMemorials ?? 5;
-          setError(
-            `На данный момент можно создать только ${maxMemorials} мемориалов. Для увеличения лимита напишите запрос на primer@gmail.com.`
-          );
+          setError(t("home.limitMessage", { count: maxMemorials }));
           return;
         }
       }
@@ -72,13 +72,13 @@ export default function HomeCreateButton({ children, className }: HomeCreateButt
   return (
     <>
       <button type="button" className={className} onClick={handleClick} disabled={checking}>
-        {checking ? "Проверка..." : children}
+        {checking ? t("home.checking") : children}
       </button>
       <AuthModal
         open={authOpen}
         visible={authVisible}
-        title="Создание мемориала"
-        helperText="Войдите или зарегистрируйтесь, чтобы сразу сохранить мемориал в аккаунте."
+        title={t("home.createAuthTitle")}
+        helperText={t("home.createAuthHelper")}
         showGuestCreate
         successRedirect="/create"
         onClose={closeAuth}

@@ -12,6 +12,7 @@ import { extname, join } from "path";
 import { canAccessAdmin, isOwnerUser } from "../auth/access-level";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
 import { createZipBuffer } from "../common/zip";
+import { MailService } from "../mail/mail.service";
 import { MaintenanceService } from "../maintenance/maintenance.service";
 import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -53,6 +54,7 @@ export class PetsService {
     @Inject(MaintenanceService)
     private readonly maintenance: MaintenanceService,
     @Inject(PricingService) private readonly pricing: PricingService,
+    @Inject(MailService) private readonly mailService: MailService,
   ) {}
 
   private async ensureOwner(ownerId: string) {
@@ -111,6 +113,41 @@ export class PetsService {
     hasModeratedChanges: boolean,
   ) {
     return !canAccessAdmin(viewer) && hasModeratedChanges;
+  }
+
+  private getFrontendUrl() {
+    return (process.env.FRONTEND_URL ?? "https://xn--80aeb9a9a9d.com").replace(
+      /\/$/,
+      "",
+    );
+  }
+
+  private async notifySupportAboutModeration(params: {
+    petId: string;
+    petName: string;
+    ownerEmail: string;
+    ownerLogin?: string | null;
+    reviewType: "INITIAL" | "REVISION";
+    changedBlocks?: string[];
+    isPublic: boolean;
+  }) {
+    try {
+      const frontendUrl = this.getFrontendUrl();
+      await this.mailService.sendMemorialSubmittedForModeration({
+        to: process.env.MODERATION_SUPPORT_EMAIL ?? "support@мяугав.com",
+        petName: params.petName,
+        petId: params.petId,
+        ownerEmail: params.ownerEmail,
+        ownerLogin: params.ownerLogin,
+        reviewType: params.reviewType,
+        changedBlocks: params.changedBlocks,
+        isPublic: params.isPublic,
+        memorialUrl: `${frontendUrl}/pets/${params.petId}`,
+        adminUrl: `${frontendUrl}/admin/moderation`,
+      });
+    } catch (error) {
+      console.warn("Support moderation email failed", error);
+    }
   }
 
   private getModerationChangedBlocks(dto: UpdatePetDto) {
@@ -478,6 +515,16 @@ export class PetsService {
         });
       },
     );
+
+    await this.notifySupportAboutModeration({
+      petId: pet.id,
+      petName: pet.name,
+      ownerEmail: owner.email,
+      ownerLogin: owner.login,
+      reviewType: MODERATION_REVIEW_INITIAL,
+      changedBlocks: [],
+      isPublic: pet.isPublic,
+    });
 
     return pet;
   }
@@ -1085,7 +1132,7 @@ export class PetsService {
       moderationChangedBlocks.length > 0,
     );
 
-    return this.prisma.pet.update({
+    const updated = await this.prisma.pet.update({
       where: { id },
       data: {
         name: dto.name,
@@ -1102,6 +1149,20 @@ export class PetsService {
         marker: markerUpdate,
       },
     });
+
+    if (shouldResetModeration) {
+      await this.notifySupportAboutModeration({
+        petId: updated.id,
+        petName: updated.name,
+        ownerEmail: pet.owner?.email ?? viewer.email,
+        ownerLogin: pet.owner?.login ?? null,
+        reviewType: MODERATION_REVIEW_REVISION,
+        changedBlocks: moderationChangedBlocks,
+        isPublic: updated.isPublic,
+      });
+    }
+
+    return updated;
   }
 
   async remove(id: string, viewer: AuthenticatedUser) {
@@ -1227,7 +1288,7 @@ export class PetsService {
       : "image/jpeg";
     const url = await this.s3.uploadPublic(key, file.buffer, contentType);
     const shouldResetModeration = this.shouldResetModeration(viewer, true);
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const photo = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const photo = await tx.petPhoto.create({
         data: {
           petId,
@@ -1243,6 +1304,18 @@ export class PetsService {
       }
       return photo;
     });
+    if (shouldResetModeration) {
+      await this.notifySupportAboutModeration({
+        petId: pet.id,
+        petName: pet.name,
+        ownerEmail: pet.owner?.email ?? viewer.email,
+        ownerLogin: pet.owner?.login ?? null,
+        reviewType: MODERATION_REVIEW_REVISION,
+        changedBlocks: ["photos"],
+        isPublic: pet.isPublic,
+      });
+    }
+    return photo;
   }
 
   async removePhoto(petId: string, photoId: string, viewer: AuthenticatedUser) {
@@ -1286,6 +1359,18 @@ export class PetsService {
         });
       }
     });
+
+    if (this.shouldResetModeration(viewer, true)) {
+      await this.notifySupportAboutModeration({
+        petId: pet.id,
+        petName: pet.name,
+        ownerEmail: pet.owner?.email ?? viewer.email,
+        ownerLogin: pet.owner?.login ?? null,
+        reviewType: MODERATION_REVIEW_REVISION,
+        changedBlocks: ["photos"],
+        isPublic: pet.isPublic,
+      });
+    }
 
     return { ok: true };
   }

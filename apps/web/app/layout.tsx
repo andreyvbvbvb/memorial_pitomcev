@@ -14,6 +14,7 @@ import {
   Source_Sans_3
 } from "next/font/google";
 import AppHeader from "../components/AppHeader";
+import { LanguageProvider } from "../components/LanguageProvider";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -95,8 +96,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${notoSans.className} ${notoSans.variable} ${inter.variable} ${manrope.variable} ${roboto.variable} ${nunitoSans.variable} ${rubik.variable} ${robotoCondensed.variable} ${ptSansNarrow.variable} ${sourceSans.variable} ${onest.variable} ${commissioner.variable}`}
       >
-        <AppHeader />
-        {children}
+        <LanguageProvider>
+          <AppHeader />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

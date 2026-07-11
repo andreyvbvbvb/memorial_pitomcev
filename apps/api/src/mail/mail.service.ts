@@ -191,6 +191,77 @@ export class MailService {
     });
   }
 
+  async sendMemorialSubmittedForModeration(params: {
+    to?: string;
+    petName: string;
+    petId: string;
+    ownerEmail: string;
+    ownerLogin?: string | null;
+    memorialUrl: string;
+    adminUrl: string;
+    reviewType: "INITIAL" | "REVISION" | string;
+    changedBlocks?: string[];
+    isPublic: boolean;
+  }) {
+    const transporter = this.getTransporter();
+    const from =
+      process.env.SMTP_FROM ??
+      process.env.SMTP_USER ??
+      "no-reply@memorial.local";
+    const to = params.to || "support@мяугав.com";
+    const reviewText =
+      params.reviewType === "REVISION"
+        ? "повторная проверка после правок"
+        : "первичная проверка после публикации";
+    const changedBlocks =
+      params.changedBlocks && params.changedBlocks.length > 0
+        ? params.changedBlocks.join(", ")
+        : "не указаны";
+    const ownerLabel = params.ownerLogin
+      ? `${params.ownerLogin} (${params.ownerEmail})`
+      : params.ownerEmail;
+    const visibilityText = params.isPublic ? "публичный" : "приватный";
+    const text = [
+      "Здравствуйте!",
+      "",
+      "В модерации появился мемориал.",
+      "",
+      `Мемориал: ${params.petName}`,
+      `ID: ${params.petId}`,
+      `Владелец: ${ownerLabel}`,
+      `Тип проверки: ${reviewText}`,
+      `Измененные блоки: ${changedBlocks}`,
+      `Видимость: ${visibilityText}`,
+      "",
+      `Открыть мемориал: ${params.memorialUrl}`,
+      `Открыть модерацию: ${params.adminUrl}`,
+    ].join("\n");
+
+    await transporter.sendMail({
+      from,
+      to,
+      subject: "Новый мемориал на модерации — МЯУГАВ",
+      text,
+      html: `
+        <div style="font-family: 'Noto Sans', Arial, sans-serif; color: #5d4037; line-height: 1.55;">
+          <h2 style="margin: 0 0 16px;">Мемориал на модерации</h2>
+          <p>В очереди модерации появился мемориал «${this.escapeHtml(params.petName)}».</p>
+          <div style="margin: 18px 0; padding: 14px 16px; border-radius: 16px; background: #f7f1ee; color: #6d4c41;">
+            <strong>ID:</strong> ${this.escapeHtml(params.petId)}<br />
+            <strong>Владелец:</strong> ${this.escapeHtml(ownerLabel)}<br />
+            <strong>Тип проверки:</strong> ${this.escapeHtml(reviewText)}<br />
+            <strong>Измененные блоки:</strong> ${this.escapeHtml(changedBlocks)}<br />
+            <strong>Видимость:</strong> ${this.escapeHtml(visibilityText)}
+          </div>
+          <p style="margin: 20px 0;">
+            <a href="${params.adminUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Открыть модерацию</a>
+          </p>
+          <p><a href="${params.memorialUrl}" style="color: #5d4037;">Открыть мемориал</a></p>
+        </div>
+      `,
+    });
+  }
+
   async sendMemorialCareReminder(
     email: string,
     petName: string,

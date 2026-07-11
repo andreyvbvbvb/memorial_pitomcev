@@ -1,46 +1,49 @@
+"use client";
+
 import Link from "next/link";
 import HomeCreateButton from "../components/HomeCreateButton";
 import HomeHero from "../components/HomeHero";
+import { useLanguage } from "../components/LanguageProvider";
 import SiteBanner from "../components/SiteBanner";
 
-const steps = [
-  {
-    title: "Анкета питомца",
-    text: "Имя, вид, даты, история и фотографии собираются в аккуратный профиль."
-  },
-  {
-    title: "Место на карте",
-    text: "Публичный мемориал можно разместить на общей карте памяти."
-  },
-  {
-    title: "3D-пространство",
-    text: "Домик, окружение, детали и цвета настраиваются в визуальном редакторе."
-  },
-  {
-    title: "Подарки",
-    text: "Близкие могут оставить свечу, цветы, игрушку или другой знак внимания."
-  }
-];
-
-const features = [
-  {
-    title: "Личный архив",
-    text: "Фотографии, теплые слова и история питомца хранятся в одном месте.",
-    image: "/markers/cat_1.png"
-  },
-  {
-    title: "Общая карта",
-    text: "Мемориалы можно искать по карте и открывать в 3D-режиме.",
-    image: "/markers/dog_1.png"
-  },
-  {
-    title: "Живые знаки памяти",
-    text: "Подарки отображаются в мемориале и помогают поддерживать страницу.",
-    image: "/gifts_icons/candle_1.png"
-  }
-];
-
 export default function HomePage() {
+  const { t } = useLanguage();
+  const steps = [
+    {
+      title: t("home.stepProfileTitle"),
+      text: t("home.stepProfileText"),
+    },
+    {
+      title: t("home.stepMapTitle"),
+      text: t("home.stepMapText"),
+    },
+    {
+      title: t("home.step3dTitle"),
+      text: t("home.step3dText"),
+    },
+    {
+      title: t("home.stepGiftsTitle"),
+      text: t("home.stepGiftsText"),
+    },
+  ];
+  const features = [
+    {
+      title: t("home.archiveTitle"),
+      text: t("home.archiveText"),
+      image: "/markers/cat_1.png",
+    },
+    {
+      title: t("home.sharedMapTitle"),
+      text: t("home.sharedMapText"),
+      image: "/markers/dog_1.png",
+    },
+    {
+      title: t("home.livingMemoryTitle"),
+      text: t("home.livingMemoryText"),
+      image: "/gifts_icons/candle_1.png",
+    },
+  ];
+
   return (
     <main className="relative overflow-hidden bg-[#fcf8f5] text-[#5d4037]">
       <SiteBanner variant="overlay" />
@@ -50,15 +53,13 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div className="grid gap-3">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#d3a27f]">
-              Как это работает
+              {t("home.howItWorks")}
             </p>
             <h2 className="max-w-md text-3xl font-black leading-tight text-[#5d4037] sm:text-4xl">
-              Мемориал создаётся как спокойный пошаговый конструктор
+              {t("home.builderTitle")}
             </h2>
             <p className="max-w-lg text-sm font-semibold leading-relaxed text-[#7b6b65]">
-              Сначала вы заполняете данные, затем выбираете место, собираете 3D-сцену и
-              публикуете страницу. В любой момент мемориал можно открыть, дополнить или
-              оставить приватным.
+              {t("home.builderText")}
             </p>
           </div>
 
@@ -70,7 +71,7 @@ export default function HomePage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                    Шаг {index + 1}
+                    {t("home.step")} {index + 1}
                   </span>
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#111827] text-sm font-black text-white shadow-[0_3px_0_0_#000]">
                     {index + 1}
@@ -91,17 +92,17 @@ export default function HomePage() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div className="grid gap-2">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-[#d3a27f]">
-                Возможности
+                {t("home.features")}
               </p>
               <h2 className="text-3xl font-black text-[#5d4037] sm:text-4xl">
-                Всё важное рядом
+                {t("home.everythingNearby")}
               </h2>
             </div>
             <Link
               href="/map"
               className="inline-flex w-full items-center justify-center rounded-[18px] border-[3px] border-white bg-white px-6 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-[#5d4037] shadow-[0_16px_34px_-24px_rgba(93,64,55,0.55)] transition hover:bg-[#fff7f2] sm:w-auto"
             >
-              Посмотреть карту
+              {t("home.viewMap")}
             </Link>
           </div>
 
@@ -140,21 +141,21 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div className="grid gap-3">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#3bceac]">
-              Начать
+              {t("home.start")}
             </p>
             <h2 className="max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">
-              Создайте первый мемориал и сохраните историю питомца
+              {t("home.startTitle")}
             </h2>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <HomeCreateButton className="inline-flex items-center justify-center rounded-[18px] bg-white px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#111827] shadow-[0_5px_0_0_#d9d9d9] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-y-[1px] hover:shadow-[0_6px_0_0_#d9d9d9] active:translate-y-[4px] active:scale-[0.96] active:shadow-none disabled:cursor-wait disabled:bg-white/85">
-              Создать мемориал
+              {t("home.createMemorial")}
             </HomeCreateButton>
             <Link
               href="/about"
               className="inline-flex items-center justify-center rounded-[18px] border-[2px] border-white/35 px-7 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-white transition-[transform,background-color,border-color] duration-150 ease-out hover:-translate-y-[1px] hover:bg-white/10 active:scale-[0.96]"
             >
-              О проекте
+              {t("home.aboutProject")}
             </Link>
           </div>
         </div>

@@ -9,6 +9,7 @@ import type { AuthUser } from "../lib/access";
 import AuthHelpHint from "./AuthHelpHint";
 import ErrorToast from "./ErrorToast";
 import ForgotPasswordRequest from "./ForgotPasswordRequest";
+import { useLanguage } from "./LanguageProvider";
 import {
   authCardClass,
   authCheckboxInputClass,
@@ -131,6 +132,7 @@ export default function AuthModal({
   showGuestCreate = false,
   onGuestCreate
 }: AuthModalProps) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<AuthMode>("login");
   const [identifier, setIdentifier] = useState("");
   const [login, setLogin] = useState("");
@@ -687,22 +689,22 @@ export default function AuthModal({
                 </form>
                 {showGuestCreate ? (
                   <div className="mt-2.5 rounded-[18px] border-2 border-white bg-[#f7f1ee] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:mt-3 sm:rounded-[20px] sm:border-[3px] sm:p-2.5">
-                    <div className="mb-2 flex items-center justify-center gap-2">
-                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63]">
-                        Продолжить без входа
-                      </p>
-                      <AuthHelpHint
-                        className="h-6 w-6 border-2 text-[10px]"
-                        placement="top"
-                        text="Можно собрать мемориал без входа. Сохранить и опубликовать его получится в конце после входа или регистрации."
-                      />
+	                    <div className="mb-2 flex items-center justify-center gap-2">
+	                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8d6e63]">
+	                        {t("auth.guestSection")}
+	                      </p>
+	                      <AuthHelpHint
+	                        className="h-6 w-6 border-2 text-[10px]"
+	                        placement="top"
+	                        text={t("auth.guestHint")}
+	                      />
                     </div>
                     <button
                       type="button"
                       className="inline-flex w-full items-center justify-center rounded-[16px] border-[3px] border-white bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-y-0.5 hover:bg-[#fffaf6]"
                       onClick={onGuestCreate}
                     >
-                      Создать без входа
+                      {t("home.createGuest")}
                     </button>
                   </div>
                 ) : null}
