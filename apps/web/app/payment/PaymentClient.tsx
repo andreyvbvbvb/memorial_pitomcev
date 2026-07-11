@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { API_BASE } from "../../lib/config";
+import {
+  isWalletCurrencyDisabled,
+  useWalletPaymentMode,
+} from "../../components/useWalletPaymentMode";
 
 type UserResponse = {
   id: string;
@@ -112,11 +116,13 @@ export default function PaymentClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const apiUrl = useMemo(() => API_BASE, []);
+  const walletPaymentMode = useWalletPaymentMode(apiUrl);
   const coins = Number(searchParams.get("coins") ?? "0");
   const currencyParam = (searchParams.get("currency") ?? "RUB").toUpperCase();
   const currency = isAllowedCurrency(currencyParam) ? currencyParam : "RUB";
   const validPlan = isAllowedCoins(coins);
   const amount = validPlan ? PAYMENT_PLANS[currency][coins] : null;
+  const currencyDisabled = isWalletCurrencyDisabled(currency, walletPaymentMode);
 
   const [user, setUser] = useState<UserResponse | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -189,6 +195,10 @@ export default function PaymentClient() {
 
   const startPayment = async () => {
     if (!validPlan || loading) {
+      return;
+    }
+    if (currencyDisabled) {
+      setError("Платежи в USD временно в разработке.");
       return;
     }
     if (!user) {
@@ -278,6 +288,36 @@ export default function PaymentClient() {
           onClick={() => router.back()}
         >
           Назад
+        </button>
+      </PaymentShell>
+    );
+  }
+
+  if (currency === "USD" && !walletPaymentMode.loaded) {
+    return (
+      <PaymentShell>
+        <div className="text-sm font-black uppercase tracking-[0.22em] text-[#8d6e63]">
+          Проверяем доступность валюты
+        </div>
+      </PaymentShell>
+    );
+  }
+
+  if (currencyDisabled) {
+    return (
+      <PaymentShell>
+        <h1 className="text-3xl font-black text-[#5d4037]">
+          USD в разработке
+        </h1>
+        <p className="mt-4 text-[#8d6e63]">
+          Оплата в долларах временно недоступна. Сейчас можно пополнить баланс
+          в рублях.
+        </p>
+        <button
+          className="mt-8 rounded-full bg-[#111827] px-8 py-4 text-sm font-black uppercase tracking-[0.22em] text-white"
+          onClick={() => router.replace(`/payment?coins=${coins}&currency=RUB`)}
+        >
+          Перейти на RUB
         </button>
       </PaymentShell>
     );

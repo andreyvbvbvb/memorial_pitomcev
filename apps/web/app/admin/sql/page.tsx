@@ -373,6 +373,10 @@ type MemorialPublicationMode = {
   freeLifetime: boolean;
 };
 
+type WalletPaymentMode = {
+  usdEnabled: boolean;
+};
+
 type GiftPrice = {
   id: string;
   code: string;
@@ -1080,12 +1084,15 @@ export default function AdminSqlPage() {
   >([]);
   const [memorialPublicationMode, setMemorialPublicationMode] =
     useState<MemorialPublicationMode>({ freeLifetime: true });
+  const [walletPaymentMode, setWalletPaymentMode] =
+    useState<WalletPaymentMode>({ usdEnabled: false });
   const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [pricingNotice, setPricingNotice] = useState<string | null>(null);
   const [savingPlanYears, setSavingPlanYears] = useState<number | null>(null);
   const [savingPublicationMode, setSavingPublicationMode] = useState(false);
+  const [savingWalletPaymentMode, setSavingWalletPaymentMode] = useState(false);
   const [savingGiftId, setSavingGiftId] = useState<string | null>(null);
   const [giftPriceFilter, setGiftPriceFilter] = useState("");
   const [modelMetadataItems, setModelMetadataItems] = useState<
@@ -1360,6 +1367,7 @@ export default function AdminSqlPage() {
         const data = (await response.json()) as {
           memorialPlanPrices?: MemorialPlanPrice[];
           memorialPublicationMode?: MemorialPublicationMode;
+          walletPaymentMode?: WalletPaymentMode;
           gifts?: GiftPrice[];
         };
         if (!isMounted) {
@@ -1370,6 +1378,9 @@ export default function AdminSqlPage() {
         );
         setMemorialPublicationMode({
           freeLifetime: data.memorialPublicationMode?.freeLifetime === true,
+        });
+        setWalletPaymentMode({
+          usdEnabled: data.walletPaymentMode?.usdEnabled === true,
         });
         setGiftPrices(Array.isArray(data.gifts) ? data.gifts : []);
       } catch (err) {
@@ -1924,6 +1935,48 @@ export default function AdminSqlPage() {
       }));
     } finally {
       setSavingPublicationMode(false);
+    }
+  };
+
+  const saveWalletPaymentMode = async (usdEnabled: boolean) => {
+    setSavingWalletPaymentMode(true);
+    setPricingError(null);
+    setPricingNotice(null);
+    try {
+      const response = await fetch(
+        `${apiUrl}/admin/pricing/wallet-payment-mode`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ usdEnabled }),
+        },
+      );
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || "Не удалось сохранить режим USD");
+      }
+      const data = (await response.json()) as {
+        walletPaymentMode?: WalletPaymentMode;
+      };
+      setWalletPaymentMode({
+        usdEnabled:
+          data.walletPaymentMode?.usdEnabled === true ? true : usdEnabled,
+      });
+      setPricingNotice(
+        usdEnabled
+          ? "USD-платежи включены"
+          : "USD-платежи выключены и помечены как режим в разработке",
+      );
+    } catch (err) {
+      setPricingError(
+        err instanceof Error ? err.message : "Ошибка сохранения режима USD",
+      );
+      setWalletPaymentMode((prev) => ({
+        usdEnabled: !prev.usdEnabled,
+      }));
+    } finally {
+      setSavingWalletPaymentMode(false);
     }
   };
 
@@ -3107,6 +3160,34 @@ export default function AdminSqlPage() {
                 {savingPublicationMode ? (
                   <span className="text-[11px] text-slate-400">
                     Сохраняем режим...
+                  </span>
+                ) : null}
+              </span>
+            </label>
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3">
+              <input
+                type="checkbox"
+                checked={walletPaymentMode.usdEnabled}
+                disabled={savingWalletPaymentMode}
+                onChange={(event) => {
+                  const usdEnabled = event.target.checked;
+                  setWalletPaymentMode({ usdEnabled });
+                  void saveWalletPaymentMode(usdEnabled);
+                }}
+                className="mt-1 h-4 w-4 accent-emerald-500"
+              />
+              <span className="grid gap-1 text-xs text-slate-600">
+                <span className="font-semibold text-slate-800">
+                  USD-платежи
+                </span>
+                <span>
+                  Если выключено, пользователи видят USD как неактивный вариант
+                  с пометкой «В разработке», а прямое создание USD-платежа
+                  блокируется на API.
+                </span>
+                {savingWalletPaymentMode ? (
+                  <span className="text-[11px] text-slate-400">
+                    Сохраняем режим USD...
                   </span>
                 ) : null}
               </span>

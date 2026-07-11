@@ -6,6 +6,11 @@ import { API_BASE } from "../../lib/config";
 import { resolveGiftIconUrl } from "../../lib/gifts";
 import ErrorToast from "../../components/ErrorToast";
 import {
+  WALLET_TOP_UP_CURRENCIES,
+  isWalletCurrencyDisabled,
+  useWalletPaymentMode,
+} from "../../components/useWalletPaymentMode";
+import {
   authBackdropGlowClass,
   authCardClass,
   authInnerShellClass,
@@ -107,6 +112,13 @@ export default function ProfileClient() {
 
   const apiUrl = useMemo(() => API_BASE, []);
   const router = useRouter();
+  const walletPaymentMode = useWalletPaymentMode(apiUrl);
+
+  useEffect(() => {
+    if (isWalletCurrencyDisabled(topUpCurrency, walletPaymentMode)) {
+      setTopUpCurrency("RUB");
+    }
+  }, [topUpCurrency, walletPaymentMode.usdEnabled]);
 
   useEffect(() => {
     const loadMe = async () => {
@@ -708,20 +720,36 @@ export default function ProfileClient() {
                 Баланс: {profile?.coinBalance ?? 0} монет
               </p>
               <div className="mt-4 flex gap-2 rounded-[20px] bg-[#f1e7e0] p-1.5">
-                {(["RUB", "USD"] as const).map((currency) => {
+                {WALLET_TOP_UP_CURRENCIES.map((currency) => {
                   const isActive = topUpCurrency === currency;
+                  const isDisabled = isWalletCurrencyDisabled(
+                    currency,
+                    walletPaymentMode,
+                  );
                   return (
                     <button
                       key={currency}
                       type="button"
-                      onClick={() => setTopUpCurrency(currency)}
-                      className={`flex-1 rounded-[15px] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition ${
-                        isActive
-                          ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
-                          : "text-[#8d6e63] hover:bg-white/70"
+                      onClick={() => {
+                        if (!isDisabled) {
+                          setTopUpCurrency(currency);
+                        }
+                      }}
+                      disabled={isDisabled}
+                      className={`flex min-h-[2.55rem] flex-1 flex-col items-center justify-center rounded-[15px] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition ${
+                        isDisabled
+                          ? "cursor-not-allowed bg-white/45 text-[#b0a29c]"
+                          : isActive
+                            ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
+                            : "text-[#8d6e63] hover:bg-white/70"
                       }`}
                     >
-                      {currency}
+                      <span>{currency}</span>
+                      {isDisabled ? (
+                        <span className="mt-0.5 text-[8px] font-black normal-case tracking-normal">
+                          В разработке
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -759,12 +787,18 @@ export default function ProfileClient() {
                   if (!topUpPlan) {
                     return;
                   }
+                  if (isWalletCurrencyDisabled(topUpCurrency, walletPaymentMode)) {
+                    return;
+                  }
                   router.push(
                     `/payment?coins=${topUpPlan}&currency=${topUpCurrency}`,
                   );
                   closeTopUp();
                 }}
-                disabled={!topUpPlan}
+                disabled={
+                  !topUpPlan ||
+                  isWalletCurrencyDisabled(topUpCurrency, walletPaymentMode)
+                }
               >
                 Продолжить
               </button>

@@ -18,6 +18,7 @@ import { canAccessAdmin } from "../auth/access-level";
 import { AuthGuard } from "../auth/auth.guard";
 import type { AuthenticatedUser } from "../auth/authenticated-user";
 import { CurrentUser } from "../auth/current-user.decorator";
+import { PricingService } from "../pricing/pricing.service";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CreatePaymentDto,
@@ -56,7 +57,10 @@ const TOP_UP_PRICE_MINOR: Record<
 
 @Controller("wallet")
 export class WalletController {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(PricingService) private readonly pricing: PricingService,
+  ) {}
 
   private async ensureOwner(ownerId: string) {
     const existing = await this.prisma.user.findUnique({
@@ -108,6 +112,10 @@ export class WalletController {
     @Body() dto: CreatePaymentDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
+    const paymentMode = await this.pricing.getWalletPaymentMode();
+    if (dto.currency === "USD" && !paymentMode.usdEnabled) {
+      throw new BadRequestException("Платежи в USD временно в разработке");
+    }
     const publicId = process.env.CLOUDPAYMENTS_PUBLIC_ID?.trim();
     if (!publicId) {
       throw new ServiceUnavailableException("CloudPayments пока не настроен");

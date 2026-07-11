@@ -14,4 +14,9 @@ export class PricingController {
   getMemorialPublicationMode() {
     return this.pricing.getMemorialPublicationMode();
   }
+
+  @Get("wallet-payment-mode")
+  getWalletPaymentMode() {
+    return this.pricing.getWalletPaymentMode();
+  }
 }

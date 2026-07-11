@@ -62,6 +62,7 @@ import {
   AdminUpdateGiftPriceDto,
   AdminUpdateMemorialPlanPriceDto,
   AdminUpdateMemorialPublicationModeDto,
+  AdminUpdateWalletPaymentModeDto,
 } from "./dto/admin-pricing.dto";
 import { DEFAULT_LOADING_TIPS } from "../content/loading-tips.constants";
 import {
@@ -1125,13 +1126,19 @@ export class AdminController {
   @Get("pricing")
   async getPricing(@Req() req: Request) {
     await this.ensureAdmin(req);
-    const [memorialPlanPrices, gifts, memorialPublicationMode] =
+    const [
+      memorialPlanPrices,
+      gifts,
+      memorialPublicationMode,
+      walletPaymentMode,
+    ] =
       await Promise.all([
         this.pricingService.listMemorialPlanPrices(),
         this.giftsService.listCatalog(),
         this.pricingService.getMemorialPublicationMode(),
+        this.pricingService.getWalletPaymentMode(),
       ]);
-    return { memorialPlanPrices, gifts, memorialPublicationMode };
+    return { memorialPlanPrices, gifts, memorialPublicationMode, walletPaymentMode };
   }
 
   @Patch("pricing/memorial-plan")
@@ -1158,6 +1165,18 @@ export class AdminController {
         dto.freeLifetime,
       );
     return { memorialPublicationMode };
+  }
+
+  @Patch("pricing/wallet-payment-mode")
+  async updateWalletPaymentMode(
+    @Req() req: Request,
+    @Body() dto: AdminUpdateWalletPaymentModeDto,
+  ) {
+    await this.ensureAdmin(req);
+    const walletPaymentMode = await this.pricingService.updateWalletPaymentMode(
+      dto.usdEnabled,
+    );
+    return { walletPaymentMode };
   }
 
   @Patch("pricing/gifts/:id")

@@ -15,10 +15,17 @@ type MemorialPlanPriceRow = { years: number; price: number };
 export type MemorialPublicationMode = {
   freeLifetime: boolean;
 };
+export type WalletPaymentMode = {
+  usdEnabled: boolean;
+};
 
 const MEMORIAL_PUBLICATION_MODE_KEY = "memorialPublicationMode";
+const WALLET_PAYMENT_MODE_KEY = "walletPaymentMode";
 const DEFAULT_MEMORIAL_PUBLICATION_MODE: MemorialPublicationMode = {
   freeLifetime: true,
+};
+const DEFAULT_WALLET_PAYMENT_MODE: WalletPaymentMode = {
+  usdEnabled: false,
 };
 
 const normalizeMemorialPublicationMode = (
@@ -31,6 +38,15 @@ const normalizeMemorialPublicationMode = (
     };
   }
   return DEFAULT_MEMORIAL_PUBLICATION_MODE;
+};
+
+const normalizeWalletPaymentMode = (value: unknown): WalletPaymentMode => {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return {
+      usdEnabled: (value as { usdEnabled?: unknown }).usdEnabled === true,
+    };
+  }
+  return DEFAULT_WALLET_PAYMENT_MODE;
 };
 
 @Injectable()
@@ -117,5 +133,25 @@ export class PricingService {
       },
     });
     return normalizeMemorialPublicationMode(row.value);
+  }
+
+  async getWalletPaymentMode() {
+    const row = await this.prisma.appSetting.findUnique({
+      where: { key: WALLET_PAYMENT_MODE_KEY },
+    });
+    return normalizeWalletPaymentMode(row?.value);
+  }
+
+  async updateWalletPaymentMode(usdEnabled: boolean) {
+    const mode: WalletPaymentMode = { usdEnabled };
+    const row = await this.prisma.appSetting.upsert({
+      where: { key: WALLET_PAYMENT_MODE_KEY },
+      update: { value: mode },
+      create: {
+        key: WALLET_PAYMENT_MODE_KEY,
+        value: mode,
+      },
+    });
+    return normalizeWalletPaymentMode(row.value);
   }
 }

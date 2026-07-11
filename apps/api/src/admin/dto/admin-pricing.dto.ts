@@ -45,3 +45,8 @@ export class AdminUpdateMemorialPublicationModeDto {
   @IsBoolean()
   freeLifetime!: boolean;
 }
+
+export class AdminUpdateWalletPaymentModeDto {
+  @IsBoolean()
+  usdEnabled!: boolean;
+}
