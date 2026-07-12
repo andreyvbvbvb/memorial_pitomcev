@@ -139,17 +139,17 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "nav.mainMobileNav": "Основная мобильная навигация",
     "nav.language": "Язык",
     "home.hero":
-      "Создавайте тёплые 3D-мемориалы, сохраняйте фотографии и истории, отмечайте любимцев на общей карте памяти.",
+      "Сохраните память о вашем любимом питомце",
     "home.createMemorial": "Создать мемориал",
     "home.openMap": "Открыть карту",
     "home.howItWorks": "Как это работает",
-    "home.builderTitle": "Мемориал создаётся как спокойный пошаговый конструктор",
+    "home.builderTitle": "Мемориал создается как пошаговый инструктор",
     "home.builderText":
-      "Сначала вы заполняете данные, затем выбираете место, собираете 3D-сцену и публикуете страницу. В любой момент мемориал можно открыть, дополнить или оставить приватным.",
+      "Можно будет написать истории связанные с вашим питомцем, разместить мемориал в его любимом месте, построить для него самый уютный мемориал и добавить на память фотографии. В любой момент вы сможете добавить новые данные или удалить их",
     "home.step": "Шаг",
     "home.stepProfileTitle": "Анкета питомца",
     "home.stepProfileText":
-      "Имя, вид, даты, история и фотографии собираются в аккуратный профиль.",
+      "Имя, его история и фотографии создают память, которую не хочется забыть",
     "home.stepMapTitle": "Место на карте",
     "home.stepMapText": "Публичный мемориал можно разместить на общей карте памяти.",
     "home.step3dTitle": "3D-пространство",
@@ -168,7 +168,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "home.sharedMapText": "Мемориалы можно искать по карте и открывать в 3D-режиме.",
     "home.livingMemoryTitle": "Живые знаки памяти",
     "home.livingMemoryText":
-      "Подарки отображаются в мемориале и помогают поддерживать страницу.",
+      "Вы можете украсить подарками как мемориалы ваших питомцев, так и других хозяев, им будет очень приятно",
     "home.start": "Начать",
     "home.startTitle": "Создайте первый мемориал и сохраните историю питомца",
     "home.aboutProject": "О проекте",
@@ -192,18 +192,19 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "payment.balanceCurrent": "Баланс: {count} монет",
     "payment.topUpAction": "Пополнить",
     "about.eyebrow": "О проекте",
-    "about.title": "МяуГав хранит память о питомцах в теплых 3D-мемориалах.",
+    "about.title":
+      "Я хотел бы, чтобы каждый хозяин смог создать место, где он сможет увидеться со своим маленьким питомцем",
     "about.text":
-      "Здесь можно создать страницу любимца, добавить фотографии и историю, отметить мемориал на карте памяти и вернуться к нему в любой момент.",
+      "Всем привет! Меня зовут Андрей. У меня был лабрадор Арчи, ему немного не хватило до 11 лет, очень тяжело заболел и не смогли с ним выкарабкаться. Уже прошло больше года с его ухода, но все равно иногда замечаю его шерсть в углах и на одежде, не говоря о родных потертостях на диване. Арчи был очень добрым и дружелюбным, идеальным лабрадором.\n\nИ знаете, раньше люди верили, что звезды на небе это души наших близких людей, любимых питомцев, которые теперь следят за нами оттуда. И я решил сделать что-то подобное, решил, что раз он там, на небе, то ему нужен свой домик, в котором он может находиться.\n\nМЯУГАВ делается уже почти год, благодаря которому я и другие хозяева смогут сделать для своих питомцев что-нибудь хорошее и запоминающиеся, чтобы было место, куда можно прийти и вспомнить разные истории о друге. Я также решил, что с помощью этого сайта я смогу финансово помочь приютам с хвостиками, которые, к сожалению, так и не нашли своих хозяев.\n\nУ меня к вам просьба, помогите сделать его лучше и распространить для тех, кому он может быть правда полезен. Я не очень хочу заниматься какой-либо специальной рекламой и заставлять людей что-то делать. Будет лучше, если этот сайт найдет именно тот человек и именно в то время, когда он будет ему необходим.",
     "about.contacts": "Контакты",
     "about.contactsText":
       "По вопросам аккаунта, восстановления доступа и работы сервиса можно написать на почту",
-    "about.documents": "Документы сервиса",
+    "about.documents": "Документы",
     "about.documentsText":
       "Юридические документы вынесены на отдельные страницы, чтобы страница о проекте оставалась короткой и понятной.",
     "about.politics": "Политика обработки персональных данных",
     "about.offer": "Публичная оферта",
-    "about.businessDetails": "Реквизиты ИП",
+    "about.businessDetails": "Реквизиты",
     "about.legalName": "Наименование",
     "about.ogrn": "ОГРН / ОГРНИП",
     "about.inn": "ИНН",
@@ -245,17 +246,17 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "nav.mainMobileNav": "Main mobile navigation",
     "nav.language": "Language",
     "home.hero":
-      "Create warm 3D memorials, keep photos and stories, and place beloved pets on a shared memory map.",
+      "Preserve the memory of your beloved pet",
     "home.createMemorial": "Create memorial",
     "home.openMap": "Open map",
     "home.howItWorks": "How it works",
-    "home.builderTitle": "A calm step-by-step builder for a personal memorial",
+    "home.builderTitle": "A memorial is created as a step-by-step guide",
     "home.builderText":
-      "Fill in the details, choose a place, assemble the 3D scene and publish the page. You can open, update or keep the memorial private at any time.",
+      "You will be able to write stories connected with your pet, place the memorial in their favorite spot, build the coziest memorial for them and add photos as keepsakes. At any time you can add new details or delete them.",
     "home.step": "Step",
     "home.stepProfileTitle": "Pet profile",
     "home.stepProfileText":
-      "Name, species, dates, story and photos are collected in a neat profile.",
+      "The name, story and photos create a memory you do not want to forget.",
     "home.stepMapTitle": "Place on the map",
     "home.stepMapText": "A public memorial can be placed on the shared memory map.",
     "home.step3dTitle": "3D space",
@@ -273,7 +274,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "home.sharedMapText": "Memorials can be found on the map and opened in 3D mode.",
     "home.livingMemoryTitle": "Living signs of memory",
     "home.livingMemoryText":
-      "Gifts appear inside the memorial and help support the page.",
+      "You can decorate memorials of your own pets and other owners' pets with gifts. It will mean a lot to them.",
     "home.start": "Start",
     "home.startTitle": "Create your first memorial and preserve your pet's story",
     "home.aboutProject": "About",
@@ -297,18 +298,19 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "payment.balanceCurrent": "Balance: {count} coins",
     "payment.topUpAction": "Top up",
     "about.eyebrow": "About",
-    "about.title": "MeowGav preserves pet memories in warm 3D memorials.",
+    "about.title":
+      "I wanted every owner to be able to create a place where they can meet their little pet again",
     "about.text":
-      "You can create a page for a beloved pet, add photos and a story, place the memorial on the memory map and return to it at any time.",
+      "Hello everyone! My name is Andrey. I had a labrador named Archie. He was just a little short of 11 years old, became very seriously ill, and we could not get through it together. More than a year has passed since he left, but I still sometimes notice his fur in corners and on clothes, not to mention the familiar worn places on the sofa. Archie was very kind and friendly, an ideal labrador.\n\nPeople used to believe that the stars in the sky are the souls of our loved ones and beloved pets, watching over us from there. I decided to make something similar: if he is there, in the sky, then he needs his own little house where he can stay.\n\nМЯУГАВ has been in the making for almost a year, so that I and other owners can do something good and memorable for our pets, a place where we can come back and remember stories about a friend. I also decided that through this site I could financially help shelters with pets who, unfortunately, never found their owners.\n\nI have a request: please help make it better and share it with those who may truly need it. I do not really want to do special advertising or force people to do anything. It would be better if this site finds exactly the right person, exactly when they need it.",
     "about.contacts": "Contacts",
     "about.contactsText":
       "For account questions, access recovery or service support, email us at",
-    "about.documents": "Service documents",
+    "about.documents": "Documents",
     "about.documentsText":
       "Legal documents are kept on separate pages so this project page stays short and clear.",
     "about.politics": "Personal data processing policy",
     "about.offer": "Public offer",
-    "about.businessDetails": "Sole proprietor details",
+    "about.businessDetails": "Details",
     "about.legalName": "Legal name",
     "about.ogrn": "OGRN / OGRNIP",
     "about.inn": "Tax ID",
