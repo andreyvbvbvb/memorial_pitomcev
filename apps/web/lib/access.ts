@@ -7,6 +7,7 @@ export type AuthUser = {
   coinBalance?: number;
   maxMemorials?: number | null;
   role?: "USER" | "ADMIN";
+  preferredLanguage?: "ru" | "en" | string | null;
   accessLevel?: AccessLevel;
   termsAccepted?: boolean;
   offerAccepted?: boolean;

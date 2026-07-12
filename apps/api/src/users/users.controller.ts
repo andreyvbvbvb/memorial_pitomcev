@@ -51,6 +51,7 @@ export class UsersController {
       id: profile.id,
       login: profile.login,
       email: profile.email,
+      preferredLanguage: profile.preferredLanguage,
       coinBalance: profile.coinBalance
     };
   }
@@ -105,6 +106,7 @@ export class UsersController {
       data: {
         login: login || undefined,
         email: email || undefined,
+        preferredLanguage: dto.preferredLanguage,
         passwordHash
       }
     });
@@ -112,6 +114,7 @@ export class UsersController {
       id: updated.id,
       login: updated.login,
       email: updated.email,
+      preferredLanguage: updated.preferredLanguage,
       coinBalance: updated.coinBalance
     };
   }

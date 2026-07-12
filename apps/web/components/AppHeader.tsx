@@ -400,6 +400,14 @@ export default function AppHeader() {
       </button>
     </div>
   ) : null;
+  const languageMenuBlock = (
+    <div className="mx-2 mb-2 rounded-[22px] border-2 border-white bg-[#fffcf9] p-3 shadow-[0_14px_34px_-28px_rgba(93,64,55,0.5)]">
+      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
+        {t("nav.language")}
+      </p>
+      <LanguageSwitcher />
+    </div>
+  );
 
   return (
     <>
@@ -416,7 +424,6 @@ export default function AppHeader() {
             {t("brand")}
           </Link>
           <div className={navWrapClass}>
-            <LanguageSwitcher compact />
             {user ? (
               <>
                 {!isPortraitLayout ? (
@@ -484,6 +491,7 @@ export default function AppHeader() {
                   {menuOpen ? (
                     <div className={menuPanelClass}>
                       {mobileMenuHeader}
+                      {languageMenuBlock}
                       <div className="p-6 pb-4">
                         <div className="mb-4 flex justify-between items-start">
                           <div className="flex flex-col">
@@ -579,6 +587,12 @@ export default function AppHeader() {
                                 {t("nav.giftSlots")}
                               </span>
                             </Link>
+                            <Link className={menuItemClass} href="/admin/tiktok">
+                              <span className="text-[#d3a27f]">{renderMenuIcon("admin")}</span>
+                              <span className="text-xs font-black uppercase tracking-tight">
+                                {t("nav.tiktok")}
+                              </span>
+                            </Link>
                           </>
                         ) : null}
                         <div className="mx-4 my-2 h-px bg-[#f8f9fa]" />
@@ -632,6 +646,7 @@ export default function AppHeader() {
                   {menuOpen ? (
                     <div className={menuPanelClass}>
                       {mobileMenuHeader}
+                      {languageMenuBlock}
                       <div className="p-2 text-sm text-[#5d4037]">
                         {pathname === "/auth" ? null : (
                           <button

@@ -1,4 +1,12 @@
-import { IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from "class-validator";
 
 export class UpdateUserDto {
   @IsOptional()
@@ -26,4 +34,8 @@ export class UpdateUserDto {
   @MinLength(6)
   @MaxLength(200)
   newPassword?: string;
+
+  @IsOptional()
+  @IsIn(["ru", "en"])
+  preferredLanguage?: "ru" | "en";
 }

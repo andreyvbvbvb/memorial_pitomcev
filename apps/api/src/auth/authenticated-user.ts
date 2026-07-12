@@ -6,6 +6,7 @@ export type AuthenticatedUser = {
   email: string;
   login: string | null;
   role: Role;
+  preferredLanguage: string;
   coinBalance: number;
   maxMemorials: number | null;
 };

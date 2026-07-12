@@ -22,5 +22,8 @@ export const config = {
     "/profile/:path*",
     "/admin/sql/:path*",
     "/admin/moderation/:path*",
+    "/admin/video/:path*",
+    "/admin/gift-slots/:path*",
+    "/admin/tiktok/:path*",
   ],
 };

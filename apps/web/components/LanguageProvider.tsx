@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { API_BASE } from "../lib/config";
 
 export type AppLanguage = "ru" | "en";
 
@@ -30,6 +31,7 @@ type TranslationKey =
   | "nav.admin"
   | "nav.video"
   | "nav.giftSlots"
+  | "nav.tiktok"
   | "nav.logout"
   | "nav.account"
   | "nav.balance"
@@ -80,6 +82,7 @@ type TranslationKey =
   | "menu.adminPanel"
   | "menu.videoStudio"
   | "menu.giftCheck"
+  | "menu.tiktokStudio"
   | "payment.balanceTitle"
   | "payment.balanceHeading"
   | "payment.balanceCurrent"
@@ -122,6 +125,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "nav.admin": "Админ",
     "nav.video": "Видео",
     "nav.giftSlots": "Слоты подарков",
+    "nav.tiktok": "TikTok",
     "nav.logout": "Выйти",
     "nav.account": "Аккаунт",
     "nav.balance": "Баланс",
@@ -182,6 +186,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "menu.adminPanel": "Админ-панель",
     "menu.videoStudio": "Видеостудия",
     "menu.giftCheck": "Проверка подарков",
+    "menu.tiktokStudio": "TikTok-студия",
     "payment.balanceTitle": "Баланс",
     "payment.balanceHeading": "Пополнение баланса",
     "payment.balanceCurrent": "Баланс: {count} монет",
@@ -209,7 +214,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "about.email": "Адрес электронной почты",
   },
   en: {
-    brand: "MEOWGAV",
+    brand: "МЯУГАВ",
     "nav.create": "create",
     "nav.checking": "checking",
     "nav.myPets": "My pets",
@@ -226,6 +231,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "nav.admin": "Admin",
     "nav.video": "Video",
     "nav.giftSlots": "Gift slots",
+    "nav.tiktok": "TikTok",
     "nav.logout": "Log out",
     "nav.account": "Account",
     "nav.balance": "Balance",
@@ -285,6 +291,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
     "menu.adminPanel": "Admin panel",
     "menu.videoStudio": "Video studio",
     "menu.giftCheck": "Gift check",
+    "menu.tiktokStudio": "TikTok studio",
     "payment.balanceTitle": "Balance",
     "payment.balanceHeading": "Top up balance",
     "payment.balanceCurrent": "Balance: {count} coins",
@@ -320,27 +327,81 @@ type LanguageContextValue = {
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+const LANGUAGE_STORAGE_KEY = "meowgav-language";
+
+const isAppLanguage = (value: unknown): value is AppLanguage =>
+  value === "ru" || value === "en";
 
 function resolveInitialLanguage(): AppLanguage {
   if (typeof window === "undefined") {
     return "ru";
   }
-  const saved = window.localStorage.getItem("meowgav-language");
-  return saved === "en" ? "en" : "ru";
+  const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return isAppLanguage(saved) ? saved : "ru";
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<AppLanguage>(resolveInitialLanguage);
+  const [accountUserId, setAccountUserId] = useState<string | null>(null);
+  const apiUrl = useMemo(() => API_BASE, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
-    window.localStorage.setItem("meowgav-language", language);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     window.dispatchEvent(new CustomEvent("meowgav-language-changed", { detail: language }));
   }, [language]);
 
+  const loadAccountLanguage = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/auth/me`, { credentials: "include" });
+      if (!response.ok) {
+        setAccountUserId(null);
+        return;
+      }
+      const data = (await response.json()) as {
+        id?: string;
+        preferredLanguage?: string | null;
+      };
+      setAccountUserId(data.id ?? null);
+      if (isAppLanguage(data.preferredLanguage)) {
+        setLanguageState(data.preferredLanguage);
+      }
+    } catch {
+      setAccountUserId(null);
+    }
+  }, [apiUrl]);
+
+  useEffect(() => {
+    void loadAccountLanguage();
+    window.addEventListener("memorial-auth-changed", loadAccountLanguage);
+    return () => {
+      window.removeEventListener("memorial-auth-changed", loadAccountLanguage);
+    };
+  }, [loadAccountLanguage]);
+
+  const persistAccountLanguage = useCallback(
+    async (nextLanguage: AppLanguage) => {
+      if (!accountUserId) {
+        return;
+      }
+      try {
+        await fetch(`${apiUrl}/users/${encodeURIComponent(accountUserId)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preferredLanguage: nextLanguage }),
+        });
+      } catch {
+        // The local change remains active; the next account load will reconcile it.
+      }
+    },
+    [accountUserId, apiUrl],
+  );
+
   const setLanguage = useCallback((nextLanguage: AppLanguage) => {
     setLanguageState(nextLanguage);
-  }, []);
+    void persistAccountLanguage(nextLanguage);
+  }, [persistAccountLanguage]);
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>) => {
@@ -375,7 +436,10 @@ export function useLanguage() {
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { language, setLanguage, t } = useLanguage();
-  const languages: AppLanguage[] = ["ru", "en"];
+  const languages: Array<{ id: AppLanguage; flag: string; label: string }> = [
+    { id: "ru", flag: "🇷🇺", label: "Русский" },
+    { id: "en", flag: "🇺🇸", label: "English" },
+  ];
 
   return (
     <div
@@ -385,20 +449,22 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
       aria-label={t("nav.language")}
     >
       {languages.map((item) => {
-        const isActive = language === item;
+        const isActive = language === item.id;
         return (
           <button
-            key={item}
+            key={item.id}
             type="button"
-            className={`grid min-h-8 min-w-8 place-items-center rounded-[10px] px-2 text-[10px] font-black uppercase tracking-[0.08em] transition-[transform,background-color,color,box-shadow] duration-150 ease-out active:scale-[0.96] ${
+            className={`grid min-h-10 min-w-11 place-items-center rounded-[10px] px-2 text-xl leading-none transition-[transform,background-color,color,box-shadow] duration-150 ease-out active:scale-[0.96] ${
               isActive
                 ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
                 : "text-[#8d6e63] hover:bg-white"
             }`}
-            onClick={() => setLanguage(item)}
+            onClick={() => setLanguage(item.id)}
             aria-pressed={isActive}
+            aria-label={item.label}
+            title={item.label}
           >
-            {item}
+            {item.flag}
           </button>
         );
       })}

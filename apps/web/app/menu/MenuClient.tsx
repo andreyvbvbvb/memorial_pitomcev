@@ -309,6 +309,7 @@ export default function MenuClient() {
               <>
                 <MenuItem href="/admin/sql" icon="admin" label={t("menu.adminPanel")} />
                 <MenuItem href="/admin/video" icon="admin" label={t("menu.videoStudio")} />
+                <MenuItem href="/admin/tiktok" icon="admin" label={t("menu.tiktokStudio")} />
                 <MenuItem
                   href="/admin/gift-slots"
                   icon="admin"
