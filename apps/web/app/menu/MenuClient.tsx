@@ -245,6 +245,11 @@ export default function MenuClient() {
       router.push("/");
     }
   };
+  const languageMenuBlock = (
+    <div className="mt-1 flex justify-center rounded-[18px] bg-[#fffcf9] px-2 py-2 shadow-[0_14px_34px_-28px_rgba(93,64,55,0.5)]">
+      <LanguageSwitcher compact />
+    </div>
+  );
 
   return (
     <main className="min-h-[100dvh] bg-[#f7f1ee] px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4 text-[#5d4037] sm:px-6 sm:pt-8">
@@ -257,7 +262,6 @@ export default function MenuClient() {
             >
               {t("brand")}
             </Link>
-            <LanguageSwitcher compact />
           </div>
         </div>
 
@@ -331,6 +335,7 @@ export default function MenuClient() {
                 </span>
               </button>
             ) : null}
+            {languageMenuBlock}
           </div>
         )}
       </section>

@@ -401,11 +401,8 @@ export default function AppHeader() {
     </div>
   ) : null;
   const languageMenuBlock = (
-    <div className="mx-2 mb-2 rounded-[22px] border-2 border-white bg-[#fffcf9] p-3 shadow-[0_14px_34px_-28px_rgba(93,64,55,0.5)]">
-      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
-        {t("nav.language")}
-      </p>
-      <LanguageSwitcher />
+    <div className="mt-2 flex justify-center rounded-[18px] bg-[#f7f1ee] px-2 py-2">
+      <LanguageSwitcher compact />
     </div>
   );
 
@@ -491,7 +488,6 @@ export default function AppHeader() {
                   {menuOpen ? (
                     <div className={menuPanelClass}>
                       {mobileMenuHeader}
-                      {languageMenuBlock}
                       <div className="p-6 pb-4">
                         <div className="mb-4 flex justify-between items-start">
                           <div className="flex flex-col">
@@ -606,6 +602,7 @@ export default function AppHeader() {
                             {t("nav.logout")}
                           </span>
                         </button>
+                        {languageMenuBlock}
                       </div>
                     </div>
                   ) : null}
@@ -646,7 +643,6 @@ export default function AppHeader() {
                   {menuOpen ? (
                     <div className={menuPanelClass}>
                       {mobileMenuHeader}
-                      {languageMenuBlock}
                       <div className="p-2 text-sm text-[#5d4037]">
                         {pathname === "/auth" ? null : (
                           <button
@@ -690,6 +686,7 @@ export default function AppHeader() {
                             {t("nav.news")}
                           </span>
                         </Link>
+                        {languageMenuBlock}
                       </div>
                     </div>
                   ) : null}

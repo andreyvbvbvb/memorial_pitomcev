@@ -443,8 +443,10 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
 
   return (
     <div
-      className={`inline-flex items-center rounded-[14px] border border-white/80 bg-[#f6efea] p-1 shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55),inset_0_1px_0_rgba(255,255,255,0.95)] ${
-        compact ? "gap-0.5" : "gap-1"
+      className={`inline-flex items-center ${
+        compact
+          ? "gap-1"
+          : "gap-1 rounded-[14px] border border-white/80 bg-[#f6efea] p-1 shadow-[0_10px_24px_-18px_rgba(93,64,55,0.55),inset_0_1px_0_rgba(255,255,255,0.95)]"
       }`}
       aria-label={t("nav.language")}
     >
@@ -454,7 +456,11 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
           <button
             key={item.id}
             type="button"
-            className={`grid min-h-10 min-w-11 place-items-center rounded-[10px] px-2 text-xl leading-none transition-[transform,background-color,color,box-shadow] duration-150 ease-out active:scale-[0.96] ${
+            className={`grid place-items-center leading-none transition-[transform,background-color,color,box-shadow] duration-150 ease-out active:scale-[0.96] ${
+              compact
+                ? "h-10 w-10 rounded-full px-0 text-base"
+                : "min-h-10 min-w-11 rounded-[10px] px-2 text-xl"
+            } ${
               isActive
                 ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
                 : "text-[#8d6e63] hover:bg-white"
