@@ -265,6 +265,10 @@ export default function AppHeader() {
     isPortraitLayout
       ? "group relative inline-flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-[9px] font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white"
       : "group relative inline-flex h-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] px-4 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
+  const activePillClass =
+    "!border-[#111827] !bg-[#111827] !text-white !shadow-[0_4px_0_0_#000]";
+  const navPillClass = (href: string) =>
+    `${pillClass} ${pathname === href ? activePillClass : ""}`;
   const iconPillClass =
     "group relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-white/80 bg-[#f6efea] text-base text-[#5d4037] shadow-[0_10px_24px_-14px_rgba(93,64,55,0.65),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur transition hover:-translate-y-[1px] hover:bg-[#d3a27f] hover:text-white";
   const createButtonClass =
@@ -447,7 +451,7 @@ export default function AppHeader() {
                       <span>{createChecking ? t("nav.checking") : t("nav.create")}</span>
                     </button>
                     <Link
-                      className={pillClass}
+                      className={navPillClass("/my-pets")}
                       href="/my-pets"
                       aria-label={t("nav.myPets")}
                       title={t("nav.myPets")}
@@ -455,7 +459,7 @@ export default function AppHeader() {
                       {t("nav.myPets")}
                     </Link>
                     <Link
-                      className={pillClass}
+                      className={navPillClass("/map")}
                       href="/map"
                       aria-label={t("nav.map")}
                       title={t("nav.map")}

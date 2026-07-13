@@ -592,7 +592,8 @@ export default function AuthClient() {
 	                    />
 	                  </div>
 	                  <p className="mt-2 text-xs font-semibold leading-relaxed text-[#8d6e63]">
-	                    Код отправлен на {email.trim() || "указанный email"}.
+	                    Код отправлен на {email.trim() || "указанный email"}. Если
+	                    письма нет во Входящих, проверьте папку Спам.
 	                  </p>
 	                </div>
 	                <button

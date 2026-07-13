@@ -1547,7 +1547,9 @@ export default function MapClient() {
   }, [filterSheetOpen, typeFilter, nameFilter]);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey
+    googleMapsApiKey: apiKey,
+    language: "ru",
+    region: "RU"
   });
 
   useEffect(() => {

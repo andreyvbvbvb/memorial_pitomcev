@@ -4308,6 +4308,16 @@ export default function PetClient({ id, mode = "view" }: Props) {
                           Закрыть
                         </button>
                       </div>
+                      <div className="shrink-0 rounded-[18px] border-2 border-white bg-[#fffcf9] px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-[#5d4037] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+                        Баланс:{" "}
+                        <span className="tabular-nums text-[#3bceac]">
+                          {currentUser
+                            ? walletLoading
+                              ? "загрузка..."
+                              : `${walletBalance ?? 0} монет`
+                            : "после входа"}
+                        </span>
+                      </div>
                       <div className={giftFlowClass}>
                         {!isPortraitLayout ? (
                           <div className="grid gap-2 text-sm font-semibold text-[#6f6360]">

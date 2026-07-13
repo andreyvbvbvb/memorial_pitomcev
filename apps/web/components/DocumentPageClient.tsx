@@ -96,9 +96,20 @@ export default function DocumentPageClient({
           href="/about"
           aria-label="Вернуться на страницу о проекте"
           title="О проекте"
-          className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-white bg-[#f7f1ee] text-2xl font-black leading-none text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-x-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-[#3bceac]/30"
+          className="mb-5 inline-grid h-11 w-11 place-items-center rounded-full border-[3px] border-white bg-[#f7f1ee] text-[#5d4037] shadow-[0_12px_26px_-18px_rgba(93,64,55,0.55)] transition hover:-translate-x-0.5 hover:bg-white focus:outline-none focus:ring-4 focus:ring-[#3bceac]/30"
         >
-          ←
+          <svg
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </Link>
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#d3a27f]">
           Документ
@@ -108,8 +119,8 @@ export default function DocumentPageClient({
         </h1>
         <div className="mt-6 inline-flex rounded-[20px] bg-[#f1e7e0] p-1.5">
           {[
-            ["current", "Актуальный текст"],
-            ["history", "История"]
+            ["current", "Текущий"],
+            ["history", "Пред. редакции"]
           ].map(([value, label]) => (
             <button
               key={value}

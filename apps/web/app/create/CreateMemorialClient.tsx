@@ -208,7 +208,7 @@ type FormState = {
   deathDate: string;
   epitaph: string;
   story: string;
-  isPublic: boolean;
+  isPublic: boolean | null;
   lat: string;
   lng: string;
   markerStyle: string;
@@ -244,7 +244,7 @@ type EditContentSnapshot = {
   deathDate: string;
   epitaph: string;
   story: string;
-  isPublic: boolean;
+  isPublic: boolean | null;
 };
 
 type SoulPathPointState = {
@@ -371,6 +371,7 @@ type Step3Tab = {
 type BuilderOverlayId =
   | "details"
   | "marker"
+  | "visibility"
   | "photos"
   | "story"
   | "base"
@@ -682,6 +683,21 @@ const BuilderOverlayIcon = ({ id }: { id: BuilderOverlayId }) => {
           <circle cx="12" cy="10" r="2.5" />
         </svg>
       );
+    case "visibility":
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          className={STEP3_ICON_CLASS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 3l7 4v5c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V7l7-4Z" />
+          <path d="M9.5 12l1.6 1.6 3.6-3.6" />
+        </svg>
+      );
     case "photos":
       return (
         <svg
@@ -794,7 +810,7 @@ const initialState: FormState = {
   deathDate: "",
   epitaph: "",
   story: "",
-  isPublic: true,
+  isPublic: null,
   lat: "",
   lng: "",
   markerStyle: markerStyles[0]?.id ?? "dog",
@@ -1035,7 +1051,7 @@ const buildDraftFormState = (
     deathDate: draft.deathDate ? draft.deathDate.slice(0, 10) : "",
     epitaph: draft.epitaph ?? "",
     story: draft.story ?? "",
-    isPublic: draft.isPublic ?? true,
+    isPublic: draft.isPublic ?? null,
     lat:
       typeof draft.lat === "number" && !Number.isNaN(draft.lat)
         ? draft.lat.toFixed(6)
@@ -1137,10 +1153,6 @@ export default function CreateMemorialClient({
   const [soulSceneMode, setSoulSceneMode] = useState<PetSoulMode>("idle");
   const [soulPreviewReady, setSoulPreviewReady] = useState(isEditMode);
   const [hoveredSoulColor, setHoveredSoulColor] = useState<string | null>(null);
-  const [customSoulPickerOpen, setCustomSoulPickerOpen] = useState(false);
-  const [soulColorTab, setSoulColorTab] = useState<"standard" | "custom">(
-    "standard",
-  );
   const [farewellPlaying, setFarewellPlaying] = useState(false);
   const [detectedGiftSlots, setDetectedGiftSlots] = useState<string[] | null>(
     null,
@@ -1165,6 +1177,7 @@ export default function CreateMemorialClient({
   const [visitedOverlays, setVisitedOverlays] = useState({
     details: true,
     marker: false,
+    visibility: false,
     photos: false,
     story: false,
     base: false,
@@ -1321,7 +1334,11 @@ export default function CreateMemorialClient({
     }
   }, [topUpCurrency, walletPaymentMode.usdEnabled]);
 
-  const { isLoaded, loadError } = useJsApiLoader({ googleMapsApiKey: apiKey });
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: apiKey,
+    language: "ru",
+    region: "RU",
+  });
   const makeLocalPhotoId = useCallback(
     () =>
       crypto.randomUUID?.() ??
@@ -1490,6 +1507,7 @@ export default function CreateMemorialClient({
     typeof lng === "number" &&
     !Number.isNaN(lat) &&
     !Number.isNaN(lng);
+  const hasVisibilityChoice = form.isPublic !== null;
   const mapCenter = canShowMarker ? { lat: lat!, lng: lng! } : defaultCenter;
 
   const selectedMarker = markerStyleById(form.markerStyle);
@@ -2589,53 +2607,43 @@ export default function CreateMemorialClient({
       </div>
     );
 
+    const customColorControl = (
+      <label
+        onMouseEnter={() => setHoveredSoulColor(customSoulColorValue)}
+        onMouseLeave={() => setHoveredSoulColor(null)}
+        onFocus={() => setHoveredSoulColor(customSoulColorValue)}
+        onBlur={() => setHoveredSoulColor(null)}
+        className={`relative cursor-pointer border bg-[#fffcf9] font-black uppercase text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition-[transform,border-color,box-shadow] duration-150 active:scale-[0.96] ${
+          compact
+            ? "flex min-h-11 items-center justify-between gap-3 rounded-2xl border-white px-3 py-2 text-[10px] tracking-[0.12em]"
+            : "inline-flex h-10 items-center gap-2 rounded-full px-3 text-[10px] tracking-[0.12em] hover:-translate-y-0.5"
+        } ${
+          !selectedSoulColorIsPreset
+            ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
+            : "border-white hover:border-[#d3a27f]"
+        }`}
+      >
+        <span>{compact ? "Свой цвет" : "Свой"}</span>
+        <span
+          className={`${compact ? "h-8 w-8" : "h-5 w-5"} rounded-full border border-white shadow-inner`}
+          style={{ backgroundColor: customSoulColorValue }}
+        />
+        <input
+          type="color"
+          value={customSoulColorValue}
+          onInput={(event) => applySoulColor(event.currentTarget.value)}
+          onChange={(event) => applySoulColor(event.currentTarget.value)}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          aria-label="Выбрать свой цвет души"
+        />
+      </label>
+    );
+
     if (compact) {
       return (
         <div className="relative grid gap-2">
-          <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#eadfd9] bg-[#f7f1ee] p-1">
-            {(
-              [
-                ["standard", "Стандартные"],
-                ["custom", "Свой цвет"],
-              ] as const
-            ).map(([tab, label]) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setSoulColorTab(tab)}
-                className={`rounded-xl px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.08em] transition ${
-                  soulColorTab === tab
-                    ? "bg-[#111827] text-white shadow-[0_3px_0_0_#000]"
-                    : "bg-[#fffcf9] text-[#8d6e63]"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          {soulColorTab === "standard" ? (
-            standardPalette
-          ) : (
-            <div className="grid gap-3 rounded-2xl bg-[#f7f1ee] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8d6e63]">
-                  Свой цвет
-                </span>
-                <span
-                  className="h-9 w-9 rounded-full border-2 border-white shadow-inner"
-                  style={{ backgroundColor: customSoulColorValue }}
-                />
-              </div>
-              <input
-                type="color"
-                value={customSoulColorValue}
-                onInput={(event) => applySoulColor(event.currentTarget.value)}
-                onChange={(event) => applySoulColor(event.currentTarget.value)}
-                className="h-14 w-full min-w-0 cursor-pointer rounded-2xl border-2 border-white bg-[#fffcf9] p-1 shadow-inner"
-                aria-label="Выбрать свой цвет души"
-              />
-            </div>
-          )}
+          {standardPalette}
+          {customColorControl}
         </div>
       );
     }
@@ -2653,45 +2661,7 @@ export default function CreateMemorialClient({
         </div>
         <div className="relative flex flex-wrap items-center gap-2">
           {standardPalette}
-          <button
-            type="button"
-            onClick={() => setCustomSoulPickerOpen((open) => !open)}
-            onMouseEnter={() => setHoveredSoulColor(customSoulColorValue)}
-            onMouseLeave={() => setHoveredSoulColor(null)}
-            onFocus={() => setHoveredSoulColor(customSoulColorValue)}
-            onBlur={() => setHoveredSoulColor(null)}
-            className={`inline-flex h-10 items-center gap-2 rounded-full border bg-[#fffcf9] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.5)] transition hover:-translate-y-0.5 ${
-              !selectedSoulColorIsPreset
-                ? "border-[#5d4037] ring-2 ring-[#3bceac]/60"
-                : "border-white hover:border-[#d3a27f]"
-            }`}
-            aria-expanded={customSoulPickerOpen}
-          >
-            <span
-              className="h-5 w-5 rounded-full border border-white shadow-inner"
-              style={{ backgroundColor: customSoulColorValue }}
-            />
-            Свой
-          </button>
-          {customSoulPickerOpen ? (
-            <div
-              className={`absolute z-[260] w-[min(16rem,calc(100vw-2rem))] rounded-[18px] border-[3px] border-white bg-white/96 p-3 shadow-[0_18px_40px_-22px_rgba(93,64,55,0.55)] backdrop-blur ${compact ? "bottom-[calc(100%+0.6rem)] left-0" : "right-0 top-[calc(100%+0.6rem)]"}`}
-            >
-              <label className="grid gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#8d6e63]">
-                Палитра
-                <input
-                  type="color"
-                  value={customSoulColorValue}
-                  onInput={(event) => applySoulColor(event.currentTarget.value)}
-                  onChange={(event) =>
-                    applySoulColor(event.currentTarget.value)
-                  }
-                  className="h-11 w-full min-w-[10rem] cursor-pointer rounded-2xl border-2 border-white bg-[#f6efea]/92 p-1 shadow-inner"
-                  aria-label="Выбрать свой цвет души"
-                />
-              </label>
-            </div>
-          ) : null}
+          {customColorControl}
         </div>
       </div>
     );
@@ -2908,6 +2878,7 @@ export default function CreateMemorialClient({
           setVisitedOverlays({
             details: true,
             marker: true,
+            visibility: true,
             photos: true,
             story: true,
             base: true,
@@ -3031,7 +3002,7 @@ export default function CreateMemorialClient({
             deathDate: form.deathDate || undefined,
             epitaph: form.epitaph.trim() || undefined,
             story: form.story.trim() || undefined,
-            isPublic: form.isPublic,
+            isPublic: form.isPublic ?? undefined,
             lat: canShowMarker ? lat : undefined,
             lng: canShowMarker ? lng : undefined,
             markerStyle: form.markerStyle,
@@ -3279,6 +3250,9 @@ export default function CreateMemorialClient({
       if (!canShowMarker) {
         return "Нужно выбрать точку на карте (для приватного мемориала она хранится скрыто)";
       }
+      if (!hasVisibilityChoice) {
+        return "Выберите публичный или приватный мемориал";
+      }
       if (photos.length === 0) {
         return "Добавьте хотя бы одну фотографию питомца";
       }
@@ -3354,7 +3328,10 @@ export default function CreateMemorialClient({
     setStep((prev) => clampStep(prev + 1));
   };
 
-  const handleChange = (field: keyof FormState, value: string | boolean) => {
+  const handleChange = (
+    field: keyof FormState,
+    value: string | boolean | null,
+  ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -3758,7 +3735,7 @@ export default function CreateMemorialClient({
     if (current.story !== initial.story) {
       patch.story = current.story;
     }
-    if (current.isPublic !== initial.isPublic) {
+    if (current.isPublic !== null && current.isPublic !== initial.isPublic) {
       patch.isPublic = current.isPublic;
     }
 
@@ -3791,6 +3768,10 @@ export default function CreateMemorialClient({
       const editValidationMessage = validateBasicInfo(false);
       if (editValidationMessage) {
         setError(editValidationMessage);
+        return;
+      }
+      if (!hasVisibilityChoice) {
+        setError("Выберите публичный или приватный мемориал");
         return;
       }
       if (editSaveRequiresModeration && !options?.confirmedEditModeration) {
@@ -3894,7 +3875,7 @@ export default function CreateMemorialClient({
       deathDate: form.deathDate || undefined,
       epitaph: form.epitaph.trim() || undefined,
       story: form.story.trim() || undefined,
-      isPublic: form.isPublic,
+      isPublic: form.isPublic ?? false,
       lat: canShowMarker ? lat : undefined,
       lng: canShowMarker ? lng : undefined,
       markerStyle: form.markerStyle,
@@ -4041,6 +4022,7 @@ export default function CreateMemorialClient({
       panel !== "base" &&
       panel !== "story" &&
       panel !== "marker" &&
+      panel !== "visibility" &&
       panel !== "photos" &&
       panel !== "soul"
     ) {
@@ -4670,7 +4652,7 @@ export default function CreateMemorialClient({
                       <div
                         id="environment-season-auto-help"
                         role="tooltip"
-                        className="absolute left-0 top-full z-[1200] mt-2 w-64 rounded-xl bg-white px-3 py-2 text-[11px] font-medium leading-relaxed text-[#6f6360] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_8px_24px_rgba(93,64,55,0.16)]"
+                        className="fixed left-1/2 top-[max(1rem,calc(env(safe-area-inset-top)+1rem))] z-[3000] w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-[11px] font-medium leading-relaxed text-[#6f6360] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_8px_24px_rgba(93,64,55,0.16)]"
                       >
                         Если включить автосмену, поверхность мемориала будет
                         автоматически выбирать сезон по текущей дате.
@@ -4704,14 +4686,11 @@ export default function CreateMemorialClient({
                       : "grid-rows-[auto_minmax(0,1fr)]"
                   }`}
                 >
-                  <div className="group relative">
-                    <span className="grid h-7 w-7 place-items-center rounded-full border border-white bg-[#fffcf9] text-[12px] font-black text-[#8d6e63] shadow-sm">
-                      ?
-                    </span>
-                    <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-52 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                      Выбор времени года для поверхности мемориала.
-                    </span>
-                  </div>
+                  <AuthHelpHint
+                    placement="left"
+                    className="h-7 w-7 border text-[12px] [&>span]:!fixed [&>span]:!bottom-auto [&>span]:!right-auto [&>span]:!left-1/2 [&>span]:!top-[max(1rem,calc(env(safe-area-inset-top)+1rem))] [&>span]:!z-[3000] [&>span]:!w-[min(20rem,calc(100vw-2rem))] [&>span]:!-translate-x-1/2 [&>span]:!translate-y-0"
+                    text="Выбор времени года для поверхности мемориала."
+                  />
                   <div className="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain pr-0.5">
                     {environmentSeasons.map((season) => {
                       const isActive = form.environmentSeason === season;
@@ -4742,7 +4721,7 @@ export default function CreateMemorialClient({
                     })}
                   </div>
                   {isPortraitLayout ? (
-                    <label className="group relative flex items-center justify-center text-xs text-[#6f6360]">
+                    <label className="relative flex items-center justify-center text-xs text-[#6f6360]">
                       <input
                         type="checkbox"
                         className="h-4 w-4"
@@ -4756,10 +4735,6 @@ export default function CreateMemorialClient({
                         aria-label="Автосмена сезонов"
                         title="Автосмена сезонов"
                       />
-                      <span className="pointer-events-none absolute right-full top-1/2 z-[1000] mr-2 w-56 -translate-y-1/2 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                        Если включить, поверхность будет меняться по текущей
-                        дате.
-                      </span>
                     </label>
                   ) : null}
                 </div>
@@ -5411,25 +5386,9 @@ export default function CreateMemorialClient({
                 </button>
               </div>
 
-              <label className="group relative flex items-center gap-2 text-xs font-bold text-[#6f6360]">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4"
-                  checked={form.isPublic}
-                  onChange={(event) =>
-                    handleChange("isPublic", event.target.checked)
-                  }
-                />
-                Публичный мемориал
-                <span className="grid h-5 w-5 place-items-center rounded-full border border-white bg-[#fffcf9] text-[10px] font-black text-[#8d6e63]">
-                  ?
-                </span>
-                <span className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                  Кликни на карте, чтобы выбрать точку. Публичный мемориал виден
-                  на карте всем пользователям, приватные доступны только по
-                  ссылке.
-                </span>
-              </label>
+              <p className="rounded-2xl bg-[#fffcf9] px-3 py-2 text-[11px] font-semibold leading-snug text-[#8d6e63]">
+                Видимость мемориала выбирается в отдельном блоке «Доступ».
+              </p>
             </div>
           </div>
 
@@ -5627,22 +5586,59 @@ export default function CreateMemorialClient({
           Очистить
         </button>
       </div>
-      <label className="group relative mt-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.08em] text-[#6f6360]">
-        <input
-          type="checkbox"
-          className="h-3.5 w-3.5"
-          checked={form.isPublic}
-          onChange={(event) => handleChange("isPublic", event.target.checked)}
-        />
-        Публичный
-        <span className="grid h-5 w-5 place-items-center rounded-full border border-white bg-[#f7f1ee] text-[10px] font-black text-[#8d6e63]">
-          ?
-        </span>
-        <span className="pointer-events-none fixed left-4 right-4 top-[calc(3.75rem+env(safe-area-inset-top))] z-[2200] rounded-lg border border-[#eadfd9] bg-white px-3 py-2 text-[11px] font-semibold normal-case leading-snug tracking-normal text-[#6f6360] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          Кликни на карте, чтобы выбрать точку. Публичный мемориал виден на
-          карте всем пользователям, приватные доступны только по ссылке.
-        </span>
-      </label>
+      <p className="mt-2 rounded-xl bg-[#f7f1ee] px-2 py-1.5 text-[9px] font-bold leading-snug text-[#8d6e63]">
+        Доступ выбирается в отдельном блоке.
+      </p>
+    </div>
+  );
+
+  const renderVisibilityPanel = () => (
+    <div className={overlayShellClass}>
+      <h3 className={overlaySectionTitleClass}>
+        <span className="h-2 w-2 rounded-full bg-[#3bceac]" />
+        Доступ к мемориалу
+      </h3>
+      <div className={isPortraitLayout ? "grid gap-2" : "grid gap-3"}>
+        {[
+          {
+            value: true,
+            title: "Публичный",
+            text: "После модерации мемориал появится на общей карте и будет доступен другим пользователям.",
+          },
+          {
+            value: false,
+            title: "Приватный",
+            text: "Мемориал будет доступен владельцу и по прямой ссылке, без показа на общей карте.",
+          },
+        ].map((option) => {
+          const isSelected = form.isPublic === option.value;
+          return (
+            <button
+              key={option.title}
+              type="button"
+              onClick={() => handleChange("isPublic", option.value)}
+              className={`rounded-[22px] border-[3px] px-4 py-3 text-left transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.96] ${
+                isSelected
+                  ? "border-[#3bceac] bg-[#f0fffb] text-[#5d4037] shadow-[0_12px_26px_-20px_rgba(59,206,172,0.7)]"
+                  : "border-white bg-[#fffcf9] text-[#8d6e63] hover:border-[#d3a27f]/50"
+              }`}
+              aria-pressed={isSelected}
+            >
+              <span className="block text-sm font-black uppercase tracking-[0.12em]">
+                {option.title}
+              </span>
+              <span className="mt-1 block text-xs font-semibold leading-snug">
+                {option.text}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {!hasVisibilityChoice ? (
+        <p className="text-xs font-semibold text-[#8d6e63]">
+          Выберите один вариант, чтобы продолжить публикацию.
+        </p>
+      ) : null}
     </div>
   );
 
@@ -6237,6 +6233,8 @@ export default function CreateMemorialClient({
         return renderBaseInfoPanel();
       case "marker":
         return renderMarkerPanel();
+      case "visibility":
+        return renderVisibilityPanel();
       case "photos":
         return renderPhotosPanel();
       case "soul":
@@ -6366,7 +6364,13 @@ export default function CreateMemorialClient({
       id: "marker",
       label: "Маркер на карте",
       disabled: false,
-      highlight: !isEditMode && isBuilderStep && !visitedOverlays.marker,
+      highlight: !isEditMode && isBuilderStep && !canShowMarker,
+    },
+    {
+      id: "visibility",
+      label: "Доступ",
+      disabled: false,
+      highlight: !isEditMode && isBuilderStep && !hasVisibilityChoice,
     },
     {
       id: "photos",
@@ -6953,7 +6957,7 @@ export default function CreateMemorialClient({
                       title="Маркер"
                       className={`${panelButtonClass(
                         activeOverlay === "marker",
-                        !isEditMode && isBuilderStep && !visitedOverlays.marker,
+                        !isEditMode && isBuilderStep && !canShowMarker,
                       )}`}
                     >
                       <svg
@@ -6970,13 +6974,44 @@ export default function CreateMemorialClient({
                       </svg>
                       {!isEditMode &&
                       isBuilderStep &&
-                      !visitedOverlays.marker ? (
+                      !canShowMarker ? (
                         <span className={builderAttentionBadgeClass}>!</span>
                       ) : null}
                     </button>
                     <span className={builderControlTooltipClass}>
                       Маркер на карте
                     </span>
+                  </div>
+                  <div className="group/control relative">
+                    <button
+                      type="button"
+                      onClick={() => toggleOverlay("visibility")}
+                      aria-label="Доступ"
+                      title="Доступ"
+                      className={`${panelButtonClass(
+                        activeOverlay === "visibility",
+                        !isEditMode && isBuilderStep && !hasVisibilityChoice,
+                      )}`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 3l7 4v5c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V7l7-4Z" />
+                        <path d="M9.5 12l1.6 1.6 3.6-3.6" />
+                      </svg>
+                      {!isEditMode &&
+                      isBuilderStep &&
+                      !hasVisibilityChoice ? (
+                        <span className={builderAttentionBadgeClass}>!</span>
+                      ) : null}
+                    </button>
+                    <span className={builderControlTooltipClass}>Доступ</span>
                   </div>
                   <div className="group/control relative">
                     <button
@@ -7387,11 +7422,11 @@ export default function CreateMemorialClient({
                             фотографии, которые вы изменили.
                           </p>
                         ) : isFreeLifetimePublication ? (
-                          <div className="rounded-2xl border border-[#eadfd9] bg-[#fffcf9] px-4 py-3 text-xs text-[#8d6e63]">
-                            Сейчас публикация бесплатная и бессрочная. После
-                            проверки мемориал будет доступен без ограничения по
-                            времени.
-                          </div>
+                          <p className="text-xs text-[#8d6e63]">
+                            После проверки вам придет письмо. Публичный мемориал
+                            появится на карте только после одобрения, а приватный
+                            останется виден только вам.
+                          </p>
                         ) : (
                           <>
                             <p className="text-xs text-[#8d6e63]">
@@ -7461,12 +7496,12 @@ export default function CreateMemorialClient({
         title="Отправить мемориал на проверку?"
         message={
           isFreeLifetimePublication
-            ? "После подтверждения мы бесплатно опубликуем мемориал только для вас и отправим его на модерацию."
+            ? "После подтверждения мы опубликуем мемориал только для вас и отправим его на модерацию."
             : "После подтверждения мы спишем монеты, опубликуем мемориал только для вас и отправим его на модерацию."
         }
         helperText={
           isFreeLifetimePublication
-            ? "Мемориал будет бессрочным. После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
+            ? "После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
             : "После проверки вам придет письмо. Публичный мемориал появится на карте только после одобрения, а приватный останется виден только вам."
         }
         cancelAction={{
