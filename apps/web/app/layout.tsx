@@ -15,6 +15,7 @@ import {
 } from "next/font/google";
 import AppHeader from "../components/AppHeader";
 import { LanguageProvider } from "../components/LanguageProvider";
+import PageViewTracker from "../components/PageViewTracker";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
@@ -97,6 +98,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         className={`${notoSans.className} ${notoSans.variable} ${inter.variable} ${manrope.variable} ${roboto.variable} ${nunitoSans.variable} ${rubik.variable} ${robotoCondensed.variable} ${ptSansNarrow.variable} ${sourceSans.variable} ${onest.variable} ${commissioner.variable}`}
       >
         <LanguageProvider>
+          <PageViewTracker />
           <AppHeader />
           {children}
         </LanguageProvider>

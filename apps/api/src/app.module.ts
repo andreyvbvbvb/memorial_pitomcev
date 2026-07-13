@@ -12,6 +12,7 @@ import { AdminModule } from "./admin/admin.module";
 import { CharityModule } from "./charity/charity.module";
 import { ContentModule } from "./content/content.module";
 import { MaintenanceModule } from "./maintenance/maintenance.module";
+import { AnalyticsModule } from "./analytics/analytics.module";
 
 @Module({
   imports: [
@@ -26,8 +27,9 @@ import { MaintenanceModule } from "./maintenance/maintenance.module";
     AdminModule,
     CharityModule,
     ContentModule,
-    MaintenanceModule
+    MaintenanceModule,
+    AnalyticsModule,
   ],
-  controllers: [HealthController]
+  controllers: [HealthController],
 })
 export class AppModule {}

@@ -35,6 +35,7 @@ import {
   resolveWallModel,
 } from "../../../lib/memorial-models";
 import ErrorToast from "../../../components/ErrorToast";
+import DailyStatsPanel from "../../../components/admin/DailyStatsPanel";
 import DirtModelPreview from "../../../components/admin/DirtModelPreview";
 import SkyTuningPreview from "../../../components/admin/SkyTuningPreview";
 
@@ -4567,6 +4568,7 @@ export default function AdminSqlPage() {
         <p className="mt-2 text-sm text-slate-600">
           Разрешены только SELECT, DELETE и UPDATE. Выполняется на сервере API.
         </p>
+        <DailyStatsPanel />
         {content}
       </div>
       {error ? (

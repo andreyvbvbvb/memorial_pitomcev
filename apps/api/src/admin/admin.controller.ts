@@ -70,6 +70,13 @@ import {
   normalizeHeroVideoSetting,
 } from "../content/hero-video-setting";
 import { AdminPerformanceService } from "./admin-performance.service";
+import {
+  addDays,
+  getMoscowDay,
+  getMoscowDayStartUtc,
+  TRACKED_PAGE_KEYS,
+  TRACKED_PAGE_LABELS,
+} from "../analytics/analytics-pages";
 
 const MODERATION_REVIEW_REVISION = "REVISION";
 const K6_WORKFLOW_URL =
@@ -436,6 +443,115 @@ export class AdminController {
   async performanceSnapshot(@Req() req: Request) {
     await this.ensureAdmin(req);
     return this.performanceService.snapshot();
+  }
+
+  @Get("daily-stats")
+  async dailyStats(@Req() req: Request, @Query("days") days?: string) {
+    await this.ensureAdmin(req);
+    const parsedDays = Number.parseInt(days ?? "14", 10);
+    const daysCount = Number.isFinite(parsedDays)
+      ? Math.min(90, Math.max(1, parsedDays))
+      : 14;
+    const today = getMoscowDay();
+    const startDay = addDays(today, -(daysCount - 1));
+    const dayKeys = Array.from({ length: daysCount }, (_, index) =>
+      addDays(startDay, index),
+    );
+    const startUtc = getMoscowDayStartUtc(startDay);
+    const endUtc = getMoscowDayStartUtc(addDays(today, 1));
+
+    const [pageRows, userRows, memorialRows] = await Promise.all([
+      this.prisma.pageViewDaily.findMany({
+        where: { day: { in: dayKeys } },
+        orderBy: [{ day: "asc" }, { page: "asc" }],
+      }) as Promise<Array<{ day: string; page: string; views: number }>>,
+      this.prisma.user.findMany({
+        where: { createdAt: { gte: startUtc, lt: endUtc } },
+        select: { createdAt: true },
+      }) as Promise<Array<{ createdAt: Date }>>,
+      this.prisma.memorial.findMany({
+        where: { createdAt: { gte: startUtc, lt: endUtc } },
+        select: { createdAt: true },
+      }) as Promise<Array<{ createdAt: Date }>>,
+    ]);
+
+    const createEmptyPageCounts = () =>
+      Object.fromEntries(TRACKED_PAGE_KEYS.map((page) => [page, 0])) as Record<
+        string,
+        number
+      >;
+    const dayMap = new Map(
+      dayKeys.map((day) => [
+        day,
+        {
+          day,
+          totalViews: 0,
+          newAccounts: 0,
+          newMemorials: 0,
+          pages: createEmptyPageCounts(),
+        },
+      ]),
+    );
+
+    pageRows.forEach((row) => {
+      const day = dayMap.get(row.day);
+      if (!day || !(row.page in day.pages)) {
+        return;
+      }
+      day.pages[row.page] = (day.pages[row.page] ?? 0) + row.views;
+      day.totalViews += row.views;
+    });
+    userRows.forEach((row) => {
+      const day = dayMap.get(getMoscowDay(row.createdAt));
+      if (day) {
+        day.newAccounts += 1;
+      }
+    });
+    memorialRows.forEach((row) => {
+      const day = dayMap.get(getMoscowDay(row.createdAt));
+      if (day) {
+        day.newMemorials += 1;
+      }
+    });
+
+    const pageTotals = TRACKED_PAGE_KEYS.map((page) => ({
+      page,
+      label: TRACKED_PAGE_LABELS[page] ?? page,
+      views: Array.from(dayMap.values()).reduce(
+        (total, day) => total + (day.pages[page] ?? 0),
+        0,
+      ),
+    }));
+    const resultDays = Array.from(dayMap.values()).map((day) => ({
+      day: day.day,
+      totalViews: day.totalViews,
+      newAccounts: day.newAccounts,
+      newMemorials: day.newMemorials,
+      pages: TRACKED_PAGE_KEYS.map((page) => ({
+        page,
+        label: TRACKED_PAGE_LABELS[page] ?? page,
+        views: day.pages[page] ?? 0,
+      })),
+    }));
+
+    return {
+      daysCount,
+      from: startDay,
+      to: today,
+      totals: {
+        views: resultDays.reduce((total, day) => total + day.totalViews, 0),
+        newAccounts: resultDays.reduce(
+          (total, day) => total + day.newAccounts,
+          0,
+        ),
+        newMemorials: resultDays.reduce(
+          (total, day) => total + day.newMemorials,
+          0,
+        ),
+      },
+      pages: pageTotals,
+      days: resultDays,
+    };
   }
 
   @Post("performance/k6")
