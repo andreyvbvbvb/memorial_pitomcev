@@ -19,12 +19,31 @@ const PROTECTED_PATH_PREFIXES = [
   "/admin/tiktok",
 ];
 
+function normalizeHost(value: string | null) {
+  const firstHost = value?.split(",")[0]?.trim();
+  if (!firstHost) {
+    return "";
+  }
+  return firstHost.replace(/^"|"$/g, "").split(":")[0]?.toLowerCase() || "";
+}
+
+function getForwardedHost(request: NextRequest) {
+  const forwarded = request.headers.get("forwarded");
+  const match = forwarded?.match(/(?:^|[;,]\s*)host=("[^"]+"|[^;,]+)/i);
+  return match?.[1] ?? null;
+}
+
 function shouldRedirectToCanonical(request: NextRequest) {
-  const hostname =
-    request.nextUrl.hostname.toLowerCase() ||
-    request.headers.get("host")?.split(":")[0]?.toLowerCase() ||
-    "";
-  return REDIRECT_HOSTS.has(hostname);
+  const hostCandidates = [
+    request.nextUrl.hostname,
+    request.headers.get("host"),
+    request.headers.get("x-forwarded-host"),
+    request.headers.get("x-original-host"),
+    request.headers.get("x-host"),
+    getForwardedHost(request),
+  ].map(normalizeHost);
+
+  return hostCandidates.some((hostname) => REDIRECT_HOSTS.has(hostname));
 }
 
 function isProtectedPath(pathname: string) {
