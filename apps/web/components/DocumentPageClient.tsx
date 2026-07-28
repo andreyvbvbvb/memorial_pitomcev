@@ -35,6 +35,9 @@ const builtInRevisions: Record<LegalDocumentType, DocumentRevision[]> = {
   ]
 };
 
+const formatRevisionDate = (value: string) =>
+  new Date(value).toLocaleDateString("ru-RU");
+
 export default function DocumentPageClient({
   documentType,
   title,
@@ -46,7 +49,20 @@ export default function DocumentPageClient({
 }) {
   const apiUrl = useMemo(() => API_BASE, []);
   const [tab, setTab] = useState<"current" | "history">("current");
-  const [revisions, setRevisions] = useState<DocumentRevision[]>([]);
+  const [revisions, setRevisions] = useState<DocumentRevision[]>(
+    () => builtInRevisions[documentType]
+  );
+
+  const sortedRevisions = useMemo(
+    () =>
+      [...revisions].sort(
+        (left, right) =>
+          new Date(right.createdAt).getTime() -
+          new Date(left.createdAt).getTime()
+      ),
+    [revisions]
+  );
+  const currentRevision = sortedRevisions[0] ?? null;
 
   useEffect(() => {
     let isMounted = true;
@@ -137,13 +153,56 @@ export default function DocumentPageClient({
           ))}
         </div>
         {tab === "current" ? (
-          <div className="mt-6 space-y-4 text-base font-semibold leading-relaxed text-[#6f6360]">
-            {children}
-          </div>
+          currentRevision ? (
+            <div className="mt-6 grid gap-4">
+              <section className="rounded-[22px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 shadow-[0_14px_30px_-24px_rgba(93,64,55,0.45)] sm:px-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#d3a27f]">
+                  Текущая редакция
+                </p>
+                <h2 className="mt-2 text-lg font-black leading-snug text-[#5d4037]">
+                  {currentRevision.title}
+                </h2>
+                <p className="mt-2 text-xs font-semibold text-[#8d6e63]">
+                  Добавлена {formatRevisionDate(currentRevision.createdAt)}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a
+                    href={currentRevision.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-[15px] bg-[#111827] px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_3px_0_0_#000] transition hover:-translate-y-0.5"
+                  >
+                    Открыть PDF
+                  </a>
+                  <a
+                    href={currentRevision.fileUrl}
+                    download={currentRevision.fileName}
+                    className="rounded-[15px] border-[2px] border-white bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.45)] transition hover:-translate-y-0.5"
+                  >
+                    Скачать
+                  </a>
+                </div>
+              </section>
+              <object
+                data={currentRevision.fileUrl}
+                type="application/pdf"
+                className="min-h-[68vh] w-full rounded-[22px] border-[3px] border-white bg-[#f7f1ee]"
+              >
+                <div className="rounded-[22px] border-[3px] border-white bg-[#f7f1ee] px-4 py-4 text-sm font-semibold text-[#8d6e63]">
+                  PDF не удалось показать внутри страницы. Откройте его
+                  отдельной вкладкой или скачайте файл.
+                </div>
+              </object>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4 text-base font-semibold leading-relaxed text-[#6f6360]">
+              {children}
+            </div>
+          )
         ) : (
           <div className="mt-6 grid gap-3">
-            {revisions.length > 0 ? (
-              revisions.map((revision) => (
+            {sortedRevisions.length > 0 ? (
+              sortedRevisions.map((revision) => (
                 <a
                   key={revision.id}
                   href={revision.fileUrl}
@@ -155,7 +214,8 @@ export default function DocumentPageClient({
                     {revision.title}
                   </span>
                   <span className="mt-1 block text-xs font-semibold text-[#8d6e63]">
-                    Добавлен {new Date(revision.createdAt).toLocaleDateString("ru-RU")} · скачать PDF
+                    Добавлен {formatRevisionDate(revision.createdAt)} · скачать
+                    PDF
                   </span>
                 </a>
               ))

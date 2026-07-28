@@ -3895,7 +3895,8 @@ export default function AdminSqlPage() {
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
               Загруженные PDF попадают в историю документа на страницах
-              политики и оферты.
+              политики и оферты. Самая новая редакция автоматически
+              показывается во вкладке "Текущий".
             </p>
             <div className="mt-3 grid gap-2">
               <select
