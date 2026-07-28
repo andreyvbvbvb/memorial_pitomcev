@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { API_BASE } from "../../lib/config";
@@ -132,6 +132,23 @@ export default function PaymentClient() {
   );
   const [error, setError] = useState<string | null>(null);
   const [currentInvoiceId, setCurrentInvoiceId] = useState<string | null>(null);
+  const [successDialog, setSuccessDialog] = useState<{
+    coins: number;
+    balance: number | null;
+  } | null>(null);
+
+  const refreshUser = useCallback(async () => {
+    const response = await fetch(`${apiUrl}/auth/me`, {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data = (await response.json()) as UserResponse;
+    setUser(data);
+    return data;
+  }, [apiUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,6 +156,7 @@ export default function PaymentClient() {
       try {
         const response = await fetch(`${apiUrl}/auth/me`, {
           credentials: "include",
+          cache: "no-store",
         });
         if (!response.ok) {
           if (!cancelled) {
@@ -173,8 +191,16 @@ export default function PaymentClient() {
       if (response.ok) {
         const data = (await response.json()) as PaymentStatusResponse;
         if (data.status === "paid") {
+          const refreshedUser = await refreshUser().catch(() => null);
+          const refreshedBalance =
+            typeof refreshedUser?.coinBalance === "number"
+              ? refreshedUser.coinBalance
+              : typeof user?.coinBalance === "number"
+                ? user.coinBalance + data.coins
+                : null;
           window.dispatchEvent(new Event("memorial-auth-changed"));
-          setMessage(`Баланс пополнен на ${data.coins} монет.`);
+          setMessage("Оплата подтверждена.");
+          setSuccessDialog({ coins: data.coins, balance: refreshedBalance });
           return true;
         }
         if (data.status === "failed") {
@@ -387,6 +413,49 @@ export default function PaymentClient() {
           </div>
         ) : null}
       </div>
+      {successDialog ? (
+        <div
+          className="fixed inset-0 z-[1000] grid place-items-center bg-[#3b2a24]/35 px-4 backdrop-blur-[3px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payment-success-title"
+        >
+          <section className="w-full max-w-sm rounded-[30px] bg-white p-3 shadow-[0_32px_90px_-36px_rgba(17,24,39,0.7)]">
+            <div className="rounded-[22px] bg-[#f7f1ee] px-5 py-6 text-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#3bceac]">
+                Оплата прошла
+              </p>
+              <h2
+                id="payment-success-title"
+                className="mt-2 text-balance text-2xl font-black leading-tight text-[#5d4037]"
+              >
+                Баланс успешно пополнен
+              </h2>
+              <div className="mt-5 rounded-[20px] bg-white px-4 py-4 shadow-[0_14px_32px_-26px_rgba(93,64,55,0.55)]">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8d6e63]">
+                  Текущий баланс
+                </p>
+                <p className="mt-1 text-4xl font-black tabular-nums text-[#111827]">
+                  {successDialog.balance ?? "—"}
+                </p>
+                <p className="mt-1 text-sm font-bold text-[#8d6e63]">
+                  монет
+                </p>
+              </div>
+              <p className="mt-4 text-sm font-bold text-[#8d6e63]">
+                Пополнение: +{successDialog.coins} монет
+              </p>
+              <button
+                type="button"
+                onClick={() => setSuccessDialog(null)}
+                className="mt-6 min-h-11 w-full rounded-full bg-[#111827] px-6 py-3 text-xs font-black uppercase tracking-[0.18em] text-white shadow-[0_8px_0_rgba(17,24,39,0.18)] transition-transform active:scale-[0.96]"
+              >
+                Закрыть
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </PaymentShell>
   );
 }
