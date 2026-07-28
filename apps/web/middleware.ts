@@ -16,6 +16,7 @@ const PROTECTED_PATH_PREFIXES = [
   "/admin/moderation",
   "/admin/video",
   "/admin/gift-slots",
+  "/admin/detail-showcase",
   "/admin/tiktok",
 ];
 

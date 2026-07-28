@@ -4559,6 +4559,12 @@ export default function AdminSqlPage() {
               Слоты подарков
             </a>
             <a
+              href="/admin/detail-showcase"
+              className="rounded-[16px] bg-[#fffcf9] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_10px_24px_rgba(93,64,55,0.12)] transition-transform duration-150 active:scale-[0.96]"
+            >
+              Витрина деталей
+            </a>
+            <a
               href="/admin/moderation"
               className="rounded-[16px] bg-[#fffcf9] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5d4037] shadow-[0_10px_24px_rgba(93,64,55,0.12)] transition hover:-translate-y-0.5"
             >
