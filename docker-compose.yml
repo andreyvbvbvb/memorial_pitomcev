@@ -30,7 +30,7 @@ services:
       - GITHUB_WORKFLOW_TOKEN=${GITHUB_WORKFLOW_TOKEN:-}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES=${JWT_EXPIRES}
-      - FRONTEND_URL=${FRONTEND_URL:-https://xn--80aeb9a9a9d.com}
+      - FRONTEND_URL=${FRONTEND_URL:-https://meowgav.ru}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USER=${SMTP_USER}

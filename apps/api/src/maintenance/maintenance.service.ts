@@ -89,7 +89,7 @@ export class MaintenanceService implements OnModuleInit, OnModuleDestroy {
   }
 
   private getFrontendUrl() {
-    return (process.env.FRONTEND_URL ?? "https://xn--80aeb9a9a9d.com").replace(
+    return (process.env.FRONTEND_URL ?? "https://meowgav.ru").replace(
       /\/+$/,
       "",
     );

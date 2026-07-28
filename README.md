@@ -33,14 +33,13 @@ CLOUDPAYMENTS_API_SECRET="cloudpayments_api_secret"
 ```
 
 ## Production domain
-Primary public domain: `https://мяугав.com`.
+Primary public domain: `https://meowgav.ru`.
 
-Use the ASCII/punycode form in server env values when a platform does not handle IDN domains reliably:
-`https://xn--80aeb9a9a9d.com`.
+The previous IDN domain `https://мяугав.com` redirects to `https://meowgav.ru`.
 
 Recommended production values when web and API are served through the same domain:
 ```
-FRONTEND_URL=https://xn--80aeb9a9a9d.com
+FRONTEND_URL=https://meowgav.ru
 NEXT_PUBLIC_API_URL=/api
 INTERNAL_API_URL=http://api:3001
 ```
@@ -56,9 +55,9 @@ CLOUDPAYMENTS_API_SECRET=...
 
 Configure CloudPayments notifications to the public API URL:
 ```
-Check: https://xn--80aeb9a9a9d.com/api/wallet/payments/cloudpayments/check
-Pay:   https://xn--80aeb9a9a9d.com/api/wallet/payments/cloudpayments/pay
-Fail:  https://xn--80aeb9a9a9d.com/api/wallet/payments/cloudpayments/fail
+Check: https://meowgav.ru/api/wallet/payments/cloudpayments/check
+Pay:   https://meowgav.ru/api/wallet/payments/cloudpayments/pay
+Fail:  https://meowgav.ru/api/wallet/payments/cloudpayments/fail
 ```
 
 ## Apps
