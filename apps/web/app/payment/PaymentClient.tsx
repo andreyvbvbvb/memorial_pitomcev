@@ -127,9 +127,6 @@ export default function PaymentClient() {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(
-    "Подготовьте оплату, затем подтвердите её в окне банка.",
-  );
   const [error, setError] = useState<string | null>(null);
   const [currentInvoiceId, setCurrentInvoiceId] = useState<string | null>(null);
   const [successDialog, setSuccessDialog] = useState<{
@@ -199,7 +196,6 @@ export default function PaymentClient() {
                 ? user.coinBalance + data.coins
                 : null;
           window.dispatchEvent(new Event("memorial-auth-changed"));
-          setMessage("Оплата подтверждена.");
           setSuccessDialog({ coins: data.coins, balance: refreshedBalance });
           return true;
         }
@@ -215,7 +211,6 @@ export default function PaymentClient() {
     setError(
       "Платёж не завершён. Если вы закрыли окно оплаты, деньги не списаны и баланс не изменился.",
     );
-    setMessage("Можно открыть оплату ещё раз или выбрать другой способ.");
     return false;
   };
 
@@ -233,7 +228,6 @@ export default function PaymentClient() {
     }
     setLoading(true);
     setError(null);
-    setMessage("Создаем платеж и открываем защищенное окно оплаты.");
     try {
       const orderResponse = await fetch(
         `${apiUrl}/wallet/payments/cloudpayments`,
@@ -288,7 +282,6 @@ export default function PaymentClient() {
         retryPayment: false,
         emailBehavior: "Optional",
       });
-      setMessage("Окно оплаты закрыто. Проверяем статус платежа.");
       setError(null);
       void pollPaymentStatus(order.invoiceId);
     } catch (paymentError) {
@@ -392,11 +385,8 @@ export default function PaymentClient() {
             {amount} {currency}
           </div>
         </div>
-        <p className="mt-5 text-sm font-bold leading-relaxed text-[#8d6e63]">
-          {message}
-        </p>
         {error ? (
-          <div className="mt-4 rounded-2xl border border-[#f2c6bd] bg-[#fff5f2] px-4 py-3 text-sm font-bold text-[#9a5a4c]">
+          <div className="mt-5 rounded-2xl border border-[#f2c6bd] bg-[#fff5f2] px-4 py-3 text-sm font-bold text-[#9a5a4c]">
             {error}
           </div>
         ) : null}
