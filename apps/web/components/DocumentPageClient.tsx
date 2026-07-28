@@ -165,23 +165,6 @@ export default function DocumentPageClient({
                 <p className="mt-2 text-xs font-semibold text-[#8d6e63]">
                   Добавлена {formatRevisionDate(currentRevision.createdAt)}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <a
-                    href={currentRevision.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-[15px] bg-[#111827] px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_3px_0_0_#000] transition hover:-translate-y-0.5"
-                  >
-                    Открыть PDF
-                  </a>
-                  <a
-                    href={currentRevision.fileUrl}
-                    download={currentRevision.fileName}
-                    className="rounded-[15px] border-[2px] border-white bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#5d4037] shadow-[0_10px_22px_-18px_rgba(93,64,55,0.45)] transition hover:-translate-y-0.5"
-                  >
-                    Скачать
-                  </a>
-                </div>
               </section>
               <object
                 data={currentRevision.fileUrl}
