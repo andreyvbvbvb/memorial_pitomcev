@@ -341,7 +341,7 @@ function ShowcaseScene({
         enablePan={false}
         target={[0, 0, 0]}
         minDistance={2.1}
-        maxDistance={8}
+        maxDistance={18}
       />
     </>
   );
