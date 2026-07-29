@@ -361,6 +361,7 @@ export default function AdminDetailShowcaseClient() {
   );
   const [search, setSearch] = useState("");
   const [autoRotate, setAutoRotate] = useState(true);
+  const [showSceneInfo, setShowSceneInfo] = useState(true);
   const [effects, setEffects] = useState<Set<EffectKey>>(
     () => new Set(["floating", "rimLight", "particles", "pedestal"]),
   );
@@ -495,7 +496,7 @@ export default function AdminDetailShowcaseClient() {
         </header>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="relative h-[62vh] min-h-[520px] overflow-hidden rounded-[30px] bg-[#dcecff] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_24px_60px_-40px_rgba(93,64,55,0.65)]">
+          <section className="relative h-[76vh] min-h-[640px] overflow-hidden rounded-[30px] bg-[#dcecff] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_24px_60px_-40px_rgba(93,64,55,0.65)] xl:min-h-[720px]">
             <Canvas
               camera={{ position: [3.2, 2.05, 3.8], fov: 38 }}
               dpr={[1, 1.75]}
@@ -510,19 +511,29 @@ export default function AdminDetailShowcaseClient() {
                 viewScale={viewScale}
               />
             </Canvas>
-            <div className="pointer-events-none absolute left-3 top-3 max-w-[calc(100%-1.5rem)] rounded-[18px] bg-white/84 px-4 py-3 shadow-[0_18px_34px_-28px_rgba(93,64,55,0.55)] backdrop-blur">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#d3a27f]">
-                {selectedItem?.categoryLabel ?? "Модель"}
-              </p>
-              <h2 className="mt-1 line-clamp-2 text-lg font-black leading-tight">
-                {selectedItem?.name ?? "Деталь не выбрана"}
-              </h2>
-              {selectedItem?.description ? (
-                <p className="mt-1 line-clamp-2 max-w-md text-xs font-semibold text-[#8d6e63]">
-                  {selectedItem.description}
+            {showSceneInfo ? (
+              <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] rounded-[18px] bg-white/84 px-4 py-3 pr-12 shadow-[0_18px_34px_-28px_rgba(93,64,55,0.55)] backdrop-blur">
+                <button
+                  type="button"
+                  aria-label="Скрыть описание"
+                  onClick={() => setShowSceneInfo(false)}
+                  className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-[#f7f1ee] text-lg font-black leading-none text-[#8d6e63] transition-[background-color,transform] duration-150 active:scale-[0.96]"
+                >
+                  ×
+                </button>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#d3a27f]">
+                  {selectedItem?.categoryLabel ?? "Модель"}
                 </p>
-              ) : null}
-            </div>
+                <h2 className="mt-1 line-clamp-2 text-lg font-black leading-tight">
+                  {selectedItem?.name ?? "Деталь не выбрана"}
+                </h2>
+                {selectedItem?.description ? (
+                  <p className="mt-1 line-clamp-2 max-w-md text-xs font-semibold text-[#8d6e63]">
+                    {selectedItem.description}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </section>
 
           <aside className="grid content-start gap-4 rounded-[26px] bg-[#fffcf9] p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.05),0_18px_46px_-34px_rgba(93,64,55,0.55)]">
@@ -590,6 +601,12 @@ export default function AdminDetailShowcaseClient() {
                     {EFFECT_LABELS[key]}
                   </ToggleButton>
                 ))}
+                <ToggleButton
+                  active={showSceneInfo}
+                  onClick={() => setShowSceneInfo((value) => !value)}
+                >
+                  Описание
+                </ToggleButton>
               </div>
             </section>
 
