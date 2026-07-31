@@ -153,18 +153,23 @@ const toggleSetValue = <T,>(set: Set<T>, value: T) => {
 function ShowcaseModel({
   url,
   autoRotate,
+  preserveRotationOnChange,
+  rotationYRef,
   floating,
   targetSize,
   viewScale,
 }: {
   url: string;
   autoRotate: boolean;
+  preserveRotationOnChange: boolean;
+  rotationYRef: { current: number };
   floating: boolean;
   targetSize: number;
   viewScale: number;
 }) {
   const { scene } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
+  const preserveRotationRef = useRef(preserveRotationOnChange);
   const model = useMemo(() => {
     const clone = scene.clone(true);
     clone.traverse((node) => {
@@ -197,12 +202,18 @@ function ShowcaseModel({
   }, [scene, targetSize]);
 
   useEffect(() => {
+    preserveRotationRef.current = preserveRotationOnChange;
+  }, [preserveRotationOnChange]);
+
+  useEffect(() => {
     if (!groupRef.current) {
       return;
     }
-    groupRef.current.rotation.set(0, 0, 0);
+    const nextRotationY = preserveRotationRef.current ? rotationYRef.current : 0;
+    groupRef.current.rotation.set(0, nextRotationY, 0);
+    rotationYRef.current = nextRotationY;
     groupRef.current.position.set(0, 0, 0);
-  }, [url]);
+  }, [rotationYRef, url]);
 
   useFrame(({ clock }, delta) => {
     if (!groupRef.current) {
@@ -211,6 +222,7 @@ function ShowcaseModel({
     if (autoRotate) {
       groupRef.current.rotation.y += delta * 0.45;
     }
+    rotationYRef.current = groupRef.current.rotation.y;
     groupRef.current.position.y = floating
       ? Math.sin(clock.elapsedTime * 1.35) * 0.11
       : 0;
@@ -279,14 +291,17 @@ function ParticleHalo({ enabled }: { enabled: boolean }) {
 function ShowcaseScene({
   item,
   autoRotate,
+  preserveRotationOnChange,
   effects,
   viewScale,
 }: {
   item: ShowcaseItem | null;
   autoRotate: boolean;
+  preserveRotationOnChange: boolean;
   effects: Set<EffectKey>;
   viewScale: number;
 }) {
+  const modelRotationYRef = useRef(0);
   const hasRimLight = effects.has("rimLight");
   return (
     <>
@@ -302,8 +317,16 @@ function ShowcaseScene({
       <DirectionalLight position={[-5, 3, -5]} intensity={0.42} />
       {hasRimLight ? (
         <>
-          <PointLight position={[-2.8, 1.6, -2.2]} intensity={3.1} color="#d7f4ff" />
-          <PointLight position={[2.2, 1.2, 2.5]} intensity={1.6} color="#fff0c4" />
+          <PointLight
+            position={[-2.8, 1.6, -2.2]}
+            intensity={3.1}
+            color="#d7f4ff"
+          />
+          <PointLight
+            position={[2.2, 1.2, 2.5]}
+            intensity={1.6}
+            color="#fff0c4"
+          />
         </>
       ) : null}
       <Suspense fallback={null}>
@@ -312,6 +335,8 @@ function ShowcaseScene({
             key={item.modelUrl}
             url={item.modelUrl}
             autoRotate={autoRotate}
+            preserveRotationOnChange={preserveRotationOnChange}
+            rotationYRef={modelRotationYRef}
             floating={effects.has("floating")}
             targetSize={item.targetSize}
             viewScale={viewScale}
@@ -361,6 +386,8 @@ export default function AdminDetailShowcaseClient() {
   );
   const [search, setSearch] = useState("");
   const [autoRotate, setAutoRotate] = useState(true);
+  const [preserveRotationOnChange, setPreserveRotationOnChange] =
+    useState(false);
   const [showSceneInfo, setShowSceneInfo] = useState(true);
   const [effects, setEffects] = useState<Set<EffectKey>>(
     () => new Set(["floating", "rimLight", "particles", "pedestal"]),
@@ -507,6 +534,7 @@ export default function AdminDetailShowcaseClient() {
               <ShowcaseScene
                 item={selectedItem}
                 autoRotate={autoRotate}
+                preserveRotationOnChange={preserveRotationOnChange}
                 effects={effects}
                 viewScale={viewScale}
               />
@@ -569,10 +597,23 @@ export default function AdminDetailShowcaseClient() {
                   />
                 </label>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <ToggleButton active={autoRotate} onClick={() => setAutoRotate((value) => !value)}>
-                  Вращение
-                </ToggleButton>
+              <div className="grid gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <ToggleButton
+                    active={autoRotate}
+                    onClick={() => setAutoRotate((value) => !value)}
+                  >
+                    Вращение
+                  </ToggleButton>
+                  <ToggleButton
+                    active={preserveRotationOnChange}
+                    onClick={() =>
+                      setPreserveRotationOnChange((value) => !value)
+                    }
+                  >
+                    Сохранять угол
+                  </ToggleButton>
+                </div>
                 <label className="grid gap-1.5 rounded-[18px] bg-[#f7f1ee] px-3 py-2">
                   <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#8d6e63]">
                     Масштаб
