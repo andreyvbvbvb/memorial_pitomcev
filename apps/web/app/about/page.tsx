@@ -17,7 +17,7 @@ export default function AboutPage() {
     [t("about.bank"), 'ООО "Банк Точка"'],
     [t("about.bik"), "044525104"],
     [t("about.corrAccount"), "30101810745374525104"],
-    [t("about.email"), "support@мяугав.com"],
+    [t("about.email"), "support@meowgav.ru"],
   ];
   const tabs: Array<{ id: AboutTab; label: string }> = [
     { id: "contacts", label: t("about.contacts") },
@@ -79,10 +79,10 @@ export default function AboutPage() {
                 <p className="mt-3 text-pretty text-sm font-semibold leading-relaxed text-[#7b6a63]">
                   {t("about.contactsText")}{" "}
                   <a
-                    href="mailto:support@мяугав.com"
+                    href="mailto:support@meowgav.ru"
                     className="font-black text-[#5d4037] underline decoration-[#d3a27f] underline-offset-4"
                   >
-                    support@мяугав.com
+                    support@meowgav.ru
                   </a>
                   .
                 </p>
@@ -130,9 +130,9 @@ export default function AboutPage() {
                         {label}
                       </dt>
                       <dd className="mt-1 break-words text-[#5d4037] sm:mt-0">
-                        {value === "support@мяугав.com" ? (
+                        {value === "support@meowgav.ru" ? (
                           <a
-                            href="mailto:support@мяугав.com"
+                            href="mailto:support@meowgav.ru"
                             className="underline decoration-[#d3a27f] underline-offset-4"
                           >
                             {value}

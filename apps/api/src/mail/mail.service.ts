@@ -42,7 +42,7 @@ export class MailService {
       resetUrl,
       "",
       "Ссылка действует 1 час. Если срок истек, запросите восстановление пароля еще раз.",
-      "Если вы не запрашивали восстановление пароля, напишите нам: support@мяугав.com",
+      "Если вы не запрашивали восстановление пароля, напишите нам: support@meowgav.ru",
     ].join("\n");
 
     await transporter.sendMail({
@@ -58,7 +58,7 @@ export class MailService {
             <a href="${resetUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Сбросить пароль</a>
           </p>
           <p>Ссылка действует 1 час. Если срок истек, запросите восстановление пароля еще раз.</p>
-          <p style="color: #8d6e63;">Если вы не запрашивали восстановление пароля, напишите нам: support@мяугав.com</p>
+          <p style="color: #8d6e63;">Если вы не запрашивали восстановление пароля, напишите нам: support@meowgav.ru</p>
         </div>
       `,
     });
@@ -77,7 +77,7 @@ export class MailService {
       code,
       "",
       "Код действует 10 минут. Если вы не регистрировались в МЯУГАВ, просто проигнорируйте это письмо.",
-      "Если возникнут вопросы, напишите нам: support@мяугав.com",
+      "Если возникнут вопросы, напишите нам: support@meowgav.ru",
     ].join("\n");
 
     await transporter.sendMail({
@@ -165,7 +165,7 @@ export class MailService {
       "",
       `Редактировать мемориал: ${editUrl}`,
       "",
-      "Если возникнут вопросы, напишите нам: support@мяугав.com",
+      "Если возникнут вопросы, напишите нам: support@meowgav.ru",
     ].join("\n");
 
     await transporter.sendMail({
@@ -185,7 +185,7 @@ export class MailService {
           <p style="margin: 20px 0;">
             <a href="${editUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Редактировать</a>
           </p>
-          <p style="color: #8d6e63;">Если возникнут вопросы, напишите нам: support@мяугав.com</p>
+          <p style="color: #8d6e63;">Если возникнут вопросы, напишите нам: support@meowgav.ru</p>
         </div>
       `,
     });
@@ -208,7 +208,7 @@ export class MailService {
       process.env.SMTP_FROM ??
       process.env.SMTP_USER ??
       "no-reply@memorial.local";
-    const to = params.to || "support@мяугав.com";
+    const to = params.to || "support@meowgav.ru";
     const reviewText =
       params.reviewType === "REVISION"
         ? "повторная проверка после правок"
@@ -324,7 +324,7 @@ export class MailService {
       "",
       `Открыть мемориал: ${memorialUrl}`,
       "",
-      "Если возникнут вопросы, напишите нам: support@мяугав.com",
+      "Если возникнут вопросы, напишите нам: support@meowgav.ru",
     ].join("\n");
 
     await transporter.sendMail({
@@ -340,7 +340,7 @@ export class MailService {
           <p style="margin: 20px 0;">
             <a href="${memorialUrl}" style="display: inline-block; padding: 13px 22px; border-radius: 16px; background: #111827; color: #ffffff; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase;">Открыть мемориал</a>
           </p>
-          <p style="color: #8d6e63;">Если возникнут вопросы, напишите нам: support@мяугав.com</p>
+          <p style="color: #8d6e63;">Если возникнут вопросы, напишите нам: support@meowgav.ru</p>
         </div>
       `,
     });

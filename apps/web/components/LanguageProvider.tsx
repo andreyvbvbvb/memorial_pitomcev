@@ -181,7 +181,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
       "Можно собрать мемориал без входа. Сохранить и опубликовать его получится в конце после входа или регистрации.",
     "home.checking": "Проверка...",
     "home.limitMessage":
-      "На данный момент можно создать только {count} мемориалов. Для увеличения лимита напишите запрос на support@мяугав.com.",
+      "На данный момент можно создать только {count} мемориалов. Для увеличения лимита напишите запрос на support@meowgav.ru.",
     "menu.loadingAccount": "Проверяем аккаунт...",
     "menu.adminPanel": "Админ-панель",
     "menu.videoStudio": "Видеостудия",
@@ -287,7 +287,7 @@ const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
       "You can assemble a memorial without signing in. Saving and publishing will be available at the end after sign-in or registration.",
     "home.checking": "Checking...",
     "home.limitMessage":
-      "You can currently create only {count} memorials. To raise the limit, contact support@мяугав.com.",
+      "You can currently create only {count} memorials. To raise the limit, contact support@meowgav.ru.",
     "menu.loadingAccount": "Checking account...",
     "menu.adminPanel": "Admin panel",
     "menu.videoStudio": "Video studio",

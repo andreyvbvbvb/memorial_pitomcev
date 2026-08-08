@@ -134,7 +134,7 @@ export class PetsService {
     try {
       const frontendUrl = this.getFrontendUrl();
       await this.mailService.sendMemorialSubmittedForModeration({
-        to: process.env.MODERATION_SUPPORT_EMAIL ?? "support@мяугав.com",
+        to: process.env.MODERATION_SUPPORT_EMAIL ?? "support@meowgav.ru",
         petName: params.petName,
         petId: params.petId,
         ownerEmail: params.ownerEmail,
@@ -417,7 +417,7 @@ export class PetsService {
     });
     if (currentCount >= maxMemorials) {
       throw new BadRequestException(
-        `Достигнут лимит мемориалов: ${maxMemorials}. Для увеличения лимита напишите на support@мяугав.com`,
+        `Достигнут лимит мемориалов: ${maxMemorials}. Для увеличения лимита напишите на support@meowgav.ru`,
       );
     }
     const publicationMode = await this.pricing.getMemorialPublicationMode();
